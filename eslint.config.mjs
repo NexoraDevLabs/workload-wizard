@@ -1,55 +1,52 @@
-// eslint.config.js
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import globals from 'globals';
+// eslint.config.mjs
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
 
-export default tseslint.config(
-  // Ignore build artefacts
-  {
-    ignores: [
-      'node_modules/**',
-      'dist/**',
-      '.next/**',
-      'coverage/**',
-      '**/_generated/**',
-    ],
-  },
+export default [
+  // Base
+  { ignores: ["node_modules/**", ".next/**", "dist/**"] },
+  js.configs.recommended,
 
-  // JS files
+  // TypeScript
+  ...tseslint.configs.recommendedTypeChecked,
   {
-    files: ['**/*.{js,jsx}'],
-    ...js.configs.recommended,
-    languageOptions: {
-      globals: { ...globals.browser, ...globals.node },
-    },
-  },
-
-  // TS / TSX files
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      ...tseslint.configs.recommended,
-      ...tseslint.configs.recommendedTypeChecked, // enables type-aware rules
-    ],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parserOptions: {
-        // Uses tsconfig without requiring a fixed path
-        projectService: true,
+        project: ["./tsconfig.json"], // ensure this path is correct
         tsconfigRootDir: import.meta.dirname,
       },
-      globals: { ...globals.browser, ...globals.node, ...globals.vitest }, // Vitest globals if you use them
     },
     rules: {
-      '@typescript-eslint/consistent-type-imports': [
-        'warn',
-        { prefer: 'type-imports' },
-      ],
-      'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-      'no-console': ['error', { allow: ['warn', 'error'] }],
+      // Strict TS useful for this codebase
+      "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": ["error", { checksVoidReturn: { attributes: false } }],
+      "@typescript-eslint/no-unsafe-assignment": "warn",
+      "@typescript-eslint/restrict-template-expressions": ["warn", { allowNumber: true, allowBoolean: true }],
     },
-  }
-);
+  },
+
+  // React + Hooks
+  {
+    files: ["**/*.{jsx,tsx}"],
+    plugins: {
+      "react-hooks": require("eslint-plugin-react-hooks"),
+      "jsx-a11y": require("eslint-plugin-jsx-a11y"),
+    },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+      "jsx-a11y/anchor-is-valid": "warn",
+    },
+  },
+
+  // Import hygiene + Prettier align
+  {
+    rules: {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+    },
+  },
+];
