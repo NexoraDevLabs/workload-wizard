@@ -6,7 +6,7 @@ on:
   push:
     branches: [dev, main]
   schedule:
-    - cron: "35 2 * * 1"
+    - cron: '35 2 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -113,7 +113,7 @@ jobs:
         if: ${{ steps.codescan_enabled.outputs.enabled == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{ matrix.language }}"
+          category: '/language:${{ matrix.language }}'
 
       - name: Skip CodeQL upload (fork PR or code scanning disabled)
         if: ${{ steps.codescan_enabled.outputs.enabled != 'true' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
@@ -140,6 +140,6 @@ jobs:
       - name: Remove old artifacts (keep latest 10 and all tag builds)
         uses: c-hive/gha-remove-artifacts@v1.4.0
         with:
-          age: "14 days"
+          age: '14 days'
           skip-recent: 10
           skip-tags: true

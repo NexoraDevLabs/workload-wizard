@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Course {
   _id: string;
@@ -42,8 +42,8 @@ export function EditCourseForm({
   const [form, setForm] = useState({
     code: course.code,
     name: course.name,
-    studentCount: course.studentCount?.toString() || "",
-    campuses: course.campuses?.join(", ") || "",
+    studentCount: course.studentCount?.toString() || '',
+    campuses: course.campuses?.join(', ') || '',
   });
   const codeAvailability = useQuery((api as any).courses.isCodeAvailable, {
     code: form.code,
@@ -70,7 +70,7 @@ export function EditCourseForm({
         ...(form.campuses.trim()
           ? {
               campuses: form.campuses
-                .split(",")
+                .split(',')
                 .map((s) => s.trim())
                 .filter(Boolean),
             }
@@ -78,19 +78,19 @@ export function EditCourseForm({
       });
 
       toast({
-        title: "Course updated",
+        title: 'Course updated',
         description: `${form.code.trim()} has been updated successfully.`,
-        variant: "success",
+        variant: 'success',
       });
 
       onCourseUpdated();
       onClose();
     } catch (error) {
       toast({
-        title: "Failed to update course",
+        title: 'Failed to update course',
         description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -168,8 +168,8 @@ export function EditCourseForm({
             <div className="space-y-2">
               <Label>Campuses</Label>
               <div className="flex flex-wrap gap-2">
-                {(form.campuses || "")
-                  .split(",")
+                {(form.campuses || '')
+                  .split(',')
                   .map((s) => s.trim())
                   .filter(Boolean)
                   .map((c) => (
@@ -177,12 +177,12 @@ export function EditCourseForm({
                       key={c}
                       type="button"
                       onClick={() => {
-                        const list = (form.campuses || "")
-                          .split(",")
+                        const list = (form.campuses || '')
+                          .split(',')
                           .map((s) => s.trim())
                           .filter(Boolean)
                           .filter((x) => x !== c);
-                        setForm((f) => ({ ...f, campuses: list.join(", ") }));
+                        setForm((f) => ({ ...f, campuses: list.join(', ') }));
                       }}
                       className="px-2 py-1 rounded-full text-xs bg-muted hover:bg-muted/70"
                       title="Click to remove"
@@ -198,13 +198,13 @@ export function EditCourseForm({
                   onChange={(e) => {
                     const val = e.target.value;
                     if (!val) return;
-                    const list = (form.campuses || "")
-                      .split(",")
+                    const list = (form.campuses || '')
+                      .split(',')
                       .map((s) => s.trim())
                       .filter(Boolean);
                     if (!list.includes(val)) list.push(val);
-                    setForm((f) => ({ ...f, campuses: list.join(", ") }));
-                    e.currentTarget.value = "";
+                    setForm((f) => ({ ...f, campuses: list.join(', ') }));
+                    e.currentTarget.value = '';
                   }}
                 >
                   <option value="">Add campus…</option>
@@ -235,7 +235,7 @@ export function EditCourseForm({
                 disabled={!canSubmit || isLoading}
                 className="flex-1"
               >
-                {isLoading ? "Updating..." : "Update Course"}
+                {isLoading ? 'Updating...' : 'Update Course'}
               </Button>
             </div>
           </form>

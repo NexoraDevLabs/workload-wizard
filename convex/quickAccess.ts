@@ -1,5 +1,5 @@
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { query, mutation } from './_generated/server';
+import { v } from 'convex/values';
 
 export const getForCurrentUser = query({
   args: {},
@@ -7,8 +7,8 @@ export const getForCurrentUser = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return { links: [], showNames: true };
     const row = await ctx.db
-      .query("quick_access_prefs")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .query('quick_access_prefs')
+      .withIndex('by_user', (q) => q.eq('userId', identity.subject))
       .first();
     return (
       row || {
@@ -26,11 +26,11 @@ export const saveForCurrentUser = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
     const now = Date.now();
     const existing = await ctx.db
-      .query("quick_access_prefs")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .query('quick_access_prefs')
+      .withIndex('by_user', (q) => q.eq('userId', identity.subject))
       .first();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -40,7 +40,7 @@ export const saveForCurrentUser = mutation({
       });
       return existing._id;
     }
-    return await ctx.db.insert("quick_access_prefs", {
+    return await ctx.db.insert('quick_access_prefs', {
       userId: identity.subject,
       links: args.links,
       showNames: args.showNames,

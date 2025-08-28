@@ -28,8 +28,8 @@ jobs:
           branchName: feat/issue-${{ github.event.issue.number }}
           defaultBranch: dev
           openDraftPR: true
-          prTitle: "feat: ${{ github.event.issue.title }}"
-          prBody: "Auto-created from #${{ github.event.issue.number }}"
+          prTitle: 'feat: ${{ github.event.issue.title }}'
+          prBody: 'Auto-created from #${{ github.event.issue.number }}'
           copyIssueLabelsToPR: true
 
   create-fix-branch:
@@ -46,6 +46,6 @@ jobs:
           branchName: fix/issue-${{ github.event.issue.number }}
           defaultBranch: dev
           openDraftPR: true
-          prTitle: "fix: ${{ github.event.issue.title }}"
-          prBody: "Auto-created from #${{ github.event.issue.number }}"
+          prTitle: 'fix: ${{ github.event.issue.title }}'
+          prBody: 'Auto-created from #${{ github.event.issue.number }}'
           copyIssueLabelsToPR: true

@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useMemo, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { withToast } from "@/lib/utils";
+} from '@/components/ui/select';
+import { useMemo, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { withToast } from '@/lib/utils';
 // Feature flags removed
 
 export default function AcademicYearsAdminPage() {
@@ -29,7 +29,7 @@ export default function AcademicYearsAdminPage() {
 
   const years = useQuery(
     (api as any).academicYears.listForOrganisation,
-    user?.id ? ({ userId: user.id } as any) : ("skip" as any),
+    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
   ) as any[] | undefined;
 
   const create = useMutation((api as any).academicYears.create);
@@ -41,23 +41,23 @@ export default function AcademicYearsAdminPage() {
   const bulkEnabled = false;
 
   const [form, setForm] = useState({
-    name: "",
-    startDate: "",
-    endDate: "",
-    status: "draft" as "draft" | "published",
+    name: '',
+    startDate: '',
+    endDate: '',
+    status: 'draft' as 'draft' | 'published',
     isDefaultForOrg: false,
   });
 
   const canCreate = useMemo(
     () => form.name.trim() && form.startDate && form.endDate,
-    [form],
+    [form]
   );
 
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Admin", href: "/admin" },
-        { label: "Academic Years" },
+        { label: 'Admin', href: '/admin' },
+        { label: 'Academic Years' },
       ]}
       title="Academic Years (Admin)"
       subtitle="Create, publish, archive, and set default year"
@@ -92,7 +92,7 @@ export default function AcademicYearsAdminPage() {
                       let end = f.endDate;
                       if (start) {
                         const [y, m, d] = start
-                          .split("-")
+                          .split('-')
                           .map((n) => Number(n));
                         if (y && m && d) {
                           const startUtc = Date.UTC(y, m - 1, d);
@@ -101,9 +101,9 @@ export default function AcademicYearsAdminPage() {
                           const yyyy = date.getUTCFullYear();
                           const mm = String(date.getUTCMonth() + 1).padStart(
                             2,
-                            "0",
+                            '0'
                           );
-                          const dd = String(date.getUTCDate()).padStart(2, "0");
+                          const dd = String(date.getUTCDate()).padStart(2, '0');
                           end = `${yyyy}-${mm}-${dd}`;
                         }
                       }
@@ -173,18 +173,18 @@ export default function AcademicYearsAdminPage() {
                         } as any),
                       {
                         success: {
-                          title: "Academic Year Created",
+                          title: 'Academic Year Created',
                           description: `Academic year "${form.name.trim()}" has been created successfully.`,
                         },
-                        error: { title: "Failed to create academic year" },
+                        error: { title: 'Failed to create academic year' },
                       },
-                      toast,
+                      toast
                     );
                     setForm({
-                      name: "",
-                      startDate: "",
-                      endDate: "",
-                      status: "draft",
+                      name: '',
+                      startDate: '',
+                      endDate: '',
+                      status: 'draft',
                       isDefaultForOrg: false,
                     });
                   } finally {
@@ -192,7 +192,7 @@ export default function AcademicYearsAdminPage() {
                   }
                 }}
               >
-                {isLoading ? "Creating..." : "Create"}
+                {isLoading ? 'Creating...' : 'Create'}
               </Button>
             </div>
           </CardContent>
@@ -205,27 +205,27 @@ export default function AcademicYearsAdminPage() {
               {bulkEnabled && Array.isArray(years) && years.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Select
-                    value={""}
+                    value={''}
                     onValueChange={async (v) => {
                       if (!user?.id) return;
                       const ids = years.map((y) => y._id);
-                      setIsSettingStatus("bulk");
+                      setIsSettingStatus('bulk');
                       try {
                         await withToast(
                           () =>
                             bulkSetStatus({
-                              userId: user!.id,
+                              userId: user.id,
                               ids,
                               status: v,
                             } as any),
                           {
                             success: {
-                              title: "Bulk Status Updated",
+                              title: 'Bulk Status Updated',
                               description: `All ${years.length} years → ${v}.`,
                             },
-                            error: { title: "Failed bulk update" },
+                            error: { title: 'Failed bulk update' },
                           },
-                          toast,
+                          toast
                         );
                       } finally {
                         setIsSettingStatus(null);
@@ -256,7 +256,7 @@ export default function AcademicYearsAdminPage() {
                     >
                       <div className="space-y-1">
                         <div className="font-medium">
-                          {y.name}{" "}
+                          {y.name}{' '}
                           {y.isDefaultForOrg ? (
                             <span className="text-xs text-muted-foreground">
                               • default
@@ -265,7 +265,7 @@ export default function AcademicYearsAdminPage() {
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {y.startDate} → {y.endDate} · {y.status}
-                          {y.staging ? " · staging" : ""}
+                          {y.staging ? ' · staging' : ''}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -285,12 +285,12 @@ export default function AcademicYearsAdminPage() {
                                   } as any),
                                 {
                                   success: {
-                                    title: "Default Set",
+                                    title: 'Default Set',
                                     description: `"${y.name}" is now the default academic year.`,
                                   },
-                                  error: { title: "Failed to set default" },
+                                  error: { title: 'Failed to set default' },
                                 },
-                                toast,
+                                toast
                               );
                             } finally {
                               setIsUpdating(null);
@@ -298,8 +298,8 @@ export default function AcademicYearsAdminPage() {
                           }}
                         >
                           {isUpdating === String(y._id)
-                            ? "Setting..."
-                            : "Set default"}
+                            ? 'Setting...'
+                            : 'Set default'}
                         </Button>
                         <Button
                           variant="outline"
@@ -311,7 +311,7 @@ export default function AcademicYearsAdminPage() {
                               await withToast(
                                 () =>
                                   cloneYear({
-                                    userId: user!.id,
+                                    userId: user.id,
                                     sourceId: y._id,
                                     name: `${y.name} (copy)`,
                                     startDate: y.startDate,
@@ -319,12 +319,12 @@ export default function AcademicYearsAdminPage() {
                                   } as any),
                                 {
                                   success: {
-                                    title: "Year Cloned",
+                                    title: 'Year Cloned',
                                     description: `Created a draft copy of "${y.name}".`,
                                   },
-                                  error: { title: "Failed to clone year" },
+                                  error: { title: 'Failed to clone year' },
                                 },
-                                toast,
+                                toast
                               );
                             } finally {
                               setIsLoading(false);
@@ -345,16 +345,16 @@ export default function AcademicYearsAdminPage() {
                                   setStatus({
                                     userId: user!.id,
                                     id: y._id,
-                                    status: "published",
+                                    status: 'published',
                                   } as any),
                                 {
                                   success: {
-                                    title: "Status Updated",
+                                    title: 'Status Updated',
                                     description: `"${y.name}" has been published.`,
                                   },
-                                  error: { title: "Failed to publish" },
+                                  error: { title: 'Failed to publish' },
                                 },
-                                toast,
+                                toast
                               );
                             } finally {
                               setIsSettingStatus(null);
@@ -362,8 +362,8 @@ export default function AcademicYearsAdminPage() {
                           }}
                         >
                           {isSettingStatus === String(y._id)
-                            ? "Publishing..."
-                            : "Publish"}
+                            ? 'Publishing...'
+                            : 'Publish'}
                         </Button>
                         <Button
                           variant="outline"
@@ -377,16 +377,16 @@ export default function AcademicYearsAdminPage() {
                                   setStatus({
                                     userId: user!.id,
                                     id: y._id,
-                                    status: "draft",
+                                    status: 'draft',
                                   } as any),
                                 {
                                   success: {
-                                    title: "Status Updated",
+                                    title: 'Status Updated',
                                     description: `"${y.name}" has been marked as draft.`,
                                   },
-                                  error: { title: "Failed to update status" },
+                                  error: { title: 'Failed to update status' },
                                 },
-                                toast,
+                                toast
                               );
                             } finally {
                               setIsSettingStatus(null);
@@ -394,8 +394,8 @@ export default function AcademicYearsAdminPage() {
                           }}
                         >
                           {isSettingStatus === String(y._id)
-                            ? "Updating..."
-                            : "Mark draft"}
+                            ? 'Updating...'
+                            : 'Mark draft'}
                         </Button>
                         <Button
                           variant="destructive"
@@ -409,16 +409,16 @@ export default function AcademicYearsAdminPage() {
                                   setStatus({
                                     userId: user!.id,
                                     id: y._id,
-                                    status: "archived",
+                                    status: 'archived',
                                   } as any),
                                 {
                                   success: {
-                                    title: "Status Updated",
+                                    title: 'Status Updated',
                                     description: `"${y.name}" has been archived.`,
                                   },
-                                  error: { title: "Failed to archive" },
+                                  error: { title: 'Failed to archive' },
                                 },
-                                toast,
+                                toast
                               );
                             } finally {
                               setIsSettingStatus(null);
@@ -426,8 +426,8 @@ export default function AcademicYearsAdminPage() {
                           }}
                         >
                           {isSettingStatus === String(y._id)
-                            ? "Archiving..."
-                            : "Archive"}
+                            ? 'Archiving...'
+                            : 'Archive'}
                         </Button>
                       </div>
                     </li>

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import * as React from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Mail, Building2, User } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Mail, Building2, User } from 'lucide-react';
 
 type JoinWaitlistProps = {
   /** Where this signup came from (stored server-side) */
@@ -31,37 +31,37 @@ type JoinWaitlistProps = {
 };
 
 export default function JoinWaitlist({
-  source = "landing",
+  source = 'landing',
   trigger,
-  buttonText = "Join waitlist",
+  buttonText = 'Join waitlist',
   buttonProps,
   onSuccess,
   initialOpen = false,
 }: JoinWaitlistProps) {
   const { toast } = useToast();
   const [open, setOpen] = React.useState(initialOpen);
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
-  const [organisation, setOrganisation] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [organisation, setOrganisation] = React.useState('');
+  const [email, setEmail] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!firstName.trim()) {
-      toast({ title: "Please enter your first name" });
+      toast({ title: 'Please enter your first name' });
       return;
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast({ title: "Please enter a valid email" });
+      toast({ title: 'Please enter a valid email' });
       return;
     }
 
     try {
       setSubmitting(true);
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
           name: `${firstName} ${lastName}`.trim(),
@@ -69,28 +69,28 @@ export default function JoinWaitlist({
           organisation: organisation?.trim() || undefined,
         }),
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) throw new Error('Request failed');
       const json = await res.json();
 
       if (json?.already) {
         toast({
           title: "You're already on the waitlist",
-          description: "We’ll keep you posted.",
+          description: 'We’ll keep you posted.',
         });
       } else {
         toast({ title: "Thanks — we'll be in touch" });
       }
 
-      setFirstName("");
-      setLastName("");
-      setOrganisation("");
-      setEmail("");
+      setFirstName('');
+      setLastName('');
+      setOrganisation('');
+      setEmail('');
       setOpen(false);
       onSuccess?.();
     } catch {
       toast({
-        title: "Something went wrong",
-        description: "Please try again later",
+        title: 'Something went wrong',
+        description: 'Please try again later',
       });
     } finally {
       setSubmitting(false);
@@ -126,7 +126,7 @@ export default function JoinWaitlist({
               Join the waitlist
             </DialogTitle>
             <p className="text-sm text-white/60">
-              Be the first to try{" "}
+              Be the first to try{' '}
               <span className="text-white font-medium">WorkloadWizard</span>.
             </p>
           </DialogHeader>
@@ -234,7 +234,7 @@ export default function JoinWaitlist({
                   transition-all
                 "
               >
-                {submitting ? "Joining…" : "Join waitlist"}
+                {submitting ? 'Joining…' : 'Join waitlist'}
               </Button>
             </DialogFooter>
 
@@ -248,7 +248,7 @@ export default function JoinWaitlist({
 
       {/* Darker overlay & autofill clean-up */}
       <style jsx global>{`
-        .fixed.inset-0[data-state="open"] {
+        .fixed.inset-0[data-state='open'] {
           background: rgba(2, 6, 23, 0.55);
         }
         input:focus {

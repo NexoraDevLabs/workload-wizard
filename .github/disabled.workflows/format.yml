@@ -87,9 +87,9 @@ jobs:
       - name: Auto-commit formatting changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: format with prettier"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: 'chore: format with prettier'
+          commit_user_name: 'github-actions[bot]'
+          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
           branch: ${{ github.ref_name }}
 
   check-on-pr:
@@ -173,6 +173,6 @@ jobs:
       - name: Remove old artifacts (keep latest 10 and all tag builds)
         uses: c-hive/gha-remove-artifacts@v1.4.0
         with:
-          age: "14 days"
+          age: '14 days'
           skip-recent: 10
           skip-tags: true

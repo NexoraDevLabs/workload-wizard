@@ -4,26 +4,26 @@ on:
   workflow_call:
     inputs:
       node-version-file:
-        description: "Path to .nvmrc (or set an explicit version via setup-node in the caller)."
+        description: 'Path to .nvmrc (or set an explicit version via setup-node in the caller).'
         required: false
         type: string
-        default: ".nvmrc"
+        default: '.nvmrc'
       use-queue:
-        description: "Serialize runs per-branch to avoid overlapping installs."
+        description: 'Serialize runs per-branch to avoid overlapping installs.'
         required: false
         type: boolean
         default: true
       run-artifact-cleanup:
-        description: "If true, run artifact janitor after install (push/dispatch only)."
+        description: 'If true, run artifact janitor after install (push/dispatch only).'
         required: false
         type: boolean
         default: false
     outputs:
       pm:
-        description: "Detected package manager (pnpm|npm)."
+        description: 'Detected package manager (pnpm|npm).'
         value: ${{ jobs.install.outputs.pm }}
       node-version:
-        description: "Resolved Node.js version."
+        description: 'Resolved Node.js version.'
         value: ${{ jobs.install.outputs.node-version }}
 
 permissions:
@@ -145,6 +145,6 @@ jobs:
       - name: Remove old artifacts (keep latest 10 and all tag builds)
         uses: c-hive/gha-remove-artifacts@v1.4.0
         with:
-          age: "14 days"
+          age: '14 days'
           skip-recent: 10
           skip-tags: true

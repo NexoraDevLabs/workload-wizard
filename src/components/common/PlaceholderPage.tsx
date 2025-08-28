@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
 import {
   StandardizedSidebarLayout,
   type BreadcrumbItem,
-} from "@/components/layout/StandardizedSidebarLayout";
+} from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Construction,
   ArrowRight,
@@ -19,8 +19,8 @@ import {
   Calendar,
   Users,
   BarChart3,
-} from "lucide-react";
-import Link from "next/link";
+} from 'lucide-react';
+import Link from 'next/link';
 
 interface PlaceholderPageProps {
   breadcrumbs?: BreadcrumbItem[];
@@ -31,7 +31,7 @@ interface PlaceholderPageProps {
     label: string;
     href: string;
     icon?: React.ComponentType<{ className?: string }>;
-    variant?: "default" | "outline" | "secondary";
+    variant?: 'default' | 'outline' | 'secondary';
   }[];
   headerActions?: React.ReactNode;
 }
@@ -86,7 +86,7 @@ export function PlaceholderPage({
                   return (
                     <Button
                       key={index}
-                      variant={action.variant || "outline"}
+                      variant={action.variant || 'outline'}
                       asChild
                       className="justify-start h-auto p-4"
                     >
@@ -112,32 +112,32 @@ export function PlaceholderPage({
 
 // Pre-configured placeholder for common pages
 export function DashboardPlaceholder() {
-  const breadcrumbs = [{ label: "Home", href: "/" }, { label: "Dashboard" }];
+  const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Dashboard' }];
 
   const suggestedActions = [
     {
-      label: "Manage Users",
-      href: "/admin/users",
+      label: 'Manage Users',
+      href: '/admin/users',
       icon: Users,
-      variant: "default" as const,
+      variant: 'default' as const,
     },
     {
-      label: "View Organisation",
-      href: "/organisation",
+      label: 'View Organisation',
+      href: '/organisation',
       icon: Users,
-      variant: "outline" as const,
+      variant: 'outline' as const,
     },
     {
-      label: "Audit Logs",
-      href: "/admin/audit-logs",
+      label: 'Audit Logs',
+      href: '/admin/audit-logs',
       icon: BarChart3,
-      variant: "outline" as const,
+      variant: 'outline' as const,
     },
     {
-      label: "UI Components",
-      href: "/ui",
+      label: 'UI Components',
+      href: '/ui',
       icon: Calendar,
-      variant: "outline" as const,
+      variant: 'outline' as const,
     },
   ];
 
@@ -152,32 +152,32 @@ export function DashboardPlaceholder() {
 
 // Pre-configured placeholder for common pages
 export function HomePlaceholder() {
-  const breadcrumbs = [{ label: "Home", href: "/" }];
+  const breadcrumbs = [{ label: 'Home', href: '/' }];
 
   const suggestedActions = [
     {
-      label: "Manage Users",
-      href: "/admin/users",
+      label: 'Manage Users',
+      href: '/admin/users',
       icon: Users,
-      variant: "default" as const,
+      variant: 'default' as const,
     },
     {
-      label: "View Organisation",
-      href: "/organisation",
+      label: 'View Organisation',
+      href: '/organisation',
       icon: Users,
-      variant: "outline" as const,
+      variant: 'outline' as const,
     },
     {
-      label: "Audit Logs",
-      href: "/admin/audit-logs",
+      label: 'Audit Logs',
+      href: '/admin/audit-logs',
       icon: BarChart3,
-      variant: "outline" as const,
+      variant: 'outline' as const,
     },
     {
-      label: "UI Components",
-      href: "/ui",
+      label: 'UI Components',
+      href: '/ui',
       icon: Calendar,
-      variant: "outline" as const,
+      variant: 'outline' as const,
     },
   ];
 

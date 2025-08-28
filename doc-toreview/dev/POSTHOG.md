@@ -63,8 +63,8 @@ We intentionally do not initialise `posthog-js` in production here. All analytic
 ```ts
 // instrumentation-client.ts (excerpt)
 // PostHog configuration with advanced features
-if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-  import("posthog-js").then((posthog) => {
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  import('posthog-js').then((posthog) => {
     posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       // Session recordings with privacy settings
       session_recording: {
@@ -106,36 +106,36 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
 Our enhanced analytics service provides comprehensive tracking capabilities:
 
 ```ts
-import { analytics } from "@/lib/analytics";
+import { analytics } from '@/lib/analytics';
 
 // User identification
-analytics.identify("user-123", {
-  name: "John Doe",
-  email: "john@example.com",
-  role: "admin",
+analytics.identify('user-123', {
+  name: 'John Doe',
+  email: 'john@example.com',
+  role: 'admin',
 });
 
 // Custom event tracking with enhanced context
-analytics.track("button_clicked", {
-  button_name: "create_course",
-  page_location: "courses",
-  user_role: "admin",
+analytics.track('button_clicked', {
+  button_name: 'create_course',
+  page_location: 'courses',
+  user_role: 'admin',
 });
 
 // Page view tracking
-analytics.trackPageView("Course Creation Page");
+analytics.trackPageView('Course Creation Page');
 
 // Form tracking
-analytics.trackFormStart("course_form");
-analytics.trackFormSubmit("course_form", true, {
-  course_type: "undergraduate",
+analytics.trackFormStart('course_form');
+analytics.trackFormSubmit('course_form', true, {
+  course_type: 'undergraduate',
 });
 
 // Performance tracking
-analytics.trackPerformance("page_load_time", 1500);
+analytics.trackPerformance('page_load_time', 1500);
 
 // User action tracking
-analytics.trackUserAction("search", "search_input", { query_length: 10 });
+analytics.trackUserAction('search', 'search_input', { query_length: 10 });
 
 // Session tracking
 analytics.trackSessionStart();

@@ -5,10 +5,10 @@ on:
     branches: [dev, main]
     types: [ready_for_review, synchronize, reopened]
     paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "README*"
-      - "public/**"
+      - '**/*.md'
+      - 'docs/**'
+      - 'README*'
+      - 'public/**'
   push:
     branches: [dev, main]
 
@@ -21,20 +21,20 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NEXT_TELEMETRY_DISABLED: "1"
-  NODE_OPTIONS: "--max_old_space_size=4096"
-  NEXT_DISABLE_SOURCEMAPS: "1"
-  SENTRY_SKIP_AUTO_RELEASE: "1"
-  SENTRY_SOURCEMAPS: "false"
+  NEXT_TELEMETRY_DISABLED: '1'
+  NODE_OPTIONS: '--max_old_space_size=4096'
+  NEXT_DISABLE_SOURCEMAPS: '1'
+  SENTRY_SKIP_AUTO_RELEASE: '1'
+  SENTRY_SOURCEMAPS: 'false'
 
   # --- dummy envs so server code doesn't crash in CI ---
-  NEXT_PUBLIC_CONVEX_URL: "https://example.invalid"
-  CONVEX_DEPLOYMENT: "https://example.invalid"
-  FEATFLAG_STATSIG_SERVER_API_KEY: "test_server_key"
-  STATSIG_SERVER_SECRET_KEY: "test_server_key"
-  STATSIG_SERVER_API_KEY: "test_server_key"
-  CLERK_WEBHOOK_SECRET: "test_webhook_secret"
-  WEBHOOK_SECRET: "test_webhook_secret"
+  NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
+  CONVEX_DEPLOYMENT: 'https://example.invalid'
+  FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
+  STATSIG_SERVER_SECRET_KEY: 'test_server_key'
+  STATSIG_SERVER_API_KEY: 'test_server_key'
+  CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+  WEBHOOK_SECRET: 'test_webhook_secret'
 
 jobs:
   gh_status:

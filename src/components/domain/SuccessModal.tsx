@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { CheckCircle, X } from "lucide-react";
+} from '@/components/ui/card';
+import { CheckCircle, X } from 'lucide-react';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ export function SuccessModal({
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: "rgba(0,0,0,0.5)" }}
+      style={{ background: 'rgba(0,0,0,0.5)' }}
     >
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="pb-4">

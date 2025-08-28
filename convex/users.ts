@@ -1,10 +1,10 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { clerkClient } from "@clerk/nextjs/server";
-import { requirePermission } from "./permissions";
-import { writeAudit } from "./audit";
-import type { Id, Doc } from "./_generated/dataModel";
-import { requireOrgPermission } from "./permissions";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { clerkClient } from '@clerk/nextjs/server';
+import { requirePermission } from './permissions';
+import { writeAudit } from './audit';
+import type { Id, Doc } from './_generated/dataModel';
+import { requireOrgPermission } from './permissions';
 
 export const create = mutation({
   args: {
@@ -16,7 +16,7 @@ export const create = mutation({
     systemRoles: v.array(v.string()),
     // Do not trust client org; derive from actor when userId is present.
     // Keep optional to allow webhook/system calls to provide it explicitly.
-    organisationId: v.optional(v.id("organisations")),
+    organisationId: v.optional(v.id('organisations')),
     pictureUrl: v.optional(v.string()),
     subject: v.optional(v.string()),
     tokenIdentifier: v.optional(v.string()),
@@ -27,28 +27,28 @@ export const create = mutation({
   handler: async (ctx, args) => {
     // If an authenticated actor is performing this (userId present), derive org from the actor
     // and enforce scope. For webhook calls (no userId), fall back to provided organisationId.
-    let derivedOrganisationId: Id<"organisations"> | undefined =
+    let derivedOrganisationId: Id<'organisations'> | undefined =
       args.organisationId;
 
     if (args.userId) {
-      await requirePermission(ctx, args.userId, "users.invite");
+      await requirePermission(ctx, args.userId, 'users.invite');
       // Enforce org scope for non-system actors
       const actor = await ctx.db
-        .query("users")
-        .withIndex("by_subject", (q) => q.eq("subject", args.userId as string))
+        .query('users')
+        .withIndex('by_subject', (q) => q.eq('subject', args.userId as string))
         .first();
       if (actor) {
         const isSystem =
           Array.isArray(actor.systemRoles) &&
           actor.systemRoles.some((r: string) =>
-            ["admin", "sysadmin", "developer"].includes(r),
+            ['admin', 'sysadmin', 'developer'].includes(r)
           );
         // If explicit organisationId provided, allow assigning user to a different org
         if (args.organisationId) {
-          derivedOrganisationId = args.organisationId as Id<"organisations">;
+          derivedOrganisationId = args.organisationId as Id<'organisations'>;
         } else {
           // Otherwise default to actor's org
-          derivedOrganisationId = actor.organisationId as Id<"organisations">;
+          derivedOrganisationId = actor.organisationId as Id<'organisations'>;
         }
       }
     }
@@ -56,9 +56,9 @@ export const create = mutation({
     // For non-actor/system contexts (e.g., webhook), require organisationId to be present
     if (!derivedOrganisationId) {
       if (!args.organisationId) {
-        throw new Error("organisationId is required for system/webhook calls");
+        throw new Error('organisationId is required for system/webhook calls');
       }
-      derivedOrganisationId = args.organisationId as Id<"organisations">;
+      derivedOrganisationId = args.organisationId as Id<'organisations'>;
     }
 
     const base = {
@@ -68,7 +68,7 @@ export const create = mutation({
       fullName: args.fullName || `${args.givenName} ${args.familyName}`,
       systemRoles: args.systemRoles,
       organisationId: derivedOrganisationId,
-      subject: args.subject || "",
+      subject: args.subject || '',
       isActive: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -84,14 +84,14 @@ export const create = mutation({
         ? { tokenIdentifier: args.tokenIdentifier }
         : {}),
     };
-    const userId = await ctx.db.insert("users", { ...base, ...optional });
+    const userId = await ctx.db.insert('users', { ...base, ...optional });
 
     // Audit invite/create when initiated by an authenticated actor
     if (args.userId) {
       try {
         await writeAudit(ctx, {
-          action: "user.invited",
-          entityType: "user",
+          action: 'user.invited',
+          entityType: 'user',
           entityId: String(userId),
           entityName: base.email,
           performedBy: args.userId,
@@ -101,8 +101,8 @@ export const create = mutation({
             username: optional.username,
             systemRoles: base.systemRoles,
           }),
-          severity: "info",
-          type: "sys",
+          severity: 'info',
+          type: 'sys',
         });
       } catch {}
     }
@@ -113,34 +113,34 @@ export const create = mutation({
 
 export const update = mutation({
   args: {
-    id: v.id("users"),
+    id: v.id('users'),
     email: v.optional(v.string()),
     username: v.optional(v.string()),
     givenName: v.optional(v.string()),
     familyName: v.optional(v.string()),
     fullName: v.optional(v.string()),
     systemRoles: v.optional(v.array(v.string())),
-    organisationId: v.optional(v.id("organisations")),
+    organisationId: v.optional(v.id('organisations')),
     isActive: v.optional(v.boolean()),
     currentUserId: v.string(),
   },
   handler: async (ctx, args) => {
     const actor = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.currentUserId))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.currentUserId))
       .first();
 
     const targetUser = await ctx.db.get(args.id);
     if (!targetUser) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     // Enforce granular permission within target user's organisation
     await requireOrgPermission(
       ctx,
       args.currentUserId,
-      "users.edit",
-      String(targetUser.organisationId),
+      'users.edit',
+      String(targetUser.organisationId)
     );
 
     const { id, currentUserId, ...updates } = args;
@@ -151,24 +151,24 @@ export const update = mutation({
         !!actor &&
         Array.isArray(actor.systemRoles) &&
         actor.systemRoles.some((r: string) =>
-          ["admin", "sysadmin", "developer"].includes(r),
+          ['admin', 'sysadmin', 'developer'].includes(r)
         );
       if (!isSystemActor) {
         throw new Error(
-          "Unauthorized: Only system administrators may change system roles",
+          'Unauthorized: Only system administrators may change system roles'
         );
       }
       // Prevent assigning protected roles unless actor is sysadmin
       const assigningProtected = updates.systemRoles.some(
-        (r: string) => r === "sysadmin" || r === "developer",
+        (r: string) => r === 'sysadmin' || r === 'developer'
       );
       const actorIsSysadmin =
         !!actor &&
         Array.isArray(actor.systemRoles) &&
-        actor.systemRoles.includes("sysadmin");
+        actor.systemRoles.includes('sysadmin');
       if (assigningProtected && !actorIsSysadmin) {
         throw new Error(
-          "Unauthorized: Only sysadmin may assign developer/sysadmin roles",
+          'Unauthorized: Only sysadmin may assign developer/sysadmin roles'
         );
       }
     }
@@ -176,13 +176,13 @@ export const update = mutation({
     // If email is being updated, ensure it's unique
     if (updates.email) {
       const existingUser = await ctx.db
-        .query("users")
-        .filter((q) => q.eq(q.field("email"), updates.email))
-        .filter((q) => q.neq(q.field("_id"), id))
+        .query('users')
+        .filter((q) => q.eq(q.field('email'), updates.email))
+        .filter((q) => q.neq(q.field('_id'), id))
         .first();
 
       if (existingUser) {
-        throw new Error("Email address is already in use");
+        throw new Error('Email address is already in use');
       }
     }
 
@@ -201,14 +201,14 @@ export const update = mutation({
     // Audit update
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "user",
+        action: 'update',
+        entityType: 'user',
         entityId: String(id),
         performedBy: args.currentUserId,
-        details: "User updated",
+        details: 'User updated',
         metadata: JSON.stringify(updates),
-        severity: "info",
-        type: "sys",
+        severity: 'info',
+        type: 'sys',
       });
     } catch {}
   },
@@ -218,26 +218,26 @@ export const update = mutation({
 export const ensureMembership = mutation({
   args: {
     userId: v.string(), // Clerk subject
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     isPrimary: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.userId))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error('User not found');
 
     const existing = await ctx.db
-      .query("user_organisations")
-      .withIndex("by_user_org", (q) =>
-        q.eq("userId", args.userId).eq("organisationId", args.organisationId),
+      .query('user_organisations')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', args.userId).eq('organisationId', args.organisationId)
       )
       .first();
 
     const now = Date.now();
     if (!existing) {
-      await ctx.db.insert("user_organisations", {
+      await ctx.db.insert('user_organisations', {
         userId: args.userId,
         organisationId: args.organisationId,
         isPrimary: args.isPrimary ?? true,
@@ -257,8 +257,8 @@ export const ensureMembership = mutation({
     // If setting primary, mark other memberships as non-primary
     if (args.isPrimary) {
       const others = await ctx.db
-        .query("user_organisations")
-        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+        .query('user_organisations')
+        .withIndex('by_user', (q) => q.eq('userId', args.userId))
         .collect();
       for (const m of others) {
         if (
@@ -276,28 +276,28 @@ export const ensureMembership = mutation({
 
 export const updateEmail = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.id('users'),
     newEmail: v.string(),
-    currentUserId: v.id("users"),
+    currentUserId: v.id('users'),
   },
   handler: async (ctx, args) => {
     // Get the current user to check their subject for permissions
     const currentUser = await ctx.db.get(args.currentUserId);
     if (!currentUser) {
-      throw new Error("Current user not found");
+      throw new Error('Current user not found');
     }
 
-    await requirePermission(ctx, currentUser.subject, "users.edit");
+    await requirePermission(ctx, currentUser.subject, 'users.edit');
 
     // Check if the new email is already in use by another user
     const existingUser = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("email"), args.newEmail))
-      .filter((q) => q.neq(q.field("_id"), args.userId))
+      .query('users')
+      .filter((q) => q.eq(q.field('email'), args.newEmail))
+      .filter((q) => q.neq(q.field('_id'), args.userId))
       .first();
 
     if (existingUser) {
-      throw new Error("Email address is already in use by another user");
+      throw new Error('Email address is already in use by another user');
     }
 
     // Update the email
@@ -308,14 +308,14 @@ export const updateEmail = mutation({
     // Audit email change
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "user",
+        action: 'update',
+        entityType: 'user',
         entityId: String(args.userId),
         performedBy: currentUser.subject,
-        details: "User email updated",
+        details: 'User email updated',
         metadata: JSON.stringify({ newEmail: args.newEmail }),
-        severity: "info",
-        type: "sys",
+        severity: 'info',
+        type: 'sys',
       });
     } catch {}
   },
@@ -323,16 +323,16 @@ export const updateEmail = mutation({
 
 export const list = query({
   args: {
-    organisationId: v.optional(v.id("organisations")),
+    organisationId: v.optional(v.id('organisations')),
   },
   handler: async (ctx, args) => {
-    let users: Doc<"users">[] = [];
+    let users: Doc<'users'>[] = [];
     if (args.organisationId) {
       // Prefer memberships table when present; fall back to legacy field for now
       const memberships = await ctx.db
-        .query("user_organisations")
-        .withIndex("by_org", (q) =>
-          q.eq("organisationId", args.organisationId as Id<"organisations">),
+        .query('user_organisations')
+        .withIndex('by_org', (q) =>
+          q.eq('organisationId', args.organisationId as Id<'organisations'>)
         )
         .collect()
         .catch(() => [] as any[]);
@@ -340,19 +340,19 @@ export const list = query({
       if (Array.isArray(memberships) && memberships.length > 0) {
         const userIds = memberships.map((m) => m.userId);
         users = await ctx.db
-          .query("users")
+          .query('users')
           .filter((q) =>
-            (q as any).in((q as any).field("subject"), userIds as any),
+            (q as any).in((q as any).field('subject'), userIds as any)
           )
           .collect();
       } else {
         users = await ctx.db
-          .query("users")
-          .filter((q) => q.eq(q.field("organisationId"), args.organisationId))
+          .query('users')
+          .filter((q) => q.eq(q.field('organisationId'), args.organisationId))
           .collect();
       }
     } else {
-      users = await ctx.db.query("users").collect();
+      users = await ctx.db.query('users').collect();
     }
 
     // Get organisation details for each user
@@ -362,17 +362,17 @@ export const list = query({
 
         // Get all current organisational role assignments for this user in their org (support multiple)
         const assignments = await ctx.db
-          .query("user_role_assignments")
-          .withIndex("by_user_org", (q) =>
+          .query('user_role_assignments')
+          .withIndex('by_user_org', (q) =>
             q
-              .eq("userId", user.subject)
-              .eq("organisationId", user.organisationId),
+              .eq('userId', user.subject)
+              .eq('organisationId', user.organisationId)
           )
-          .filter((q) => q.eq(q.field("isActive"), true))
+          .filter((q) => q.eq(q.field('isActive'), true))
           .collect();
 
         const organisationalRoles: Array<{
-          id: Id<"user_roles">;
+          id: Id<'user_roles'>;
           name: string;
           description: string;
         } | null> = [];
@@ -402,7 +402,7 @@ export const list = query({
           organisationalRoles,
           organisationalRole,
         };
-      }),
+      })
     );
 
     return usersWithOrganisations;
@@ -410,7 +410,7 @@ export const list = query({
 });
 
 export const get = query({
-  args: { id: v.id("users") },
+  args: { id: v.id('users') },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
   },
@@ -420,8 +420,8 @@ export const getBySubject = query({
   args: { subject: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.subject))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
   },
 });
@@ -430,8 +430,8 @@ export const getByEmail = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .query('users')
+      .withIndex('by_email', (q) => q.eq('email', args.email))
       .first();
   },
 });
@@ -441,12 +441,12 @@ export const remove = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("subject"), args.userId))
+      .query('users')
+      .filter((q) => q.eq(q.field('subject'), args.userId))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     // Soft delete by setting isActive to false
@@ -458,15 +458,15 @@ export const remove = mutation({
     // Audit
     try {
       await writeAudit(ctx, {
-        action: "deactivate",
-        entityType: "user",
+        action: 'deactivate',
+        entityType: 'user',
         entityId: user.subject,
         entityName: user.fullName,
         performedBy: user.subject,
         organisationId: user.organisationId,
-        details: "User deactivated",
-        severity: "warning",
-        type: "sys",
+        details: 'User deactivated',
+        severity: 'warning',
+        type: 'sys',
       });
     } catch {}
 
@@ -479,12 +479,12 @@ export const hardDelete = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("subject"), args.userId))
+      .query('users')
+      .filter((q) => q.eq(q.field('subject'), args.userId))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     // Hard delete by removing the user from the database
@@ -493,15 +493,15 @@ export const hardDelete = mutation({
     // Audit
     try {
       await writeAudit(ctx, {
-        action: "delete",
-        entityType: "user",
+        action: 'delete',
+        entityType: 'user',
         entityId: user.subject,
         entityName: user.fullName,
         performedBy: user.subject,
         organisationId: user.organisationId,
-        details: "User hard deleted",
-        severity: "critical",
-        type: "sys",
+        details: 'User hard deleted',
+        severity: 'critical',
+        type: 'sys',
       });
     } catch {}
 
@@ -511,12 +511,12 @@ export const hardDelete = mutation({
 
 // Query to get users by organisation
 export const listByOrganisation = query({
-  args: { organisationId: v.id("organisations") },
+  args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     const users = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("organisationId"), args.organisationId))
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('users')
+      .filter((q) => q.eq(q.field('organisationId'), args.organisationId))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
 
     return users;
@@ -525,11 +525,11 @@ export const listByOrganisation = query({
 
 // Query to get all users by organisation (including inactive)
 export const listAllByOrganisation = query({
-  args: { organisationId: v.id("organisations") },
+  args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     const users = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("organisationId"), args.organisationId))
+      .query('users')
+      .filter((q) => q.eq(q.field('organisationId'), args.organisationId))
       .collect();
 
     return users;
@@ -541,12 +541,12 @@ export const updateLastSignIn = mutation({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("subject"), args.userId))
+      .query('users')
+      .filter((q) => q.eq(q.field('subject'), args.userId))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     await ctx.db.patch(user._id, {
@@ -573,18 +573,18 @@ export const updateByWebhook = mutation({
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("subject"), args.userId))
+      .query('users')
+      .filter((q) => q.eq(q.field('subject'), args.userId))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     const { userId, ...updates } = args;
 
     // Build a safe update object with correct types
-    const processedUpdates: Partial<Doc<"users">> & Record<string, unknown> =
+    const processedUpdates: Partial<Doc<'users'>> & Record<string, unknown> =
       {};
 
     if (updates.email !== undefined) processedUpdates.email = updates.email;
@@ -602,15 +602,15 @@ export const updateByWebhook = mutation({
       processedUpdates.pictureUrl = updates.pictureUrl;
 
     // Handle organisation ID conversion
-    if (updates.organisationId && updates.organisationId !== "") {
+    if (updates.organisationId && updates.organisationId !== '') {
       try {
         const org = await ctx.db
-          .query("organisations")
+          .query('organisations')
           .filter((q) =>
             q.eq(
-              q.field("_id"),
-              updates.organisationId as unknown as Id<"organisations">,
-            ),
+              q.field('_id'),
+              updates.organisationId as unknown as Id<'organisations'>
+            )
           )
           .first();
         if (org) {
@@ -635,17 +635,17 @@ export const updateByWebhook = mutation({
     // Audit webhook update (system)
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "user",
+        action: 'update',
+        entityType: 'user',
         entityId: String(user._id),
         entityName: user.fullName || user.email,
-        performedBy: "system",
+        performedBy: 'system',
         organisationId:
           (processedUpdates.organisationId as any) || user.organisationId,
-        details: "User updated via webhook",
+        details: 'User updated via webhook',
         metadata: JSON.stringify(processedUpdates),
-        severity: "info",
-        type: "sys",
+        severity: 'info',
+        type: 'sys',
       });
     } catch {}
 
@@ -660,18 +660,18 @@ export const completeOnboarding = mutation({
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.subject))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     const data = args.onboardingData;
 
     // Prepare updates object with onboarding completion
-    const updates: Partial<Doc<"users">> & Record<string, unknown> = {
+    const updates: Partial<Doc<'users'>> & Record<string, unknown> = {
       onboardingCompleted: true,
       onboardingData: args.onboardingData,
       onboardingCompletedAt: Date.now(),
@@ -708,9 +708,9 @@ export const completeOnboarding = mutation({
 
     // Handle job role (use customRole if role is "other", otherwise use role)
     if (data.role) {
-      if (data.role === "other" && data.customRole) {
+      if (data.role === 'other' && data.customRole) {
         updates.jobRole = data.customRole;
-      } else if (data.role !== "other") {
+      } else if (data.role !== 'other') {
         updates.jobRole = data.role;
       }
     }
@@ -720,16 +720,16 @@ export const completeOnboarding = mutation({
     // Audit onboarding completion
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "user",
+        action: 'update',
+        entityType: 'user',
         entityId: String(user._id),
         entityName: updates.fullName || user.fullName || user.email,
         performedBy: user.subject,
         organisationId: user.organisationId,
-        details: "Onboarding completed",
+        details: 'Onboarding completed',
         metadata: JSON.stringify(updates),
-        severity: "info",
-        type: "org",
+        severity: 'info',
+        type: 'org',
       });
     } catch {}
 
@@ -747,12 +747,12 @@ export const updateUserAvatar = mutation({
 
     // Find the user by Clerk subject ID
     const user = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', subject))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     // Update the user's picture URL
@@ -763,20 +763,20 @@ export const updateUserAvatar = mutation({
 
     // Log the avatar update
     await writeAudit(ctx, {
-      action: "update",
-      entityType: "user",
+      action: 'update',
+      entityType: 'user',
       entityId: String(user._id),
       entityName: user.fullName,
       performedBy: subject,
       performedByName: user.fullName,
       organisationId: user.organisationId,
-      details: "Updated profile picture",
+      details: 'Updated profile picture',
       metadata: JSON.stringify({
         previousPictureUrl: user.pictureUrl,
         newPictureUrl: pictureUrl,
       }),
-      severity: "info",
-      type: "sys",
+      severity: 'info',
+      type: 'sys',
     });
 
     return updatedUser;
@@ -791,8 +791,8 @@ export const getUserAvatar = query({
     const { subject } = args;
 
     const user = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', subject))
       .first();
 
     return user?.pictureUrl || null;

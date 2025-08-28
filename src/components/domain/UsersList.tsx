@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -16,12 +16,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { listUsers, deleteUser } from "@/lib/actions/userActions";
-import { useMutation, useQuery } from "convex/react";
-import type { Id } from "@/convex/_generated/dataModel";
-import { api } from "@/convex/_generated/api";
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { listUsers, deleteUser } from '@/lib/actions/userActions';
+import { useMutation, useQuery } from 'convex/react';
+import type { Id } from '@/convex/_generated/dataModel';
+import { api } from '@/convex/_generated/api';
 import {
   Trash2,
   RefreshCw,
@@ -39,11 +39,11 @@ import {
   MoreHorizontal,
   LogIn,
   UserCog,
-} from "lucide-react";
-import { EditUserForm } from "./EditUserForm";
-import { CreateUserForm } from "./CreateUserForm";
-import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
-import { UserSyncButton } from "./UserSyncButton";
+} from 'lucide-react';
+import { EditUserForm } from './EditUserForm';
+import { CreateUserForm } from './CreateUserForm';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { UserSyncButton } from './UserSyncButton';
 // DevLoginButton removed (no longer used)
 import {
   Select,
@@ -51,36 +51,36 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 // import { useAuth } from '@clerk/nextjs';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   PermissionGate,
   UsersEditGate,
   UsersDeleteGate,
   PermissionsManageGate,
-} from "@/components/common/PermissionGate";
-import { handleClientPermissionError } from "@/lib/permission-errors";
+} from '@/components/common/PermissionGate';
+import { handleClientPermissionError } from '@/lib/permission-errors';
 
 interface User {
   id: string;
@@ -102,15 +102,15 @@ interface User {
 }
 
 type SortField =
-  | "name"
-  | "email"
-  | "username"
-  | "role"
-  | "organisation"
-  | "status"
-  | "created"
-  | "lastSignIn";
-type SortDirection = "asc" | "desc";
+  | 'name'
+  | 'email'
+  | 'username'
+  | 'role'
+  | 'organisation'
+  | 'status'
+  | 'created'
+  | 'lastSignIn';
+type SortDirection = 'asc' | 'desc';
 
 export interface UsersListRef {
   handleCreateUser: () => void;
@@ -131,16 +131,16 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const [assigningUser, setAssigningUser] = useState<User | null>(null);
   const [selectedSystemRoles, setSelectedSystemRoles] = useState<string[]>([]);
   const [selectedOrgRoleId, setSelectedOrgRoleId] = useState<string | null>(
-    null,
+    null
   );
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [isBulkAssign, setIsBulkAssign] = useState(false);
 
   // Sorting state - default to alphabetical by name
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const updateLastSignIn = useMutation(api.users.updateLastSignIn);
   const organisations = useQuery(api.organisations.list);
@@ -149,18 +149,18 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     assigningUser && assigningUser.organisationId
       ? {
           organisationId:
-            assigningUser.organisationId as unknown as Id<"organisations">,
+            assigningUser.organisationId as unknown as Id<'organisations'>,
         }
-      : "skip",
+      : 'skip'
   );
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [organisationFilter, setOrganisationFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [organisationFilter, setOrganisationFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrganisationId, setSelectedOrganisationId] =
-    useState<string>("all");
+    useState<string>('all');
 
   // Expose handleCreateUser function to parent component
   useImperativeHandle(ref, () => ({
@@ -174,7 +174,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       const userList = await listUsers();
       setUsers(userList as User[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch users");
+      setError(err instanceof Error ? err.message : 'Failed to fetch users');
     } finally {
       setIsLoading(false);
     }
@@ -192,10 +192,10 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       setDeletingUser(null);
     } catch (err) {
       toast({
-        title: "Error",
+        title: 'Error',
         description:
-          err instanceof Error ? err.message : "Failed to delete user",
-        variant: "destructive",
+          err instanceof Error ? err.message : 'Failed to delete user',
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
@@ -222,14 +222,14 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       if (isBulkAssign) {
         const targets = sortedUsers.filter((u) => selectedUserIds.has(u.id));
         const sameOrgId = targets.every(
-          (u) => u.organisationId === targets[0]?.organisationId,
+          (u) => u.organisationId === targets[0]?.organisationId
         )
           ? targets[0]?.organisationId
           : null;
         const updates = targets.map(async (u) => {
-          return fetch("/api/update-user", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          return fetch('/api/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: u.subject || u.id,
               systemRoles: selectedSystemRoles,
@@ -241,13 +241,13 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
           }).then(async (r) => {
             if (!r.ok) {
               const d = await r.json();
-              throw new Error(d.error || "Failed to assign roles");
+              throw new Error(d.error || 'Failed to assign roles');
             }
           });
         });
         await Promise.all(updates);
         toast({
-          title: "Success",
+          title: 'Success',
           description: `Roles updated for ${targets.length} user(s)`,
         });
         setSelectedUserIds(new Set());
@@ -256,9 +256,9 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
         fetchUsers();
       } else {
         if (!assigningUser?.subject && !assigningUser?.id) return;
-        const res = await fetch("/api/update-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/api/update-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: assigningUser.subject || assigningUser.id,
             systemRoles: selectedSystemRoles,
@@ -268,17 +268,17 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
         });
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error || "Failed to assign roles");
+          throw new Error(data.error || 'Failed to assign roles');
         }
-        toast({ title: "Success", description: "Roles updated" });
+        toast({ title: 'Success', description: 'Roles updated' });
         setAssigningUser(null);
         fetchUsers();
       }
     } catch (e) {
       toast({
-        title: "Error",
-        description: e instanceof Error ? e.message : "Failed to assign roles",
-        variant: "destructive",
+        title: 'Error',
+        description: e instanceof Error ? e.message : 'Failed to assign roles',
+        variant: 'destructive',
       });
     }
   };
@@ -322,10 +322,10 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
 
   const handleDevLogin = async (user: User) => {
     try {
-      const response = await fetch("/api/dev-login", {
-        method: "POST",
+      const response = await fetch('/api/dev-login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId: user.subject || user.id }),
       });
@@ -334,45 +334,45 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
 
       if (response.ok && data.success) {
         // Store the session token and user info
-        localStorage.setItem("dev_login_session_token", data.sessionToken);
+        localStorage.setItem('dev_login_session_token', data.sessionToken);
         // Store the current user's Clerk ID (subject) as the original admin
         localStorage.setItem(
-          "dev_login_original_admin_id",
-          user.subject || user.id,
+          'dev_login_original_admin_id',
+          user.subject || user.id
         );
         // Store the target user's ID for cleanup
-        localStorage.setItem("dev_login_current_user_id", data.targetUser.id);
+        localStorage.setItem('dev_login_current_user_id', data.targetUser.id);
         localStorage.setItem(
-          "dev_login_target_user",
+          'dev_login_target_user',
           JSON.stringify({
             firstName: data.targetUser.firstName,
             lastName: data.targetUser.lastName,
             email: data.targetUser.email,
-          }),
+          })
         );
 
         toast({
-          title: "Success",
+          title: 'Success',
           description: `Logged in as ${data.targetUser.firstName} ${data.targetUser.lastName}`,
         });
 
         // For now, just show success and stay on the same page
         toast({
-          title: "Dev Login Success",
+          title: 'Dev Login Success',
           description: `Logged in as ${data.targetUser.firstName} ${data.targetUser.lastName}. You can now access admin pages as this user.`,
         });
 
         // Refresh the page to update the UI
         window.location.reload();
       } else {
-        throw new Error(data.error || "Failed to login as user");
+        throw new Error(data.error || 'Failed to login as user');
       }
     } catch (error) {
       toast({
-        title: "Error",
+        title: 'Error',
         description:
-          error instanceof Error ? error.message : "Failed to login as user",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'Failed to login as user',
+        variant: 'destructive',
       });
     }
   };
@@ -385,10 +385,10 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     setTogglingUserId(user.id);
 
     try {
-      const response = await fetch("/api/update-user", {
-        method: "POST",
+      const response = await fetch('/api/update-user', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId: user.subject,
@@ -398,20 +398,20 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update user status");
+        throw new Error(errorData.error || 'Failed to update user status');
       }
 
       // Refresh the user list
       fetchUsers();
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Failed to update user status",
+        error instanceof Error ? error.message : 'Failed to update user status'
       );
       toast({
-        title: "Failed to update user status",
+        title: 'Failed to update user status',
         description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
       });
     } finally {
       setTogglingUserId(null);
@@ -423,7 +423,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     const orgs = users
       .map((user) => user.organisation)
       .filter((org) => org !== null && org !== undefined)
-      .map((org) => ({ id: org!.id, name: org!.name, code: org!.code }));
+      .map((org) => ({ id: org.id, name: org.name, code: org.code }));
 
     // Remove duplicates based on id
     return Array.from(new Map(orgs.map((org) => [org.id, org])).values());
@@ -439,46 +439,46 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const sortUsers = (
     usersToSort: User[],
     field: SortField,
-    direction: SortDirection,
+    direction: SortDirection
   ) => {
     return [...usersToSort].sort((a, b) => {
       let aValue: string | number;
       let bValue: string | number;
 
       switch (field) {
-        case "name":
-          aValue = `${a.firstName || ""} ${a.lastName || ""}`
+        case 'name':
+          aValue = `${a.firstName || ''} ${a.lastName || ''}`
             .toLowerCase()
             .trim();
-          bValue = `${b.firstName || ""} ${b.lastName || ""}`
+          bValue = `${b.firstName || ''} ${b.lastName || ''}`
             .toLowerCase()
             .trim();
           break;
-        case "email":
-          aValue = (a.email || "").toLowerCase();
-          bValue = (b.email || "").toLowerCase();
+        case 'email':
+          aValue = (a.email || '').toLowerCase();
+          bValue = (b.email || '').toLowerCase();
           break;
-        case "username":
-          aValue = (a.username || "").toLowerCase();
-          bValue = (b.username || "").toLowerCase();
+        case 'username':
+          aValue = (a.username || '').toLowerCase();
+          bValue = (b.username || '').toLowerCase();
           break;
-        case "role":
+        case 'role':
           aValue = getRolesDisplay(a.roles || []).toLowerCase();
           bValue = getRolesDisplay(b.roles || []).toLowerCase();
           break;
-        case "organisation":
-          aValue = (a.organisation?.name || "").toLowerCase();
-          bValue = (b.organisation?.name || "").toLowerCase();
+        case 'organisation':
+          aValue = (a.organisation?.name || '').toLowerCase();
+          bValue = (b.organisation?.name || '').toLowerCase();
           break;
-        case "status":
+        case 'status':
           aValue = a.isActive ? 1 : 0;
           bValue = b.isActive ? 1 : 0;
           break;
-        case "created":
+        case 'created':
           aValue = a.createdAt;
           bValue = b.createdAt;
           break;
-        case "lastSignIn":
+        case 'lastSignIn':
           aValue = a.lastSignInAt || 0;
           bValue = b.lastSignInAt || 0;
           break;
@@ -486,8 +486,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
           return 0;
       }
 
-      if (aValue < bValue) return direction === "asc" ? -1 : 1;
-      if (aValue > bValue) return direction === "asc" ? 1 : -1;
+      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
       return 0;
     });
   };
@@ -495,10 +495,10 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   // Handle column header click for sorting
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection("asc");
+      setSortDirection('asc');
     }
   };
 
@@ -507,7 +507,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     if (sortField !== field) {
       return <ChevronUp className="h-4 w-4 opacity-30" />;
     }
-    return sortDirection === "asc" ? (
+    return sortDirection === 'asc' ? (
       <ChevronUp className="h-4 w-4" />
     ) : (
       <ChevronDown className="h-4 w-4" />
@@ -526,34 +526,34 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
           (user.firstName && user.firstName.toLowerCase().includes(term)) ||
           (user.lastName && user.lastName.toLowerCase().includes(term)) ||
           (user.email && user.email.toLowerCase().includes(term)) ||
-          (user.username && user.username.toLowerCase().includes(term)),
+          (user.username && user.username.toLowerCase().includes(term))
       );
     }
 
     // Role filter
-    if (roleFilter !== "all") {
+    if (roleFilter !== 'all') {
       filtered = filtered.filter(
-        (user) => user.roles && user.roles.includes(roleFilter),
+        (user) => user.roles && user.roles.includes(roleFilter)
       );
     }
 
     // Organisation filter
-    if (organisationFilter !== "all") {
+    if (organisationFilter !== 'all') {
       filtered = filtered.filter(
-        (user) => user.organisation?.id === organisationFilter,
+        (user) => user.organisation?.id === organisationFilter
       );
     }
 
     // Selected organisation filter (for admin cross-organisation viewing)
-    if (selectedOrganisationId !== "all") {
+    if (selectedOrganisationId !== 'all') {
       filtered = filtered.filter(
-        (user) => user.organisationId === selectedOrganisationId,
+        (user) => user.organisationId === selectedOrganisationId
       );
     }
 
     // Status filter
-    if (statusFilter !== "all") {
-      const isActive = statusFilter === "active";
+    if (statusFilter !== 'all') {
+      const isActive = statusFilter === 'active';
       filtered = filtered.filter((user) => user.isActive === isActive);
     }
 
@@ -592,35 +592,35 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   }, [users, sortField, sortDirection, sortedUsers.length]);
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
+    return new Date(timestamp).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
     });
   };
 
   const formatDateTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(timestamp).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "orgadmin":
-        return "Organisation Admin";
-      case "sysadmin":
-        return "System Admin";
-      case "developer":
-        return "Developer";
-      case "user":
-        return "User";
-      case "trial":
-        return "Trial";
+      case 'orgadmin':
+        return 'Organisation Admin';
+      case 'sysadmin':
+        return 'System Admin';
+      case 'developer':
+        return 'Developer';
+      case 'user':
+        return 'User';
+      case 'trial':
+        return 'Trial';
       default:
         return role;
     }
@@ -628,32 +628,32 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
-      case "orgadmin":
-        return "bg-red-100 text-red-800";
-      case "sysadmin":
-        return "bg-purple-100 text-purple-800";
-      case "developer":
-        return "bg-blue-100 text-blue-800";
-      case "user":
-        return "bg-green-100 text-green-800";
-      case "trial":
-        return "bg-yellow-100 text-yellow-800";
+      case 'orgadmin':
+        return 'bg-red-100 text-red-800';
+      case 'sysadmin':
+        return 'bg-purple-100 text-purple-800';
+      case 'developer':
+        return 'bg-blue-100 text-blue-800';
+      case 'user':
+        return 'bg-green-100 text-green-800';
+      case 'trial':
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getRolesDisplay = (roles: string[]) => {
-    if (!roles || roles.length === 0) return "No roles";
+    if (!roles || roles.length === 0) return 'No roles';
     if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
 
     // For multiple roles, show the highest priority role first
     const priorityOrder = [
-      "sysadmin",
-      "developer",
-      "orgadmin",
-      "user",
-      "trial",
+      'sysadmin',
+      'developer',
+      'orgadmin',
+      'user',
+      'trial',
     ];
     const sortedRoles = [...roles].sort((a, b) => {
       const aIndex = priorityOrder.indexOf(a);
@@ -661,19 +661,19 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       return aIndex - bIndex;
     });
 
-    return sortedRoles.map((role) => getRoleLabel(role)).join(", ");
+    return sortedRoles.map((role) => getRoleLabel(role)).join(', ');
   };
 
   const getPrimaryRoleBadgeClass = (roles: string[]) => {
-    if (!roles || roles.length === 0) return "bg-gray-100 text-gray-800";
+    if (!roles || roles.length === 0) return 'bg-gray-100 text-gray-800';
 
     // Get the highest priority role for badge styling
     const priorityOrder = [
-      "sysadmin",
-      "developer",
-      "orgadmin",
-      "user",
-      "trial",
+      'sysadmin',
+      'developer',
+      'orgadmin',
+      'user',
+      'trial',
     ];
     const sortedRoles = [...roles].sort((a, b) => {
       const aIndex = priorityOrder.indexOf(a);
@@ -681,7 +681,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       return aIndex - bIndex;
     });
 
-    return getRoleBadgeClass(sortedRoles[0] || "user");
+    return getRoleBadgeClass(sortedRoles[0] || 'user');
   };
 
   if (isLoading) {
@@ -720,7 +720,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Users</h2>
             <p className="text-muted-foreground">
-              Manage all users in the system ({sortedUsers.length} of{" "}
+              Manage all users in the system ({sortedUsers.length} of{' '}
               {users.length} total)
             </p>
           </div>
@@ -828,10 +828,10 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSearchTerm("");
-                          setRoleFilter("all");
-                          setOrganisationFilter("all");
-                          setStatusFilter("all");
+                          setSearchTerm('');
+                          setRoleFilter('all');
+                          setOrganisationFilter('all');
+                          setStatusFilter('all');
                         }}
                       >
                         Clear All
@@ -878,7 +878,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {selectedOrganisationId !== "all" && (
+                    {selectedOrganisationId !== 'all' && (
                       <Badge variant="outline" className="text-xs">
                         Filtered
                       </Badge>
@@ -969,74 +969,74 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[15%]"
-                  onClick={() => handleSort("name")}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Name
-                    {getSortIcon("name")}
+                    {getSortIcon('name')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[18%]"
-                  onClick={() => handleSort("email")}
+                  onClick={() => handleSort('email')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Email
-                    {getSortIcon("email")}
+                    {getSortIcon('email')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
-                  onClick={() => handleSort("username")}
+                  onClick={() => handleSort('username')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Username
-                    {getSortIcon("username")}
+                    {getSortIcon('username')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
-                  onClick={() => handleSort("role")}
+                  onClick={() => handleSort('role')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Role
-                    {getSortIcon("role")}
+                    {getSortIcon('role')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[15%]"
-                  onClick={() => handleSort("organisation")}
+                  onClick={() => handleSort('organisation')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Organisation
-                    {getSortIcon("organisation")}
+                    {getSortIcon('organisation')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[10%]"
-                  onClick={() => handleSort("status")}
+                  onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Status
-                    {getSortIcon("status")}
+                    {getSortIcon('status')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[10%]"
-                  onClick={() => handleSort("created")}
+                  onClick={() => handleSort('created')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Created
-                    {getSortIcon("created")}
+                    {getSortIcon('created')}
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
-                  onClick={() => handleSort("lastSignIn")}
+                  onClick={() => handleSort('lastSignIn')}
                 >
                   <div className="flex items-center justify-center gap-1">
                     Last Sign In
-                    {getSortIcon("lastSignIn")}
+                    {getSortIcon('lastSignIn')}
                   </div>
                 </TableHead>
                 <TableHead className="w-[8%] text-center font-semibold text-sm py-4">
@@ -1052,8 +1052,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                     className="text-center text-muted-foreground py-8"
                   >
                     {users.length === 0
-                      ? "No users found"
-                      : "No users match the current filters"}
+                      ? 'No users found'
+                      : 'No users match the current filters'}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -1070,14 +1070,14 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                       <div className="flex items-center justify-center">
                         {user.firstName && user.lastName
                           ? `${user.firstName} ${user.lastName}`
-                          : "N/A"}
+                          : 'N/A'}
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      {user.email || "N/A"}
+                      {user.email || 'N/A'}
                     </TableCell>
                     <TableCell className="text-center">
-                      {user.username || "N/A"}
+                      {user.username || 'N/A'}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-wrap gap-1 justify-center">
@@ -1098,7 +1098,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      {user.organisation?.name || user.organisationId || "N/A"}
+                      {user.organisation?.name || user.organisationId || 'N/A'}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center">
@@ -1137,14 +1137,14 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                           <span className="cursor-help">
                             {user.lastSignInAt
                               ? formatDate(user.lastSignInAt)
-                              : "Never"}
+                              : 'Never'}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>
                             {user.lastSignInAt
                               ? formatDateTime(user.lastSignInAt)
-                              : "Never signed in"}
+                              : 'Never signed in'}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -1207,8 +1207,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                               )}
                               <span>
                                 {user.isActive
-                                  ? "Deactivate User"
-                                  : "Activate User"}
+                                  ? 'Deactivate User'
+                                  : 'Activate User'}
                               </span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -1276,7 +1276,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
               <div>
                 <div className="text-sm font-medium mb-2">System Roles</div>
                 <div className="flex flex-wrap gap-2">
-                  {["user", "orgadmin", "sysadmin", "developer", "trial"].map(
+                  {['user', 'orgadmin', 'sysadmin', 'developer', 'trial'].map(
                     (role) => {
                       const checked = selectedSystemRoles.includes(role);
                       return (
@@ -1287,15 +1287,15 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                             setSelectedSystemRoles(
                               checked
                                 ? selectedSystemRoles.filter((r) => r !== role)
-                                : [...selectedSystemRoles, role],
+                                : [...selectedSystemRoles, role]
                             )
                           }
-                          className={`px-2 py-1 rounded border text-xs ${checked ? "bg-slate-900 text-white" : "bg-white"}`}
+                          className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
                         >
                           {getRoleLabel(role)}
                         </button>
                       );
-                    },
+                    }
                   )}
                 </div>
               </div>
@@ -1304,7 +1304,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                   Organisation Role
                 </div>
                 <Select
-                  value={selectedOrgRoleId || ""}
+                  value={selectedOrgRoleId || ''}
                   onValueChange={(v) => setSelectedOrgRoleId(v)}
                 >
                   <SelectTrigger>
@@ -1316,7 +1316,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                         <SelectItem key={r._id} value={r._id}>
                           {r.name}
                         </SelectItem>
-                      ),
+                      )
                     )}
                   </SelectContent>
                 </Select>
@@ -1337,4 +1337,4 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     </TooltipProvider>
   );
 });
-UsersList.displayName = "UsersList";
+UsersList.displayName = 'UsersList';

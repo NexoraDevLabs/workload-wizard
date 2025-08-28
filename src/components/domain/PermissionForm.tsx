@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { X } from "lucide-react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+} from '@/components/ui/card';
+import { X } from 'lucide-react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 interface PermissionFormData {
   id: string;
@@ -34,7 +34,7 @@ interface PermissionFormData {
 
 interface PermissionFormProps {
   onSubmit: (
-    data: PermissionFormData | Omit<PermissionFormData, "id">,
+    data: PermissionFormData | Omit<PermissionFormData, 'id'>
   ) => Promise<void>;
   onCancel: () => void;
   title: string;
@@ -52,9 +52,9 @@ export function PermissionForm({
   isEditing = false,
 }: PermissionFormProps) {
   const [formData, setFormData] = useState<PermissionFormData>({
-    id: initialData?.id || "",
-    group: initialData?.group || "",
-    description: initialData?.description || "",
+    id: initialData?.id || '',
+    group: initialData?.group || '',
+    description: initialData?.description || '',
     defaultRoles: initialData?.defaultRoles || [],
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -71,21 +71,21 @@ export function PermissionForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.id.trim()) {
-      newErrors.id = "Permission ID is required";
+      newErrors.id = 'Permission ID is required';
     } else if (!/^[A-Za-z]\w*(?:\.[A-Za-z]\w*)+$/.test(formData.id)) {
       newErrors.id =
         'Permission ID must be dot-separated segments (e.g., "users.create" or "reports.view.basic")';
     }
 
     if (!formData.group.trim()) {
-      newErrors.group = "Permission group is required";
+      newErrors.group = 'Permission group is required';
     } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(formData.group)) {
       newErrors.group =
-        "Group must contain only letters, numbers, and underscores";
+        'Group must contain only letters, numbers, and underscores';
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
+      newErrors.description = 'Description is required';
     }
 
     setErrors(newErrors);
@@ -128,8 +128,8 @@ export function PermissionForm({
 
   // Auto-populate group from ID
   useEffect(() => {
-    if (!isEditing && formData.id.includes(".")) {
-      const group = formData.id.split(".")[0] || "";
+    if (!isEditing && formData.id.includes('.')) {
+      const group = formData.id.split('.')[0] || '';
       setFormData((prev) => ({ ...prev, group }) as PermissionFormData);
     }
   }, [formData.id, isEditing]);
@@ -143,8 +143,8 @@ export function PermissionForm({
               <CardTitle>{title}</CardTitle>
               <CardDescription>
                 {isEditing
-                  ? "Update permission details and default role assignments"
-                  : "Create a new system permission with default role assignments"}
+                  ? 'Update permission details and default role assignments'
+                  : 'Create a new system permission with default role assignments'}
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -166,7 +166,7 @@ export function PermissionForm({
                 }
                 placeholder="e.g., users.create, staff.edit"
                 disabled={isEditing}
-                className={errors.id ? "border-red-500" : ""}
+                className={errors.id ? 'border-red-500' : ''}
               />
               {errors.id && (
                 <p className="text-sm text-red-500 mt-1">{errors.id}</p>
@@ -187,7 +187,7 @@ export function PermissionForm({
                   setFormData((prev) => ({ ...prev, group: e.target.value }))
                 }
                 placeholder="e.g., users, staff, modules"
-                className={errors.group ? "border-red-500" : ""}
+                className={errors.group ? 'border-red-500' : ''}
               />
               {errors.group && (
                 <p className="text-sm text-red-500 mt-1">{errors.group}</p>
@@ -211,7 +211,7 @@ export function PermissionForm({
                 }
                 placeholder="Describe what this permission allows users to do"
                 rows={3}
-                className={errors.description ? "border-red-500" : ""}
+                className={errors.description ? 'border-red-500' : ''}
               />
               {errors.description && (
                 <p className="text-sm text-red-500 mt-1">
@@ -273,10 +273,10 @@ export function PermissionForm({
                               {t.name}
                             </TableCell>
                             <TableCell className="text-muted-foreground">
-                              {t.description || ""}
+                              {t.description || ''}
                             </TableCell>
                           </TableRow>
-                        ),
+                        )
                       )}
                     </TableBody>
                   </Table>
@@ -295,7 +295,7 @@ export function PermissionForm({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading} className="flex-1">
-                {isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
+                {isLoading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
               </Button>
             </div>
           </form>

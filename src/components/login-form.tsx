@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSignIn, useClerk } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import posthog from "posthog-js";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { useSignIn, useClerk } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import posthog from 'posthog-js';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertCircle,
   WandSparkles,
@@ -23,34 +23,34 @@ import {
   EyeOff,
   CheckCircle,
   ArrowLeft,
-} from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+} from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export function LoginForm({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<'div'>) {
   const { isLoaded, signIn, setActive } = useSignIn();
   const { signOut } = useClerk();
-  const [emailOrUsername, setEmailOrUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const router = useRouter();
 
   // Reset password state
   const [showResetForm, setShowResetForm] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [resetCode, setResetCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
-  const [resetError, setResetError] = useState("");
-  const [resetSuccess, setResetSuccess] = useState("");
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
 
   // Password validation state
   const [passwordValidation, setPasswordValidation] = useState({
@@ -71,7 +71,7 @@ export function LoginForm({
     if (!isLoaded) return;
 
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
       const result = await signIn.create({
@@ -79,18 +79,18 @@ export function LoginForm({
         password,
       });
 
-      if (result.status === "complete") {
+      if (result.status === 'complete') {
         // Only capture if PostHog is available
-        if (typeof posthog !== "undefined" && posthog.capture) {
-          posthog.capture("login_submitted", { success: true });
+        if (typeof posthog !== 'undefined' && posthog.capture) {
+          posthog.capture('login_submitted', { success: true });
         }
         await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+        router.push('/dashboard');
       } else {
-        const errorMessage = "Sign in failed. Please check your credentials.";
+        const errorMessage = 'Sign in failed. Please check your credentials.';
         // Only capture if PostHog is available
-        if (typeof posthog !== "undefined" && posthog.capture) {
-          posthog.capture("login_submitted", {
+        if (typeof posthog !== 'undefined' && posthog.capture) {
+          posthog.capture('login_submitted', {
             success: false,
             error: errorMessage,
           });
@@ -110,38 +110,38 @@ export function LoginForm({
       };
 
       let errorMessage =
-        "Invalid email/username or password. Please try again.";
+        'Invalid email/username or password. Please try again.';
       // Don't log to console, handle errors gracefully
       if (clerkError.errors && clerkError.errors.length > 0) {
         const error = clerkError.errors[0];
 
         // Handle specific error codes
         switch (error?.code) {
-          case "form_password_incorrect":
-          case "form_identifier_not_found":
+          case 'form_password_incorrect':
+          case 'form_identifier_not_found':
             errorMessage =
-              "Invalid email/username or password. Please try again.";
+              'Invalid email/username or password. Please try again.';
             break;
-          case "form_password_pwned":
+          case 'form_password_pwned':
             errorMessage =
-              "This password has been found in a data breach. Please use a different password.";
+              'This password has been found in a data breach. Please use a different password.';
             break;
-          case "too_many_requests":
-            errorMessage = "Too many failed attempts. Please try again later.";
+          case 'too_many_requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
             break;
           default:
             errorMessage =
               error?.message ||
               error?.longMessage ||
-              "Sign in failed. Please try again.";
+              'Sign in failed. Please try again.';
         }
       } else if (clerkError.message) {
         errorMessage = clerkError.message;
       }
 
       // Only capture if PostHog is available
-      if (typeof posthog !== "undefined" && posthog.capture) {
-        posthog.capture("login_submitted", {
+      if (typeof posthog !== 'undefined' && posthog.capture) {
+        posthog.capture('login_submitted', {
           success: false,
           error: errorMessage,
           error_code: clerkError.errors?.[0]?.code,
@@ -159,11 +159,11 @@ export function LoginForm({
     if (!isLoaded) return;
 
     setIsResetLoading(true);
-    setResetError("");
-    setResetSuccess("");
+    setResetError('');
+    setResetSuccess('');
 
     try {
-      const strategy = "reset_password_email_code";
+      const strategy = 'reset_password_email_code';
 
       await signIn.create({
         strategy,
@@ -171,8 +171,8 @@ export function LoginForm({
       });
 
       // Only capture if PostHog is available
-      if (typeof posthog !== "undefined" && posthog.capture) {
-        posthog.capture("password_reset_requested", {
+      if (typeof posthog !== 'undefined' && posthog.capture) {
+        posthog.capture('password_reset_requested', {
           success: true,
           strategy,
         });
@@ -180,10 +180,10 @@ export function LoginForm({
 
       setShowPasswordForm(true);
       setResetSuccess(
-        "Verification code sent! Please enter the code and your new password.",
+        'Verification code sent! Please enter the code and your new password.'
       );
       // Save email to localStorage for refresh recovery
-      localStorage.setItem("passwordResetEmail", resetEmail);
+      localStorage.setItem('passwordResetEmail', resetEmail);
     } catch (err: unknown) {
       // Handle Clerk password reset errors
       const clerkError = err as {
@@ -196,39 +196,39 @@ export function LoginForm({
         message?: string;
       };
 
-      let errorMessage = "An error occurred. Please try again.";
+      let errorMessage = 'An error occurred. Please try again.';
       if (clerkError.errors && clerkError.errors.length > 0) {
         const error = clerkError.errors[0];
 
         // Handle specific error codes
         switch (error?.code) {
-          case "form_identifier_not_found":
-            errorMessage = "No account found with this email address.";
+          case 'form_identifier_not_found':
+            errorMessage = 'No account found with this email address.';
             break;
-          case "form_identifier_invalid":
-            errorMessage = "Please enter a valid email address.";
+          case 'form_identifier_invalid':
+            errorMessage = 'Please enter a valid email address.';
             break;
-          case "too_many_requests":
-            errorMessage = "Too many requests. Please try again later.";
+          case 'too_many_requests':
+            errorMessage = 'Too many requests. Please try again later.';
             break;
           default:
             errorMessage =
               error?.message ||
               error?.longMessage ||
-              "Failed to send reset email. Please try again.";
+              'Failed to send reset email. Please try again.';
         }
       } else if (clerkError.message) {
         // Filter out generic "is invalid" messages for better UX
-        if (clerkError.message.includes("is invalid")) {
-          errorMessage = "Please enter a valid email address.";
+        if (clerkError.message.includes('is invalid')) {
+          errorMessage = 'Please enter a valid email address.';
         } else {
           errorMessage = clerkError.message;
         }
       }
 
       // Only capture if PostHog is available
-      if (typeof posthog !== "undefined" && posthog.capture) {
-        posthog.capture("password_reset_requested", {
+      if (typeof posthog !== 'undefined' && posthog.capture) {
+        posthog.capture('password_reset_requested', {
           success: false,
           error: errorMessage,
           error_code: clerkError.errors?.[0]?.code,
@@ -246,14 +246,14 @@ export function LoginForm({
     if (!isLoaded) return;
 
     setIsResetLoading(true);
-    setResetError("");
+    setResetError('');
 
     try {
       // This function is no longer needed since we removed the separate code verification step
       // The code and password are now entered together in the password form
       setShowPasswordForm(true);
       setResetSuccess(
-        "Please enter your new password and the verification code.",
+        'Please enter your new password and the verification code.'
       );
     } catch (err: unknown) {
       const clerkError = err as {
@@ -266,13 +266,13 @@ export function LoginForm({
         message?: string;
       };
 
-      let errorMessage = "Something went wrong. Please try again.";
+      let errorMessage = 'Something went wrong. Please try again.';
       if (clerkError.errors && clerkError.errors.length > 0) {
         const error = clerkError.errors[0];
         errorMessage =
           error?.message ||
           error?.longMessage ||
-          "Something went wrong. Please try again.";
+          'Something went wrong. Please try again.';
       } else if (clerkError.message) {
         errorMessage = clerkError.message;
       }
@@ -289,11 +289,11 @@ export function LoginForm({
     if (!isLoaded) return;
 
     // Clear previous errors
-    setResetError("");
+    setResetError('');
 
     // Validate password requirements
     if (newPassword.length < 8) {
-      setResetError("Password must be at least 8 characters long.");
+      setResetError('Password must be at least 8 characters long.');
       return;
     }
 
@@ -305,20 +305,20 @@ export function LoginForm({
 
     if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
       setResetError(
-        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+        'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
       );
       return;
     }
 
     // Check if passwords match
     if (newPassword !== confirmPassword) {
-      setResetError("Passwords do not match. Please try again.");
+      setResetError('Passwords do not match. Please try again.');
       return;
     }
 
     // Check if code is provided
     if (!resetCode) {
-      setResetError("Please enter the verification code sent to your email.");
+      setResetError('Please enter the verification code sent to your email.');
       return;
     }
 
@@ -327,17 +327,17 @@ export function LoginForm({
     try {
       // Follow the official Clerk pattern: send code AND password together
       const result = await signIn.attemptFirstFactor({
-        strategy: "reset_password_email_code",
+        strategy: 'reset_password_email_code',
         code: resetCode,
         password: newPassword,
       });
 
-      if (result.status === "complete") {
+      if (result.status === 'complete') {
         // Only capture if PostHog is available
-        if (typeof posthog !== "undefined" && posthog.capture) {
-          posthog.capture("password_reset_completed", { success: true });
+        if (typeof posthog !== 'undefined' && posthog.capture) {
+          posthog.capture('password_reset_completed', { success: true });
         }
-        setResetSuccess("Password reset successfully! Redirecting to login...");
+        setResetSuccess('Password reset successfully! Redirecting to login...');
 
         // Sign out the user so they can sign in with their new password
         try {
@@ -350,12 +350,12 @@ export function LoginForm({
         setTimeout(() => {
           setShowResetForm(false);
           setShowPasswordForm(false);
-          setResetEmail("");
-          setResetCode("");
-          setNewPassword("");
-          setConfirmPassword("");
-          setResetError("");
-          setResetSuccess("");
+          setResetEmail('');
+          setResetCode('');
+          setNewPassword('');
+          setConfirmPassword('');
+          setResetError('');
+          setResetSuccess('');
           setPasswordValidation({
             length: false,
             uppercase: false,
@@ -365,12 +365,12 @@ export function LoginForm({
             match: false,
           });
           // Clear localStorage
-          localStorage.removeItem("passwordResetEmail");
+          localStorage.removeItem('passwordResetEmail');
           // Mark that user has returned to login after successful reset
           setHasReturnedToLogin(true);
         }, 1500);
       } else {
-        setResetError("Failed to reset password. Please try again.");
+        setResetError('Failed to reset password. Please try again.');
       }
     } catch (err: unknown) {
       // Password reset error
@@ -385,35 +385,35 @@ export function LoginForm({
         message?: string;
       };
 
-      let errorMessage = "Failed to reset password. Please try again.";
+      let errorMessage = 'Failed to reset password. Please try again.';
       if (clerkError.errors && clerkError.errors.length > 0) {
         const error = clerkError.errors[0];
 
         switch (error?.code) {
-          case "form_password_pwned":
+          case 'form_password_pwned':
             errorMessage =
-              "This password has been found in a data breach. Please use a different password.";
+              'This password has been found in a data breach. Please use a different password.';
             break;
-          case "form_password_too_short":
-            errorMessage = "Password must be at least 8 characters long.";
+          case 'form_password_too_short':
+            errorMessage = 'Password must be at least 8 characters long.';
             break;
-          case "form_password_too_weak":
+          case 'form_password_too_weak':
             errorMessage =
-              "Password is too weak. Please choose a stronger password.";
+              'Password is too weak. Please choose a stronger password.';
             break;
-          case "form_code_incorrect":
+          case 'form_code_incorrect':
             errorMessage =
-              "Invalid verification code. Please check the code and try again.";
+              'Invalid verification code. Please check the code and try again.';
             break;
-          case "form_code_expired":
+          case 'form_code_expired':
             errorMessage =
-              "Verification code has expired. Please request a new code.";
+              'Verification code has expired. Please request a new code.';
             break;
-          case "form_identifier_missing":
-          case "form_code_missing":
-          case "form_password_missing":
+          case 'form_identifier_missing':
+          case 'form_code_missing':
+          case 'form_password_missing':
             errorMessage =
-              "Password reset session has expired. Please start the password reset process again.";
+              'Password reset session has expired. Please start the password reset process again.';
             // Reset the form state
             setShowPasswordForm(false);
             setShowResetForm(true);
@@ -422,32 +422,32 @@ export function LoginForm({
             errorMessage =
               error?.message ||
               error?.longMessage ||
-              "Failed to reset password. Please try again.";
+              'Failed to reset password. Please try again.';
         }
       } else if (clerkError.message) {
         // Handle specific error messages
-        if (clerkError.message.includes("verification code")) {
+        if (clerkError.message.includes('verification code')) {
           errorMessage =
-            "Verification code has expired. Please request a new code.";
+            'Verification code has expired. Please request a new code.';
           // Reset to reset form to request new code
           setShowPasswordForm(false);
           setShowResetForm(true);
-        } else if (clerkError.message.includes("is missing")) {
+        } else if (clerkError.message.includes('is missing')) {
           errorMessage =
-            "Password reset session has expired. Please start the password reset process again.";
+            'Password reset session has expired. Please start the password reset process again.';
           // Reset the form state
           setShowPasswordForm(false);
           setShowResetForm(true);
-        } else if (clerkError.message.includes("is invalid")) {
-          errorMessage = "Password requirements not met. Please try again.";
+        } else if (clerkError.message.includes('is invalid')) {
+          errorMessage = 'Password requirements not met. Please try again.';
         } else {
           errorMessage = clerkError.message;
         }
       }
 
       // Only capture if PostHog is available
-      if (typeof posthog !== "undefined" && posthog.capture) {
-        posthog.capture("password_reset_completed", {
+      if (typeof posthog !== 'undefined' && posthog.capture) {
+        posthog.capture('password_reset_completed', {
           success: false,
           error: errorMessage,
           error_code: clerkError.errors?.[0]?.code,
@@ -461,11 +461,11 @@ export function LoginForm({
 
   const goBackToResetForm = () => {
     setShowPasswordForm(false);
-    setResetCode("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setResetError("");
-    setResetSuccess("");
+    setResetCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setResetError('');
+    setResetSuccess('');
     setPasswordValidation({
       length: false,
       uppercase: false,
@@ -475,19 +475,19 @@ export function LoginForm({
       match: false,
     });
     // Clear localStorage
-    localStorage.removeItem("passwordResetEmail");
+    localStorage.removeItem('passwordResetEmail');
   };
 
   const goBackToLogin = () => {
     setShowResetForm(false);
     setShowPasswordForm(false);
-    setResetEmail("");
-    setResetCode("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setResetError("");
-    setResetSuccess("");
-    setError("");
+    setResetEmail('');
+    setResetCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setResetError('');
+    setResetSuccess('');
+    setError('');
     setPasswordValidation({
       length: false,
       uppercase: false,
@@ -497,22 +497,22 @@ export function LoginForm({
       match: false,
     });
     // Clear localStorage
-    localStorage.removeItem("passwordResetEmail");
+    localStorage.removeItem('passwordResetEmail');
     // Mark that user has explicitly returned to login
     setHasReturnedToLogin(true);
   };
 
   const getCurrentTitle = () => {
-    if (showPasswordForm) return "Set New Password";
-    if (showResetForm) return "Reset Password";
-    return "Welcome back";
+    if (showPasswordForm) return 'Set New Password';
+    if (showResetForm) return 'Reset Password';
+    return 'Welcome back';
   };
 
   const getCurrentDescription = () => {
     if (showPasswordForm)
-      return "Enter your new password and verification code";
-    if (showResetForm) return "Enter your email to receive a verification code";
-    return "Login to your WorkloadWizard account";
+      return 'Enter your new password and verification code';
+    if (showResetForm) return 'Enter your email to receive a verification code';
+    return 'Login to your WorkloadWizard account';
   };
 
   // Real-time password validation
@@ -539,20 +539,20 @@ export function LoginForm({
           }
 
           // Check if there's a saved email indicating a password reset was started
-          const savedEmail = localStorage.getItem("passwordResetEmail");
+          const savedEmail = localStorage.getItem('passwordResetEmail');
 
           // Try to get the current first factor
           const firstFactor = signIn.firstFactorVerification;
 
           if (
             firstFactor &&
-            firstFactor.strategy === "reset_password_email_code"
+            firstFactor.strategy === 'reset_password_email_code'
           ) {
             // User has started password reset but hasn't completed it
-            if (firstFactor.status === "verified") {
+            if (firstFactor.status === 'verified') {
               // Code was verified, show password form
               setShowPasswordForm(true);
-              setResetSuccess("Please enter your new password.");
+              setResetSuccess('Please enter your new password.');
               // Restore email from localStorage if available
               if (savedEmail) {
                 setResetEmail(savedEmail);
@@ -561,7 +561,7 @@ export function LoginForm({
               // Code was sent but not verified, show password form
               setShowPasswordForm(true);
               setResetSuccess(
-                "Please enter the verification code and your new password.",
+                'Please enter the verification code and your new password.'
               );
               // Restore email from localStorage if available
               if (savedEmail) {
@@ -574,7 +574,7 @@ export function LoginForm({
             setShowPasswordForm(true);
             setResetEmail(savedEmail);
             setResetSuccess(
-              "Please enter the verification code and your new password.",
+              'Please enter the verification code and your new password.'
             );
           }
         } catch (error) {
@@ -588,7 +588,7 @@ export function LoginForm({
 
   return (
     <div
-      className={cn("flex flex-col gap-6 w-full max-w-md mx-auto", className)}
+      className={cn('flex flex-col gap-6 w-full max-w-md mx-auto', className)}
       {...props}
     >
       {/* Theme Toggle - Fixed Position */}
@@ -600,7 +600,7 @@ export function LoginForm({
       <div className="flex justify-center">
         <div
           className="flex aspect-square size-12 items-center justify-center rounded-lg text-white"
-          style={{ backgroundColor: "#0F59FF" }}
+          style={{ backgroundColor: '#0F59FF' }}
         >
           <WandSparkles className="size-6" />
         </div>
@@ -643,7 +643,7 @@ export function LoginForm({
                       <div className="relative">
                         <Input
                           id="password"
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="Enter your password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -670,7 +670,7 @@ export function LoginForm({
 
                 <div className="space-y-4 mt-6">
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
+                    {isLoading ? 'Signing in...' : 'Sign In'}
                   </Button>
 
                   <div className="text-center">
@@ -678,7 +678,7 @@ export function LoginForm({
                       type="button"
                       onClick={() => {
                         setShowResetForm(true);
-                        setError("");
+                        setError('');
                         setHasReturnedToLogin(false); // Reset the flag when starting new reset
                       }}
                       className="text-sm text-muted-foreground hover:text-primary hover:underline"
@@ -729,7 +729,7 @@ export function LoginForm({
                       <div className="relative">
                         <Input
                           id="newPassword"
-                          type={showNewPassword ? "text" : "password"}
+                          type={showNewPassword ? 'text' : 'password'}
                           placeholder="Enter your new password"
                           value={newPassword}
                           onChange={(e) => {
@@ -762,7 +762,7 @@ export function LoginForm({
                       <div className="relative">
                         <Input
                           id="confirmPassword"
-                          type={showConfirmPassword ? "text" : "password"}
+                          type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="Confirm your new password"
                           value={confirmPassword}
                           onChange={(e) => {
@@ -796,50 +796,50 @@ export function LoginForm({
                       </div>
                       <div className="space-y-2 text-sm">
                         <div
-                          className={`flex items-center gap-2 ${passwordValidation.length ? "text-green-600" : "text-gray-500"}`}
+                          className={`flex items-center gap-2 ${passwordValidation.length ? 'text-green-600' : 'text-gray-500'}`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full ${passwordValidation.length ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`w-2 h-2 rounded-full ${passwordValidation.length ? 'bg-green-500' : 'bg-gray-300'}`}
                           ></div>
                           At least 8 characters long
                         </div>
                         <div
-                          className={`flex items-center gap-2 ${passwordValidation.uppercase ? "text-green-600" : "text-gray-500"}`}
+                          className={`flex items-center gap-2 ${passwordValidation.uppercase ? 'text-green-600' : 'text-gray-500'}`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full ${passwordValidation.uppercase ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`w-2 h-2 rounded-full ${passwordValidation.uppercase ? 'bg-green-500' : 'bg-gray-300'}`}
                           ></div>
                           One uppercase letter (A-Z)
                         </div>
                         <div
-                          className={`flex items-center gap-2 ${passwordValidation.lowercase ? "text-green-600" : "text-gray-500"}`}
+                          className={`flex items-center gap-2 ${passwordValidation.lowercase ? 'text-green-600' : 'text-gray-500'}`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full ${passwordValidation.lowercase ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`w-2 h-2 rounded-full ${passwordValidation.lowercase ? 'bg-green-500' : 'bg-gray-300'}`}
                           ></div>
                           One lowercase letter (a-z)
                         </div>
                         <div
-                          className={`flex items-center gap-2 ${passwordValidation.number ? "text-green-600" : "text-gray-500"}`}
+                          className={`flex items-center gap-2 ${passwordValidation.number ? 'text-green-600' : 'text-gray-500'}`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full ${passwordValidation.number ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`w-2 h-2 rounded-full ${passwordValidation.number ? 'bg-green-500' : 'bg-gray-300'}`}
                           ></div>
                           One number (0-9)
                         </div>
                         <div
-                          className={`flex items-center gap-2 ${passwordValidation.special ? "text-green-600" : "text-gray-500"}`}
+                          className={`flex items-center gap-2 ${passwordValidation.special ? 'text-green-600' : 'text-gray-500'}`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full ${passwordValidation.special ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`w-2 h-2 rounded-full ${passwordValidation.special ? 'bg-green-500' : 'bg-gray-300'}`}
                           ></div>
                           One special character (!@#$%^&*)
                         </div>
                         <div
-                          className={`flex items-center gap-2 ${passwordValidation.match ? "text-green-600" : "text-gray-500"}`}
+                          className={`flex items-center gap-2 ${passwordValidation.match ? 'text-green-600' : 'text-gray-500'}`}
                         >
                           <div
-                            className={`w-2 h-2 rounded-full ${passwordValidation.match ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`w-2 h-2 rounded-full ${passwordValidation.match ? 'bg-green-500' : 'bg-gray-300'}`}
                           ></div>
                           Passwords match
                         </div>
@@ -871,7 +871,7 @@ export function LoginForm({
                         Resetting Password...
                       </div>
                     ) : (
-                      "Reset Password"
+                      'Reset Password'
                     )}
                   </Button>
 
@@ -940,7 +940,7 @@ export function LoginForm({
                         Sending...
                       </div>
                     ) : (
-                      "Send Verification Code"
+                      'Send Verification Code'
                     )}
                   </Button>
 
@@ -960,14 +960,14 @@ export function LoginForm({
         </CardContent>
       </Card>
       <div className="text-muted-foreground text-center text-xs text-balance">
-        By signing in, you agree to our{" "}
+        By signing in, you agree to our{' '}
         <a
           href="/terms"
           className="underline underline-offset-4 hover:text-primary"
         >
           Terms of Service
-        </a>{" "}
-        and{" "}
+        </a>{' '}
+        and{' '}
         <a
           href="/privacy"
           className="underline underline-offset-4 hover:text-primary"

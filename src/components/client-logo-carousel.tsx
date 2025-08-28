@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 
 const logos = [
-  { name: "Microsoft", src: "/microsoft-logo.png" },
-  { name: "Google", src: "/google-logo.png" },
-  { name: "Apple", src: "/apple-logo.png" },
-  { name: "Amazon", src: "/amazon-logo.png" },
-  { name: "Meta", src: "/meta-logo-abstract.png" },
-  { name: "Netflix", src: "/netflix-inspired-logo.png" },
-  { name: "Tesla", src: "/tesla-logo.png" },
-  { name: "Spotify", src: "/spotify-logo.png" },
-  { name: "Adobe", src: "/adobe-logo.png" },
-  { name: "Salesforce", src: "/salesforce-logo.png" },
+  { name: 'Microsoft', src: '/microsoft-logo.png' },
+  { name: 'Google', src: '/google-logo.png' },
+  { name: 'Apple', src: '/apple-logo.png' },
+  { name: 'Amazon', src: '/amazon-logo.png' },
+  { name: 'Meta', src: '/meta-logo-abstract.png' },
+  { name: 'Netflix', src: '/netflix-inspired-logo.png' },
+  { name: 'Tesla', src: '/tesla-logo.png' },
+  { name: 'Spotify', src: '/spotify-logo.png' },
+  { name: 'Adobe', src: '/adobe-logo.png' },
+  { name: 'Salesforce', src: '/salesforce-logo.png' },
 ];
 
 export function ClientLogoCarousel() {
@@ -46,7 +46,7 @@ export function ClientLogoCarousel() {
       <div
         ref={scrollRef}
         className="flex gap-12 overflow-hidden"
-        style={{ scrollBehavior: "auto" }}
+        style={{ scrollBehavior: 'auto' }}
       >
         {/* First set of logos */}
         {logos.map((logo, index) => (
@@ -55,7 +55,7 @@ export function ClientLogoCarousel() {
             className="flex-shrink-0 flex items-center justify-center h-16 w-32 grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100"
           >
             <Image
-              src={logo.src || "/placeholder.svg"}
+              src={logo.src || '/placeholder.svg'}
               alt={`${logo.name} logo`}
               width={112}
               height={48}
@@ -69,7 +69,7 @@ export function ClientLogoCarousel() {
             className="flex-shrink-0 flex items-center justify-center h-16 w-32 grayscale hover:grayscale-0 transition-all duration-300 opacity-60 hover:opacity-100"
           >
             <Image
-              src={logo.src || "/placeholder.svg"}
+              src={logo.src || '/placeholder.svg'}
               alt={`${logo.name} logo`}
               width={112}
               height={48}

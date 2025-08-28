@@ -3,9 +3,9 @@ import {
   query,
   type QueryCtx,
   type MutationCtx,
-} from "./_generated/server";
-import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+} from './_generated/server';
+import { v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 
 // Interface for audit log entry
 export interface AuditLogEntry {
@@ -15,13 +15,13 @@ export interface AuditLogEntry {
   entityName?: string;
   performedBy: string;
   performedByName?: string;
-  organisationId?: Id<"organisations">;
+  organisationId?: Id<'organisations'>;
   details?: string;
   metadata?: string;
   ipAddress?: string;
   userAgent?: string;
-  severity?: "info" | "warning" | "error" | "critical";
-  type?: "sys" | "org";
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  type?: 'sys' | 'org';
 }
 
 // Small helper to normalize and insert audit entries across mutations
@@ -31,13 +31,13 @@ export async function writeAudit(ctx: MutationCtx, args: AuditLogEntry) {
     s
       .trim()
       .toLowerCase()
-      .replace(/[\s_-]+/g, ".")
-      .replace(/\.{2,}/g, ".");
+      .replace(/[\s_-]+/g, '.')
+      .replace(/\.{2,}/g, '.');
   const normalizeEntity = (s: string) =>
     s
       .trim()
       .toLowerCase()
-      .replace(/[\s-]+/g, "_");
+      .replace(/[\s-]+/g, '_');
 
   const base = {
     action: normalize(args.action),
@@ -45,22 +45,22 @@ export async function writeAudit(ctx: MutationCtx, args: AuditLogEntry) {
     entityId: args.entityId,
     performedBy: args.performedBy,
     timestamp: Date.now(),
-    severity: ((): NonNullable<AuditLogEntry["severity"]> => {
-      const value = args.severity ?? "info";
-      return value === "info" ||
-        value === "warning" ||
-        value === "error" ||
-        value === "critical"
+    severity: ((): NonNullable<AuditLogEntry['severity']> => {
+      const value = args.severity ?? 'info';
+      return value === 'info' ||
+        value === 'warning' ||
+        value === 'error' ||
+        value === 'critical'
         ? value
-        : "info";
+        : 'info';
     })(),
   } as const;
 
-  const computedType: "sys" | "org" | undefined = args.type
+  const computedType: 'sys' | 'org' | undefined = args.type
     ? args.type
     : args.organisationId
-      ? "org"
-      : "sys";
+      ? 'org'
+      : 'sys';
   const optional = {
     ...(args.entityName ? { entityName: args.entityName } : {}),
     ...(args.performedByName ? { performedByName: args.performedByName } : {}),
@@ -72,7 +72,7 @@ export async function writeAudit(ctx: MutationCtx, args: AuditLogEntry) {
     ...(computedType ? { type: computedType } : {}),
   } as const;
 
-  return await ctx.db.insert("audit_logs", { ...base, ...optional });
+  return await ctx.db.insert('audit_logs', { ...base, ...optional });
 }
 
 // Mutation to create an audit log entry
@@ -84,13 +84,13 @@ export const create = mutation({
     entityName: v.optional(v.string()),
     performedBy: v.string(),
     performedByName: v.optional(v.string()),
-    organisationId: v.optional(v.id("organisations")),
+    organisationId: v.optional(v.id('organisations')),
     details: v.optional(v.string()),
     metadata: v.optional(v.string()),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
     severity: v.optional(v.string()),
-    type: v.optional(v.union(v.literal("sys"), v.literal("org"))),
+    type: v.optional(v.union(v.literal('sys'), v.literal('org'))),
   },
   handler: async (ctx, args) => {
     // Normalize here as a safety net in case callers bypass helpers
@@ -98,46 +98,46 @@ export const create = mutation({
       s
         .trim()
         .toLowerCase()
-        .replace(/[\s_-]+/g, ".")
-        .replace(/\.{2,}/g, ".");
+        .replace(/[\s_-]+/g, '.')
+        .replace(/\.{2,}/g, '.');
     const normalizeEntity = (s: string) =>
       s
         .trim()
         .toLowerCase()
-        .replace(/[\s-]+/g, "_");
+        .replace(/[\s-]+/g, '_');
     const normalizedAction = normalize(args.action);
     const normalizedEntityType = normalizeEntity(args.entityType);
     const base: Omit<
       AuditLogEntry,
-      | "entityName"
-      | "performedByName"
-      | "organisationId"
-      | "details"
-      | "metadata"
-      | "ipAddress"
-      | "userAgent"
+      | 'entityName'
+      | 'performedByName'
+      | 'organisationId'
+      | 'details'
+      | 'metadata'
+      | 'ipAddress'
+      | 'userAgent'
     > & { timestamp: number } = {
       action: normalizedAction,
       entityType: normalizedEntityType,
       entityId: args.entityId,
       performedBy: args.performedBy,
       timestamp: Date.now(),
-      severity: ((): NonNullable<AuditLogEntry["severity"]> => {
-        const value = args.severity ?? "info";
-        return value === "info" ||
-          value === "warning" ||
-          value === "error" ||
-          value === "critical"
+      severity: ((): NonNullable<AuditLogEntry['severity']> => {
+        const value = args.severity ?? 'info';
+        return value === 'info' ||
+          value === 'warning' ||
+          value === 'error' ||
+          value === 'critical'
           ? value
-          : "info";
+          : 'info';
       })(),
     } as const;
 
-    const computedType: "sys" | "org" | undefined = args.type
+    const computedType: 'sys' | 'org' | undefined = args.type
       ? args.type
       : args.organisationId
-        ? "org"
-        : "sys";
+        ? 'org'
+        : 'sys';
     const optional = {
       ...(args.entityName ? { entityName: args.entityName } : {}),
       ...(args.performedByName
@@ -151,7 +151,7 @@ export const create = mutation({
       ...(computedType ? { type: computedType } : {}),
     } as const;
 
-    const logId = await ctx.db.insert("audit_logs", { ...base, ...optional });
+    const logId = await ctx.db.insert('audit_logs', { ...base, ...optional });
 
     return logId;
   },
@@ -163,54 +163,54 @@ export const list = query({
     entityType: v.optional(v.string()),
     entityId: v.optional(v.string()),
     performedBy: v.optional(v.string()),
-    organisationId: v.optional(v.id("organisations")),
+    organisationId: v.optional(v.id('organisations')),
     action: v.optional(v.string()),
     severity: v.optional(v.string()),
     type: v.optional(v.string()),
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
     limit: v.optional(v.number()),
-    cursor: v.optional(v.id("audit_logs")),
+    cursor: v.optional(v.id('audit_logs')),
     search: v.optional(v.string()),
     timeRange: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Start from timestamp index, descending (newest first)
     let query = ctx.db
-      .query("audit_logs")
-      .withIndex("by_timestamp", (q) =>
-        q.gte("timestamp", (args.startDate ?? 0) as any),
+      .query('audit_logs')
+      .withIndex('by_timestamp', (q) =>
+        q.gte('timestamp', (args.startDate ?? 0) as any)
       )
-      .order("desc");
+      .order('desc');
 
     // Apply filters
     if (args.entityType) {
-      query = query.filter((q) => q.eq(q.field("entityType"), args.entityType));
+      query = query.filter((q) => q.eq(q.field('entityType'), args.entityType));
     }
     if (args.entityId) {
-      query = query.filter((q) => q.eq(q.field("entityId"), args.entityId));
+      query = query.filter((q) => q.eq(q.field('entityId'), args.entityId));
     }
     if (args.performedBy) {
       query = query.filter((q) =>
-        q.eq(q.field("performedBy"), args.performedBy),
+        q.eq(q.field('performedBy'), args.performedBy)
       );
     }
     if (args.organisationId) {
       query = query.filter((q) =>
-        q.eq(q.field("organisationId"), args.organisationId),
+        q.eq(q.field('organisationId'), args.organisationId)
       );
     }
     if (args.action) {
-      query = query.filter((q) => q.eq(q.field("action"), args.action));
+      query = query.filter((q) => q.eq(q.field('action'), args.action));
     }
     if (args.severity) {
-      query = query.filter((q) => q.eq(q.field("severity"), args.severity));
+      query = query.filter((q) => q.eq(q.field('severity'), args.severity));
     }
     if (args.type) {
-      query = query.filter((q) => q.eq(q.field("type"), args.type));
+      query = query.filter((q) => q.eq(q.field('type'), args.type));
     }
     if (args.endDate) {
-      query = query.filter((q) => q.lte(q.field("timestamp"), args.endDate!));
+      query = query.filter((q) => q.lte(q.field('timestamp'), args.endDate!));
     }
 
     // Apply cursor-based pagination
@@ -223,7 +223,7 @@ export const list = query({
       if (cursorDoc) {
         // For descending order, fetch items with timestamp < cursor timestamp
         logs = await query
-          .filter((q) => q.lt(q.field("timestamp"), cursorDoc.timestamp))
+          .filter((q) => q.lt(q.field('timestamp'), cursorDoc.timestamp))
           .take(limit);
       } else {
         logs = await query.take(limit);
@@ -246,7 +246,7 @@ export const list = query({
           log.entityName?.toLowerCase().includes(searchLower) ||
           log.performedByName?.toLowerCase().includes(searchLower) ||
           log.details?.toLowerCase().includes(searchLower) ||
-          log.ipAddress?.toLowerCase().includes(searchLower),
+          log.ipAddress?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -271,9 +271,9 @@ export const getEntityLogs = query({
   },
   handler: async (ctx, args) => {
     const logs = await ctx.db
-      .query("audit_logs")
-      .filter((q) => q.eq(q.field("entityType"), args.entityType))
-      .filter((q) => q.eq(q.field("entityId"), args.entityId))
+      .query('audit_logs')
+      .filter((q) => q.eq(q.field('entityType'), args.entityType))
+      .filter((q) => q.eq(q.field('entityId'), args.entityId))
       .take(args.limit || 50);
 
     const sortedLogs = logs.sort((a, b) => b.timestamp - a.timestamp);
@@ -296,8 +296,8 @@ export const getUserActivity = query({
   },
   handler: async (ctx, args) => {
     const logs = await ctx.db
-      .query("audit_logs")
-      .filter((q) => q.eq(q.field("performedBy"), args.userId))
+      .query('audit_logs')
+      .filter((q) => q.eq(q.field('performedBy'), args.userId))
       .take(args.limit || 50);
 
     const sortedLogs = logs.sort((a, b) => b.timestamp - a.timestamp);
@@ -318,11 +318,11 @@ export const getRecentLogs = query({
     organisationId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("audit_logs");
+    let query = ctx.db.query('audit_logs');
 
     if (args.organisationId) {
       query = query.filter((q) =>
-        q.eq(q.field("organisationId"), args.organisationId),
+        q.eq(q.field('organisationId'), args.organisationId)
       );
     }
 
@@ -340,18 +340,18 @@ export const getStats = query({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let query = ctx.db.query("audit_logs");
+    let query = ctx.db.query('audit_logs');
 
     if (args.organisationId) {
       query = query.filter((q) =>
-        q.eq(q.field("organisationId"), args.organisationId),
+        q.eq(q.field('organisationId'), args.organisationId)
       );
     }
     if (args.startDate) {
-      query = query.filter((q) => q.gte(q.field("timestamp"), args.startDate!));
+      query = query.filter((q) => q.gte(q.field('timestamp'), args.startDate!));
     }
     if (args.endDate) {
-      query = query.filter((q) => q.lte(q.field("timestamp"), args.endDate!));
+      query = query.filter((q) => q.lte(q.field('timestamp'), args.endDate!));
     }
 
     const logs = await query.collect();
@@ -372,8 +372,8 @@ export const getStats = query({
         (entityTypeCounts[log.entityType] || 0) + 1;
 
       // Severity counts
-      severityCounts[log.severity || "info"] =
-        (severityCounts[log.severity || "info"] || 0) + 1;
+      severityCounts[log.severity || 'info'] =
+        (severityCounts[log.severity || 'info'] || 0) + 1;
 
       // User counts
       userCounts[log.performedBy] = (userCounts[log.performedBy] || 0) + 1;
@@ -415,9 +415,9 @@ export const getStats = query({
       mostActiveHour:
         Object.entries(hourlyActivity).sort(([, a], [, b]) => b - a)[0]?.[0] ||
         null,
-      criticalLogs: severityCounts["critical"] || 0,
-      errorLogs: severityCounts["error"] || 0,
-      warningLogs: severityCounts["warning"] || 0,
+      criticalLogs: severityCounts['critical'] || 0,
+      errorLogs: severityCounts['error'] || 0,
+      warningLogs: severityCounts['warning'] || 0,
     };
   },
 });
@@ -432,9 +432,9 @@ export const getLogsByDateRange = query({
   },
   handler: async (ctx, args) => {
     const logs = await ctx.db
-      .query("audit_logs")
-      .filter((q) => q.gte(q.field("timestamp"), args.startDate))
-      .filter((q) => q.lte(q.field("timestamp"), args.endDate))
+      .query('audit_logs')
+      .filter((q) => q.gte(q.field('timestamp'), args.startDate))
+      .filter((q) => q.lte(q.field('timestamp'), args.endDate))
       .take(args.limit || 100);
 
     const sortedLogs = logs.sort((a, b) => b.timestamp - a.timestamp);
@@ -457,8 +457,8 @@ export const getLogsBySeverity = query({
   },
   handler: async (ctx, args) => {
     const logs = await ctx.db
-      .query("audit_logs")
-      .filter((q) => q.eq(q.field("severity"), args.severity))
+      .query('audit_logs')
+      .filter((q) => q.eq(q.field('severity'), args.severity))
       .take(args.limit || 100);
 
     const sortedLogs = logs.sort((a, b) => b.timestamp - a.timestamp);
@@ -481,8 +481,8 @@ export const getLogsByAction = query({
   },
   handler: async (ctx, args) => {
     const logs = await ctx.db
-      .query("audit_logs")
-      .filter((q) => q.eq(q.field("action"), args.action))
+      .query('audit_logs')
+      .filter((q) => q.eq(q.field('action'), args.action))
       .take(args.limit || 100);
 
     const sortedLogs = logs.sort((a, b) => b.timestamp - a.timestamp);

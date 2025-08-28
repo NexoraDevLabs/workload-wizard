@@ -1,13 +1,13 @@
 // Feature Flags - Single source of truth using Statsig
-import { createStatsigAdapter, type StatsigUser } from "@flags-sdk/statsig";
-import { getCurrentUserDetails } from "@/lib/auth/currentUser";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
+import { createStatsigAdapter, type StatsigUser } from '@flags-sdk/statsig';
+import { getCurrentUserDetails } from '@/lib/auth/currentUser';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 const serverKey = process.env.FEATFLAG_STATSIG_SERVER_API_KEY;
 if (!serverKey) {
   throw new Error(
-    "Missing FEATFLAG_STATSIG_SERVER_API_KEY in env; required for server-side Statsig.",
+    'Missing FEATFLAG_STATSIG_SERVER_API_KEY in env; required for server-side Statsig.'
   );
 }
 
@@ -18,16 +18,16 @@ export const statsigAdapter = createStatsigAdapter({
 export const identify = async ({ headers }: { headers?: Headers } = {}) => {
   // Be resilient on special routes (e.g. Sanity Studio) and environments
   const pathname =
-    headers?.get?.("next-url") ||
-    headers?.get?.("x-invoke-path") ||
-    headers?.get?.("x-matched-path") ||
-    "";
+    headers?.get?.('next-url') ||
+    headers?.get?.('x-invoke-path') ||
+    headers?.get?.('x-matched-path') ||
+    '';
 
-  if (pathname.startsWith("/studio")) {
-    const anon: StatsigUser = { userID: "anonymous", customIDs: {} };
-    const userAgent = headers?.get?.("user-agent") || undefined;
+  if (pathname.startsWith('/studio')) {
+    const anon: StatsigUser = { userID: 'anonymous', customIDs: {} };
+    const userAgent = headers?.get?.('user-agent') || undefined;
     const ip =
-      headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+      headers?.get?.('x-forwarded-for')?.split(',')[0]?.trim() || undefined;
     if (userAgent) anon.userAgent = userAgent;
     if (ip) anon.ip = ip;
     return anon;
@@ -40,11 +40,11 @@ export const identify = async ({ headers }: { headers?: Headers } = {}) => {
     // If Clerk isn't initialised or throws in this context, fall back to anonymous
     user = null;
   }
-  const userAgent = headers?.get?.("user-agent") || undefined;
+  const userAgent = headers?.get?.('user-agent') || undefined;
   const ip =
-    headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+    headers?.get?.('x-forwarded-for')?.split(',')[0]?.trim() || undefined;
   if (!user) {
-    const anon: StatsigUser = { userID: "anonymous", customIDs: {} };
+    const anon: StatsigUser = { userID: 'anonymous', customIDs: {} };
     if (userAgent) anon.userAgent = userAgent;
     if (ip) anon.ip = ip;
     return anon;
@@ -69,7 +69,7 @@ export const identify = async ({ headers }: { headers?: Headers } = {}) => {
     const flattened: Record<string, boolean> = {};
     for (const r of rows as Array<{ featureKey: string; enabled: boolean }>) {
       enrolled[r.featureKey] = !!r.enabled;
-      const safe = `enrolled_${r.featureKey.replace(/[^A-Za-z0-9_]/g, "_")}`;
+      const safe = `enrolled_${r.featureKey.replace(/[^A-Za-z0-9_]/g, '_')}`;
       flattened[safe] = !!r.enabled;
     }
     (identified.custom as any).enrolled = enrolled;
@@ -91,16 +91,16 @@ export const createFeatureFlag = (key: string) => {
 
 // Centralised flag keys - Single source of truth
 export enum FeatureFlagKey {
-  QUICK_ACCESS_BETA = "quick_access_beta",
-  PINK_MODE = "pink_mode",
-  ADVANCED_ANALYTICS = "advanced_analytics",
-  BULK_OPERATIONS = "bulk_operations",
-  REAL_TIME_COLLABORATION = "real_time_collaboration",
+  QUICK_ACCESS_BETA = 'quick_access_beta',
+  PINK_MODE = 'pink_mode',
+  ADVANCED_ANALYTICS = 'advanced_analytics',
+  BULK_OPERATIONS = 'bulk_operations',
+  REAL_TIME_COLLABORATION = 'real_time_collaboration',
 }
 
 // Helper function to check if a feature is enabled
 export async function isFeatureEnabled(
-  flagKey: FeatureFlagKey,
+  flagKey: FeatureFlagKey
 ): Promise<boolean> {
   try {
     const user = await identify();

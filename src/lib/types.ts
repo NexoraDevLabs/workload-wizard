@@ -7,7 +7,7 @@ export interface AcademicYear {
   isActive: boolean;
   staging: boolean;
   organisationId: string;
-  status: "draft" | "published" | "archived";
+  status: 'draft' | 'published' | 'archived';
   isDefaultForOrg: boolean;
   createdAt: number;
   updatedAt: number;
@@ -22,7 +22,7 @@ export interface Organisation {
   contactPhone?: string;
   domain?: string;
   isActive: boolean;
-  status: "active" | "inactive" | "suspended";
+  status: 'active' | 'inactive' | 'suspended';
   website?: string;
   createdAt: number;
   updatedAt: number;
@@ -107,7 +107,7 @@ export interface LecturerProfile {
   id: string;
   fullName: string;
   email: string;
-  contract: "FT" | "PT" | "Bank";
+  contract: 'FT' | 'PT' | 'Bank';
   fte: number;
   maxTeachingHours: number;
   totalContract: number;
@@ -133,7 +133,7 @@ export interface ModuleAllocation {
   id: string;
   staffId: string;
   moduleIterationId: string;
-  type: "teaching" | "admin";
+  type: 'teaching' | 'admin';
   hours: number;
   createdAt: number;
   updatedAt: number;
@@ -163,7 +163,7 @@ export interface AdminAllocationCategory {
 export interface AuditLog {
   id: string;
   userId: string;
-  action: "create" | "update" | "delete";
+  action: 'create' | 'update' | 'delete';
   entityId: string;
   entityType: string;
   changes: Record<string, unknown>;
@@ -173,7 +173,7 @@ export interface AuditLog {
   createdAt: number;
 }
 
-export type AllocationType = "teaching" | "admin";
+export type AllocationType = 'teaching' | 'admin';
 
 export interface StaffWorkloadSummary {
   staffId: string;

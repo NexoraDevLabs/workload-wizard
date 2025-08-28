@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, {
   createContext,
@@ -6,25 +6,25 @@ import React, {
   useContext,
   useMemo,
   useState,
-} from "react";
-import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { useToast } from "@/hooks/use-toast";
-import { getEnv } from "@/lib/env";
+} from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { useToast } from '@/hooks/use-toast';
+import { getEnv } from '@/lib/env';
 
-export type AcademicYearStatus = "draft" | "published" | "archived";
+export type AcademicYearStatus = 'draft' | 'published' | 'archived';
 
 export interface AcademicYear {
-  _id: Id<"academic_years">;
+  _id: Id<'academic_years'>;
   name: string;
   startDate: string;
   endDate: string;
   status: AcademicYearStatus;
   staging?: boolean;
   isDefaultForOrg?: boolean;
-  organisationId: Id<"organisations">;
+  organisationId: Id<'organisations'>;
 }
 
 type AcademicYearContextValue = {
@@ -40,7 +40,7 @@ type AcademicYearContextValue = {
 };
 
 const AcademicYearContext = createContext<AcademicYearContextValue | undefined>(
-  undefined,
+  undefined
 );
 
 function AcademicYearProviderInternal({
@@ -56,36 +56,36 @@ function AcademicYearProviderInternal({
 
   const convexUser = useQuery(
     apiAny.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   ) as
-    | { systemRoles?: string[]; organisationId?: Id<"organisations"> }
+    | { systemRoles?: string[]; organisationId?: Id<'organisations'> }
     | undefined;
 
   const isManagement = useMemo(() => {
     const roles = convexUser?.systemRoles || [];
     return (
-      roles.includes("orgadmin") ||
-      roles.includes("sysadmin") ||
-      roles.includes("developer")
+      roles.includes('orgadmin') ||
+      roles.includes('sysadmin') ||
+      roles.includes('developer')
     );
   }, [convexUser]);
 
   const orgIdStr = useMemo(
     () =>
       convexUser?.organisationId ? String(convexUser.organisationId) : null,
-    [convexUser],
+    [convexUser]
   );
 
   // Fetch academic years for organisation, server decides visibility based on permissions
   const allYears = useQuery(
     apiAny.academicYears.listForOrganisation,
-    convexUser ? { userId: user!.id } : "skip",
+    convexUser ? { userId: user!.id } : 'skip'
   ) as AcademicYear[] | undefined;
 
   // Load server preferences (selected year + includeDrafts)
   const preferences = useQuery(
     apiAny.academicYears.getPreferences,
-    convexUser ? { userId: user!.id } : "skip",
+    convexUser ? { userId: user!.id } : 'skip'
   ) as
     | {
         _id: string;
@@ -102,13 +102,13 @@ function AcademicYearProviderInternal({
   React.useEffect(() => {
     if (!orgIdStr) return;
     // Prefer server preference; fall back to localStorage once
-    if (typeof preferences?.includeDrafts !== "undefined") {
+    if (typeof preferences?.includeDrafts !== 'undefined') {
       setIncludeDraftsState(!!preferences.includeDrafts);
       return;
     }
     try {
       const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
-      if (raw !== null) setIncludeDraftsState(raw === "1");
+      if (raw !== null) setIncludeDraftsState(raw === '1');
     } catch {}
   }, [orgIdStr, preferences?.includeDrafts]);
 
@@ -122,21 +122,21 @@ function AcademicYearProviderInternal({
         setPrefsMutation({ userId: user.id, includeDrafts: v }).catch(
           (err: unknown) => {
             const message =
-              err instanceof Error ? err.message : "Failed to save preferences";
+              err instanceof Error ? err.message : 'Failed to save preferences';
             toast({
-              title: "Preferences not saved",
+              title: 'Preferences not saved',
               description: `${message}. Kept locally for now.`,
-              variant: "destructive",
+              variant: 'destructive',
             });
-          },
+          }
         );
       }
       try {
         if (orgIdStr)
-          localStorage.setItem(`ay_drafts:${orgIdStr}`, v ? "1" : "0");
+          localStorage.setItem(`ay_drafts:${orgIdStr}`, v ? '1' : '0');
       } catch {}
     },
-    [orgIdStr, setPrefsMutation, user?.id, toast],
+    [orgIdStr, setPrefsMutation, user?.id, toast]
   );
 
   const years = useMemo(() => {
@@ -150,14 +150,14 @@ function AcademicYearProviderInternal({
   const defaultYearId = useMemo(() => {
     const defaultYear = years.find((y) => y.isDefaultForOrg);
     if (defaultYear) return String(defaultYear._id);
-    const published = years.find((y) => y.status === "published" && !y.staging);
+    const published = years.find((y) => y.status === 'published' && !y.staging);
     return published ? String(published._id) : null;
   }, [years]);
 
   const [currentYearId, setCurrentYearIdState] = useState<string | null>(null);
   const currentYear = useMemo(
     () => (years || []).find((y) => String(y._id) === currentYearId) || null,
-    [years, currentYearId],
+    [years, currentYearId]
   );
 
   // Ensure we always have a selection when years change
@@ -202,14 +202,14 @@ function AcademicYearProviderInternal({
       if (user?.id) {
         setPrefsMutation({
           userId: user.id,
-          selectedAcademicYearId: id as unknown as Id<"academic_years">,
+          selectedAcademicYearId: id as unknown as Id<'academic_years'>,
         }).catch((err: unknown) => {
           const message =
-            err instanceof Error ? err.message : "Failed to save preferences";
+            err instanceof Error ? err.message : 'Failed to save preferences';
           toast({
-            title: "Preferences not saved",
+            title: 'Preferences not saved',
             description: `${message}. Kept locally for now.`,
-            variant: "destructive",
+            variant: 'destructive',
           });
         });
       }
@@ -217,7 +217,7 @@ function AcademicYearProviderInternal({
         if (orgIdStr) localStorage.setItem(`ay_current:${orgIdStr}`, id);
       } catch {}
     },
-    [orgIdStr, setPrefsMutation, user?.id, toast],
+    [orgIdStr, setPrefsMutation, user?.id, toast]
   );
 
   // Mutations
@@ -229,22 +229,22 @@ function AcademicYearProviderInternal({
       try {
         await updateYear({
           userId: user.id,
-          id: id as unknown as Id<"academic_years">,
+          id: id as unknown as Id<'academic_years'>,
           isDefaultForOrg: true,
         });
         toast({
-          title: "Default year updated",
+          title: 'Default year updated',
           description:
             "This organisation's default academic year has been set.",
-          variant: "success",
+          variant: 'success',
         });
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Failed to set default year";
-        toast({ title: "Error", description: message, variant: "destructive" });
+          error instanceof Error ? error.message : 'Failed to set default year';
+        toast({ title: 'Error', description: message, variant: 'destructive' });
       }
     },
-    [updateYear, user?.id, toast],
+    [updateYear, user?.id, toast]
   );
 
   const refreshNonce = useState<number>(0)[1];
@@ -275,7 +275,7 @@ function AcademicYearProviderInternal({
       isManagement,
       setAsDefaultForOrg,
       refresh,
-    ],
+    ]
   );
 
   return (
@@ -291,7 +291,7 @@ export function AcademicYearProvider({
   children: React.ReactNode;
 }) {
   // Avoid running Clerk-dependent hooks during SSR/prerender
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return <>{children}</>;
   }
 
@@ -299,7 +299,7 @@ export function AcademicYearProvider({
 
   // Check if we're in build time to avoid Clerk initialization
   const isBuildTime =
-    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === "pk_test_build_time_only";
+    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
 
   // If in build time, render children without context
   if (isBuildTime) {
@@ -314,6 +314,6 @@ export function AcademicYearProvider({
 export function useAcademicYear() {
   const ctx = useContext(AcademicYearContext);
   if (!ctx)
-    throw new Error("useAcademicYear must be used within AcademicYearProvider");
+    throw new Error('useAcademicYear must be used within AcademicYearProvider');
   return ctx;
 }

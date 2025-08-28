@@ -3,14 +3,14 @@
 // Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 // Silence Sentry SDK telemetry without relying on typed options
 // This is safe to set at module load time in Next.js configs
-process.env.SENTRY_TELEMETRY_DISABLED = "1";
+process.env.SENTRY_TELEMETRY_DISABLED = '1';
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
   debug: false,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
@@ -20,8 +20,8 @@ Sentry.init({
   enableLogs: true,
 
   // Environment
-  environment: process.env.NODE_ENV || "development",
+  environment: process.env.NODE_ENV || 'development',
 
   // Release version
-  release: process.env.NEXT_PUBLIC_APP_VERSION || "v0.4.0",
+  release: process.env.NEXT_PUBLIC_APP_VERSION || 'v0.4.0',
 });

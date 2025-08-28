@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
-import { useParams } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Doc } from "@/convex/_generated/dataModel";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Doc } from '@/convex/_generated/dataModel';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -18,15 +18,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useAcademicYear } from "@/components/providers/AcademicYearProvider";
+} from '@/components/ui/select';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 import {
   Table,
   TableBody,
@@ -34,23 +34,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
-import { usePageBreadcrumbs } from "@/hooks/useBreadcrumbs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { withToast, toastError } from "@/lib/utils";
-import { analytics } from "@/lib/analytics";
-import { Checkbox } from "@/components/ui/checkbox";
-import { GenericDeleteModal } from "@/components/domain/GenericDeleteModal";
-import { PermissionGate } from "@/components/common/PermissionGate";
-import { useQuery as useConvexQuery } from "convex/react";
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { usePageBreadcrumbs } from '@/hooks/useBreadcrumbs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { withToast, toastError } from '@/lib/utils';
+import { analytics } from '@/lib/analytics';
+import { Checkbox } from '@/components/ui/checkbox';
+import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { useQuery as useConvexQuery } from 'convex/react';
 
 export default function IterationDetailsPage() {
   const params = useParams<{ id: string; iterationId: string }>();
-  const courseId = params?.id as string;
-  const iterationId = params?.iterationId as string;
+  const courseId = params?.id;
+  const iterationId = params?.iterationId;
 
   const { currentYear } = useAcademicYear();
   const { user } = useUser();
@@ -58,13 +58,13 @@ export default function IterationDetailsPage() {
   // Fetch course and module data
   const course = useQuery(
     api.courses.getById,
-    courseId ? ({ id: courseId as any } as any) : ("skip" as any),
+    courseId ? ({ id: courseId as any } as any) : ('skip' as any)
   );
 
   // Fetch iteration details
   const iteration = useQuery(
     api.modules.getIterationById,
-    iterationId ? ({ id: iterationId as any } as any) : ("skip" as any),
+    iterationId ? ({ id: iterationId as any } as any) : ('skip' as any)
   );
 
   // Fetch module details
@@ -72,7 +72,7 @@ export default function IterationDetailsPage() {
     api.modules.getById,
     iteration?.moduleId
       ? ({ id: iteration.moduleId as any } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   // Fetch groups for this iteration
@@ -80,16 +80,16 @@ export default function IterationDetailsPage() {
     (api as any).groups.listByIteration,
     iterationId
       ? ({ moduleIterationId: iterationId as any } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   // Fetch lecturer profiles for assignment
   const lecturerProfiles = useQuery(
     (api as any).staff.list,
-    user?.id ? ({ userId: user.id } as any) : ("skip" as any),
+    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
   );
   const orgSettings = useConvexQuery(
-    (api as any).organisationSettings.getForActor,
+    (api as any).organisationSettings.getForActor
   ) as { campusOptions?: string[]; maxClassSizePerGroup?: number } | undefined;
 
   // Mutations
@@ -103,30 +103,30 @@ export default function IterationDetailsPage() {
   // Local state
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [assignLecturerOpen, setAssignLecturerOpen] = useState(false);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [selectedLecturerId, setSelectedLecturerId] = useState<string>("");
-  const [hoursOverride, setHoursOverride] = useState<string>("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [selectedLecturerId, setSelectedLecturerId] = useState<string>('');
+  const [hoursOverride, setHoursOverride] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Record<string, boolean>>({});
   const [bulkRemoveOpen, setBulkRemoveOpen] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
-  const [bulkEditHours, setBulkEditHours] = useState<string>("");
+  const [bulkEditHours, setBulkEditHours] = useState<string>('');
   const [editIterOpen, setEditIterOpen] = useState(false);
-  const [iterTotalHours, setIterTotalHours] = useState<string>("");
+  const [iterTotalHours, setIterTotalHours] = useState<string>('');
   const [bulkGroupsOpen, setBulkGroupsOpen] = useState(false);
 
   // Form state for creating groups
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupSize, setNewGroupSize] = useState<string>("");
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupSize, setNewGroupSize] = useState<string>('');
 
   const { toast } = useToast();
 
   // Set breadcrumbs
   usePageBreadcrumbs([
-    { label: "Courses", href: "/courses" },
-    { label: course?.code || "Loading...", href: `/courses/${courseId}` },
+    { label: 'Courses', href: '/courses' },
+    { label: course?.code || 'Loading...', href: `/courses/${courseId}` },
     {
-      label: "Iteration",
+      label: 'Iteration',
       href: `/courses/${courseId}/iterations/${iterationId}`,
     },
   ]);
@@ -134,9 +134,9 @@ export default function IterationDetailsPage() {
   // initialise iteration edit fields when opened
   const openEditIteration = () => {
     setIterTotalHours(
-      typeof (iteration as any)?.totalHours === "number"
+      typeof (iteration as any)?.totalHours === 'number'
         ? String((iteration as any).totalHours)
-        : "",
+        : ''
     );
     setEditIterOpen(true);
   };
@@ -146,7 +146,7 @@ export default function IterationDetailsPage() {
     (api as any).allocations.getModuleTeachingHours,
     selectedGroupId
       ? ({ groupId: selectedGroupId as any } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   // Get lecturer totals for instant updates
@@ -157,7 +157,7 @@ export default function IterationDetailsPage() {
           lecturerId: selectedLecturerId as any,
           academicYearId: currentYear._id,
         } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   // Get allocations for selected group
@@ -165,7 +165,7 @@ export default function IterationDetailsPage() {
     (api as any).allocations.listForGroup,
     selectedGroupId
       ? ({ groupId: selectedGroupId as any } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   // Iteration summary
@@ -173,13 +173,13 @@ export default function IterationDetailsPage() {
     (api as any).allocations.iterationSummary,
     iteration?._id
       ? ({ moduleIterationId: (iteration as any)._id } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   const resetAssignDialogState = () => {
-    setSelectedGroupId("");
-    setSelectedLecturerId("");
-    setHoursOverride("");
+    setSelectedGroupId('');
+    setSelectedLecturerId('');
+    setHoursOverride('');
     setIsSubmitting(false);
   };
 
@@ -191,8 +191,8 @@ export default function IterationDetailsPage() {
   };
 
   const resetCreateGroupState = () => {
-    setNewGroupName("");
-    setNewGroupSize("");
+    setNewGroupName('');
+    setNewGroupSize('');
   };
 
   const handleCreateGroupClose = (open: boolean) => {
@@ -206,8 +206,8 @@ export default function IterationDetailsPage() {
     return (
       <StandardizedSidebarLayout
         breadcrumbs={[
-          { label: "Courses", href: "/courses" },
-          { label: "Loading..." },
+          { label: 'Courses', href: '/courses' },
+          { label: 'Loading...' },
         ]}
         title="Iteration Details"
       >
@@ -220,8 +220,8 @@ export default function IterationDetailsPage() {
     return (
       <StandardizedSidebarLayout
         breadcrumbs={[
-          { label: "Courses", href: "/courses" },
-          { label: "Loading..." },
+          { label: 'Courses', href: '/courses' },
+          { label: 'Loading...' },
         ]}
         title="Iteration Details"
       >
@@ -234,9 +234,9 @@ export default function IterationDetailsPage() {
     return (
       <StandardizedSidebarLayout
         breadcrumbs={[
-          { label: "Courses", href: "/courses" },
+          { label: 'Courses', href: '/courses' },
           { label: course.code, href: `/courses/${courseId}` },
-          { label: "Iteration" },
+          { label: 'Iteration' },
         ]}
         title="Iteration Details"
       >
@@ -250,9 +250,9 @@ export default function IterationDetailsPage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Courses", href: "/courses" },
+        { label: 'Courses', href: '/courses' },
         { label: course.code, href: `/courses/${courseId}` },
-        { label: "Iteration" },
+        { label: 'Iteration' },
       ]}
       title={`${moduleData.code} - ${moduleData.name} (${currentYear.name})`}
     >
@@ -264,7 +264,7 @@ export default function IterationDetailsPage() {
               <span>Iteration Overview</span>
               <Badge variant="outline">{currentYear.status}</Badge>
               {iterationSummary &&
-                typeof iteration.totalHours === "number" &&
+                typeof iteration.totalHours === 'number' &&
                 iterationSummary.allocatedTotal >
                   (iteration.totalHours || 0) && (
                   <Badge
@@ -287,7 +287,7 @@ export default function IterationDetailsPage() {
               <div>
                 <Label className="text-sm text-muted-foreground">Credits</Label>
                 <div className="font-medium">
-                  {moduleData.credits || "Not set"}
+                  {moduleData.credits || 'Not set'}
                 </div>
               </div>
               <div>
@@ -295,7 +295,7 @@ export default function IterationDetailsPage() {
                   Total Hours
                 </Label>
                 <div className="font-medium">
-                  {iteration.totalHours || "Not set"}
+                  {iteration.totalHours || 'Not set'}
                 </div>
               </div>
               <div>
@@ -360,7 +360,7 @@ export default function IterationDetailsPage() {
                   variant="outline"
                   disabled={!Object.values(bulkSelected).some(Boolean)}
                   onClick={() => {
-                    setSelectedGroupId("__bulk__");
+                    setSelectedGroupId('__bulk__');
                     setAssignLecturerOpen(true);
                   }}
                 >
@@ -444,12 +444,12 @@ export default function IterationDetailsPage() {
                             } as any),
                           {
                             success: {
-                              title: "Group created",
+                              title: 'Group created',
                               description: `Group "${newGroupName}" has been created.`,
                             },
-                            error: { title: "Failed to create group" },
+                            error: { title: 'Failed to create group' },
                           },
-                          toast,
+                          toast
                         );
                         handleCreateGroupClose(false);
                       }}
@@ -479,19 +479,19 @@ export default function IterationDetailsPage() {
                     onDelete={async () => {
                       if (
                         confirm(
-                          `Are you sure you want to delete group "${group.name}"? This will also remove all lecturer allocations.`,
+                          `Are you sure you want to delete group "${group.name}"? This will also remove all lecturer allocations.`
                         )
                       ) {
                         await withToast(
-                          () => deleteGroup({ id: group._id as any }),
+                          () => deleteGroup({ id: group._id }),
                           {
                             success: {
-                              title: "Group deleted",
+                              title: 'Group deleted',
                               description: `Group "${group.name}" has been deleted.`,
                             },
-                            error: { title: "Failed to delete group" },
+                            error: { title: 'Failed to delete group' },
                           },
-                          toast,
+                          toast
                         );
                       }
                     }}
@@ -535,7 +535,7 @@ export default function IterationDetailsPage() {
                       <span className="text-muted-foreground">Group:</span>
                       <div className="font-medium">
                         {(groups as any[])?.find(
-                          (g) => String(g._id) === selectedGroupId,
+                          (g) => String(g._id) === selectedGroupId
                         )?.name || selectedGroupId}
                       </div>
                     </div>
@@ -545,7 +545,7 @@ export default function IterationDetailsPage() {
                       <span className="text-muted-foreground">Lecturer:</span>
                       <div className="font-medium">
                         {(lecturerProfiles as any[])?.find(
-                          (p) => String(p._id) === selectedLecturerId,
+                          (p) => String(p._id) === selectedLecturerId
                         )?.fullName || selectedLecturerId}
                       </div>
                     </div>
@@ -555,7 +555,7 @@ export default function IterationDetailsPage() {
             )}
 
             <div className="space-y-4">
-              {selectedGroupId !== "__bulk__" && (
+              {selectedGroupId !== '__bulk__' && (
                 <div>
                   <Label>Group</Label>
                   <Select
@@ -620,7 +620,7 @@ export default function IterationDetailsPage() {
                       </span>
                     ) : (
                       <span className="text-muted-foreground">
-                        Override: {hoursOverride}h (computed:{" "}
+                        Override: {hoursOverride}h (computed:{' '}
                         {moduleHours?.computedHours || 0}h)
                       </span>
                     )}
@@ -665,7 +665,7 @@ export default function IterationDetailsPage() {
                   {hoursOverride.trim() && (
                     <div className="pt-2 border-t">
                       <div className="text-xs text-muted-foreground">
-                        Override Hours:{" "}
+                        Override Hours:{' '}
                         <span className="font-medium text-foreground">
                           {hoursOverride}
                         </span>
@@ -713,7 +713,7 @@ export default function IterationDetailsPage() {
                   !selectedGroupId ||
                   !selectedLecturerId ||
                   isSubmitting ||
-                  (hoursOverride.trim() !== "" &&
+                  (hoursOverride.trim() !== '' &&
                     (isNaN(Number(hoursOverride)) ||
                       Number(hoursOverride) < 0 ||
                       Number(hoursOverride) > 1000))
@@ -727,30 +727,30 @@ export default function IterationDetailsPage() {
                           groupId: selectedGroupId as any,
                           lecturerId: selectedLecturerId as any,
                           academicYearId: currentYear._id as any,
-                          organisationId: moduleData.organisationId as any,
-                          type: "teaching",
+                          organisationId: moduleData.organisationId,
+                          type: 'teaching',
                           ...(hoursOverride.trim()
                             ? { hoursOverride: Number(hoursOverride) }
                             : {}),
                         } as any);
                         // metric
-                        analytics.track("allocation.assigned", {
+                        analytics.track('allocation.assigned', {
                           groupId: selectedGroupId,
                           lecturerId: selectedLecturerId,
                           academicYearId: String(currentYear._id),
                           organisationId: String(moduleData.organisationId),
-                          hasOverride: hoursOverride.trim() !== "",
+                          hasOverride: hoursOverride.trim() !== '',
                         });
                         return result;
                       },
                       {
                         success: {
-                          title: "Lecturer assigned",
+                          title: 'Lecturer assigned',
                           description: `Lecturer assigned to group for ${currentYear.name}.`,
                         },
-                        error: { title: "Error assigning lecturer" },
+                        error: { title: 'Error assigning lecturer' },
                       },
-                      toast,
+                      toast
                     );
                     handleAssignDialogClose(false);
                   } finally {
@@ -758,7 +758,7 @@ export default function IterationDetailsPage() {
                   }
                 }}
               >
-                {isSubmitting ? "Assigning..." : "Assign"}
+                {isSubmitting ? 'Assigning...' : 'Assign'}
               </Button>
             </DialogFooter>
             {!!selectedGroupId && (
@@ -785,11 +785,11 @@ export default function IterationDetailsPage() {
                     <TableBody>
                       {groupAllocations.map(({ allocation, lecturer }) => {
                         const hours =
-                          typeof allocation.hoursOverride === "number"
+                          typeof allocation.hoursOverride === 'number'
                             ? `${allocation.hoursOverride} (override)`
-                            : typeof allocation.hoursComputed === "number"
+                            : typeof allocation.hoursComputed === 'number'
                               ? String(allocation.hoursComputed)
-                              : "-";
+                              : '-';
                         return (
                           <TableRow key={String(allocation._id)}>
                             <TableCell className="py-2">
@@ -815,17 +815,17 @@ export default function IterationDetailsPage() {
                                 className="text-xs underline"
                                 onClick={async () => {
                                   const input = prompt(
-                                    "Change allocation type (teaching/admin)",
-                                    allocation.type,
+                                    'Change allocation type (teaching/admin)',
+                                    allocation.type
                                   );
                                   if (input === null) return;
                                   const next = input.trim().toLowerCase();
-                                  if (next !== "teaching" && next !== "admin") {
+                                  if (next !== 'teaching' && next !== 'admin') {
                                     toast({
-                                      title: "Invalid type",
+                                      title: 'Invalid type',
                                       description:
                                         "Type must be 'teaching' or 'admin'",
-                                      variant: "destructive",
+                                      variant: 'destructive',
                                     });
                                     return;
                                   }
@@ -834,17 +834,17 @@ export default function IterationDetailsPage() {
                                       allocationId: allocation._id,
                                       type: next,
                                     } as any);
-                                    analytics.track("allocation.updated", {
+                                    analytics.track('allocation.updated', {
                                       allocationId: String(allocation._id),
-                                      field: "type",
+                                      field: 'type',
                                       value: next,
                                     });
                                     toast({
-                                      title: "Allocation updated",
+                                      title: 'Allocation updated',
                                       description: `Type set to ${next}`,
                                     });
                                   } catch (e: unknown) {
-                                    toastError(toast, e, "Update failed");
+                                    toastError(toast, e, 'Update failed');
                                   }
                                 }}
                               >
@@ -854,28 +854,28 @@ export default function IterationDetailsPage() {
                                 className="text-xs underline"
                                 onClick={async () => {
                                   const input = prompt(
-                                    "Set hours override (leave blank to clear)",
-                                    typeof allocation.hoursOverride === "number"
+                                    'Set hours override (leave blank to clear)',
+                                    typeof allocation.hoursOverride === 'number'
                                       ? String(allocation.hoursOverride)
-                                      : "",
+                                      : ''
                                   );
                                   if (input === null) return; // cancelled
                                   const trimmed = input.trim();
                                   try {
-                                    if (trimmed === "") {
+                                    if (trimmed === '') {
                                       await updateAllocation({
                                         allocationId: allocation._id,
                                         hoursOverride: null,
                                       } as any);
-                                      analytics.track("allocation.updated", {
+                                      analytics.track('allocation.updated', {
                                         allocationId: String(allocation._id),
-                                        field: "hoursOverride",
+                                        field: 'hoursOverride',
                                         value: null,
                                       });
                                       toast({
-                                        title: "Override cleared",
+                                        title: 'Override cleared',
                                         description:
-                                          "Hours override removed; using computed hours.",
+                                          'Hours override removed; using computed hours.',
                                       });
                                     } else {
                                       const value = Number(trimmed);
@@ -885,25 +885,25 @@ export default function IterationDetailsPage() {
                                         value > 1000
                                       ) {
                                         throw new Error(
-                                          "Enter a number between 0 and 1000",
+                                          'Enter a number between 0 and 1000'
                                         );
                                       }
                                       await updateAllocation({
                                         allocationId: allocation._id,
                                         hoursOverride: value,
                                       } as any);
-                                      analytics.track("allocation.updated", {
+                                      analytics.track('allocation.updated', {
                                         allocationId: String(allocation._id),
-                                        field: "hoursOverride",
+                                        field: 'hoursOverride',
                                         value,
                                       });
                                       toast({
-                                        title: "Allocation updated",
+                                        title: 'Allocation updated',
                                         description: `Override set to ${value}h`,
                                       });
                                     }
                                   } catch (e: unknown) {
-                                    toastError(toast, e, "Update failed");
+                                    toastError(toast, e, 'Update failed');
                                   }
                                 }}
                               >
@@ -914,25 +914,25 @@ export default function IterationDetailsPage() {
                                 onClick={async () => {
                                   if (
                                     confirm(
-                                      `Are you sure you want to remove ${lecturer?.fullName || allocation.lecturerId} from this group?`,
+                                      `Are you sure you want to remove ${lecturer?.fullName || allocation.lecturerId} from this group?`
                                     )
                                   ) {
                                     try {
                                       await removeAllocation({
                                         allocationId: allocation._id,
                                       } as any);
-                                      analytics.track("allocation.deleted", {
+                                      analytics.track('allocation.deleted', {
                                         allocationId: String(allocation._id),
                                       });
                                       toast({
-                                        title: "Allocation removed",
+                                        title: 'Allocation removed',
                                         description: `Lecturer ${lecturer?.fullName || allocation.lecturerId} removed from group.`,
                                       });
                                     } catch (e: unknown) {
                                       toastError(
                                         toast,
                                         e,
-                                        "Error removing allocation",
+                                        'Error removing allocation'
                                       );
                                     }
                                   }
@@ -956,7 +956,7 @@ export default function IterationDetailsPage() {
         <Dialog
           open={bulkEditOpen}
           onOpenChange={(o) => {
-            if (!o) setBulkEditHours("");
+            if (!o) setBulkEditHours('');
             setBulkEditOpen(o);
           }}
         >
@@ -988,15 +988,15 @@ export default function IterationDetailsPage() {
               <Button
                 onClick={async () => {
                   const parsed =
-                    bulkEditHours.trim() === "" ? null : Number(bulkEditHours);
+                    bulkEditHours.trim() === '' ? null : Number(bulkEditHours);
                   if (
                     parsed !== null &&
                     (!Number.isFinite(parsed) || parsed < 0 || parsed > 1000)
                   ) {
                     toast({
-                      title: "Invalid hours",
-                      description: "Enter a number 0-1000 or leave blank.",
-                      variant: "destructive",
+                      title: 'Invalid hours',
+                      description: 'Enter a number 0-1000 or leave blank.',
+                      variant: 'destructive',
                     });
                     return;
                   }
@@ -1019,12 +1019,12 @@ export default function IterationDetailsPage() {
                       });
                     }
                   }
-                  analytics.track("allocation.bulkHoursUpdated", {
+                  analytics.track('allocation.bulkHoursUpdated', {
                     groupCount: groupIds.length,
                     value: parsed,
                   });
                   toast({
-                    title: "Overrides updated",
+                    title: 'Overrides updated',
                     description: `Applied to allocations in ${groupIds.length} group(s).`,
                   });
                   setBulkEditOpen(false);
@@ -1063,9 +1063,9 @@ export default function IterationDetailsPage() {
               <Button
                 onClick={async () => {
                   const val = iterTotalHours.trim();
-                  const num = val === "" ? 0 : Number(val);
+                  const num = val === '' ? 0 : Number(val);
                   if (!Number.isFinite(num) || num < 0 || num > 2000) {
-                    toastError(toast, "Invalid hours", "Enter 0-2000");
+                    toastError(toast, 'Invalid hours', 'Enter 0-2000');
                     return;
                   }
                   await withToast(
@@ -1076,12 +1076,12 @@ export default function IterationDetailsPage() {
                       } as any),
                     {
                       success: {
-                        title: "Iteration updated",
+                        title: 'Iteration updated',
                         description: `Total hours set to ${num}`,
                       },
-                      error: { title: "Failed to update iteration" },
+                      error: { title: 'Failed to update iteration' },
                     },
-                    toast,
+                    toast
                   );
                   setEditIterOpen(false);
                 }}
@@ -1104,9 +1104,7 @@ export default function IterationDetailsPage() {
             </Button>
           </DialogTrigger>
           <BulkGroupsForm
-            campuses={
-              (moduleData as any)?.campuses || (course as any)?.campuses || []
-            }
+            campuses={moduleData?.campuses || course?.campuses || []}
             onClose={() => setBulkGroupsOpen(false)}
             onCreate={async (defs) => {
               // defs: Array<{ campus: string; groups: { name: string; sizePlanned?: number }[] }>
@@ -1122,10 +1120,10 @@ export default function IterationDetailsPage() {
                           : {}),
                       } as any),
                     {
-                      success: { title: "Group created" },
-                      error: { title: "Failed to create group" },
+                      success: { title: 'Group created' },
+                      error: { title: 'Failed to create group' },
                     },
-                    toast,
+                    toast
                   );
                 }
               }
@@ -1153,14 +1151,14 @@ export default function IterationDetailsPage() {
                 }),
               {
                 success: {
-                  title: "Allocations removed",
+                  title: 'Allocations removed',
                   description: `Removed from ${groupIds.length} group(s).`,
                 },
-                error: { title: "Bulk remove failed" },
+                error: { title: 'Bulk remove failed' },
               },
-              toast,
+              toast
             );
-            analytics.track("allocation.bulkRemoved", {
+            analytics.track('allocation.bulkRemoved', {
               groupCount: groupIds.length,
             });
             setBulkSelected({});
@@ -1183,7 +1181,7 @@ function BulkGroupsForm({
     defs: Array<{
       campus: string;
       groups: { name: string; sizePlanned?: number }[];
-    }>,
+    }>
   ) => Promise<void> | void;
 }) {
   const anyApi = api as any;
@@ -1192,11 +1190,11 @@ function BulkGroupsForm({
     | undefined;
   const [entries, setEntries] = useState<
     Array<{ campus: string; students: string }>
-  >((campuses || []).map((c) => ({ campus: c, students: "" })));
+  >((campuses || []).map((c) => ({ campus: c, students: '' })));
   const [maxSize, setMaxSize] = useState<string>(
     settings?.maxClassSizePerGroup
       ? String(settings.maxClassSizePerGroup)
-      : "25",
+      : '25'
   );
 
   const parsed = entries
@@ -1253,7 +1251,7 @@ function BulkGroupsForm({
                   <Input
                     type="number"
                     inputMode="numeric"
-                    value={entries.find((e) => e.campus === c)?.students || ""}
+                    value={entries.find((e) => e.campus === c)?.students || ''}
                     onChange={(e) =>
                       setEntries((prev) => {
                         const next = [...prev];
@@ -1335,7 +1333,7 @@ function GroupCard({
 
   // Fetch allocations for this group
   const allocations = useQuery((api as any).allocations.listForGroup, {
-    groupId: group._id as any,
+    groupId: group._id,
   });
 
   return (
@@ -1382,7 +1380,7 @@ function GroupCard({
           <div className="space-y-2">
             {allocations.map(({ allocation, lecturer }) => {
               const hours =
-                typeof allocation.hoursOverride === "number"
+                typeof allocation.hoursOverride === 'number'
                   ? allocation.hoursOverride
                   : allocation.hoursComputed || 0;
 
@@ -1393,7 +1391,7 @@ function GroupCard({
                 >
                   <div>
                     <div className="font-medium text-sm">
-                      {lecturer?.fullName || "Unknown Lecturer"}
+                      {lecturer?.fullName || 'Unknown Lecturer'}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {lecturer?.email} • {allocation.type}

@@ -1,6 +1,7 @@
-"use client";
+'use client';
 
-import { ReactNode, useMemo, useState } from "react";
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Bell,
   CloudLightning,
@@ -12,19 +13,19 @@ import {
   SkipForward,
   Thermometer,
   Timer as TimerIcon,
-} from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // Animation variants
 
 const BOUNCE_VARIANTS = {
   idle: 0.5,
-  "ring-idle": 0.5,
-  "timer-ring": 0.35,
-  "ring-timer": 0.35,
-  "timer-idle": 0.3,
-  "idle-timer": 0.3,
-  "idle-ring": 0.5,
+  'ring-idle': 0.5,
+  'timer-ring': 0.35,
+  'ring-timer': 0.35,
+  'timer-idle': 0.3,
+  'idle-timer': 0.3,
+  'idle-ring': 0.5,
 } as const;
 
 // Idle Component with Weather
@@ -54,7 +55,7 @@ const DefaultIdle = () => {
         {showTemp && (
           <motion.div
             initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto" }}
+            animate={{ opacity: 1, width: 'auto' }}
             exit={{ opacity: 0, width: 0 }}
             className="flex items-center gap-1 overflow-hidden text-white"
           >
@@ -109,9 +110,9 @@ const DefaultTimer = () => {
       <div className="h-1 w-24 overflow-hidden rounded-full bg-white/20">
         <motion.div
           className="h-full bg-amber-500"
-          initial={{ width: "100%" }}
-          animate={{ width: "0%" }}
-          transition={{ duration: time, ease: "linear" }}
+          initial={{ width: '100%' }}
+          animate={{ width: '0%' }}
+          transition={{ duration: time, ease: 'linear' }}
         />
       </div>
     </div>
@@ -176,7 +177,7 @@ const MusicPlayer = () => {
   );
 };
 
-type View = "idle" | "ring" | "timer" | "notification" | "music";
+type View = 'idle' | 'ring' | 'timer' | 'notification' | 'music';
 
 export interface DynamicIslandProps {
   view?: View;
@@ -193,22 +194,22 @@ export default function DynamicIsland({
   idleContent,
   ringContent,
   timerContent,
-  className = "",
+  className = '',
 }: DynamicIslandProps) {
-  const [internalView, setInternalView] = useState<View>("idle");
-  const [variantKey, setVariantKey] = useState<string>("idle");
+  const [internalView, setInternalView] = useState<View>('idle');
+  const [variantKey, setVariantKey] = useState<string>('idle');
 
   const view = controlledView ?? internalView;
 
   const content = useMemo(() => {
     switch (view) {
-      case "ring":
+      case 'ring':
         return ringContent ?? <DefaultRing />;
-      case "timer":
+      case 'timer':
         return timerContent ?? <DefaultTimer />;
-      case "notification":
+      case 'notification':
         return <Notification />;
-      case "music":
+      case 'music':
         return <MusicPlayer />;
       default:
         return idleContent ?? <DefaultIdle />;
@@ -228,7 +229,7 @@ export default function DynamicIsland({
         <motion.div
           layout
           transition={{
-            type: "spring",
+            type: 'spring',
             bounce:
               BOUNCE_VARIANTS[variantKey as keyof typeof BOUNCE_VARIANTS] ??
               0.5,
@@ -238,7 +239,7 @@ export default function DynamicIsland({
         >
           <motion.div
             transition={{
-              type: "spring",
+              type: 'spring',
               bounce:
                 BOUNCE_VARIANTS[variantKey as keyof typeof BOUNCE_VARIANTS] ??
                 0.5,
@@ -246,14 +247,14 @@ export default function DynamicIsland({
             initial={{
               scale: 0.9,
               opacity: 0,
-              filter: "blur(5px)",
+              filter: 'blur(5px)',
               originX: 0.5,
               originY: 0.5,
             }}
             animate={{
               scale: 1,
               opacity: 1,
-              filter: "blur(0px)",
+              filter: 'blur(0px)',
               originX: 0.5,
               originY: 0.5,
               transition: { delay: 0.05 },
@@ -266,11 +267,11 @@ export default function DynamicIsland({
 
         <div className="bg-background absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 justify-center gap-1 rounded-full border p-1">
           {[
-            { key: "idle", icon: <CloudLightning className="size-3" /> },
-            { key: "ring", icon: <Phone className="size-3" /> },
-            { key: "timer", icon: <TimerIcon className="size-3" /> },
-            { key: "notification", icon: <Bell className="size-3" /> },
-            { key: "music", icon: <Music2 className="size-3" /> },
+            { key: 'idle', icon: <CloudLightning className="size-3" /> },
+            { key: 'ring', icon: <Phone className="size-3" /> },
+            { key: 'timer', icon: <TimerIcon className="size-3" /> },
+            { key: 'notification', icon: <Bell className="size-3" /> },
+            { key: 'music', icon: <Music2 className="size-3" /> },
           ].map(({ key, icon }) => (
             <button
               type="button"

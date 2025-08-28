@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import posthog from "posthog-js";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import posthog from 'posthog-js';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Settings,
   User,
@@ -30,11 +30,11 @@ import {
   Save,
   X,
   RefreshCw,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -42,20 +42,20 @@ export default function ProfilePage() {
   const updateUserAvatar = useMutation(api.users.updateUserAvatar);
   const convexAvatarUrl = useQuery(
     api.users.getUserAvatar,
-    user ? { subject: user.id } : "skip",
+    user ? { subject: user.id } : 'skip'
   );
 
   // Form state
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [avatarRefreshKey, setAvatarRefreshKey] = useState<number>(0);
 
   if (!isLoaded) {
@@ -74,8 +74,8 @@ export default function ProfilePage() {
     );
   }
 
-  const userName = user.fullName || user.firstName || "User";
-  const userEmail = user.emailAddresses[0]?.emailAddress || "";
+  const userName = user.fullName || user.firstName || 'User';
+  const userEmail = user.emailAddresses[0]?.emailAddress || '';
   const userRole = user.publicMetadata?.role as string;
   const clerkAvatarUrl = user.imageUrl;
   const convexAvatarUrlValue = convexAvatarUrl || null;
@@ -86,16 +86,16 @@ export default function ProfilePage() {
     ? `${clerkAvatarUrl}?r=${avatarRefreshKey}`
     : convexAvatarUrlValue
       ? `${convexAvatarUrlValue}?r=${avatarRefreshKey}`
-      : "";
+      : '';
 
   const createdAt = user.createdAt;
 
   // Initialize form data when user loads
-  if (!isEditing && formData.firstName === "") {
+  if (!isEditing && formData.firstName === '') {
     setFormData({
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      username: user.username || "",
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      username: user.username || '',
       email: userEmail,
     });
   }
@@ -103,19 +103,19 @@ export default function ProfilePage() {
   // Generate initials from name
   const getInitials = (name: string) => {
     return name
-      .split(" ")
+      .split(' ')
       .map((part) => part.charAt(0))
-      .join("")
+      .join('')
       .toUpperCase()
       .slice(0, 2);
   };
 
   const formatDate = (date: Date | null) => {
-    if (!date) return "Unknown";
-    return new Intl.DateTimeFormat("en-GB", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    if (!date) return 'Unknown';
+    return new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     }).format(date);
   };
 
@@ -131,16 +131,16 @@ export default function ProfilePage() {
     if (file) {
       // Validate file type
       const allowedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
       ];
       if (!allowedTypes.includes(file.type)) {
         toast({
-          title: "Invalid File Type",
-          description: "Please select a JPG, PNG, GIF, or WebP image.",
-          variant: "destructive",
+          title: 'Invalid File Type',
+          description: 'Please select a JPG, PNG, GIF, or WebP image.',
+          variant: 'destructive',
         });
         return;
       }
@@ -149,9 +149,9 @@ export default function ProfilePage() {
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
         toast({
-          title: "File Too Large",
-          description: "Please select an image smaller than 5MB.",
-          variant: "destructive",
+          title: 'File Too Large',
+          description: 'Please select an image smaller than 5MB.',
+          variant: 'destructive',
         });
         return;
       }
@@ -163,9 +163,9 @@ export default function ProfilePage() {
       };
       reader.onerror = () => {
         toast({
-          title: "File Read Error",
-          description: "Failed to read the selected file. Please try again.",
-          variant: "destructive",
+          title: 'File Read Error',
+          description: 'Failed to read the selected file. Please try again.',
+          variant: 'destructive',
         });
       };
       reader.readAsDataURL(file);
@@ -178,9 +178,9 @@ export default function ProfilePage() {
       // Ensure user is authenticated
       if (!user || !user.id) {
         toast({
-          title: "Authentication Error",
-          description: "Please sign in again to update your profile.",
-          variant: "destructive",
+          title: 'Authentication Error',
+          description: 'Please sign in again to update your profile.',
+          variant: 'destructive',
         });
         return;
       }
@@ -196,9 +196,9 @@ export default function ProfilePage() {
         // Update email if changed
         if (formData.email !== userEmail) {
           try {
-            const response = await fetch("/api/update-user-email", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+            const response = await fetch('/api/update-user-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 userId: user.id,
                 newEmail: formData.email.trim(),
@@ -207,25 +207,25 @@ export default function ProfilePage() {
 
             if (!response.ok) {
               const errorData = await response.json();
-              throw new Error(errorData.error || "Failed to update email");
+              throw new Error(errorData.error || 'Failed to update email');
             }
 
             toast({
-              title: "Email Updated",
-              description: "Your email address has been updated successfully.",
-              variant: "success",
+              title: 'Email Updated',
+              description: 'Your email address has been updated successfully.',
+              variant: 'success',
             });
 
             // Reload user data to get updated email
             await user.reload();
           } catch (emailError) {
             toast({
-              title: "Email Update Failed",
+              title: 'Email Update Failed',
               description:
                 emailError instanceof Error
                   ? emailError.message
-                  : "Failed to update email. Please try again.",
-              variant: "destructive",
+                  : 'Failed to update email. Please try again.',
+              variant: 'destructive',
             });
             return;
           }
@@ -236,16 +236,16 @@ export default function ProfilePage() {
           try {
             // Validate file type
             const allowedTypes = [
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-              "image/webp",
+              'image/jpeg',
+              'image/png',
+              'image/gif',
+              'image/webp',
             ];
             if (!allowedTypes.includes(avatarFile.type)) {
               toast({
-                title: "Invalid File Type",
-                description: "Please select a JPG, PNG, GIF, or WebP image.",
-                variant: "destructive",
+                title: 'Invalid File Type',
+                description: 'Please select a JPG, PNG, GIF, or WebP image.',
+                variant: 'destructive',
               });
               return;
             }
@@ -254,9 +254,9 @@ export default function ProfilePage() {
             const maxSize = 5 * 1024 * 1024; // 5MB
             if (avatarFile.size > maxSize) {
               toast({
-                title: "File Too Large",
-                description: "Please select an image smaller than 5MB.",
-                variant: "destructive",
+                title: 'File Too Large',
+                description: 'Please select an image smaller than 5MB.',
+                variant: 'destructive',
               });
               return;
             }
@@ -268,7 +268,7 @@ export default function ProfilePage() {
             } catch (clerkError) {
               // Clerk upload error
               throw new Error(
-                `Clerk upload failed: ${clerkError instanceof Error ? clerkError.message : "Unknown error"}`,
+                `Clerk upload failed: ${clerkError instanceof Error ? clerkError.message : 'Unknown error'}`
               );
             }
 
@@ -286,10 +286,10 @@ export default function ProfilePage() {
               });
 
               toast({
-                title: "Avatar Updated",
+                title: 'Avatar Updated',
                 description:
-                  "Your profile picture has been updated successfully.",
-                variant: "success",
+                  'Your profile picture has been updated successfully.',
+                variant: 'success',
               });
 
               // Force a refresh of the user data to get the updated avatar
@@ -299,66 +299,66 @@ export default function ProfilePage() {
               setAvatarRefreshKey((prev) => prev + 1);
             } else {
               toast({
-                title: "Avatar Update",
+                title: 'Avatar Update',
                 description:
-                  "Avatar uploaded to Clerk. It may take a moment to appear.",
-                variant: "success",
+                  'Avatar uploaded to Clerk. It may take a moment to appear.',
+                variant: 'success',
               });
             }
           } catch (avatarError) {
             // Avatar update error
 
             // Provide more specific error messages
-            let errorMessage = "Failed to update avatar. Please try again.";
+            let errorMessage = 'Failed to update avatar. Please try again.';
             if (avatarError instanceof Error) {
-              if (avatarError.message.includes("network")) {
+              if (avatarError.message.includes('network')) {
                 errorMessage =
-                  "Network error. Please check your connection and try again.";
-              } else if (avatarError.message.includes("unauthorized")) {
-                errorMessage = "Authentication error. Please sign in again.";
-              } else if (avatarError.message.includes("file")) {
+                  'Network error. Please check your connection and try again.';
+              } else if (avatarError.message.includes('unauthorized')) {
+                errorMessage = 'Authentication error. Please sign in again.';
+              } else if (avatarError.message.includes('file')) {
                 errorMessage =
-                  "Invalid file. Please select a valid image file.";
+                  'Invalid file. Please select a valid image file.';
               }
             }
 
             toast({
-              title: "Avatar Update Failed",
+              title: 'Avatar Update Failed',
               description: errorMessage,
-              variant: "destructive",
+              variant: 'destructive',
             });
           }
         }
 
         // Only capture if PostHog is available
-        if (typeof posthog !== "undefined" && posthog.capture) {
-          posthog.capture("profile-updated", {
+        if (typeof posthog !== 'undefined' && posthog.capture) {
+          posthog.capture('profile-updated', {
             user_id: user.id,
             avatar_updated: !!(avatarFile && avatarFile.size > 0),
           });
         }
 
         toast({
-          title: "Profile Updated",
-          description: "Your profile has been successfully updated.",
-          variant: "success",
+          title: 'Profile Updated',
+          description: 'Your profile has been successfully updated.',
+          variant: 'success',
         });
 
         setIsEditing(false);
         setFormData({
-          firstName: user.firstName || "",
-          lastName: user.lastName || "",
-          username: user.username || "",
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          username: user.username || '',
           email: userEmail,
         });
         setAvatarFile(null);
-        setAvatarPreview("");
+        setAvatarPreview('');
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -367,18 +367,18 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     // Only capture if PostHog is available
-    if (typeof posthog !== "undefined" && posthog.capture) {
-      posthog.capture("profile-edit-cancelled", { user_id: user.id });
+    if (typeof posthog !== 'undefined' && posthog.capture) {
+      posthog.capture('profile-edit-cancelled', { user_id: user.id });
     }
     setIsEditing(false);
     setFormData({
-      firstName: user.firstName || "",
-      lastName: user.lastName || "",
-      username: user.username || "",
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      username: user.username || '',
       email: userEmail,
     });
     setAvatarFile(null);
-    setAvatarPreview("");
+    setAvatarPreview('');
   };
 
   const handleRefreshAvatar = async () => {
@@ -386,23 +386,23 @@ export default function ProfilePage() {
       await user.reload();
       setAvatarRefreshKey((prev) => prev + 1);
       toast({
-        title: "Avatar Refreshed",
-        description: "Profile picture has been refreshed.",
-        variant: "success",
+        title: 'Avatar Refreshed',
+        description: 'Profile picture has been refreshed.',
+        variant: 'success',
       });
     } catch (error) {
       toast({
-        title: "Refresh Failed",
-        description: "Failed to refresh avatar. Please try again.",
-        variant: "destructive",
+        title: 'Refresh Failed',
+        description: 'Failed to refresh avatar. Please try again.',
+        variant: 'destructive',
       });
     }
   };
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Account", href: "/account" },
-    { label: "Profile" },
+    { label: 'Home', href: '/' },
+    { label: 'Account', href: '/account' },
+    { label: 'Profile' },
   ];
 
   return (
@@ -502,7 +502,7 @@ export default function ProfilePage() {
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          document.getElementById("avatar")?.click()
+                          document.getElementById('avatar')?.click()
                         }
                         disabled={!isEditing}
                       >
@@ -515,7 +515,7 @@ export default function ProfilePage() {
                           size="sm"
                           onClick={() => {
                             setAvatarFile(null);
-                            setAvatarPreview("");
+                            setAvatarPreview('');
                           }}
                         >
                           <X className="h-4 w-4 mr-2" />
@@ -559,7 +559,7 @@ export default function ProfilePage() {
                       id="firstName"
                       value={formData.firstName}
                       onChange={(e) =>
-                        handleInputChange("firstName", e.target.value)
+                        handleInputChange('firstName', e.target.value)
                       }
                       disabled={!isEditing}
                     />
@@ -570,7 +570,7 @@ export default function ProfilePage() {
                       id="lastName"
                       value={formData.lastName}
                       onChange={(e) =>
-                        handleInputChange("lastName", e.target.value)
+                        handleInputChange('lastName', e.target.value)
                       }
                       disabled={!isEditing}
                     />
@@ -581,7 +581,7 @@ export default function ProfilePage() {
                       id="username"
                       value={formData.username}
                       onChange={(e) =>
-                        handleInputChange("username", e.target.value)
+                        handleInputChange('username', e.target.value)
                       }
                       disabled={!isEditing}
                     />
@@ -593,7 +593,7 @@ export default function ProfilePage() {
                       type="email"
                       value={formData.email}
                       onChange={(e) =>
-                        handleInputChange("email", e.target.value)
+                        handleInputChange('email', e.target.value)
                       }
                       disabled={!isEditing}
                     />
@@ -630,8 +630,8 @@ export default function ProfilePage() {
                   <Button
                     onClick={() => {
                       // Only capture if PostHog is available
-                      if (typeof posthog !== "undefined" && posthog.capture) {
-                        posthog.capture("profile-edit-started", {
+                      if (typeof posthog !== 'undefined' && posthog.capture) {
+                        posthog.capture('profile-edit-started', {
                           user_id: user.id,
                         });
                       }

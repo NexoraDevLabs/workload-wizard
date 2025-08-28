@@ -1,50 +1,50 @@
-import { Upload, Settings, BarChart, CheckCircle, Clock } from "lucide-react";
+import { Upload, Settings, BarChart, CheckCircle, Clock } from 'lucide-react';
 
 const HowItWorks = () => {
   const steps = [
     {
       icon: Upload,
       step: 1,
-      title: "Import Your Data",
+      title: 'Import Your Data',
       description:
-        "Upload staff lists, course catalogs, and existing workload data. Our smart import wizard handles multiple formats.",
+        'Upload staff lists, course catalogs, and existing workload data. Our smart import wizard handles multiple formats.',
       details: [
-        "Excel, CSV, and XML support",
-        "Automatic data validation",
-        "Bulk import capabilities",
+        'Excel, CSV, and XML support',
+        'Automatic data validation',
+        'Bulk import capabilities',
       ],
     },
     {
       icon: Settings,
       step: 2,
-      title: "Configure Policies",
+      title: 'Configure Policies',
       description:
         "Set up your institution's specific workload policies, union agreements, and allocation rules.",
       details: [
-        "Flexible rule engine",
-        "Custom workload models",
-        "Compliance templates",
+        'Flexible rule engine',
+        'Custom workload models',
+        'Compliance templates',
       ],
     },
     {
       icon: BarChart,
       step: 3,
-      title: "Optimise Allocation",
+      title: 'Optimise Allocation',
       description:
-        "Let our AI-powered engine suggest optimal workload distributions based on your constraints and preferences.",
+        'Let our AI-powered engine suggest optimal workload distributions based on your constraints and preferences.',
       details: [
-        "Smart scheduling algorithms",
-        "Conflict detection",
-        "Load balancing",
+        'Smart scheduling algorithms',
+        'Conflict detection',
+        'Load balancing',
       ],
     },
     {
       icon: CheckCircle,
       step: 4,
-      title: "Monitor & Adjust",
+      title: 'Monitor & Adjust',
       description:
-        "Track workload in real-time, generate reports, and make adjustments as needed throughout the academic year.",
-      details: ["Live dashboards", "Automated reporting", "Change tracking"],
+        'Track workload in real-time, generate reports, and make adjustments as needed throughout the academic year.',
+      details: ['Live dashboards', 'Automated reporting', 'Change tracking'],
     },
   ];
 

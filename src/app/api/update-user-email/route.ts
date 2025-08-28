@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { clerkClient, currentUser } from "@clerk/nextjs/server";
-import { getOrganisationIdFromSession } from "@/lib/authz";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
-import { z } from "zod";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { clerkClient, currentUser } from '@clerk/nextjs/server';
+import { getOrganisationIdFromSession } from '@/lib/authz';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+import { z } from 'zod';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -12,7 +13,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
 
     if (!currentUserData) {
       return NextResponse.json(
-        { error: "Unauthorised: User not authenticated" },
-        { status: 401 },
+        { error: 'Unauthorised: User not authenticated' },
+        { status: 401 }
       );
     }
 
@@ -40,15 +41,15 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === "object" && "errors" in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in (err as any)) {
         return NextResponse.json(
-          { error: "Invalid request body", details: (err as any).errors },
-          { status: 400 },
+          { error: 'Invalid request body', details: (err as any).errors },
+          { status: 400 }
         );
       }
       return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 },
+        { error: 'Invalid request body' },
+        { status: 400 }
       );
     }
 
@@ -60,11 +61,11 @@ export async function POST(request: NextRequest) {
     const userRole = currentUserData.publicMetadata?.role as string;
     const userRoles = currentUserData.publicMetadata?.roles as string[];
     const isAdmin =
-      userRole === "sysadmin" ||
-      userRole === "developer" ||
+      userRole === 'sysadmin' ||
+      userRole === 'developer' ||
       (userRoles &&
-        (userRoles.includes("sysadmin") || userRoles.includes("developer")));
-    const isOrgAdmin = userRole === "orgadmin";
+        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
+    const isOrgAdmin = userRole === 'orgadmin';
 
     // Allow users to update their own email
     const isUpdatingOwnEmail = currentUserData.id === userId;
@@ -73,9 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Unauthorised: You can only update your own email or admin access required",
+            'Unauthorised: You can only update your own email or admin access required',
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -96,9 +97,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Unauthorised: Can only update emails for users in your own organisation",
+              'Unauthorised: Can only update emails for users in your own organisation',
           },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
@@ -111,12 +112,12 @@ export async function POST(request: NextRequest) {
 
       if (
         (existingUser.data?.length || 0) > 0 &&
-        existingUser.data![0] &&
-        existingUser.data![0].id !== userId
+        existingUser.data[0] &&
+        existingUser.data[0].id !== userId
       ) {
         return NextResponse.json(
-          { error: "Email address is already in use by another user" },
-          { status: 409 },
+          { error: 'Email address is already in use by another user' },
+          { status: 409 }
         );
       }
     } catch (error) {
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
           api.users.getBySubject,
           {
             subject: currentUserData.id,
-          },
+          }
         );
 
         if (!currentConvexUser) {
@@ -190,32 +191,32 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Email updated successfully" },
-      { status: 200 },
+      { message: 'Email updated successfully' },
+      { status: 200 }
     );
   } catch (error) {
     // Error updating user email
 
     if (error instanceof Error) {
       // Handle specific Clerk errors
-      if (error.message.includes("already exists")) {
+      if (error.message.includes('already exists')) {
         return NextResponse.json(
-          { error: "Email address is already in use" },
-          { status: 409 },
+          { error: 'Email address is already in use' },
+          { status: 409 }
         );
       }
 
-      if (error.message.includes("Invalid email")) {
+      if (error.message.includes('Invalid email')) {
         return NextResponse.json(
-          { error: "Invalid email format" },
-          { status: 400 },
+          { error: 'Invalid email format' },
+          { status: 400 }
         );
       }
     }
 
     return NextResponse.json(
-      { error: "Failed to update email" },
-      { status: 500 },
+      { error: 'Failed to update email' },
+      { status: 500 }
     );
   }
 }

@@ -1,10 +1,10 @@
-"use server";
+'use server';
 
-import { clerkClient } from "@clerk/nextjs/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
-import { hasAdminAccess } from "@/lib/auth/permissions";
+import { clerkClient } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+import { hasAdminAccess } from '@/lib/auth/permissions';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -13,7 +13,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -24,7 +24,7 @@ export async function syncUsernamesFromClerk() {
   const currentUserData = await currentUser();
 
   if (!currentUserData) {
-    throw new Error("Unauthorized: User not authenticated");
+    throw new Error('Unauthorized: User not authenticated');
   }
 
   // Check if user has admin role in Clerk metadata
@@ -35,10 +35,10 @@ export async function syncUsernamesFromClerk() {
     !hasAdminAccess(userRole) &&
     !(
       userRoles &&
-      (userRoles.includes("sysadmin") || userRoles.includes("developer"))
+      (userRoles.includes('sysadmin') || userRoles.includes('developer'))
     )
   ) {
-    throw new Error("Unauthorized: Admin access required");
+    throw new Error('Unauthorized: Admin access required');
   }
 
   try {
@@ -66,7 +66,7 @@ export async function syncUsernamesFromClerk() {
 
       if ((clerkUsersResponse.data?.length || 0) > 0) {
         lastUserId =
-          clerkUsersResponse.data![clerkUsersResponse.data!.length - 1]!.id;
+          clerkUsersResponse.data[clerkUsersResponse.data.length - 1]!.id;
       } else {
         hasNextPage = false;
       }
@@ -86,32 +86,32 @@ export async function syncUsernamesFromClerk() {
           api.users.getBySubject,
           {
             subject: clerkUser.id,
-          },
+          }
         );
 
         if (!convexUser) {
           // Clerk user not found in Convex, skipping
           results.push({
             userId: clerkUser.id,
-            email: clerkUser.emailAddresses[0]?.emailAddress || "unknown",
-            status: "skipped",
-            message: "User not found in Convex",
+            email: clerkUser.emailAddresses[0]?.emailAddress || 'unknown',
+            status: 'skipped',
+            message: 'User not found in Convex',
           });
           skippedCount++;
           continue;
         }
 
         // Check if username needs updating
-        const clerkUsername = clerkUser.username || "";
-        const convexUsername = convexUser.username || "";
+        const clerkUsername = clerkUser.username || '';
+        const convexUsername = convexUser.username || '';
 
         if (clerkUsername === convexUsername) {
           // Username already synced
           results.push({
             userId: clerkUser.id,
-            email: clerkUser.emailAddresses[0]?.emailAddress || "unknown",
-            status: "skipped",
-            message: "Username already up to date",
+            email: clerkUser.emailAddresses[0]?.emailAddress || 'unknown',
+            status: 'skipped',
+            message: 'Username already up to date',
           });
           skippedCount++;
           continue;
@@ -122,10 +122,10 @@ export async function syncUsernamesFromClerk() {
           api.users.getBySubject,
           {
             subject: currentUserData.id,
-          },
+          }
         );
         if (!currentConvexUser) {
-          throw new Error("Current user not found in Convex");
+          throw new Error('Current user not found in Convex');
         }
 
         // Update username in Convex
@@ -138,8 +138,8 @@ export async function syncUsernamesFromClerk() {
         // Username updated
         results.push({
           userId: clerkUser.id,
-          email: clerkUser.emailAddresses[0]?.emailAddress || "unknown",
-          status: "updated",
+          email: clerkUser.emailAddresses[0]?.emailAddress || 'unknown',
+          status: 'updated',
           message: `Username updated: "${convexUsername}" -> "${clerkUsername}"`,
         });
         updatedCount++;
@@ -147,10 +147,10 @@ export async function syncUsernamesFromClerk() {
         // Error updating user
         results.push({
           userId: clerkUser.id,
-          email: clerkUser.emailAddresses[0]?.emailAddress || "unknown",
-          status: "error",
+          email: clerkUser.emailAddresses[0]?.emailAddress || 'unknown',
+          status: 'error',
           message:
-            innerError instanceof Error ? innerError.message : "Unknown error",
+            innerError instanceof Error ? innerError.message : 'Unknown error',
         });
         errorCount++;
       }
@@ -170,7 +170,7 @@ export async function syncUsernamesFromClerk() {
     };
   } catch (error) {
     throw new Error(
-      `Failed to sync usernames: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Failed to sync usernames: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }

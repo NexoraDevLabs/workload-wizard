@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { LoadingOverlay } from "@/components/loading-overlay";
-import { OnboardingCheck } from "@/components/common/OnboardingCheck";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { useUser } from '@clerk/nextjs';
+import { LoadingOverlay } from '@/components/loading-overlay';
+import { OnboardingCheck } from '@/components/common/OnboardingCheck';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 
 export function AuthenticatedLayout({
   children,

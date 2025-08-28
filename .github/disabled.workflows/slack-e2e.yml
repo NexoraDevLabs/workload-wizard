@@ -2,7 +2,7 @@ name: Slack - E2E notifications
 
 on:
   workflow_run:
-    workflows: ["E2E"]
+    workflows: ['E2E']
     types: [completed]
 
 permissions:

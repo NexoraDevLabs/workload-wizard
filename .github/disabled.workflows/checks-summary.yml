@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     branches: [dev, main]
   workflow_run:
-    workflows: ["Quality", "E2E", "Semgrep", "CodeQL", "Deploy to Vercel"]
+    workflows: ['Quality', 'E2E', 'Semgrep', 'CodeQL', 'Deploy to Vercel']
     types: [completed]
 
 permissions:

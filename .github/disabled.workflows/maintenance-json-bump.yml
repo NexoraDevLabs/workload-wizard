@@ -1,24 +1,24 @@
-name: "Maintenance: JSON Field Update"
+name: 'Maintenance: JSON Field Update'
 
 on:
   workflow_dispatch:
     inputs:
       file:
-        description: "JSON file to edit"
+        description: 'JSON file to edit'
         required: true
-        default: "package.json"
+        default: 'package.json'
       field:
-        description: "Field path (dot.notation)"
+        description: 'Field path (dot.notation)'
         required: true
-        default: "version"
+        default: 'version'
       value:
-        description: "New value (string)"
+        description: 'New value (string)'
         required: true
-        default: "0.0.0-maint"
+        default: '0.0.0-maint'
       branch:
-        description: "Target branch base"
+        description: 'Target branch base'
         required: true
-        default: "dev"
+        default: 'dev'
 
 permissions:
   contents: write
@@ -46,7 +46,7 @@ jobs:
         with:
           commit-message: "chore: set ${{ inputs.field }} in ${{ inputs.file }} to '${{ inputs.value }}'"
           title: "chore: set ${{ inputs.field }} → '${{ inputs.value }}'"
-          body: "Automated change via workflow dispatch."
+          body: 'Automated change via workflow dispatch.'
           branch: chore/json-edit-${{ github.run_id }}
           base: ${{ inputs.branch }}
           delete-branch: true

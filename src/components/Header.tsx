@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { WandSparkles } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { WandSparkles } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 const Header = () => {
   const { isSignedIn, isLoaded } = useUser();
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
-  const isBlogPage = pathname === "/blog";
-  const isSupportPage = pathname === "/support";
+  const isHomePage = pathname === '/';
+  const isBlogPage = pathname === '/blog';
+  const isSupportPage = pathname === '/support';
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -22,21 +22,21 @@ const Header = () => {
       setIsScrolled(scrollTop > 10);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <header
       className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-6xl px-4 transition-all duration-300 ${
-        isScrolled ? "top-2" : "top-4"
+        isScrolled ? 'top-2' : 'top-4'
       }`}
     >
       <div
         className={`bg-black/90 backdrop-blur-md rounded-full px-6 py-3 border border-white/10 transition-all duration-300 ${
           isScrolled
-            ? "rounded-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]"
-            : "rounded-full"
+            ? 'rounded-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.1)]'
+            : 'rounded-full'
         }`}
       >
         <div className="flex items-center justify-between gap-6">

@@ -1,11 +1,19 @@
-"use server";
+'use server';
 
-import { clerkClient } from "@clerk/nextjs/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
-import { hasAdminAccess } from "@/lib/auth/permissions";
-import { statsigAdapter } from "@/flags";
+import { clerkClient } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+import { hasAdminAccess } from '@/lib/auth/permissions';
+// Lazy import to avoid build-time issues
+let statsigAdapter: any = null;
+async function getStatsigAdapter() {
+  if (!statsigAdapter) {
+    const { statsigAdapter: adapter } = await import('@/flags');
+    statsigAdapter = adapter;
+  }
+  return statsigAdapter;
+}
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -14,7 +22,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -25,7 +33,7 @@ export async function syncUsersFromClerk() {
   const currentUserData = await currentUser();
 
   if (!currentUserData) {
-    throw new Error("Unauthorized: User not authenticated");
+    throw new Error('Unauthorized: User not authenticated');
   }
 
   // Check if user has admin role in Clerk metadata
@@ -36,15 +44,16 @@ export async function syncUsersFromClerk() {
     !hasAdminAccess(userRole) &&
     !(
       userRoles &&
-      (userRoles.includes("sysadmin") || userRoles.includes("developer"))
+      (userRoles.includes('sysadmin') || userRoles.includes('developer'))
     )
   ) {
-    throw new Error("Unauthorized: Admin access required");
+    throw new Error('Unauthorized: Admin access required');
   }
 
   try {
     // Initialize Statsig once for the batch
-    const Statsig = await statsigAdapter.initialize();
+    const adapter = await getStatsigAdapter();
+    const Statsig = await adapter.initialize();
 
     // Get all users from Clerk
     const clerk = await clerkClient();
@@ -57,7 +66,7 @@ export async function syncUsersFromClerk() {
     const organisations = await getConvexClient().query(api.organisations.list);
     if ((organisations?.length || 0) === 0) {
       throw new Error(
-        "No organisations found in Convex. Please create an organisation first.",
+        'No organisations found in Convex. Please create an organisation first.'
       );
     }
     const defaultOrganisationId = organisations[0]!._id;
@@ -67,15 +76,15 @@ export async function syncUsersFromClerk() {
     for (const clerkUser of clerkUsers) {
       try {
         const primaryEmail = clerkUser.emailAddresses.find(
-          (email) => email.id === clerkUser.primaryEmailAddressId,
+          (email) => email.id === clerkUser.primaryEmailAddressId
         )?.emailAddress;
 
         if (!primaryEmail) {
           // Clerk user has no primary email address, skipping
           results.push({
             userId: clerkUser.id,
-            status: "failed",
-            message: "No primary email address found",
+            status: 'failed',
+            message: 'No primary email address found',
           });
           continue;
         }
@@ -85,24 +94,24 @@ export async function syncUsersFromClerk() {
           api.users.getBySubject,
           {
             subject: clerkUser.id,
-          },
+          }
         );
 
         if (!existingConvexUser) {
           // Create user in Convex if not found
           const systemRole =
             (clerkUser.publicMetadata?.role as
-              | "orgadmin"
-              | "sysadmin"
-              | "developer"
-              | "user"
-              | "trial") || "user";
+              | 'orgadmin'
+              | 'sysadmin'
+              | 'developer'
+              | 'user'
+              | 'trial') || 'user';
 
           const createData = {
             email: primaryEmail,
-            username: clerkUser.username || "",
-            givenName: clerkUser.firstName || "",
-            familyName: clerkUser.lastName || "",
+            username: clerkUser.username || '',
+            givenName: clerkUser.firstName || '',
+            familyName: clerkUser.lastName || '',
             fullName:
               clerkUser.firstName && clerkUser.lastName
                 ? `${clerkUser.firstName} ${clerkUser.lastName}`
@@ -110,7 +119,7 @@ export async function syncUsersFromClerk() {
             systemRoles: [systemRole],
             // API accepts optional organisationId for system flows; Convex derives for actor-driven flows
             organisationId: defaultOrganisationId,
-            pictureUrl: clerkUser.imageUrl || "",
+            pictureUrl: clerkUser.imageUrl || '',
             subject: clerkUser.id,
             tokenIdentifier: `https://clerk.com/users/${clerkUser.id}`,
           };
@@ -118,15 +127,15 @@ export async function syncUsersFromClerk() {
           await getConvexClient().mutation(api.users.create, createData);
           results.push({
             userId: clerkUser.id,
-            status: "created",
-            message: "User created in Convex",
+            status: 'created',
+            message: 'User created in Convex',
           });
         } else {
           // User already exists in Convex
           results.push({
             userId: clerkUser.id,
-            status: "skipped",
-            message: "User already exists in Convex",
+            status: 'skipped',
+            message: 'User already exists in Convex',
           });
         }
 
@@ -143,12 +152,12 @@ export async function syncUsersFromClerk() {
               roles:
                 (clerkUser.publicMetadata?.roles as string[] | undefined) ||
                 (clerkUser.publicMetadata?.role
-                  ? [String(clerkUser.publicMetadata.role)]
+                  ? [clerkUser.publicMetadata.role as string]
                   : []),
-              source: "manual_sync",
+              source: 'manual_sync',
             },
           },
-          "user_synced",
+          'user_synced'
         );
       } catch (innerError) {
         // Error processing Clerk user
@@ -156,7 +165,7 @@ export async function syncUsersFromClerk() {
           innerError instanceof Error ? innerError.message : String(innerError);
         results.push({
           userId: clerkUser.id,
-          status: "failed",
+          status: 'failed',
           message: `Failed to process: ${errorMessage}`,
         });
       }
@@ -165,7 +174,7 @@ export async function syncUsersFromClerk() {
     // Flush Statsig events once at the end of the batch
     try {
       await Statsig.flush();
-    } catch (e) {
+    } catch {
       // Statsig flush failed after sync batch
     }
 
@@ -175,8 +184,8 @@ export async function syncUsersFromClerk() {
       message: `Sync complete. Processed ${clerkUsers.length} users.`,
       results,
     };
-  } catch (error) {
-    throw new Error("Failed to sync users from Clerk");
+  } catch {
+    throw new Error('Failed to sync users from Clerk');
   }
 }
 
@@ -184,7 +193,7 @@ export async function getSyncStatus() {
   const currentUserData = await currentUser();
 
   if (!currentUserData) {
-    throw new Error("Unauthorized: User not authenticated");
+    throw new Error('Unauthorized: User not authenticated');
   }
 
   // Check if user has admin role in Clerk metadata
@@ -195,10 +204,10 @@ export async function getSyncStatus() {
     !hasAdminAccess(userRole) &&
     !(
       userRoles &&
-      (userRoles.includes("sysadmin") || userRoles.includes("developer"))
+      (userRoles.includes('sysadmin') || userRoles.includes('developer'))
     )
   ) {
-    throw new Error("Unauthorized: Admin access required");
+    throw new Error('Unauthorized: Admin access required');
   }
 
   try {
@@ -211,10 +220,10 @@ export async function getSyncStatus() {
     const convexUserSubjects = new Set(convexUsers.map((u) => u.subject));
 
     const missingInConvex = clerkUsers.filter(
-      (clerkUser) => !convexUserSubjects.has(clerkUser.id),
+      (clerkUser) => !convexUserSubjects.has(clerkUser.id)
     );
     const extraInConvex = convexUsers.filter(
-      (convexUser) => !clerkUserIds.has(convexUser.subject),
+      (convexUser) => !clerkUserIds.has(convexUser.subject)
     );
 
     return {
@@ -224,7 +233,7 @@ export async function getSyncStatus() {
       extraInConvex: extraInConvex.length,
       isSynced: missingInConvex.length === 0 && extraInConvex.length === 0,
     };
-  } catch (error) {
-    throw new Error("Failed to get sync status");
+  } catch {
+    throw new Error('Failed to get sync status');
   }
 }

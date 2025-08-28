@@ -1,34 +1,34 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { writeAudit } from "./audit";
-import { requireOrgPermission } from "./permissions";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { writeAudit } from './audit';
+import { requireOrgPermission } from './permissions';
 
 // List courses for an organisation
 export const listByOrganisation = query({
-  args: { organisationId: v.id("organisations") },
+  args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     // Only allow listing courses in your own organisation (or system roles)
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return [];
     const actor = await ctx.db
-      .query("users" as any)
-      .withIndex("by_subject" as any, (q) =>
-        (q as any).eq("subject", identity.subject),
+      .query('users' as any)
+      .withIndex('by_subject' as any, (q) =>
+        (q as any).eq('subject', identity.subject)
       )
       .first();
     if (!actor) return [];
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.view",
-      args.organisationId as any,
+      'courses.view',
+      args.organisationId as any
     );
     const courses = await ctx.db
-      .query("courses" as any)
-      .withIndex("by_organisation" as any, (q) =>
-        (q as any).eq("organisationId", args.organisationId as any),
+      .query('courses' as any)
+      .withIndex('by_organisation' as any, (q) =>
+        (q as any).eq('organisationId', args.organisationId as any)
       )
-      .order("asc")
+      .order('asc')
       .collect();
     return courses;
   },
@@ -41,24 +41,24 @@ export const listForActor = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return [];
     const actor = await ctx.db
-      .query("users" as any)
-      .withIndex("by_subject" as any, (q) =>
-        (q as any).eq("subject", identity.subject),
+      .query('users' as any)
+      .withIndex('by_subject' as any, (q) =>
+        (q as any).eq('subject', identity.subject)
       )
       .first();
     if (!actor) return [];
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.view",
-      actor.organisationId as any,
+      'courses.view',
+      actor.organisationId
     );
     const courses = await ctx.db
-      .query("courses" as any)
-      .withIndex("by_organisation" as any, (q) =>
-        (q as any).eq("organisationId", actor.organisationId as any),
+      .query('courses' as any)
+      .withIndex('by_organisation' as any, (q) =>
+        (q as any).eq('organisationId', actor.organisationId)
       )
-      .order("asc")
+      .order('asc')
       .collect();
     return courses;
   },
@@ -66,7 +66,7 @@ export const listForActor = query({
 
 // Get a single course
 export const getById = query({
-  args: { id: v.id("courses") },
+  args: { id: v.id('courses') },
   handler: async (ctx, args) => {
     const course = await (ctx.db as any).get(args.id as any);
     return course;
@@ -78,54 +78,54 @@ export const create = mutation({
   args: {
     code: v.string(),
     name: v.string(),
-    leaderProfileId: v.optional(v.id("lecturer_profiles")),
+    leaderProfileId: v.optional(v.id('lecturer_profiles')),
     studentCount: v.optional(v.number()),
     campuses: v.optional(v.array(v.string())),
     studentDistributionByCampus: v.optional(
-      v.array(v.object({ campus: v.string(), count: v.number() })),
+      v.array(v.object({ campus: v.string(), count: v.number() }))
     ),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
 
     // derive organisation from actor
     const actor = await ctx.db
-      .query("users" as any)
-      .withIndex("by_subject" as any, (q) =>
-        (q as any).eq("subject", identity.subject),
+      .query('users' as any)
+      .withIndex('by_subject' as any, (q) =>
+        (q as any).eq('subject', identity.subject)
       )
       .first();
-    if (!actor) throw new Error("User not found");
+    if (!actor) throw new Error('User not found');
 
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.create",
-      actor.organisationId as any,
+      'courses.create',
+      actor.organisationId
     );
 
     // Check uniqueness of code within organisation
     const existing = await ctx.db
-      .query("courses" as any)
-      .withIndex("by_organisation" as any, (q) =>
-        (q as any).eq("organisationId", actor.organisationId as any),
+      .query('courses' as any)
+      .withIndex('by_organisation' as any, (q) =>
+        (q as any).eq('organisationId', actor.organisationId)
       )
-      .filter((q) => (q as any).eq((q as any).field("code"), args.code))
+      .filter((q) => (q as any).eq((q as any).field('code'), args.code))
       .first();
     if (existing) {
-      throw new Error("Course code already exists in this organisation");
+      throw new Error('Course code already exists in this organisation');
     }
 
-    const id = await (ctx.db as any).insert("courses", {
+    const id = await (ctx.db as any).insert('courses', {
       code: args.code,
       name: args.name,
       organisationId: actor.organisationId,
       ...(args.leaderProfileId
         ? { leaderProfileId: args.leaderProfileId }
         : {}),
-      ...(typeof args.studentCount === "number"
+      ...(typeof args.studentCount === 'number'
         ? { studentCount: args.studentCount }
         : {}),
       ...(args.campuses && args.campuses.length > 0
@@ -140,15 +140,15 @@ export const create = mutation({
 
     try {
       await writeAudit(ctx, {
-        action: "create",
-        entityType: "course",
+        action: 'create',
+        entityType: 'course',
         entityId: String(id),
         entityName: `${args.code} ${args.name}`,
         performedBy: identity.subject,
         organisationId: actor.organisationId,
         details: `Course created (${args.code})`,
-        severity: "info",
-        type: "org",
+        severity: 'info',
+        type: 'org',
       });
     } catch {}
 
@@ -159,40 +159,40 @@ export const create = mutation({
 // Update course
 export const update = mutation({
   args: {
-    id: v.id("courses"),
+    id: v.id('courses'),
     code: v.string(),
     name: v.string(),
-    leaderProfileId: v.optional(v.id("lecturer_profiles")),
+    leaderProfileId: v.optional(v.id('lecturer_profiles')),
     studentCount: v.optional(v.number()),
     campuses: v.optional(v.array(v.string())),
     studentDistributionByCampus: v.optional(
-      v.array(v.object({ campus: v.string(), count: v.number() })),
+      v.array(v.object({ campus: v.string(), count: v.number() }))
     ),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
     const course = await (ctx.db as any).get(args.id as any);
-    if (!course) throw new Error("Course not found");
+    if (!course) throw new Error('Course not found');
 
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.edit",
-      course.organisationId as any,
+      'courses.edit',
+      course.organisationId
     );
 
     // Uniqueness: prevent duplicate codes within the same organisation if code changed
     if (args.code !== course.code) {
       const conflict = await ctx.db
-        .query("courses" as any)
-        .withIndex("by_organisation" as any, (q) =>
-          (q as any).eq("organisationId", course.organisationId as any),
+        .query('courses' as any)
+        .withIndex('by_organisation' as any, (q) =>
+          (q as any).eq('organisationId', course.organisationId)
         )
-        .filter((q) => (q as any).eq((q as any).field("code"), args.code))
+        .filter((q) => (q as any).eq((q as any).field('code'), args.code))
         .first();
       if (conflict && String(conflict._id) !== String(args.id)) {
-        throw new Error("Course code already exists in this organisation");
+        throw new Error('Course code already exists in this organisation');
       }
     }
 
@@ -202,25 +202,25 @@ export const update = mutation({
       name: args.name,
       updatedAt: now,
     };
-    if ("leaderProfileId" in args)
+    if ('leaderProfileId' in args)
       updates.leaderProfileId = args.leaderProfileId;
-    if ("studentCount" in args) updates.studentCount = args.studentCount;
-    if ("campuses" in args) updates.campuses = args.campuses;
-    if ("studentDistributionByCampus" in args)
+    if ('studentCount' in args) updates.studentCount = args.studentCount;
+    if ('campuses' in args) updates.campuses = args.campuses;
+    if ('studentDistributionByCampus' in args)
       updates.studentDistributionByCampus = args.studentDistributionByCampus;
     await (ctx.db as any).patch(args.id as any, updates);
 
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "course",
+        action: 'update',
+        entityType: 'course',
         entityId: String(args.id),
         entityName: `${args.code} ${args.name}`,
         performedBy: identity.subject,
         organisationId: course.organisationId,
         details: `Course updated (${args.code})`,
-        severity: "info",
-        type: "org",
+        severity: 'info',
+        type: 'org',
       });
     } catch {}
 
@@ -230,33 +230,33 @@ export const update = mutation({
 
 // Delete course
 export const remove = mutation({
-  args: { id: v.id("courses") },
+  args: { id: v.id('courses') },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
     const existing = await (ctx.db as any).get(args.id as any);
     if (!existing) return args.id;
 
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.delete",
-      existing.organisationId as any,
+      'courses.delete',
+      existing.organisationId
     );
 
     await (ctx.db as any).delete(args.id as any);
 
     try {
       await writeAudit(ctx, {
-        action: "delete",
-        entityType: "course",
+        action: 'delete',
+        entityType: 'course',
         entityId: String(args.id),
         entityName: existing.name,
         performedBy: identity.subject,
         organisationId: existing.organisationId,
         details: `Course deleted (${existing.code})`,
-        severity: "warning",
-        type: "org",
+        severity: 'warning',
+        type: 'org',
       });
     } catch {}
 
@@ -268,7 +268,7 @@ export const remove = mutation({
 
 // List years for a course
 export const listYears = query({
-  args: { courseId: v.id("courses") },
+  args: { courseId: v.id('courses') },
   handler: async (ctx, args) => {
     const course = await (ctx.db as any).get(args.courseId as any);
     if (!course) return [];
@@ -278,15 +278,15 @@ export const listYears = query({
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.view",
-      course.organisationId as any,
+      'courses.view',
+      course.organisationId
     );
     const years = await ctx.db
-      .query("course_years" as any)
-      .withIndex("by_course" as any, (q) =>
-        (q as any).eq("courseId", args.courseId as any),
+      .query('course_years' as any)
+      .withIndex('by_course' as any, (q) =>
+        (q as any).eq('courseId', args.courseId as any)
       )
-      .order("asc")
+      .order('asc')
       .collect();
     return years;
   },
@@ -294,26 +294,26 @@ export const listYears = query({
 
 // Check if a course code is available within the actor's organisation
 export const isCodeAvailable = query({
-  args: { code: v.string(), excludeId: v.optional(v.id("courses")) },
+  args: { code: v.string(), excludeId: v.optional(v.id('courses')) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return { available: false };
 
     // Derive organisation from actor
     const actor = await ctx.db
-      .query("users" as any)
-      .withIndex("by_subject" as any, (q) =>
-        (q as any).eq("subject", identity.subject),
+      .query('users' as any)
+      .withIndex('by_subject' as any, (q) =>
+        (q as any).eq('subject', identity.subject)
       )
       .first();
     if (!actor) return { available: false };
 
     const existing = await ctx.db
-      .query("courses" as any)
-      .withIndex("by_organisation" as any, (q) =>
-        (q as any).eq("organisationId", actor.organisationId as any),
+      .query('courses' as any)
+      .withIndex('by_organisation' as any, (q) =>
+        (q as any).eq('organisationId', actor.organisationId)
       )
-      .filter((q) => (q as any).eq((q as any).field("code"), args.code))
+      .filter((q) => (q as any).eq((q as any).field('code'), args.code))
       .first();
 
     if (!existing) return { available: true };
@@ -326,34 +326,34 @@ export const isCodeAvailable = query({
 
 // Add a year to a course
 export const addYear = mutation({
-  args: { courseId: v.id("courses"), yearNumber: v.number() },
+  args: { courseId: v.id('courses'), yearNumber: v.number() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
     const course = await (ctx.db as any).get(args.courseId as any);
-    if (!course) throw new Error("Course not found");
+    if (!course) throw new Error('Course not found');
 
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "courses.years.add",
-      course.organisationId as any,
+      'courses.years.add',
+      course.organisationId
     );
 
     // Ensure unique yearNumber per course
     const exists = await ctx.db
-      .query("course_years" as any)
-      .withIndex("by_course" as any, (q) =>
-        (q as any).eq("courseId", args.courseId as any),
+      .query('course_years' as any)
+      .withIndex('by_course' as any, (q) =>
+        (q as any).eq('courseId', args.courseId as any)
       )
       .filter((q) =>
-        (q as any).eq((q as any).field("yearNumber"), args.yearNumber),
+        (q as any).eq((q as any).field('yearNumber'), args.yearNumber)
       )
       .first();
-    if (exists) throw new Error("Year already exists for this course");
+    if (exists) throw new Error('Year already exists for this course');
 
     const now = Date.now();
-    const id = await (ctx.db as any).insert("course_years", {
+    const id = await (ctx.db as any).insert('course_years', {
       courseId: args.courseId,
       yearNumber: args.yearNumber,
       createdAt: now,
@@ -362,15 +362,15 @@ export const addYear = mutation({
 
     try {
       await writeAudit(ctx, {
-        action: "create",
-        entityType: "course_year",
+        action: 'create',
+        entityType: 'course_year',
         entityId: String(id),
         entityName: `${course.code} Y${args.yearNumber}`,
         performedBy: identity.subject,
         organisationId: course.organisationId,
         details: `Year ${args.yearNumber} added to course ${course.code}`,
-        severity: "info",
-        type: "org",
+        severity: 'info',
+        type: 'org',
       });
     } catch {}
 
@@ -382,20 +382,20 @@ export const addYear = mutation({
 // Creates N groups per module iteration campus split is not yet module-aware; this is per-course/year helper.
 export const initialiseRecommendedGroups = mutation({
   args: {
-    courseId: v.id("courses"),
-    academicYearId: v.id("academic_years"),
+    courseId: v.id('courses'),
+    academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
     const course = await ctx.db.get(args.courseId);
-    if (!course) throw new Error("Course not found");
+    if (!course) throw new Error('Course not found');
 
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "groups.create",
-      (course as any).organisationId,
+      'groups.create',
+      (course as any).organisationId
     );
 
     // Guard: only once per AY
@@ -406,18 +406,18 @@ export const initialiseRecommendedGroups = mutation({
 
     // Settings
     const settings = await ctx.db
-      .query("organisation_settings" as any)
-      .withIndex("by_organisation" as any, (q) =>
-        (q as any).eq("organisationId", (course as any).organisationId as any),
+      .query('organisation_settings' as any)
+      .withIndex('by_organisation' as any, (q) =>
+        (q as any).eq('organisationId', (course as any).organisationId)
       )
       .first();
-    const maxSize = (settings as any)?.maxClassSizePerGroup || 25;
+    const maxSize = settings?.maxClassSizePerGroup || 25;
 
     // Compute per campus recommended counts
     const dist: Array<{ campus: string; count: number }> =
       ((course as any).studentDistributionByCampus as any[]) || [];
-    if (dist.length === 0 && typeof (course as any).studentCount === "number") {
-      dist.push({ campus: "Main Campus", count: (course as any).studentCount });
+    if (dist.length === 0 && typeof (course as any).studentCount === 'number') {
+      dist.push({ campus: 'Main Campus', count: (course as any).studentCount });
     }
 
     // Create a placeholder course-level grouping record by creating module_groups under a virtual iteration is out of scope here.

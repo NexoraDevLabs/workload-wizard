@@ -1,19 +1,20 @@
-import React, { ReactNode, forwardRef } from "react";
-import { usePermissionManager } from "@/hooks/usePermissionManager";
-import { type PermissionId } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import type { ReactNode } from 'react';
+import React, { forwardRef } from 'react';
+import { usePermissionManager } from '@/hooks/usePermissionManager';
+import { type PermissionId } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 interface PermissionFieldProps {
   permission: PermissionId;
@@ -40,7 +41,7 @@ export const PermissionField = forwardRef<HTMLDivElement, PermissionFieldProps>(
       fallback = null,
       hideForbidden = false,
     },
-    ref,
+    ref
   ) => {
     const { gateField, canPerform } = usePermissionManager(organisationId);
 
@@ -81,7 +82,7 @@ export const PermissionField = forwardRef<HTMLDivElement, PermissionFieldProps>(
           disabled: fieldState.disabled,
           readOnly: (fieldState as any).readonly,
           ...((fieldState as any).helperText
-            ? { "aria-describedby": `${permission}-helper` }
+            ? { 'aria-describedby': `${permission}-helper` }
             : {}),
         };
         return React.cloneElement(child as any, props);
@@ -96,10 +97,10 @@ export const PermissionField = forwardRef<HTMLDivElement, PermissionFieldProps>(
           <p
             id={`${permission}-helper`}
             className={cn(
-              "text-sm",
+              'text-sm',
               fieldState.errorMessage
-                ? "text-destructive"
-                : "text-muted-foreground",
+                ? 'text-destructive'
+                : 'text-muted-foreground'
             )}
           >
             {fieldState.helperText}
@@ -107,10 +108,10 @@ export const PermissionField = forwardRef<HTMLDivElement, PermissionFieldProps>(
         )}
       </div>
     );
-  },
+  }
 );
 
-PermissionField.displayName = "PermissionField";
+PermissionField.displayName = 'PermissionField';
 
 // Permission-aware form components
 interface PermissionInputProps extends React.ComponentProps<typeof Input> {
@@ -140,7 +141,7 @@ export const PermissionInput = forwardRef<
       hideForbidden,
       ...props
     },
-    ref,
+    ref
   ) => {
     const { gateField, canPerform } = usePermissionManager(organisationId);
 
@@ -180,10 +181,10 @@ export const PermissionInput = forwardRef<
         {fieldState.helperText && (
           <p
             className={cn(
-              "text-sm",
+              'text-sm',
               fieldState.errorMessage
-                ? "text-destructive"
-                : "text-muted-foreground",
+                ? 'text-destructive'
+                : 'text-muted-foreground'
             )}
           >
             {fieldState.helperText}
@@ -191,10 +192,10 @@ export const PermissionInput = forwardRef<
         )}
       </div>
     );
-  },
+  }
 );
 
-PermissionInput.displayName = "PermissionInput";
+PermissionInput.displayName = 'PermissionInput';
 
 interface PermissionTextareaProps
   extends React.ComponentProps<typeof Textarea> {
@@ -224,7 +225,7 @@ export const PermissionTextarea = forwardRef<
       hideForbidden,
       ...props
     },
-    ref,
+    ref
   ) => {
     const { gateField, canPerform } = usePermissionManager(organisationId);
 
@@ -264,10 +265,10 @@ export const PermissionTextarea = forwardRef<
         {fieldState.helperText && (
           <p
             className={cn(
-              "text-sm",
+              'text-sm',
               fieldState.errorMessage
-                ? "text-destructive"
-                : "text-muted-foreground",
+                ? 'text-destructive'
+                : 'text-muted-foreground'
             )}
           >
             {fieldState.helperText}
@@ -275,10 +276,10 @@ export const PermissionTextarea = forwardRef<
         )}
       </div>
     );
-  },
+  }
 );
 
-PermissionTextarea.displayName = "PermissionTextarea";
+PermissionTextarea.displayName = 'PermissionTextarea';
 
 interface PermissionSelectProps extends React.ComponentProps<typeof Select> {
   permission: PermissionId;
@@ -309,7 +310,7 @@ export const PermissionSelect = forwardRef<
       children,
       ...props
     },
-    ref,
+    ref
   ) => {
     const { gateField, canPerform } = usePermissionManager(organisationId);
 
@@ -349,10 +350,10 @@ export const PermissionSelect = forwardRef<
         {fieldState.helperText && (
           <p
             className={cn(
-              "text-sm",
+              'text-sm',
               fieldState.errorMessage
-                ? "text-destructive"
-                : "text-muted-foreground",
+                ? 'text-destructive'
+                : 'text-muted-foreground'
             )}
           >
             {fieldState.helperText}
@@ -360,15 +361,15 @@ export const PermissionSelect = forwardRef<
         )}
       </div>
     );
-  },
+  }
 );
 
-PermissionSelect.displayName = "PermissionSelect";
+PermissionSelect.displayName = 'PermissionSelect';
 
 // Convenience components for common permissions
 export const UsersViewField = forwardRef<
   HTMLDivElement,
-  Omit<PermissionFieldProps, "permission">
+  Omit<PermissionFieldProps, 'permission'>
 >((props, ref) => (
   <PermissionField
     ref={ref}
@@ -380,7 +381,7 @@ export const UsersViewField = forwardRef<
 
 export const UsersCreateField = forwardRef<
   HTMLDivElement,
-  Omit<PermissionFieldProps, "permission">
+  Omit<PermissionFieldProps, 'permission'>
 >((props, ref) => (
   <PermissionField
     ref={ref}
@@ -392,7 +393,7 @@ export const UsersCreateField = forwardRef<
 
 export const UsersEditField = forwardRef<
   HTMLDivElement,
-  Omit<PermissionFieldProps, "permission">
+  Omit<PermissionFieldProps, 'permission'>
 >((props, ref) => (
   <PermissionField
     ref={ref}
@@ -403,6 +404,6 @@ export const UsersEditField = forwardRef<
 ));
 
 // Set display names
-UsersViewField.displayName = "UsersViewField";
-UsersCreateField.displayName = "UsersCreateField";
-UsersEditField.displayName = "UsersEditField";
+UsersViewField.displayName = 'UsersViewField';
+UsersCreateField.displayName = 'UsersCreateField';
+UsersEditField.displayName = 'UsersEditField';

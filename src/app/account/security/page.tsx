@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import posthog from "posthog-js";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import posthog from 'posthog-js';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Shield, Key, Save, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function SecurityPage() {
   const { user, isLoaded } = useUser();
@@ -34,9 +34,9 @@ export default function SecurityPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function SecurityPage() {
     }
 
     if (!user) {
-      router.push("/");
+      router.push('/');
       return;
     }
   }, [isLoaded, user, router]);
@@ -67,7 +67,7 @@ export default function SecurityPage() {
   }
 
   const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: "", color: "" };
+    if (!password) return { strength: 0, label: '', color: '' };
 
     let score = 0;
     if (password.length >= 8) score++;
@@ -77,12 +77,12 @@ export default function SecurityPage() {
     if (/[^A-Za-z0-9]/.test(password)) score++;
 
     const strengthMap = [
-      { strength: 0, label: "Very Weak", color: "text-red-500" },
-      { strength: 1, label: "Weak", color: "text-orange-500" },
-      { strength: 2, label: "Fair", color: "text-yellow-500" },
-      { strength: 3, label: "Good", color: "text-blue-500" },
-      { strength: 4, label: "Strong", color: "text-green-500" },
-      { strength: 5, label: "Very Strong", color: "text-green-600" },
+      { strength: 0, label: 'Very Weak', color: 'text-red-500' },
+      { strength: 1, label: 'Weak', color: 'text-orange-500' },
+      { strength: 2, label: 'Fair', color: 'text-yellow-500' },
+      { strength: 3, label: 'Good', color: 'text-blue-500' },
+      { strength: 4, label: 'Strong', color: 'text-green-500' },
+      { strength: 5, label: 'Very Strong', color: 'text-green-600' },
     ];
 
     return strengthMap[Math.min(score, 5)];
@@ -101,9 +101,9 @@ export default function SecurityPage() {
       // Ensure user is properly loaded
       if (!user || !user.id) {
         toast({
-          title: "Authentication Error",
-          description: "Please sign in again to update your password.",
-          variant: "destructive",
+          title: 'Authentication Error',
+          description: 'Please sign in again to update your password.',
+          variant: 'destructive',
         });
         return;
       }
@@ -113,9 +113,9 @@ export default function SecurityPage() {
       // Validate password match
       if (passwordData.newPassword !== passwordData.confirmPassword) {
         toast({
-          title: "Password Mismatch",
-          description: "New password and confirm password do not match.",
-          variant: "destructive",
+          title: 'Password Mismatch',
+          description: 'New password and confirm password do not match.',
+          variant: 'destructive',
         });
         return;
       }
@@ -123,9 +123,9 @@ export default function SecurityPage() {
       // Validate password strength (optional - you can customize these rules)
       if (passwordData.newPassword.length < 8) {
         toast({
-          title: "Password Too Short",
-          description: "Password must be at least 8 characters long.",
-          variant: "destructive",
+          title: 'Password Too Short',
+          description: 'Password must be at least 8 characters long.',
+          variant: 'destructive',
         });
         return;
       }
@@ -133,9 +133,9 @@ export default function SecurityPage() {
       // Validate current password is provided
       if (!passwordData.currentPassword) {
         toast({
-          title: "Current Password Required",
-          description: "Please enter your current password to change it.",
-          variant: "destructive",
+          title: 'Current Password Required',
+          description: 'Please enter your current password to change it.',
+          variant: 'destructive',
         });
         return;
       }
@@ -149,24 +149,24 @@ export default function SecurityPage() {
       await user.reload();
 
       toast({
-        title: "Password Updated",
+        title: 'Password Updated',
         description:
-          "Your password has been successfully updated. You may need to sign in again with your new password.",
-        variant: "success",
+          'Your password has been successfully updated. You may need to sign in again with your new password.',
+        variant: 'success',
       });
 
       // Only capture if PostHog is available
-      if (typeof posthog !== "undefined" && posthog.capture) {
-        posthog.capture("password-updated", {
+      if (typeof posthog !== 'undefined' && posthog.capture) {
+        posthog.capture('password-updated', {
           user_id: user.id,
         });
       }
 
       // Clear password fields after successful update
       setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
       });
       setIsEditingPassword(false);
 
@@ -177,32 +177,32 @@ export default function SecurityPage() {
     } catch (passwordError) {
       // Provide more specific error messages
       let errorMessage =
-        "Failed to update password. Please check your current password.";
+        'Failed to update password. Please check your current password.';
       if (passwordError instanceof Error) {
-        if (passwordError.message.includes("current password")) {
-          errorMessage = "Current password is incorrect. Please try again.";
-        } else if (passwordError.message.includes("weak")) {
+        if (passwordError.message.includes('current password')) {
+          errorMessage = 'Current password is incorrect. Please try again.';
+        } else if (passwordError.message.includes('weak')) {
           errorMessage =
-            "Password is too weak. Please choose a stronger password.";
-        } else if (passwordError.message.includes("recent")) {
+            'Password is too weak. Please choose a stronger password.';
+        } else if (passwordError.message.includes('recent')) {
           errorMessage =
-            "Cannot reuse a recent password. Please choose a different password.";
+            'Cannot reuse a recent password. Please choose a different password.';
         } else if (
-          passwordError.message.includes("breach") ||
-          passwordError.message.includes("compromised")
+          passwordError.message.includes('breach') ||
+          passwordError.message.includes('compromised')
         ) {
           errorMessage =
-            "This password has been found in online breaches. Please choose a different, more secure password.";
-        } else if (passwordError.message.includes("_baseFetch")) {
+            'This password has been found in online breaches. Please choose a different, more secure password.';
+        } else if (passwordError.message.includes('_baseFetch')) {
           errorMessage =
-            "Network error occurred. Please check your connection and try again.";
+            'Network error occurred. Please check your connection and try again.';
         }
       }
 
       toast({
-        title: "Password Update Failed",
+        title: 'Password Update Failed',
         description: errorMessage,
-        variant: "destructive",
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -212,9 +212,9 @@ export default function SecurityPage() {
   const handlePasswordCancel = () => {
     setIsEditingPassword(false);
     setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     });
     setShowCurrentPassword(false);
     setShowNewPassword(false);
@@ -222,9 +222,9 @@ export default function SecurityPage() {
   };
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Account", href: "/account" },
-    { label: "Security & Privacy" },
+    { label: 'Home', href: '/' },
+    { label: 'Account', href: '/account' },
+    { label: 'Security & Privacy' },
   ];
 
   return (
@@ -287,8 +287,8 @@ export default function SecurityPage() {
                       onClick={() => {
                         setIsEditingPassword(true);
                         // Only capture if PostHog is available
-                        if (typeof posthog !== "undefined" && posthog.capture) {
-                          posthog.capture("password-edit-started", {
+                        if (typeof posthog !== 'undefined' && posthog.capture) {
+                          posthog.capture('password-edit-started', {
                             user_id: user.id,
                           });
                         }
@@ -307,12 +307,12 @@ export default function SecurityPage() {
                       <div className="relative">
                         <Input
                           id="currentPassword"
-                          type={showCurrentPassword ? "text" : "password"}
+                          type={showCurrentPassword ? 'text' : 'password'}
                           value={passwordData.currentPassword}
                           onChange={(e) =>
                             handlePasswordChange(
-                              "currentPassword",
-                              e.target.value,
+                              'currentPassword',
+                              e.target.value
                             )
                           }
                           placeholder="Enter current password"
@@ -341,12 +341,12 @@ export default function SecurityPage() {
                         <div className="relative">
                           <Input
                             id="newPassword"
-                            type={showNewPassword ? "text" : "password"}
+                            type={showNewPassword ? 'text' : 'password'}
                             value={passwordData.newPassword}
                             onChange={(e) =>
                               handlePasswordChange(
-                                "newPassword",
-                                e.target.value,
+                                'newPassword',
+                                e.target.value
                               )
                             }
                             placeholder="Enter new password"
@@ -373,12 +373,12 @@ export default function SecurityPage() {
                         <div className="relative">
                           <Input
                             id="confirmPassword"
-                            type={showConfirmPassword ? "text" : "password"}
+                            type={showConfirmPassword ? 'text' : 'password'}
                             value={passwordData.confirmPassword}
                             onChange={(e) =>
                               handlePasswordChange(
-                                "confirmPassword",
-                                e.target.value,
+                                'confirmPassword',
+                                e.target.value
                               )
                             }
                             placeholder="Confirm new password"
@@ -409,17 +409,17 @@ export default function SecurityPage() {
                         <div className="space-y-1">
                           {(() => {
                             const s = getPasswordStrength(
-                              passwordData.newPassword,
+                              passwordData.newPassword
                             );
                             return (
-                              <p className={`text-sm ${s?.color || ""}`}>
-                                Password strength: {s?.label || ""}
+                              <p className={`text-sm ${s?.color || ''}`}>
+                                Password strength: {s?.label || ''}
                               </p>
                             );
                           })()}
                           {(() => {
                             const s = getPasswordStrength(
-                              passwordData.newPassword,
+                              passwordData.newPassword
                             );
                             return (
                               <div className="flex space-x-1">
@@ -428,9 +428,9 @@ export default function SecurityPage() {
                                     key={level}
                                     className={`h-1 flex-1 rounded ${
                                       level <= (s?.strength || 0)
-                                        ? s?.color?.replace("text-", "bg-") ||
-                                          "bg-gray-200"
-                                        : "bg-gray-200"
+                                        ? s?.color?.replace('text-', 'bg-') ||
+                                          'bg-gray-200'
+                                        : 'bg-gray-200'
                                     }`}
                                   />
                                 ))}
@@ -482,7 +482,7 @@ export default function SecurityPage() {
                               (passwordData.newPassword !==
                                 passwordData.confirmPassword ||
                                 passwordData.newPassword.length < 8 ||
-                                !passwordData.currentPassword)),
+                                !passwordData.currentPassword))
                         )}
                       >
                         {isLoading ? (

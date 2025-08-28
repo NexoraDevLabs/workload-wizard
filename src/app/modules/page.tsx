@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { useAcademicYear } from "@/components/providers/AcademicYearProvider";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { EditModuleForm } from "@/components/domain/EditModuleForm";
-import { PermissionGate } from "@/components/common/PermissionGate";
-import { useQuery as useConvexQuery } from "convex/react";
-import { GenericDeleteModal } from "@/components/domain/GenericDeleteModal";
-import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2 } from "lucide-react";
-import { withToast } from "@/lib/utils";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { EditModuleForm } from '@/components/domain/EditModuleForm';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { useQuery as useConvexQuery } from 'convex/react';
+import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
+import { useToast } from '@/hooks/use-toast';
+import { Edit, Trash2 } from 'lucide-react';
+import { withToast } from '@/lib/utils';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function ModulesPage() {
   const { toast } = useToast();
@@ -31,25 +31,25 @@ export default function ModulesPage() {
   const anyApi = api as any;
   const me = useConvexQuery(
     anyApi.users.getBySubject,
-    typeof window !== "undefined"
+    typeof window !== 'undefined'
       ? { subject: (window as any).Clerk?.user?.id }
-      : "skip",
+      : 'skip'
   ) as { systemRoles?: string[] } | undefined;
   const isAdminLike = (me?.systemRoles || []).some(
-    (r) => r === "orgadmin" || r === "sysadmin" || r === "developer",
+    (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
   );
 
   const [form, setForm] = useState({
-    code: "",
-    name: "",
-    credits: "",
-    leaderProfileId: "",
-    level: "",
-    teachingHours: "",
-    markingHours: "",
+    code: '',
+    name: '',
+    credits: '',
+    leaderProfileId: '',
+    level: '',
+    teachingHours: '',
+    markingHours: '',
   });
   const orgSettings = useQuery(
-    (api as any).organisationSettings.getForActor,
+    (api as any).organisationSettings.getForActor
   ) as
     | {
         moduleHoursByCredits?: Array<{
@@ -62,7 +62,7 @@ export default function ModulesPage() {
   const lecturers = (useQuery((api as any).staff.listForActor) || []) as any[];
   const codeAvailability = useQuery(
     (api as any).modules.isCodeAvailable,
-    form.code.trim() ? ({ code: form.code.trim() } as any) : ("skip" as any),
+    form.code.trim() ? ({ code: form.code.trim() } as any) : ('skip' as any)
   ) as { available: boolean } | undefined;
   const [editingModule, setEditingModule] = useState<any>(null);
   const [deletingModule, setDeletingModule] = useState<any>(null);
@@ -76,7 +76,7 @@ export default function ModulesPage() {
       form.code.trim().length > 0 &&
       form.name.trim().length > 0 &&
       (codeAvailability ? codeAvailability.available : true),
-    [form, codeAvailability],
+    [form, codeAvailability]
   );
 
   const handleCreateModule = async (e: React.FormEvent) => {
@@ -98,25 +98,25 @@ export default function ModulesPage() {
           : {}),
       });
       setForm({
-        code: "",
-        name: "",
-        credits: "",
-        leaderProfileId: "",
-        level: "",
-        teachingHours: "",
-        markingHours: "",
+        code: '',
+        name: '',
+        credits: '',
+        leaderProfileId: '',
+        level: '',
+        teachingHours: '',
+        markingHours: '',
       });
       toast({
-        title: "Module created",
+        title: 'Module created',
         description: `${form.code.trim()} has been created successfully.`,
-        variant: "success",
+        variant: 'success',
       });
     } catch (error) {
       toast({
-        title: "Failed to create module",
+        title: 'Failed to create module',
         description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -140,15 +140,15 @@ export default function ModulesPage() {
         return next;
       });
       await withToast(
-        () => deleteModule({ id: toDelete._id as any }),
+        () => deleteModule({ id: toDelete._id }),
         {
           success: {
-            title: "Module deleted",
+            title: 'Module deleted',
             description: `${toDelete.code} has been deleted successfully.`,
           },
-          error: { title: "Failed to delete module" },
+          error: { title: 'Failed to delete module' },
         },
-        toast,
+        toast
       );
       setDeletingModule(null);
     } catch (error) {
@@ -177,8 +177,8 @@ export default function ModulesPage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Modules" },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Modules' },
       ]}
       title="Modules"
       subtitle="Create and manage modules"
@@ -332,7 +332,7 @@ export default function ModulesPage() {
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>
-              All Modules {currentYear ? `— ${currentYear.name}` : ""}
+              All Modules {currentYear ? `— ${currentYear.name}` : ''}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -348,7 +348,7 @@ export default function ModulesPage() {
                         <div className="font-medium">{m.code}</div>
                         <div className="text-sm text-muted-foreground">
                           {m.name}
-                          {typeof m.credits === "number"
+                          {typeof m.credits === 'number'
                             ? ` · ${m.credits} credits`
                             : null}
                         </div>

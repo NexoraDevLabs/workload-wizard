@@ -4,17 +4,17 @@
  */
 
 export function hasSystemAdminAccess(userRole?: string): boolean {
-  return userRole === "sysadmin" || userRole === "developer";
+  return userRole === 'sysadmin' || userRole === 'developer';
 }
 
 export function hasOrgAdminAccess(userRole?: string): boolean {
-  return userRole === "orgadmin";
+  return userRole === 'orgadmin';
 }
 
 export function hasAdminAccess(userRole?: string): boolean {
   return (
-    userRole === "orgadmin" ||
-    userRole === "sysadmin" ||
-    userRole === "developer"
+    userRole === 'orgadmin' ||
+    userRole === 'sysadmin' ||
+    userRole === 'developer'
   );
 }

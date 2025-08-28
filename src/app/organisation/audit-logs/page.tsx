@@ -1,13 +1,13 @@
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { AuditLogsViewer } from "@/components/domain/AuditLogsViewer";
-import { AuditViewGate } from "@/components/common/PermissionGate";
-import { getUserOrgOrThrow } from "@/lib/auth/currentUser";
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { AuditLogsViewer } from '@/components/domain/AuditLogsViewer';
+import { AuditViewGate } from '@/components/common/PermissionGate';
+import { getUserOrgOrThrow } from '@/lib/auth/currentUser';
 
 export default async function OrganisationAuditLogsPage() {
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Organisation", href: "/organisation" },
-    { label: "Audit Logs" },
+    { label: 'Home', href: '/' },
+    { label: 'Organisation', href: '/organisation' },
+    { label: 'Audit Logs' },
   ];
   const user = await getUserOrgOrThrow();
   const orgId = user.organisationId;
@@ -29,7 +29,7 @@ export default async function OrganisationAuditLogsPage() {
         subtitle="Monitor system activity and user actions"
       >
         <AuditLogsViewer
-          forcedFilters={{ type: "org", organisationId: orgId }}
+          forcedFilters={{ type: 'org', organisationId: orgId }}
         />
       </StandardizedSidebarLayout>
     </AuditViewGate>

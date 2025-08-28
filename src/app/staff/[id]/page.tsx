@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useParams } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { useParams } from 'next/navigation';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Edit,
   User,
@@ -23,22 +23,22 @@ import {
   CheckCircle,
   Link2,
   RefreshCw,
-} from "lucide-react";
-import { useState } from "react";
-import { useAcademicYear } from "@/components/providers/AcademicYearProvider";
-import { useUser } from "@clerk/nextjs";
-import { EditStaffForm } from "@/components/domain/EditStaffForm";
-import { PermissionGate } from "@/components/common/PermissionGate";
-import { DeactivateConfirmationModal } from "@/components/domain/DeactivateConfirmationModal";
-import { useToast } from "@/hooks/use-toast";
-import { withToast } from "@/lib/utils";
+} from 'lucide-react';
+import { useState } from 'react';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { useUser } from '@clerk/nextjs';
+import { EditStaffForm } from '@/components/domain/EditStaffForm';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
+import { useToast } from '@/hooks/use-toast';
+import { withToast } from '@/lib/utils';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function StaffProfilePage() {
   const params = useParams<{ id: string }>();
-  const profileId = params?.id as string;
+  const profileId = params?.id;
   const { user } = useUser();
   const { toast } = useToast();
 
@@ -48,7 +48,7 @@ export default function StaffProfilePage() {
 
   const profile = useQuery(
     (api as any).staff.get,
-    profileId ? ({ profileId: profileId as any } as any) : ("skip" as any),
+    profileId ? ({ profileId: profileId as any } as any) : ('skip' as any)
   );
 
   const { currentYear } = useAcademicYear();
@@ -59,28 +59,28 @@ export default function StaffProfilePage() {
           lecturerId: profileId as any,
           academicYearId: (currentYear as any)._id,
         } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
   const groupAllocations = useQuery(
     (api as any).allocations.listForLecturer,
-    "skip" as any,
+    'skip' as any
   );
 
   // Permission checks
   const canEdit = useQuery(api.permissions.hasPermission, {
-    userId: user?.id || "",
-    permissionId: "staff.edit",
+    userId: user?.id || '',
+    permissionId: 'staff.edit',
   });
 
   const canDeactivate = useQuery(api.permissions.hasPermission, {
-    userId: user?.id || "",
-    permissionId: "staff.edit", // Using edit permission for deactivate
+    userId: user?.id || '',
+    permissionId: 'staff.edit', // Using edit permission for deactivate
   });
 
   // Check if email matches Clerk user
   const clerkUser = useQuery(
     api.users.getByEmail,
-    profile?.email ? { email: profile.email } : "skip",
+    profile?.email ? { email: profile.email } : 'skip'
   );
 
   const editMutation = useMutation(api.staff.edit);
@@ -92,19 +92,19 @@ export default function StaffProfilePage() {
       await editMutation({
         profileId: profileId as any,
         ...formData,
-        userId: user?.id || "",
+        userId: user?.id || '',
       });
 
       setIsEditing(false);
       toast({
-        title: "Profile Updated",
-        description: "Lecturer profile has been updated successfully.",
+        title: 'Profile Updated',
+        description: 'Lecturer profile has been updated successfully.',
       });
     } catch (error) {
       toast({
-        title: "Update Failed",
-        description: "Failed to update lecturer profile. Please try again.",
-        variant: "destructive",
+        title: 'Update Failed',
+        description: 'Failed to update lecturer profile. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -115,19 +115,19 @@ export default function StaffProfilePage() {
       await editMutation({
         profileId: profileId as any,
         userSubject: clerkUser.subject,
-        userId: user?.id || "",
+        userId: user?.id || '',
       } as any);
       toast({
-        title: "Profile linked",
-        description: "Lecturer profile linked to user account.",
+        title: 'Profile linked',
+        description: 'Lecturer profile linked to user account.',
       });
       // ensure UI shows linked state immediately
       window.location.reload();
     } catch (e) {
       toast({
-        title: "Link failed",
-        description: e instanceof Error ? e.message : "An error occurred",
-        variant: "destructive",
+        title: 'Link failed',
+        description: e instanceof Error ? e.message : 'An error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -141,14 +141,14 @@ export default function StaffProfilePage() {
         pictureUrl: clerkUser.pictureUrl,
       } as any);
       toast({
-        title: "Avatar synced",
-        description: "Profile picture synced from Clerk.",
+        title: 'Avatar synced',
+        description: 'Profile picture synced from Clerk.',
       });
     } catch (e) {
       toast({
-        title: "Avatar sync failed",
-        description: e instanceof Error ? e.message : "An error occurred",
-        variant: "destructive",
+        title: 'Avatar sync failed',
+        description: e instanceof Error ? e.message : 'An error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -158,19 +158,19 @@ export default function StaffProfilePage() {
       await deactivateMutation({
         profileId: profileId as any,
         isActive: false,
-        userId: user?.id || "",
+        userId: user?.id || '',
       });
 
       setShowDeactivateModal(false);
       toast({
-        title: "Profile Deactivated",
-        description: "Lecturer profile has been deactivated.",
+        title: 'Profile Deactivated',
+        description: 'Lecturer profile has been deactivated.',
       });
     } catch (error) {
       toast({
-        title: "Deactivation Failed",
-        description: "Failed to deactivate lecturer profile. Please try again.",
-        variant: "destructive",
+        title: 'Deactivation Failed',
+        description: 'Failed to deactivate lecturer profile. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -180,18 +180,18 @@ export default function StaffProfilePage() {
       await deactivateMutation({
         profileId: profileId as any,
         isActive: true,
-        userId: user?.id || "",
+        userId: user?.id || '',
       });
 
       toast({
-        title: "Profile Reactivated",
-        description: "Lecturer profile has been reactivated.",
+        title: 'Profile Reactivated',
+        description: 'Lecturer profile has been reactivated.',
       });
     } catch (error) {
       toast({
-        title: "Reactivation Failed",
-        description: "Failed to reactivate lecturer profile. Please try again.",
-        variant: "destructive",
+        title: 'Reactivation Failed',
+        description: 'Failed to reactivate lecturer profile. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -199,7 +199,7 @@ export default function StaffProfilePage() {
   if (!profile) {
     return (
       <StandardizedSidebarLayout
-        breadcrumbs={[{ label: "Staff", href: "/staff" }, { label: "Profile" }]}
+        breadcrumbs={[{ label: 'Staff', href: '/staff' }, { label: 'Profile' }]}
         title="Lecturer Profile"
       >
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -210,7 +210,7 @@ export default function StaffProfilePage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Staff", href: "/staff" },
+        { label: 'Staff', href: '/staff' },
         { label: profile.fullName },
       ]}
       title={profile.fullName}
@@ -310,25 +310,25 @@ export default function StaffProfilePage() {
             <CardTitle>Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div>Role: {profile.role || "—"}</div>
-            <div>Team: {profile.teamName || "—"}</div>
+            <div>Role: {profile.role || '—'}</div>
+            <div>Team: {profile.teamName || '—'}</div>
             <div>Contract: {profile.contract}</div>
             <div>FTE: {profile.fte}</div>
             <div>Max Teaching: {profile.maxTeachingHours}h</div>
             <div>Total Contract: {profile.totalContract}h</div>
-            <div>Pref Location: {profile.prefWorkingLocation || "—"}</div>
+            <div>Pref Location: {profile.prefWorkingLocation || '—'}</div>
             <div>
-              Pref Working Time:{" "}
-              {profile.prefWorkingTime === "am"
-                ? "AM"
-                : profile.prefWorkingTime === "pm"
-                  ? "PM"
-                  : profile.prefWorkingTime === "all_day"
-                    ? "All day"
-                    : "—"}
+              Pref Working Time:{' '}
+              {profile.prefWorkingTime === 'am'
+                ? 'AM'
+                : profile.prefWorkingTime === 'pm'
+                  ? 'PM'
+                  : profile.prefWorkingTime === 'all_day'
+                    ? 'All day'
+                    : '—'}
             </div>
-            <div>Specialism: {profile.prefSpecialism || "—"}</div>
-            <div>Notes: {profile.prefNotes || "—"}</div>
+            <div>Specialism: {profile.prefSpecialism || '—'}</div>
+            <div>Notes: {profile.prefNotes || '—'}</div>
           </CardContent>
         </Card>
 
@@ -381,7 +381,7 @@ export default function StaffProfilePage() {
             </div>
             <div className="rounded border p-2 text-xs">
               <div>
-                <span className="font-medium">Name:</span>{" "}
+                <span className="font-medium">Name:</span>{' '}
                 {clerkUser?.givenName} {clerkUser?.familyName}
               </div>
               <div>
@@ -426,59 +426,59 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
           lecturerId: lecturerId as any,
           academicYearId: (currentYear as any)._id,
         } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   ) as
     | Array<{ allocation: any; group: any; iteration: any; module: any }>
     | undefined;
-  const [sortBy, setSortBy] = useState<"module" | "hours" | "type">("module");
-  const [typeFilter, setTypeFilter] = useState<"all" | "teaching" | "admin">(
-    "all",
+  const [sortBy, setSortBy] = useState<'module' | 'hours' | 'type'>('module');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'teaching' | 'admin'>(
+    'all'
   );
 
   const data = (rows || [])
-    .filter((r) => typeFilter === "all" || r.allocation.type === typeFilter)
+    .filter((r) => typeFilter === 'all' || r.allocation.type === typeFilter)
     .sort((a, b) => {
-      if (sortBy === "hours") {
+      if (sortBy === 'hours') {
         const ha =
-          typeof a.allocation.hoursOverride === "number"
+          typeof a.allocation.hoursOverride === 'number'
             ? a.allocation.hoursOverride
             : a.allocation.hoursComputed || 0;
         const hb =
-          typeof b.allocation.hoursOverride === "number"
+          typeof b.allocation.hoursOverride === 'number'
             ? b.allocation.hoursOverride
             : b.allocation.hoursComputed || 0;
         return hb - ha;
       }
-      if (sortBy === "type")
+      if (sortBy === 'type')
         return a.allocation.type.localeCompare(b.allocation.type);
-      const ma = (a.module?.code || "") + (a.module?.name || "");
-      const mb = (b.module?.code || "") + (b.module?.name || "");
+      const ma = (a.module?.code || '') + (a.module?.name || '');
+      const mb = (b.module?.code || '') + (b.module?.name || '');
       return ma.localeCompare(mb);
     });
 
   const handleExport = () => {
-    const headers = ["Module Code", "Module Name", "Group", "Type", "Hours"];
+    const headers = ['Module Code', 'Module Name', 'Group', 'Type', 'Hours'];
     const rowsCsv = data.map(({ allocation, group, module }) => {
       const hours =
-        typeof allocation.hoursOverride === "number"
+        typeof allocation.hoursOverride === 'number'
           ? allocation.hoursOverride
           : allocation.hoursComputed || 0;
       return [
-        module?.code || "",
-        module?.name || "",
-        group?.name || "",
+        module?.code || '',
+        module?.name || '',
+        group?.name || '',
         allocation.type,
         String(hours),
       ];
     });
     const csv = [headers, ...rowsCsv]
-      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = `module-allocations-${currentYear?.name || "year"}.csv`;
+    a.download = `module-allocations-${currentYear?.name || 'year'}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -526,7 +526,7 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
         <ul className="divide-y border rounded">
           {data.map(({ allocation, group, module }) => {
             const hours =
-              typeof allocation.hoursOverride === "number"
+              typeof allocation.hoursOverride === 'number'
                 ? allocation.hoursOverride
                 : allocation.hoursComputed || 0;
             return (
@@ -536,10 +536,10 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
               >
                 <div>
                   <div className="font-medium">
-                    {module?.code || ""} — {module?.name || ""}
+                    {module?.code || ''} — {module?.name || ''}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Group: {group?.name || ""}
+                    Group: {group?.name || ''}
                   </div>
                 </div>
                 <div className="text-right">
@@ -561,11 +561,11 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
   const { toast } = useToast();
   const orgCategories = useQuery(
     (api as any).allocations.listOrganisationAdminCategories,
-    user?.id ? ({} as any) : ("skip" as any),
+    user?.id ? ({} as any) : ('skip' as any)
   ) as any[] | undefined;
   const sysCategories = useQuery(
     (api as any).allocations.listAdminCategories,
-    {},
+    {}
   ) as any[] | undefined;
   const categories =
     orgCategories && orgCategories.length > 0 ? orgCategories : sysCategories;
@@ -576,7 +576,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
           lecturerId: lecturerId as any,
           academicYearId: (currentYear as any)._id,
         } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   ) as Array<{ allocation: any; category: any }> | undefined;
   const upsert = useMutation((api as any).allocations.upsertAdminAllocation);
   const remove = useMutation((api as any).allocations.removeAdminAllocation);
@@ -596,13 +596,13 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
     const hours = Number(formOpen.hours);
     if (!Number.isFinite(hours) || hours < 0 || hours > 1000) {
       toast({
-        title: "Invalid hours",
-        description: "Enter a number between 0 and 1000",
-        variant: "destructive",
+        title: 'Invalid hours',
+        description: 'Enter a number between 0 and 1000',
+        variant: 'destructive',
       });
       return;
     }
-    setIsSaving(formOpen.id || "new");
+    setIsSaving(formOpen.id || 'new');
     try {
       await withToast(
         () =>
@@ -612,20 +612,20 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
             ...(formOpen.isCustom
               ? {
                   isCustom: true,
-                  customLabel: formOpen.customLabel || "",
-                  comment: formOpen.comment || "",
+                  customLabel: formOpen.customLabel || '',
+                  comment: formOpen.comment || '',
                 }
-              : { categoryId: formOpen.categoryId || "" }),
+              : { categoryId: formOpen.categoryId || '' }),
             hours,
             ...(formOpen.id ? { allocationId: formOpen.id as any } : {}),
           } as any),
         {
           success: {
-            title: formOpen.id ? "Allocation updated" : "Allocation created",
+            title: formOpen.id ? 'Allocation updated' : 'Allocation created',
           },
-          error: { title: "Save failed" },
+          error: { title: 'Save failed' },
         },
-        toast,
+        toast
       );
       setFormOpen(null);
     } finally {
@@ -634,16 +634,16 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
   };
 
   const handleRemove = async (allocationId: string) => {
-    if (!confirm("Remove allocation?")) return;
+    if (!confirm('Remove allocation?')) return;
     setIsRemoving(allocationId);
     try {
       await withToast(
         () => remove({ allocationId: allocationId as any } as any),
         {
-          success: { title: "Allocation removed" },
-          error: { title: "Remove failed" },
+          success: { title: 'Allocation removed' },
+          error: { title: 'Remove failed' },
         },
-        toast,
+        toast
       );
     } finally {
       setIsRemoving(null);
@@ -659,7 +659,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
 
   const totalAdminHours = (rows || []).reduce(
     (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
-    0,
+    0
   );
 
   return (
@@ -675,8 +675,8 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
           size="sm"
           onClick={() =>
             setFormOpen({
-              categoryId: categories?.[0]?._id ? String(categories[0]._id) : "",
-              hours: "",
+              categoryId: categories?.[0]?._id ? String(categories[0]._id) : '',
+              hours: '',
               isCustom: false,
             })
           }
@@ -750,7 +750,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
           <div className="bg-background border rounded-md p-4 w-full max-w-md space-y-3">
             <div className="font-medium">
-              {formOpen.id ? "Edit Admin Allocation" : "Add Admin Allocation"}
+              {formOpen.id ? 'Edit Admin Allocation' : 'Add Admin Allocation'}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -761,7 +761,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
                     checked={Boolean(formOpen.isCustom)}
                     onChange={(e) =>
                       setFormOpen(
-                        (f) => f && { ...f, isCustom: e.target.checked },
+                        (f) => f && { ...f, isCustom: e.target.checked }
                       )
                     }
                   />
@@ -772,16 +772,16 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
                 <div className="space-y-2">
                   <Input
                     placeholder="Custom category label"
-                    value={formOpen.customLabel || ""}
+                    value={formOpen.customLabel || ''}
                     onChange={(e) =>
                       setFormOpen(
-                        (f) => f && { ...f, customLabel: e.target.value },
+                        (f) => f && { ...f, customLabel: e.target.value }
                       )
                     }
                   />
                   <Input
                     placeholder="Comment (optional)"
-                    value={formOpen.comment || ""}
+                    value={formOpen.comment || ''}
                     onChange={(e) =>
                       setFormOpen((f) => f && { ...f, comment: e.target.value })
                     }
@@ -793,7 +793,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
                   value={formOpen.categoryId}
                   onChange={(e) =>
                     setFormOpen(
-                      (f) => f && { ...f, categoryId: e.target.value },
+                      (f) => f && { ...f, categoryId: e.target.value }
                     )
                   }
                 >
@@ -830,7 +830,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
                 onClick={handleSave}
                 disabled={isSaving !== null}
               >
-                {isSaving ? "Saving…" : "Save"}
+                {isSaving ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </div>

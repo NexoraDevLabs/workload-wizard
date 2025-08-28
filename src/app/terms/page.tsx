@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Card,
@@ -6,11 +6,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import Footer from "@/components/Footer";
-import DynamicHeaderIsland from "@/components/dynamic-header-island";
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import Footer from '@/components/Footer';
+import DynamicHeaderIsland from '@/components/dynamic-header-island';
 
 export default function TermsOfServicePage() {
   return (

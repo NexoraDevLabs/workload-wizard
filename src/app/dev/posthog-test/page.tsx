@@ -1,38 +1,38 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import { useState } from 'react';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 
 export default function PostHogTestPage() {
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Dev", href: "/dev" },
-    { label: "PostHog Test" },
+    { label: 'Home', href: '/' },
+    { label: 'Dev', href: '/dev' },
+    { label: 'PostHog Test' },
   ];
   const [isInitialized, setIsInitialized] = useState(false);
   const [userProperties, setUserPropertiesState] = useState({
-    name: "Test User",
-    email: "test@example.com",
-    role: "developer",
-    team: "engineering",
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'developer',
+    team: 'engineering',
   });
 
   const initializePostHog = async () => {
     try {
-      const posthog = await import("posthog-js");
+      const posthog = await import('posthog-js');
 
       if (posthog.default && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
         posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
           api_host:
-            process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
+            process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
         });
 
         // Identify user
-        posthog.default.identify("test-user-123", {
-          name: "Test User",
-          email: "test@example.com",
-          role: "developer",
-          team: "engineering",
+        posthog.default.identify('test-user-123', {
+          name: 'Test User',
+          email: 'test@example.com',
+          role: 'developer',
+          team: 'engineering',
         });
 
         setIsInitialized(true);
@@ -46,19 +46,19 @@ export default function PostHogTestPage() {
 
   const testCustomEvents = async () => {
     try {
-      const posthog = await import("posthog-js");
+      const posthog = await import('posthog-js');
 
       if (posthog.default?.capture) {
         // Test custom event tracking
-        posthog.default.capture("test_custom_event", {
-          event_type: "manual_test",
+        posthog.default.capture('test_custom_event', {
+          event_type: 'manual_test',
           timestamp: new Date().toISOString(),
           user_agent: navigator.userAgent,
           viewport: {
             width: window.innerWidth,
             height: window.innerHeight,
           },
-          custom_property: "test_value",
+          custom_property: 'test_value',
         });
 
         // Custom event captured successfully
@@ -72,25 +72,25 @@ export default function PostHogTestPage() {
 
   const testAnalyticsService = async () => {
     try {
-      const { AnalyticsService } = await import("@/lib/analytics");
+      const { AnalyticsService } = await import('@/lib/analytics');
 
       if (AnalyticsService) {
         const analytics = new AnalyticsService();
 
         // Test various analytics methods
-        analytics.track("test_analytics_service", {
-          method: "manual_test",
+        analytics.track('test_analytics_service', {
+          method: 'manual_test',
           timestamp: new Date().toISOString(),
         });
 
-        analytics.trackPageView("/dev/posthog-test", {
-          title: "PostHog Test Page",
+        analytics.trackPageView('/dev/posthog-test', {
+          title: 'PostHog Test Page',
           referrer: document.referrer,
         });
 
-        analytics.trackUserAction("button_click", {
-          button_id: "test_analytics",
-          page: "posthog-test",
+        analytics.trackUserAction('button_click', {
+          button_id: 'test_analytics',
+          page: 'posthog-test',
         });
 
         // Analytics service test completed
@@ -104,7 +104,7 @@ export default function PostHogTestPage() {
 
   const setUserProperties = async () => {
     try {
-      const posthog = await import("posthog-js");
+      const posthog = await import('posthog-js');
 
       if (posthog.default?.people) {
         // Set user properties using the people API
@@ -193,7 +193,7 @@ export default function PostHogTestPage() {
                 <input
                   type="text"
                   value={userProperties.name}
-                  onChange={(e) => updateUserProperty("name", e.target.value)}
+                  onChange={(e) => updateUserProperty('name', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
@@ -204,7 +204,7 @@ export default function PostHogTestPage() {
                 <input
                   type="email"
                   value={userProperties.email}
-                  onChange={(e) => updateUserProperty("email", e.target.value)}
+                  onChange={(e) => updateUserProperty('email', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
@@ -215,7 +215,7 @@ export default function PostHogTestPage() {
                 <input
                   type="text"
                   value={userProperties.role}
-                  onChange={(e) => updateUserProperty("role", e.target.value)}
+                  onChange={(e) => updateUserProperty('role', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
@@ -226,7 +226,7 @@ export default function PostHogTestPage() {
                 <input
                   type="text"
                   value={userProperties.team}
-                  onChange={(e) => updateUserProperty("team", e.target.value)}
+                  onChange={(e) => updateUserProperty('team', e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>

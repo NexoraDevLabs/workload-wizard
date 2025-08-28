@@ -1,16 +1,17 @@
-"use client";
+'use client';
 
-import React, { Component, ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import type { ReactNode } from 'react';
+import React, { Component } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { ShieldX } from "lucide-react";
+} from '@/components/ui/card';
+import { ShieldX } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -38,10 +39,10 @@ export class PermissionErrorBoundary extends Component<Props, State> {
     // Check if this is a permission error
     const isPermissionError =
       (error as any).statusCode === 403 ||
-      error.message === "Forbidden" ||
-      error.message.includes("permission") ||
-      error.message.includes("access denied") ||
-      error.message.includes("Insufficient permissions");
+      error.message === 'Forbidden' ||
+      error.message.includes('permission') ||
+      error.message.includes('access denied') ||
+      error.message.includes('Insufficient permissions');
 
     return {
       hasError: true,
@@ -63,7 +64,7 @@ export class PermissionErrorBoundary extends Component<Props, State> {
     if (this.state.isPermissionError) {
       // Use setTimeout to avoid navigation during render
       setTimeout(() => {
-        window.location.href = "/unauthorised";
+        window.location.href = '/unauthorised';
       }, 100);
     }
   }
@@ -132,14 +133,14 @@ export function usePermissionErrorHandler() {
   const handlePermissionError = (error: Error) => {
     const isPermissionError =
       (error as any).statusCode === 403 ||
-      error.message === "Forbidden" ||
-      error.message.includes("permission") ||
-      error.message.includes("access denied") ||
-      error.message.includes("Insufficient permissions");
+      error.message === 'Forbidden' ||
+      error.message.includes('permission') ||
+      error.message.includes('access denied') ||
+      error.message.includes('Insufficient permissions');
 
     if (isPermissionError) {
       // Redirect to unauthorised page
-      router.push("/unauthorised");
+      router.push('/unauthorised');
     } else {
       // Re-throw other errors
       throw error;
@@ -153,7 +154,7 @@ export function usePermissionErrorHandler() {
  * HOC that wraps components with permission error handling
  */
 export function withPermissionErrorHandling<P extends object>(
-  Component: React.ComponentType<P>,
+  Component: React.ComponentType<P>
 ) {
   return function WrappedComponent(props: P) {
     return (

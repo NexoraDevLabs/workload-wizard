@@ -1,27 +1,27 @@
-import { query, mutation } from "./_generated/server";
-import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
-import { writeAudit } from "./audit";
+import { query, mutation } from './_generated/server';
+import { v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
+import { writeAudit } from './audit';
 
 function isSystemUser(systemRoles?: string[] | null) {
   const roles = systemRoles || [];
-  return roles.some((r) => r === "sysadmin" || r === "developer");
+  return roles.some((r) => r === 'sysadmin' || r === 'developer');
 }
 
 function isOrgAdmin(systemRoles?: string[] | null) {
   const roles = systemRoles || [];
-  return roles.includes("orgadmin");
+  return roles.includes('orgadmin');
 }
 
 async function getActorAndOrg(ctx: any, subject: string) {
   const actor = await ctx.db
-    .query("users")
-    .withIndex("by_subject", (q: any) => q.eq("subject", subject))
+    .query('users')
+    .withIndex('by_subject', (q: any) => q.eq('subject', subject))
     .first();
-  if (!actor) throw new Error("User not found");
+  if (!actor) throw new Error('User not found');
   return {
     actor,
-    orgId: actor.organisationId as Id<"organisations">,
+    orgId: actor.organisationId as Id<'organisations'>,
   };
 }
 
@@ -32,8 +32,8 @@ export const getOrganisationSettings = query({
 
     // Read current settings
     const row = await ctx.db
-      .query("organisation_settings")
-      .withIndex("by_organisation", (q: any) => q.eq("organisationId", orgId))
+      .query('organisation_settings')
+      .withIndex('by_organisation', (q: any) => q.eq('organisationId', orgId))
       .first();
 
     // Provide sane defaults if missing
@@ -41,14 +41,14 @@ export const getOrganisationSettings = query({
       row || {
         organisationId: orgId,
         staffRoleOptions: [
-          "Lecturer",
-          "Senior Lecturer",
-          "Teaching Fellow",
-          "Associate Lecturer",
-          "Professor",
+          'Lecturer',
+          'Senior Lecturer',
+          'Teaching Fellow',
+          'Associate Lecturer',
+          'Professor',
         ],
-        teamOptions: ["Computing", "Engineering", "Business", "Design"],
-        campusOptions: ["Main Campus", "City Centre"],
+        teamOptions: ['Computing', 'Engineering', 'Business', 'Design'],
+        campusOptions: ['Main Campus', 'City Centre'],
         maxClassSizePerGroup: 25,
         baseMaxTeachingAtFTE1: 400,
         baseTotalContractAtFTE1: 550,
@@ -72,20 +72,20 @@ export const getForActor = query({
     if (!identity?.subject) return null;
     const { orgId } = await getActorAndOrg(ctx, identity.subject);
     const row = await ctx.db
-      .query("organisation_settings")
-      .withIndex("by_organisation", (q: any) => q.eq("organisationId", orgId))
+      .query('organisation_settings')
+      .withIndex('by_organisation', (q: any) => q.eq('organisationId', orgId))
       .first();
     return (
       row || {
         organisationId: orgId,
         staffRoleOptions: [
-          "Lecturer",
-          "Senior Lecturer",
-          "Teaching Fellow",
-          "Associate Lecturer",
-          "Professor",
+          'Lecturer',
+          'Senior Lecturer',
+          'Teaching Fellow',
+          'Associate Lecturer',
+          'Professor',
         ],
-        teamOptions: ["Computing", "Engineering", "Business", "Design"],
+        teamOptions: ['Computing', 'Engineering', 'Business', 'Design'],
         baseMaxTeachingAtFTE1: 400,
         baseTotalContractAtFTE1: 550,
         moduleHoursByCredits: [
@@ -115,27 +115,27 @@ export const upsertOrganisationSettings = mutation({
           credits: v.number(),
           teaching: v.number(),
           marking: v.number(),
-        }),
-      ),
+        })
+      )
     ),
     roleMaxTeachingRules: v.optional(
       v.array(
         v.object({
           role: v.string(),
-          mode: v.union(v.literal("percent"), v.literal("fixed")),
+          mode: v.union(v.literal('percent'), v.literal('fixed')),
           value: v.float64(),
-        }),
-      ),
+        })
+      )
     ),
     contractFamilyOptions: v.optional(v.array(v.string())),
     familyMaxTeachingRules: v.optional(
       v.array(
         v.object({
           family: v.string(),
-          mode: v.union(v.literal("percent"), v.literal("fixed")),
+          mode: v.union(v.literal('percent'), v.literal('fixed')),
           value: v.float64(),
-        }),
-      ),
+        })
+      )
     ),
   },
   handler: async (ctx, args) => {
@@ -144,12 +144,12 @@ export const upsertOrganisationSettings = mutation({
 
     // Authorise: sysadmin/developer override, or orgadmin allowed
     if (!isSystemUser(actor.systemRoles) && !isOrgAdmin(actor.systemRoles)) {
-      throw new Error("Permission denied: organisation settings");
+      throw new Error('Permission denied: organisation settings');
     }
 
     const existing = await ctx.db
-      .query("organisation_settings")
-      .withIndex("by_organisation", (q: any) => q.eq("organisationId", orgId))
+      .query('organisation_settings')
+      .withIndex('by_organisation', (q: any) => q.eq('organisationId', orgId))
       .first();
 
     if (existing) {
@@ -177,7 +177,7 @@ export const upsertOrganisationSettings = mutation({
         updatedAt: now,
       });
     } else {
-      await ctx.db.insert("organisation_settings", {
+      await ctx.db.insert('organisation_settings', {
         organisationId: orgId,
         staffRoleOptions: args.staffRoleOptions,
         teamOptions: args.teamOptions,
@@ -206,13 +206,13 @@ export const upsertOrganisationSettings = mutation({
 
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "organisation_settings",
+        action: 'update',
+        entityType: 'organisation_settings',
         entityId: String(orgId),
         performedBy: args.userId,
         organisationId: orgId,
-        details: "Organisation settings updated",
-        severity: "info",
+        details: 'Organisation settings updated',
+        severity: 'info',
       });
     } catch {}
 

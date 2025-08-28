@@ -1,40 +1,40 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useUser } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import { useMemo } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { useAcademicYear } from "@/components/providers/AcademicYearProvider";
-import { Input } from "@/components/ui/input";
+import { useMemo } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { CreateLecturerForm } from "@/components/domain/CreateLecturerForm";
+} from '@/components/ui/dialog';
+import { CreateLecturerForm } from '@/components/domain/CreateLecturerForm';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
@@ -42,38 +42,38 @@ export default function StaffCapacityPage() {
   const anyApi = api as any;
   const convexUser = useQuery(
     anyApi.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   ) as { systemRoles?: string[] } | undefined;
   const isAdminLike = (convexUser?.systemRoles || []).some(
-    (r) => r === "orgadmin" || r === "sysadmin" || r === "developer",
+    (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
   );
 
   const profiles = useQuery(
     (api as any).staff.list,
-    user?.id && isAdminLike ? ({ userId: user.id } as any) : ("skip" as any),
+    user?.id && isAdminLike ? ({ userId: user.id } as any) : ('skip' as any)
   ) as Array<any> | undefined;
 
   // Filters
-  const [search, setSearch] = useState("");
-  const [contract, setContract] = useState<string>("all"); // all | FT | PT | Bank
+  const [search, setSearch] = useState('');
+  const [contract, setContract] = useState<string>('all'); // all | FT | PT | Bank
   const [activeOnly, setActiveOnly] = useState<boolean>(false);
   const [overCapacityOnly, setOverCapacityOnly] = useState<boolean>(false);
-  const [capacityMode, setCapacityMode] = useState<"teaching" | "total">(
-    "teaching",
+  const [capacityMode, setCapacityMode] = useState<'teaching' | 'total'>(
+    'teaching'
   );
   const [openCreate, setOpenCreate] = useState(false);
 
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Staff" },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Staff' },
       ]}
       title="Staff capacity"
       subtitle={
         currentYear
           ? `Academic Year: ${currentYear.name}`
-          : "Select an academic year"
+          : 'Select an academic year'
       }
     >
       <div className="space-y-4">
@@ -127,7 +127,7 @@ export default function StaffCapacityPage() {
                   type="checkbox"
                   checked={activeOnly}
                   onChange={(e) => setActiveOnly(e.target.checked)}
-                />{" "}
+                />{' '}
                 Active only
               </label>
               <label className="text-sm inline-flex items-center gap-2">
@@ -136,7 +136,7 @@ export default function StaffCapacityPage() {
                   type="checkbox"
                   checked={overCapacityOnly}
                   onChange={(e) => setOverCapacityOnly(e.target.checked)}
-                />{" "}
+                />{' '}
                 Over capacity
               </label>
             </div>
@@ -207,14 +207,14 @@ function StaffRow({
     contract: string;
     activeOnly: boolean;
     overCapacityOnly: boolean;
-    capacityMode: "teaching" | "total";
+    capacityMode: 'teaching' | 'total';
   };
 }) {
   const totals = useQuery(
     (api as any).allocations.computeLecturerTotals,
     profile && yearId
       ? ({ lecturerId: profile._id, academicYearId: yearId } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   ) as
     | {
         allocatedTeaching: number;
@@ -228,7 +228,7 @@ function StaffRow({
     (api as any).allocations.listAdminAllocations,
     profile && yearId
       ? ({ lecturerId: profile._id, academicYearId: yearId } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   ) as Array<{ allocation?: { hours?: number } }> | undefined;
 
   // Apply filters when data available
@@ -237,11 +237,11 @@ function StaffRow({
     const q = filters.search.trim().toLowerCase();
     const searchOk =
       !q ||
-      (profile.fullName || "").toLowerCase().includes(q) ||
-      (profile.email || "").toLowerCase().includes(q);
+      (profile.fullName || '').toLowerCase().includes(q) ||
+      (profile.email || '').toLowerCase().includes(q);
     // Contract
     const contractOk =
-      filters.contract === "all" || profile.contract === filters.contract;
+      filters.contract === 'all' || profile.contract === filters.contract;
     // Active
     const activeOk = !filters.activeOnly || Boolean(profile.isActive);
     // Over capacity (requires totals and max values)
@@ -251,7 +251,7 @@ function StaffRow({
     if (!totals) return false;
     const adminExtra = (adminAllocations || []).reduce(
       (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
-      0,
+      0
     );
     const teaching = totals.allocatedTeaching || 0;
     const totalWithAdmin = teaching + (totals.allocatedAdmin || 0) + adminExtra;
@@ -261,7 +261,7 @@ function StaffRow({
       teachingMax > 0 ? (totals.allocatedTeaching / teachingMax) * 100 : 0;
     const totalPct = totalMax > 0 ? (totalWithAdmin / totalMax) * 100 : 0;
     const over =
-      filters.capacityMode === "teaching" ? teachingPct > 100 : totalPct > 100;
+      filters.capacityMode === 'teaching' ? teachingPct > 100 : totalPct > 100;
     return searchOk && contractOk && activeOk && over;
   }, [filters, profile, totals, adminAllocations]);
 
@@ -272,7 +272,7 @@ function StaffRow({
   const teaching = totals?.allocatedTeaching ?? 0;
   const adminStandalone = (adminAllocations || []).reduce(
     (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
-    0,
+    0
   );
   const admin = (totals?.allocatedAdmin ?? 0) + adminStandalone;
   const total = teaching + admin;
@@ -296,7 +296,7 @@ function StaffRow({
     adminPctOfTotal = Math.max(0, adminPctOfTotal - excess);
   }
 
-  const teachingColor = "bg-blue-600";
+  const teachingColor = 'bg-blue-600';
   // Note: totalColor no longer used; stacked bar below shows teaching/admin split
 
   return (
@@ -311,14 +311,14 @@ function StaffRow({
             {!profile.isActive && <Badge variant="secondary">Inactive</Badge>}
           </div>
           <div className="text-muted-foreground">
-            Team: {profile.teamName || "—"}
+            Team: {profile.teamName || '—'}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             Contract: {profile.contract} • FTE {profile.fte}
           </div>
           <div className="text-xs text-muted-foreground">
-            Limits: Max teaching {teachingMax || "–"}h • Contract{" "}
-            {totalMax || "–"}h
+            Limits: Max teaching {teachingMax || '–'}h • Contract{' '}
+            {totalMax || '–'}h
           </div>
         </div>
         <div className="flex-1 px-4">
@@ -328,7 +328,7 @@ function StaffRow({
               <div className="flex justify-between text-[11px] text-muted-foreground">
                 <span>Teaching</span>
                 <span>
-                  {teaching}/{teachingMax || "–"}h (
+                  {teaching}/{teachingMax || '–'}h (
                   {teachingMax ? teachingPct : 0}%)
                 </span>
               </div>
@@ -354,7 +354,7 @@ function StaffRow({
                           Max teaching
                         </span>
                         <span className="ml-auto font-medium">
-                          {teachingMax || "–"}h
+                          {teachingMax || '–'}h
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ function StaffRow({
                         </span>
                       </div>
                       <div className="pt-1 text-[11px] text-muted-foreground">
-                        Used:{" "}
+                        Used:{' '}
                         <span className="font-medium text-foreground">
                           {teachingPct}%
                         </span>
@@ -387,7 +387,7 @@ function StaffRow({
               <div className="flex justify-between text-[11px] text-muted-foreground">
                 <span>Total</span>
                 <span>
-                  {total}/{totalMax || "–"}h ({totalMax ? totalPct : 0}%)
+                  {total}/{totalMax || '–'}h ({totalMax ? totalPct : 0}%)
                 </span>
               </div>
               <TooltipProvider>
@@ -416,7 +416,7 @@ function StaffRow({
                           Contract baseline
                         </span>
                         <span className="ml-auto font-medium">
-                          {totalMax || "–"}h
+                          {totalMax || '–'}h
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -430,10 +430,10 @@ function StaffRow({
                         <span className="ml-auto font-medium">{admin}h</span>
                       </div>
                       <div className="pt-1 text-[11px] text-muted-foreground">
-                        Used:{" "}
+                        Used:{' '}
                         <span className="font-medium text-foreground">
                           {total}h
-                        </span>{" "}
+                        </span>{' '}
                         ({totalPct}%)
                       </div>
                     </div>

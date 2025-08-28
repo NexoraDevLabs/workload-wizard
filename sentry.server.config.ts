@@ -1,10 +1,10 @@
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 // Silence Sentry SDK telemetry without relying on typed options
-process.env.SENTRY_TELEMETRY_DISABLED = "1";
+process.env.SENTRY_TELEMETRY_DISABLED = '1';
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
   debug: false,
 
   // Enable logs to be sent to Sentry
@@ -14,8 +14,8 @@ Sentry.init({
   tracesSampleRate: 1.0,
 
   // Environment
-  environment: process.env.NODE_ENV || "development",
+  environment: process.env.NODE_ENV || 'development',
 
   // Release version
-  release: process.env.NEXT_PUBLIC_APP_VERSION || "v0.4.0",
+  release: process.env.NEXT_PUBLIC_APP_VERSION || 'v0.4.0',
 });

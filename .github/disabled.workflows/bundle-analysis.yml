@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
           cache: npm
 
       - name: Detect pnpm
@@ -38,7 +38,7 @@ jobs:
 
       - name: Build with stats
         env:
-          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_TELEMETRY_DISABLED: '1'
         run: |
           # Create a stats.json from Next build
           npx --yes next-build-watcher@1 --stats-json -- \
@@ -46,7 +46,7 @@ jobs:
 
       - name: Analyze bundle
         env:
-          ANALYZE: "true"
+          ANALYZE: 'true'
         run: |
           # Generate bundle analysis report
           if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then

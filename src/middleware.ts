@@ -2,10 +2,10 @@ import {
   clerkMiddleware,
   createRouteMatcher,
   clerkClient,
-} from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "../convex/_generated/api";
+} from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '../convex/_generated/api';
 
 // Simple token bucket per-IP for a few sensitive routes
 const RATE_LIMITS: Record<string, { tokens: number; lastRefill: number }> =
@@ -36,28 +36,28 @@ function shouldRateLimit(ip: string): boolean {
 }
 
 const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/landing",
-  "/api/webhooks/clerk",
-  "/terms",
-  "/privacy",
-  "/reset-password",
-  "/studio(.*)", // Sanity Studio handles its own auth
-  "/blog(.*)", // Make blog routes publicly accessible
-  "/support", // Make support route publicly accessible
+  '/',
+  '/sign-in(.*)',
+  '/landing',
+  '/api/webhooks/clerk',
+  '/terms',
+  '/privacy',
+  '/reset-password',
+  '/studio(.*)', // Sanity Studio handles its own auth
+  '/blog(.*)', // Make blog routes publicly accessible
+  '/support', // Make support route publicly accessible
 ]);
-const isAccountRoute = createRouteMatcher(["/account(.*)"]);
+const isAccountRoute = createRouteMatcher(['/account(.*)']);
 const isApiRoute = createRouteMatcher([
-  "/api/complete-onboarding",
-  "/api/update-user-email",
-  "/api/admin/dev-tools(.*)", // Allow admin dev tools API routes
+  '/api/complete-onboarding',
+  '/api/update-user-email',
+  '/api/admin/dev-tools(.*)', // Allow admin dev tools API routes
   // Feature flag routes removed
-  "/api/admin/reset-password", // Allow admin password reset
+  '/api/admin/reset-password', // Allow admin password reset
 ]);
 const isOnboardingRoute = createRouteMatcher([
-  "/onboarding",
-  "/onboarding-success",
+  '/onboarding',
+  '/onboarding-success',
 ]);
 
 function getConvex(): ConvexHttpClient | null {
@@ -87,21 +87,21 @@ export default clerkMiddleware(async (auth, req) => {
     const url = new URL(req.url);
     const path = url.pathname;
     const ip =
-      req.headers.get("x-forwarded-for") ||
-      req.headers.get("x-real-ip") ||
-      "unknown";
+      req.headers.get('x-forwarded-for') ||
+      req.headers.get('x-real-ip') ||
+      'unknown';
     const isSensitive = [
-      "/api/analytics/track",
-      "/api/reset-password",
-      "/api/admin/reset-password",
-      "/api/update-user",
-      "/api/update-user-email",
-      "/api/update-user-username",
+      '/api/analytics/track',
+      '/api/reset-password',
+      '/api/admin/reset-password',
+      '/api/update-user',
+      '/api/update-user-email',
+      '/api/update-user-username',
     ].some((p) => path.startsWith(p));
     if (isSensitive && shouldRateLimit(ip)) {
       return NextResponse.json(
-        { error: "Rate limit exceeded" },
-        { status: 429 },
+        { error: 'Rate limit exceeded' },
+        { status: 429 }
       );
     }
     return NextResponse.next();
@@ -126,7 +126,7 @@ export default clerkMiddleware(async (auth, req) => {
       };
       const hasCompletedInClaims = Boolean(
         claimsAny?.publicMetadata?.onboardingCompleted ??
-          claimsAny?.metadata?.publicMetadata?.onboardingCompleted,
+          claimsAny?.metadata?.publicMetadata?.onboardingCompleted
       );
 
       let hasCompletedOnboarding = hasCompletedInClaims;
@@ -135,7 +135,7 @@ export default clerkMiddleware(async (auth, req) => {
       if (!hasCompletedOnboarding) {
         try {
           const convex = getConvex();
-          if (!convex) throw new Error("Convex URL not configured");
+          if (!convex) throw new Error('Convex URL not configured');
           const user = await convex.query(api.users.getBySubject, {
             subject: userId,
           });
@@ -155,7 +155,7 @@ export default clerkMiddleware(async (auth, req) => {
               liveUser as unknown as {
                 publicMetadata?: Record<string, unknown>;
               }
-            )?.publicMetadata?.onboardingCompleted,
+            )?.publicMetadata?.onboardingCompleted
           );
         } catch (clerkErr) {
           // Clerk live metadata check failed
@@ -164,12 +164,12 @@ export default clerkMiddleware(async (auth, req) => {
 
       // Redirects based on onboarding status
       if (!hasCompletedOnboarding && !isOnboardingRoute(req)) {
-        const onboardingUrl = new URL("/onboarding", req.url);
+        const onboardingUrl = new URL('/onboarding', req.url);
         return NextResponse.redirect(onboardingUrl);
       }
 
       if (hasCompletedOnboarding && isOnboardingRoute(req)) {
-        const dashboardUrl = new URL("/dashboard", req.url);
+        const dashboardUrl = new URL('/dashboard', req.url);
         return NextResponse.redirect(dashboardUrl);
       }
     } catch (error) {
@@ -186,8 +186,8 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for API routes
-    "/(api|trpc)(.*)",
+    '/(api|trpc)(.*)',
   ],
 };

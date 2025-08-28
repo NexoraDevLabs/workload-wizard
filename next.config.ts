@@ -1,12 +1,12 @@
-import { withSentryConfig } from "@sentry/nextjs";
-import type { NextConfig } from "next";
+import { withSentryConfig } from '@sentry/nextjs';
+import type { NextConfig } from 'next';
 
 // Bundle analyzer configuration
 let withBundleAnalyzer = (config: NextConfig) => config;
 
-if (process.env.ANALYZE === "true") {
+if (process.env.ANALYZE === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  withBundleAnalyzer = require("@next/bundle-analyzer").default({
+  withBundleAnalyzer = require('@next/bundle-analyzer').default({
     enabled: true,
   });
 }
@@ -20,15 +20,15 @@ const nextConfig: NextConfig = {
   webpack: (config) => {
     // Reduce noisy infrastructure logs in CI
     config.infrastructureLogging = {
-      level: "error",
+      level: 'error',
     } as any;
     return config;
   },
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "cdn.sanity.io",
+        protocol: 'https',
+        hostname: 'cdn.sanity.io',
       },
     ],
   },
@@ -70,8 +70,8 @@ const config = withBundleAnalyzer(
     // For all available options, see:
     // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-    org: "smcnab-tech",
-    project: "workload-wizard",
+    org: 'smcnab-tech',
+    project: 'workload-wizard',
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -80,7 +80,7 @@ const config = withBundleAnalyzer(
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
-  }),
+  })
 );
 
 export default config;

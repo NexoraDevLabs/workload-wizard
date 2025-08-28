@@ -1,9 +1,18 @@
-import { Webhook } from "svix";
-import { headers } from "next/headers";
-import { WebhookEvent } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
-import { statsigAdapter } from "@/flags";
+import { Webhook } from 'svix';
+import { headers } from 'next/headers';
+import type { WebhookEvent } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+
+// Lazy import to avoid build-time issues
+let statsigAdapter: any = null;
+async function getStatsigAdapter() {
+  if (!statsigAdapter) {
+    const { statsigAdapter: adapter } = await import('@/flags');
+    statsigAdapter = adapter;
+  }
+  return statsigAdapter;
+}
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -12,7 +21,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -26,23 +35,23 @@ export async function POST(req: Request) {
 
   if (!WEBHOOK_SECRET) {
     // CLERK_WEBHOOK_SECRET not found in environment variables
-    return new Response("Webhook secret not configured", {
+    return new Response('Webhook secret not configured', {
       status: 500,
     });
   }
 
   // Get the headers
   const headerPayload = await headers();
-  const svix_id = headerPayload.get("svix-id");
-  const svix_timestamp = headerPayload.get("svix-timestamp");
-  const svix_signature = headerPayload.get("svix-signature");
+  const svix_id = headerPayload.get('svix-id');
+  const svix_timestamp = headerPayload.get('svix-timestamp');
+  const svix_signature = headerPayload.get('svix-signature');
 
   // Webhook headers logged
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
     // Missing svix headers
-    return new Response("Error occured -- no svix headers", {
+    return new Response('Error occured -- no svix headers', {
       status: 400,
     });
   }
@@ -61,14 +70,14 @@ export async function POST(req: Request) {
   // Verify the payload with the headers
   try {
     evt = wh.verify(body, {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
+      'svix-id': svix_id,
+      'svix-timestamp': svix_timestamp,
+      'svix-signature': svix_signature,
     }) as WebhookEvent;
     // Webhook verified successfully
-  } catch (err) {
+  } catch {
     // Error verifying webhook
-    return new Response("Error occured", {
+    return new Response('Error occured', {
       status: 400,
     });
   }
@@ -80,19 +89,19 @@ export async function POST(req: Request) {
 
   try {
     switch (eventType) {
-      case "user.created":
+      case 'user.created':
         // Handling user.created
         await handleUserCreated(evt.data);
         break;
-      case "user.updated":
+      case 'user.updated':
         // Handling user.updated
         await handleUserUpdated(evt.data);
         break;
-      case "user.deleted":
+      case 'user.deleted':
         // Handling user.deleted
         await handleUserDeleted(evt.data);
         break;
-      case "session.created":
+      case 'session.created':
         // Handling session.created - THIS IS FOR LOGIN TRACKING!
         await handleSessionCreated(evt.data);
         break;
@@ -102,13 +111,35 @@ export async function POST(req: Request) {
     // Webhook processed successfully
   } catch (error) {
     // Error handling webhook
-    return new Response("Error processing webhook", { status: 500 });
+    return new Response('Error processing webhook', { status: 500 });
   }
 
-  return new Response("Webhook processed successfully", { status: 200 });
+  return new Response('Webhook processed successfully', { status: 200 });
 }
 
-async function handleUserCreated(userData: any) {
+interface ClerkUserData {
+  id: string;
+  email_addresses: Array<{
+    email_address: string;
+    id: string;
+  }>;
+  primary_email_address_id?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+  image_url?: string;
+  public_metadata?: {
+    roles?: string[];
+    role?: string;
+    organisationId?: string;
+  };
+}
+
+interface DeletedUserData {
+  id?: string;
+}
+
+async function handleUserCreated(userData: ClerkUserData) {
   // Handling user.created event for user
 
   const emailAddresses = (userData.email_addresses || []) as Array<{
@@ -116,7 +147,7 @@ async function handleUserCreated(userData: any) {
     id: string;
   }>;
   const primaryEmail = emailAddresses.find(
-    (email) => email.id === (userData.primary_email_address_id || undefined),
+    (email) => email.id === (userData.primary_email_address_id || undefined)
   );
 
   if (!primaryEmail) {
@@ -131,45 +162,46 @@ async function handleUserCreated(userData: any) {
     (publicMetadata.roles as string[] | undefined) ??
     ((publicMetadata.role as string | undefined)
       ? [publicMetadata.role as string]
-      : ["user"]);
-  const organisationId = (publicMetadata.organisationId as string) || "";
+      : ['user']);
+  const organisationId = (publicMetadata.organisationId as string) || '';
 
   // Creating user in Convex
 
   try {
     // Create user in Convex
     await getConvexClient().mutation(api.users.create, {
-      email: primaryEmail.email_address as string,
-      username: (userData as unknown as { username?: string }).username || "",
-      givenName: (userData.first_name as string) || "",
-      familyName: (userData.last_name as string) || "",
+      email: primaryEmail.email_address,
+      username: (userData as unknown as { username?: string }).username || '',
+      givenName: (userData.first_name as string) || '',
+      familyName: (userData.last_name as string) || '',
       fullName:
-        `${(userData.first_name as string) || ""} ${(userData.last_name as string) || ""}`.trim(),
+        `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
       systemRoles: roles,
       // webhook path may include organisationId; API accepts optional and validates/derives server-side
       organisationId: organisationId as unknown as any,
       pictureUrl: userData.image_url as string,
-      subject: userData.id as string,
-      tokenIdentifier: primaryEmail.id as string,
+      subject: userData.id,
+      tokenIdentifier: primaryEmail.id,
     });
 
     // User created in Convex
 
     // Also create the user in Statsig Users by logging an event
-    const Statsig = await statsigAdapter.initialize();
+    const adapter = await getStatsigAdapter();
+    const Statsig = await adapter.initialize();
     await Statsig.logEvent(
       {
-        userID: userData.id as string,
-        email: primaryEmail.email_address as string,
+        userID: userData.id,
+        email: primaryEmail.email_address,
         custom: {
           fullName:
-            `${(userData.first_name as string) || ""} ${(userData.last_name as string) || ""}`.trim(),
+            `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
           organisationId,
           roles,
-          source: "clerk.webhook",
+          source: 'clerk.webhook',
         },
       },
-      "user_created",
+      'user_created'
     );
     await Statsig.flush();
   } catch (error) {
@@ -178,7 +210,7 @@ async function handleUserCreated(userData: any) {
   }
 }
 
-async function handleUserUpdated(userData: any) {
+async function handleUserUpdated(userData: ClerkUserData) {
   // Handling user.updated event for user
 
   const emailAddresses = (userData.email_addresses || []) as Array<{
@@ -186,7 +218,7 @@ async function handleUserUpdated(userData: any) {
     id: string;
   }>;
   const primaryEmail = emailAddresses.find(
-    (email) => email.id === (userData.primary_email_address_id || undefined),
+    (email) => email.id === (userData.primary_email_address_id || undefined)
   );
 
   const publicMetadata =
@@ -194,14 +226,13 @@ async function handleUserUpdated(userData: any) {
 
   // Update user in Convex using webhook-specific mutation
   await getConvexClient().mutation(api.users.updateByWebhook, {
-    userId: userData.id as string,
+    userId: userData.id,
     email: primaryEmail?.email_address as string,
-    username: ((userData as unknown as { username?: string }).username ||
-      "") as string,
+    username: (userData as unknown as { username?: string }).username || '',
     givenName: userData.first_name as string,
     familyName: userData.last_name as string,
     fullName:
-      `${(userData.first_name as string) || ""} ${(userData.last_name as string) || ""}`.trim(),
+      `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
     systemRoles:
       (publicMetadata.roles as string[]) ??
       ((publicMetadata.role as string | undefined)
@@ -214,41 +245,48 @@ async function handleUserUpdated(userData: any) {
   // User updated in Convex
 
   // Mirror update to Statsig
-  const Statsig = await statsigAdapter.initialize();
+  const adapter = await getStatsigAdapter();
+  const Statsig = await adapter.initialize();
   await Statsig.logEvent(
     {
-      userID: userData.id as string,
+      userID: userData.id,
       email: primaryEmail?.email_address as string,
       custom: {
         fullName:
-          `${(userData.first_name as string) || ""} ${(userData.last_name as string) || ""}`.trim(),
+          `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
         organisationId: (publicMetadata.organisationId as string) || undefined,
         roles:
           (publicMetadata.roles as string[]) ||
           ((publicMetadata.role as string | undefined)
             ? [publicMetadata.role as string]
             : []),
-        source: "clerk.webhook",
+        source: 'clerk.webhook',
       },
     },
-    "user_updated",
+    'user_updated'
   );
   await Statsig.flush();
 }
 
-async function handleUserDeleted(userData: any) {
+async function handleUserDeleted(userData: DeletedUserData) {
   // Handling user.deleted event for user
 
-  // Soft delete user in Convex
-  await getConvexClient().mutation(api.users.remove, {
-    userId: userData.id as string,
-  });
+      // Soft delete user in Convex
+    if (userData.id) {
+      await getConvexClient().mutation(api.users.remove, {
+        userId: userData.id,
+      });
+    }
 
   // User deleted from Convex
 }
 
+interface SessionData {
+  user_id?: string;
+}
+
 async function handleSessionCreated(sessionData: unknown) {
-  const s = sessionData as { user_id?: string };
+  const s = sessionData as SessionData;
   // Handling session.created event for user
   // Session data logged
 
@@ -261,10 +299,11 @@ async function handleSessionCreated(sessionData: unknown) {
     // Last sign in time updated in Convex for user
 
     // Log a login event to Statsig to ensure the user appears in Users
-    const Statsig = await statsigAdapter.initialize();
+    const adapter = await getStatsigAdapter();
+    const Statsig = await adapter.initialize();
     await Statsig.logEvent(
-      { userID: (s.user_id as string) || "unknown" },
-      "login",
+      { userID: (s.user_id as string) || 'unknown' },
+      'login'
     );
     await Statsig.flush();
   } catch (error) {

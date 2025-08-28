@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   BadgeCheck,
@@ -9,12 +9,12 @@ import {
   Palette,
   Shield,
   LifeBuoy,
-} from "lucide-react";
-import { useUser, useClerk } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+} from 'lucide-react';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +23,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+} from '@/components/ui/sidebar';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export function NavUser() {
   const { user, isLoaded } = useUser();
@@ -58,23 +58,23 @@ export function NavUser() {
     return null;
   }
 
-  const userName = user.fullName || user.firstName || "User";
-  const userEmail = user.emailAddresses[0]?.emailAddress || "";
+  const userName = user.fullName || user.firstName || 'User';
+  const userEmail = user.emailAddresses[0]?.emailAddress || '';
   const userRole = user.publicMetadata?.role as string;
   const avatarUrl = user.imageUrl;
 
   // Generate initials from name
   const getInitials = (name: string) => {
     return name
-      .split(" ")
+      .split(' ')
       .map((part) => part.charAt(0))
-      .join("")
+      .join('')
       .toUpperCase()
       .slice(0, 2);
   };
 
   const handleLogout = async () => {
-    await signOut(() => router.push("/sign-in"));
+    await signOut(() => router.push('/sign-in'));
   };
 
   return (
@@ -105,7 +105,7 @@ export function NavUser() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >

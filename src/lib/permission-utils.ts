@@ -2,7 +2,7 @@ import {
   type PermissionId,
   PERMISSION_SCOPES,
   USER_ROLES,
-} from "./permissions";
+} from './permissions';
 
 /**
  * Centralized gating utility for org vs system roles
@@ -11,7 +11,7 @@ import {
 export class PermissionGatingUtil {
   constructor(
     private userRole: string | undefined,
-    private organisationId?: string,
+    private organisationId?: string
   ) {}
 
   /**
@@ -64,18 +64,18 @@ export class PermissionGatingUtil {
     // This would typically check against a permission matrix
     // For now, using role-based checks
     switch (permissionId) {
-      case "users.view":
+      case 'users.view':
         return (
           this.userRole === USER_ROLES.ORG_ADMIN ||
           this.userRole === USER_ROLES.LECTURER
         );
-      case "users.create":
-      case "users.edit":
-      case "users.delete":
+      case 'users.create':
+      case 'users.edit':
+      case 'users.delete':
         return this.userRole === USER_ROLES.ORG_ADMIN;
-      case "permissions.manage":
+      case 'permissions.manage':
         return this.userRole === USER_ROLES.ORG_ADMIN;
-      case "audit.view":
+      case 'audit.view':
         return this.userRole === USER_ROLES.ORG_ADMIN;
       default:
         return false;
@@ -91,12 +91,12 @@ export class PermissionGatingUtil {
       isSystemAction?: boolean;
       hideForbidden?: boolean;
       fallbackValue?: any;
-    } = {},
+    } = {}
   ): {
     hasAccess: boolean;
     shouldHide: boolean;
     fallbackValue: any;
-    scope: "system" | "org";
+    scope: 'system' | 'org';
   } {
     const {
       isSystemAction = false,
@@ -105,7 +105,7 @@ export class PermissionGatingUtil {
     } = options;
 
     const hasAccess = this.hasPermission(permissionId, isSystemAction);
-    const scope = isSystemAction ? "system" : "org";
+    const scope = isSystemAction ? 'system' : 'org';
 
     return {
       hasAccess,
@@ -123,7 +123,7 @@ export class PermissionGatingUtil {
     options: {
       isSystemAction?: boolean;
       disabledText?: string;
-    } = {},
+    } = {}
   ): {
     disabled: boolean;
     disabledText?: string;
@@ -131,7 +131,7 @@ export class PermissionGatingUtil {
   } {
     const {
       isSystemAction = false,
-      disabledText = "Insufficient permissions",
+      disabledText = 'Insufficient permissions',
     } = options;
 
     const hasAccess = this.hasPermission(permissionId, isSystemAction);
@@ -151,17 +151,17 @@ export class PermissionGatingUtil {
     options: {
       isSystemAction?: boolean;
       actionName?: string;
-    } = {},
+    } = {}
   ): {
     canPerform: boolean;
     errorMessage?: string;
-    scope: "system" | "org";
+    scope: 'system' | 'org';
   } {
-    const { isSystemAction = false, actionName = "perform this action" } =
+    const { isSystemAction = false, actionName = 'perform this action' } =
       options;
 
     const hasAccess = this.hasPermission(permissionId, isSystemAction);
-    const scope = isSystemAction ? "system" : "org";
+    const scope = isSystemAction ? 'system' : 'org';
 
     return {
       canPerform: hasAccess,
@@ -172,7 +172,7 @@ export class PermissionGatingUtil {
     } as {
       canPerform: boolean;
       errorMessage?: string;
-      scope: "system" | "org";
+      scope: 'system' | 'org';
     };
   }
 
@@ -180,7 +180,7 @@ export class PermissionGatingUtil {
    * Check if user can access users module
    */
   canAccessUsers(): boolean {
-    return this.hasPermission("users.view");
+    return this.hasPermission('users.view');
   }
 
   /**
@@ -188,9 +188,9 @@ export class PermissionGatingUtil {
    */
   canManageUsers(): boolean {
     return (
-      this.hasPermission("users.create") ||
-      this.hasPermission("users.edit") ||
-      this.hasPermission("users.delete")
+      this.hasPermission('users.create') ||
+      this.hasPermission('users.edit') ||
+      this.hasPermission('users.delete')
     );
   }
 
@@ -198,14 +198,14 @@ export class PermissionGatingUtil {
    * Check if user can manage permissions
    */
   canManagePermissions(): boolean {
-    return this.hasPermission("permissions.manage");
+    return this.hasPermission('permissions.manage');
   }
 
   /**
    * Check if user can view audit logs
    */
   canViewAudit(): boolean {
-    return this.hasPermission("audit.view");
+    return this.hasPermission('audit.view');
   }
 }
 
@@ -214,7 +214,7 @@ export class PermissionGatingUtil {
  */
 export function createPermissionGatingUtil(
   userRole: string | undefined,
-  organisationId?: string,
+  organisationId?: string
 ): PermissionGatingUtil {
   return new PermissionGatingUtil(userRole, organisationId);
 }
@@ -224,31 +224,31 @@ export function createPermissionGatingUtil(
  */
 export function canViewUsers(
   userRole?: string,
-  organisationId?: string,
+  organisationId?: string
 ): boolean {
   return createPermissionGatingUtil(userRole, organisationId).canAccessUsers();
 }
 
 export function canManageUsers(
   userRole?: string,
-  organisationId?: string,
+  organisationId?: string
 ): boolean {
   return createPermissionGatingUtil(userRole, organisationId).canManageUsers();
 }
 
 export function canManagePermissions(
   userRole?: string,
-  organisationId?: string,
+  organisationId?: string
 ): boolean {
   return createPermissionGatingUtil(
     userRole,
-    organisationId,
+    organisationId
   ).canManagePermissions();
 }
 
 export function canViewAudit(
   userRole?: string,
-  organisationId?: string,
+  organisationId?: string
 ): boolean {
   return createPermissionGatingUtil(userRole, organisationId).canViewAudit();
 }

@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { AlertTriangle, Trash2, X } from "lucide-react";
+} from '@/components/ui/card';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 type GenericDeleteModalProps =
   | {
@@ -43,7 +43,7 @@ type GenericDeleteModalProps =
     };
 
 export function GenericDeleteModal(props: GenericDeleteModalProps) {
-  const isControlled = typeof (props as any).open === "boolean";
+  const isControlled = typeof (props as any).open === 'boolean';
   const isOpen = isControlled ? (props as any).open : true;
 
   const { isDeleting = false } = props as any;
@@ -71,25 +71,25 @@ export function GenericDeleteModal(props: GenericDeleteModalProps) {
 
   const title =
     (props as any).title ??
-    (entityType ? `Delete ${entityType}` : "Are you sure?");
+    (entityType ? `Delete ${entityType}` : 'Are you sure?');
   const description =
     (props as any).description ??
     (entityType
-      ? "This action cannot be undone"
-      : "This action cannot be undone.");
+      ? 'This action cannot be undone'
+      : 'This action cannot be undone.');
   const confirmText =
     (props as any).confirmText ??
-    (entityType ? `Delete ${entityType}` : "Confirm");
+    (entityType ? `Delete ${entityType}` : 'Confirm');
 
   const displayName =
     entityCode && entityName
       ? `${entityCode} — ${entityName}`
-      : (entityName ?? "");
+      : (entityName ?? '');
 
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: "rgba(0,0,0,0.06)" }}
+      style={{ background: 'rgba(0,0,0,0.06)' }}
     >
       <Card className="w-full max-w-md">
         <CardHeader className="pb-4">

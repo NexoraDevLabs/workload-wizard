@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
-import { EditCourseForm } from "@/components/domain/EditCourseForm";
-import { PermissionGate } from "@/components/common/PermissionGate";
-import { GenericDeleteModal } from "@/components/domain/GenericDeleteModal";
-import { useToast } from "@/hooks/use-toast";
-import { Edit, Trash2 } from "lucide-react";
-import { withToast } from "@/lib/utils";
+import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
+import { EditCourseForm } from '@/components/domain/EditCourseForm';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
+import { useToast } from '@/hooks/use-toast';
+import { Edit, Trash2 } from 'lucide-react';
+import { withToast } from '@/lib/utils';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function CoursesPage() {
   const { user } = useUser();
@@ -28,10 +28,10 @@ export default function CoursesPage() {
 
   const createCourse = useMutation(api.courses.create);
   const deleteCourse = useMutation(api.courses.remove);
-  const [form, setForm] = useState({ code: "", name: "", campuses: "" });
+  const [form, setForm] = useState({ code: '', name: '', campuses: '' });
   const codeAvailability = useQuery(
     (api as any).courses.isCodeAvailable,
-    form.code.trim() ? ({ code: form.code.trim() } as any) : ("skip" as any),
+    form.code.trim() ? ({ code: form.code.trim() } as any) : ('skip' as any)
   ) as { available: boolean } | undefined;
   const [editingCourse, setEditingCourse] = useState<any>(null);
   const [deletingCourse, setDeletingCourse] = useState<any>(null);
@@ -45,7 +45,7 @@ export default function CoursesPage() {
       form.code.trim().length > 0 &&
       form.name.trim().length > 0 &&
       (codeAvailability ? codeAvailability.available : true),
-    [form, codeAvailability],
+    [form, codeAvailability]
   );
 
   const handleCreateCourse = async (e: React.FormEvent) => {
@@ -57,24 +57,24 @@ export default function CoursesPage() {
         ...(form.campuses.trim()
           ? {
               campuses: form.campuses
-                .split(",")
+                .split(',')
                 .map((s) => s.trim())
                 .filter(Boolean),
             }
           : {}),
       } as any);
-      setForm({ code: "", name: "", campuses: "" });
+      setForm({ code: '', name: '', campuses: '' });
       toast({
-        title: "Course created",
+        title: 'Course created',
         description: `${form.code.trim()} has been created successfully.`,
-        variant: "success",
+        variant: 'success',
       });
     } catch (error) {
       toast({
-        title: "Failed to create course",
+        title: 'Failed to create course',
         description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -98,15 +98,15 @@ export default function CoursesPage() {
         return next;
       });
       await withToast(
-        () => deleteCourse({ id: toDelete._id as any }),
+        () => deleteCourse({ id: toDelete._id }),
         {
           success: {
-            title: "Course deleted",
+            title: 'Course deleted',
             description: `${toDelete.code} has been deleted successfully.`,
           },
-          error: { title: "Failed to delete course" },
+          error: { title: 'Failed to delete course' },
         },
-        toast,
+        toast
       );
       setDeletingCourse(null);
     } catch (error) {
@@ -135,8 +135,8 @@ export default function CoursesPage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Courses" },
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Courses' },
       ]}
       title="Courses"
       subtitle="View courses and manage years"
@@ -187,8 +187,8 @@ export default function CoursesPage() {
               <div className="space-y-2" data-testid="campuses-section">
                 <Label>Campuses (optional)</Label>
                 <div className="flex flex-wrap gap-2">
-                  {(form.campuses || "")
-                    .split(",")
+                  {(form.campuses || '')
+                    .split(',')
                     .map((s) => s.trim())
                     .filter(Boolean)
                     .map((c) => (
@@ -196,12 +196,12 @@ export default function CoursesPage() {
                         key={c}
                         type="button"
                         onClick={() => {
-                          const list = (form.campuses || "")
-                            .split(",")
+                          const list = (form.campuses || '')
+                            .split(',')
                             .map((s) => s.trim())
                             .filter(Boolean)
                             .filter((x) => x !== c);
-                          setForm((f) => ({ ...f, campuses: list.join(", ") }));
+                          setForm((f) => ({ ...f, campuses: list.join(', ') }));
                         }}
                         className="px-2 py-1 rounded-full text-xs bg-muted hover:bg-muted/70"
                         title="Click to remove"
@@ -218,13 +218,13 @@ export default function CoursesPage() {
                     onChange={(e) => {
                       const val = e.target.value;
                       if (!val) return;
-                      const list = (form.campuses || "")
-                        .split(",")
+                      const list = (form.campuses || '')
+                        .split(',')
                         .map((s) => s.trim())
                         .filter(Boolean);
                       if (!list.includes(val)) list.push(val);
-                      setForm((f) => ({ ...f, campuses: list.join(", ") }));
-                      e.currentTarget.value = "";
+                      setForm((f) => ({ ...f, campuses: list.join(', ') }));
+                      e.currentTarget.value = '';
                     }}
                   >
                     <option value="">Add campus…</option>
@@ -285,7 +285,7 @@ export default function CoursesPage() {
                           className="hover:underline flex-1"
                           data-testid={`course-link-${c.code}`}
                         >
-                          <span className="font-medium">{c.code}</span> —{" "}
+                          <span className="font-medium">{c.code}</span> —{' '}
                           {c.name}
                         </Link>
                         <div className="flex items-center space-x-2">

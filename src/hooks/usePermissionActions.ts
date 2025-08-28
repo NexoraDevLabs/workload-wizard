@@ -1,8 +1,8 @@
-import { useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { usePermissions } from "./usePermissions";
-import { useToast } from "./use-toast";
-import { type PermissionId } from "@/lib/permissions";
+import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { usePermissions } from './usePermissions';
+import { useToast } from './use-toast';
+import { type PermissionId } from '@/lib/permissions';
 
 interface UsePermissionActionsOptions {
   organisationId?: string;
@@ -11,7 +11,7 @@ interface UsePermissionActionsOptions {
 }
 
 export function usePermissionActions(
-  options: UsePermissionActionsOptions = {},
+  options: UsePermissionActionsOptions = {}
 ) {
   const {
     organisationId,
@@ -32,11 +32,11 @@ export function usePermissionActions(
         actionName?: string;
         onDenied?: () => void;
         onError?: (error: Error) => void;
-      } = {},
+      } = {}
     ): Promise<T | null> => {
       const {
         isSystemAction = false,
-        actionName = "this action",
+        actionName = 'this action',
         onDenied,
         onError,
       } = options;
@@ -52,11 +52,11 @@ export function usePermissionActions(
           // Handle permission denied
           if (showToastOnDenied) {
             toast({
-              title: "Access Denied",
+              title: 'Access Denied',
               description:
                 actionState.errorMessage ||
                 `You don't have permission to perform ${actionName}`,
-              variant: "destructive",
+              variant: 'destructive',
             });
           }
 
@@ -66,7 +66,7 @@ export function usePermissionActions(
 
           // Redirect to unauthorized page if enabled
           if (redirectOnDenied) {
-            router.push("/unauthorised");
+            router.push('/unauthorised');
           }
 
           return null;
@@ -83,9 +83,9 @@ export function usePermissionActions(
         } else {
           // Default error handling
           toast({
-            title: "Error",
-            description: errorObj.message || "An unexpected error occurred",
-            variant: "destructive",
+            title: 'Error',
+            description: errorObj.message || 'An unexpected error occurred',
+            variant: 'destructive',
           });
         }
 
@@ -99,14 +99,14 @@ export function usePermissionActions(
       organisationId,
       redirectOnDenied,
       showToastOnDenied,
-    ],
+    ]
   );
 
   const checkPermission = useCallback(
     (permissionId: PermissionId, isSystemAction = false): boolean => {
       return permissions.hasPermission(permissionId, isSystemAction);
     },
-    [permissions],
+    [permissions]
   );
 
   const getActionState = useCallback(
@@ -115,11 +115,11 @@ export function usePermissionActions(
       options: {
         isSystemAction?: boolean;
         actionName?: string;
-      } = {},
+      } = {}
     ) => {
       return permissions.gateActionState(permissionId, options);
     },
-    [permissions],
+    [permissions]
   );
 
   return {
@@ -137,33 +137,33 @@ export function useUserActions(options: UsePermissionActionsOptions = {}) {
 
   return {
     createUser: (action: () => Promise<any> | any, actionOptions = {}) =>
-      executeWithPermission("users.create", action, {
-        actionName: "create users",
+      executeWithPermission('users.create', action, {
+        actionName: 'create users',
         ...actionOptions,
       }),
 
     editUser: (action: () => Promise<any> | any, actionOptions = {}) =>
-      executeWithPermission("users.edit", action, {
-        actionName: "edit users",
+      executeWithPermission('users.edit', action, {
+        actionName: 'edit users',
         ...actionOptions,
       }),
 
     deleteUser: (action: () => Promise<any> | any, actionOptions = {}) =>
-      executeWithPermission("users.delete", action, {
-        actionName: "delete users",
+      executeWithPermission('users.delete', action, {
+        actionName: 'delete users',
         ...actionOptions,
       }),
 
-    viewUsers: () => checkPermission("users.view"),
-    canCreateUsers: () => checkPermission("users.create"),
-    canEditUsers: () => checkPermission("users.edit"),
-    canDeleteUsers: () => checkPermission("users.delete"),
+    viewUsers: () => checkPermission('users.view'),
+    canCreateUsers: () => checkPermission('users.create'),
+    canEditUsers: () => checkPermission('users.edit'),
+    canDeleteUsers: () => checkPermission('users.delete'),
 
-    getUserActionState: (action: "create" | "edit" | "delete") => {
+    getUserActionState: (action: 'create' | 'edit' | 'delete') => {
       const permissionMap = {
-        create: "users.create",
-        edit: "users.edit",
-        delete: "users.delete",
+        create: 'users.create',
+        edit: 'users.edit',
+        delete: 'users.delete',
       } as const;
 
       return getActionState(permissionMap[action], {
@@ -179,16 +179,16 @@ export function useAdminActions(options: UsePermissionActionsOptions = {}) {
 
   return {
     managePermissions: (action: () => Promise<any> | any, actionOptions = {}) =>
-      executeWithPermission("permissions.manage", action, {
-        actionName: "manage permissions",
+      executeWithPermission('permissions.manage', action, {
+        actionName: 'manage permissions',
         ...actionOptions,
       }),
 
-    canManagePermissions: () => checkPermission("permissions.manage"),
+    canManagePermissions: () => checkPermission('permissions.manage'),
 
-    getAdminActionState: (action: "permissions") => {
+    getAdminActionState: (action: 'permissions') => {
       const permissionMap = {
-        permissions: "permissions.manage",
+        permissions: 'permissions.manage',
       } as const;
 
       return getActionState(permissionMap[action], {

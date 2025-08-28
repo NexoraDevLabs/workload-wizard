@@ -7,13 +7,13 @@
 1. **Add via Admin UI**: `/admin/permissions`
 2. **Protect Backend Function**:
    ```typescript
-   await requirePermission(ctx, args.userId, "your.permission");
+   await requirePermission(ctx, args.userId, 'your.permission');
    ```
 3. **Check in Frontend**:
    ```typescript
    const canAccess = useQuery(api.permissions.hasPermission, {
-     userId: user?.id || "",
-     permissionId: "your.permission",
+     userId: user?.id || '',
+     permissionId: 'your.permission',
    });
    ```
 
@@ -21,16 +21,16 @@
 
 ```typescript
 // Module permissions
-("modules.create", "modules.edit", "modules.delete", "modules.view");
+('modules.create', 'modules.edit', 'modules.delete', 'modules.view');
 
 // User permissions
-("users.create", "users.edit", "users.delete", "users.view");
+('users.create', 'users.edit', 'users.delete', 'users.view');
 
 // Staff permissions
-("staff.create", "staff.edit", "staff.delete", "staff.view");
+('staff.create', 'staff.edit', 'staff.delete', 'staff.view');
 
 // Admin permissions
-("admin.users", "admin.organisations", "admin.system");
+('admin.users', 'admin.organisations', 'admin.system');
 ```
 
 ### System Roles Hierarchy

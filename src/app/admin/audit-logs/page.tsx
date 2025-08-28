@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { AuditLogsViewer } from "@/components/domain/AuditLogsViewer";
-import { Button } from "@/components/ui/button";
-import { Download, Settings } from "lucide-react";
-import { AuditViewGate } from "@/components/common/PermissionGate";
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { AuditLogsViewer } from '@/components/domain/AuditLogsViewer';
+import { Button } from '@/components/ui/button';
+import { Download, Settings } from 'lucide-react';
+import { AuditViewGate } from '@/components/common/PermissionGate';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function AdminAuditLogsPage() {
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Admin", href: "/admin" },
-    { label: "Audit Logs" },
+    { label: 'Home', href: '/' },
+    { label: 'Admin', href: '/admin' },
+    { label: 'Audit Logs' },
   ];
 
   const headerActions = <div className="flex items-center gap-2"></div>;

@@ -1,30 +1,30 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useUser } from "@clerk/nextjs";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { useUser } from '@clerk/nextjs';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useState } from "react";
+} from '@/components/ui/select';
+import { useState } from 'react';
 
-type Stage = "draft" | "alpha" | "beta" | "concept";
+type Stage = 'draft' | 'alpha' | 'beta' | 'concept';
 
 export default function AdminFeaturesPage() {
   const { user } = useUser();
@@ -34,24 +34,24 @@ export default function AdminFeaturesPage() {
 
   const [form, setForm] = useState({
     id: undefined as undefined | string,
-    key: "",
-    name: "",
-    description: "",
-    stage: "draft" as Stage,
+    key: '',
+    name: '',
+    description: '',
+    stage: 'draft' as Stage,
     isActive: true,
   });
   const [updating, setUpdating] = useState<string | null>(null);
 
   const getStageBadgeVariant = (stage: string) => {
     switch (stage.toLowerCase()) {
-      case "concept":
-        return "secondary" as const;
-      case "beta":
-        return "default" as const;
-      case "alpha":
-        return "destructive" as const;
+      case 'concept':
+        return 'secondary' as const;
+      case 'beta':
+        return 'default' as const;
+      case 'alpha':
+        return 'destructive' as const;
       default:
-        return "outline" as const;
+        return 'outline' as const;
     }
   };
 
@@ -59,18 +59,18 @@ export default function AdminFeaturesPage() {
     stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Dev", href: "/dev" },
-    { label: "Features" },
+    { label: 'Home', href: '/' },
+    { label: 'Dev', href: '/dev' },
+    { label: 'Features' },
   ];
 
   const resetForm = () =>
     setForm({
       id: undefined,
-      key: "",
-      name: "",
-      description: "",
-      stage: "draft",
+      key: '',
+      name: '',
+      description: '',
+      stage: 'draft',
       isActive: true,
     });
 
@@ -95,7 +95,7 @@ export default function AdminFeaturesPage() {
       id: row._id,
       key: row.key,
       name: row.name,
-      description: row.description || "",
+      description: row.description || '',
       stage: row.stage,
       isActive: row.isActive,
     });

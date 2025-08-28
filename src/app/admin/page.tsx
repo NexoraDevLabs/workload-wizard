@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Users,
   Building2,
@@ -21,15 +21,15 @@ import {
   RefreshCw,
   Plus,
   Settings,
-} from "lucide-react";
-import Link from "next/link";
-import { listUsers } from "@/lib/actions/userActions";
-import { api } from "@/convex/_generated/api";
-import { ConvexHttpClient } from "convex/browser";
-import { hasAnyRole } from "@/lib/utils";
+} from 'lucide-react';
+import Link from 'next/link';
+import { listUsers } from '@/lib/actions/userActions';
+import { api } from '@/convex/_generated/api';
+import { ConvexHttpClient } from 'convex/browser';
+import { hasAnyRole } from '@/lib/utils';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -38,7 +38,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -78,55 +78,55 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    if (isLoaded && !hasAnyRole(user, ["sysadmin", "developer"])) {
-      router.replace("/unauthorised");
+    if (isLoaded && !hasAnyRole(user, ['sysadmin', 'developer'])) {
+      router.replace('/unauthorised');
     }
   }, [isLoaded, user, router]);
 
   useEffect(() => {
-    if (isLoaded && hasAnyRole(user, ["sysadmin", "developer"])) {
+    if (isLoaded && hasAnyRole(user, ['sysadmin', 'developer'])) {
       fetchStats();
     }
   }, [isLoaded, user]);
 
   if (!isLoaded) return <p>Loading...</p>;
 
-  if (!hasAnyRole(user, ["sysadmin", "developer"])) {
+  if (!hasAnyRole(user, ['sysadmin', 'developer'])) {
     return null; // Will redirect in useEffect
   }
 
   const adminCards = [
     {
-      title: "User Management",
-      description: "Invite, view, and manage users across all organisations",
+      title: 'User Management',
+      description: 'Invite, view, and manage users across all organisations',
       icon: Users,
-      href: "/admin/users",
-      color: "bg-blue-500",
+      href: '/admin/users',
+      color: 'bg-blue-500',
     },
     {
-      title: "Organisation Management",
-      description: "Create and manage organisations in the system",
+      title: 'Organisation Management',
+      description: 'Create and manage organisations in the system',
       icon: Building2,
-      href: "/admin/organisations",
-      color: "bg-green-500",
+      href: '/admin/organisations',
+      color: 'bg-green-500',
     },
     {
-      title: "Permission Registry",
-      description: "Manage system permissions and default role assignments",
+      title: 'Permission Registry',
+      description: 'Manage system permissions and default role assignments',
       icon: Shield,
-      href: "/admin/permissions",
-      color: "bg-indigo-500",
+      href: '/admin/permissions',
+      color: 'bg-indigo-500',
     },
     {
-      title: "Audit Logs",
-      description: "View system activity and user actions",
+      title: 'Audit Logs',
+      description: 'View system activity and user actions',
       icon: FileText,
-      href: "/admin/audit-logs",
-      color: "bg-orange-500",
+      href: '/admin/audit-logs',
+      color: 'bg-orange-500',
     },
   ];
 
-  const breadcrumbs = [{ label: "Home", href: "/" }, { label: "Admin" }];
+  const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Admin' }];
 
   const headerActions = (
     <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
         disabled={isLoadingStats}
       >
         <RefreshCw
-          className={`h-4 w-4 mr-2 ${isLoadingStats ? "animate-spin" : ""}`}
+          className={`h-4 w-4 mr-2 ${isLoadingStats ? 'animate-spin' : ''}`}
         />
         Refresh
       </Button>
@@ -185,7 +185,7 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-3xl font-bold text-blue-600">
-                {isLoadingStats ? "..." : stats.totalUsers}
+                {isLoadingStats ? '...' : stats.totalUsers}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Total Users
@@ -193,7 +193,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-3xl font-bold text-green-600">
-                {isLoadingStats ? "..." : stats.totalOrganisations}
+                {isLoadingStats ? '...' : stats.totalOrganisations}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Organisations
@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="text-3xl font-bold text-purple-600">
-                {isLoadingStats ? "..." : stats.activeUsers}
+                {isLoadingStats ? '...' : stats.activeUsers}
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Active Users

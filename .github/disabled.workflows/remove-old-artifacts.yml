@@ -3,7 +3,7 @@ name: Remove old artifacts
 on:
   schedule:
     # Daily at 01:15 UTC
-    - cron: "15 1 * * *"
+    - cron: '15 1 * * *'
   workflow_dispatch:
 
 permissions:
@@ -40,4 +40,4 @@ jobs:
           # Keep artifacts attached to tags (releases)
           skip-tags: true
           # Delete everything older than 14 days
-          age: "14 days"
+          age: '14 days'

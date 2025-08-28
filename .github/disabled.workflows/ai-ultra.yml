@@ -49,25 +49,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Claude via Anthropic (documented key and model syntax)
           ANTHROPIC.KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          config.model: "anthropic/claude-3-5-sonnet-20240620"
+          config.model: 'anthropic/claude-3-5-sonnet-20240620'
           # Optional fallbacks to keep runs alive if Sonnet is rate limited
           config.fallback_models: '["anthropic/claude-3-haiku-20240307"]'
 
           # Auto-run on our PR events
-          github_action_config.auto_review: "true"
+          github_action_config.auto_review: 'true'
           github_action_config.pr_actions: '["ready_for_review","labeled","synchronize","reopened"]'
 
           # Reviewer behaviour (keep cost/replies sane)
-          PR_REVIEWER.DIFF_ONLY: "true"
-          PR_REVIEWER.MAX_FILES: "40"
-          PR_REVIEWER.MAX_FILE_SIZE_KB: "400"
-          PR_REVIEWER.SKIP_LARGE_PRS: "true"
-          PR_REVIEWER.INLINE_COMMENTS: "false"
-          PR_REVIEWER.MAX_COMMENTS: "15"
+          PR_REVIEWER.DIFF_ONLY: 'true'
+          PR_REVIEWER.MAX_FILES: '40'
+          PR_REVIEWER.MAX_FILE_SIZE_KB: '400'
+          PR_REVIEWER.SKIP_LARGE_PRS: 'true'
+          PR_REVIEWER.INLINE_COMMENTS: 'false'
+          PR_REVIEWER.MAX_COMMENTS: '15'
 
           # Locale & CODEOWNERS
-          general.language: "en-GB"
-          general.respect_codeowners: "true"
+          general.language: 'en-GB'
+          general.respect_codeowners: 'true'
 
       - name: Add "ai:reviewed" label
         if: ${{ success() }}

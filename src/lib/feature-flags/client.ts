@@ -1,6 +1,6 @@
 // Client-side feature flag functions using Statsig
-import { statsigAdapter, type StatsigUser } from "@flags-sdk/statsig";
-import { FeatureFlags } from "./types";
+import { statsigAdapter, type StatsigUser } from '@flags-sdk/statsig';
+import type { FeatureFlags } from './types';
 
 export interface FeatureFlagResult {
   enabled: boolean;
@@ -12,14 +12,14 @@ async function getCurrentUser(): Promise<StatsigUser> {
   // For client-side, we'll use a simplified approach
   // In a real implementation, you'd get user details from your auth system
   return {
-    userID: "anonymous",
+    userID: 'anonymous',
     customIDs: {},
   };
 }
 
 // Check if a feature flag is enabled
 export async function getFeatureFlag(
-  flagKey: FeatureFlags,
+  flagKey: FeatureFlags
 ): Promise<FeatureFlagResult> {
   try {
     const user = await getCurrentUser();
@@ -41,7 +41,7 @@ export async function getFeatureFlag(
 
 // Check if a feature flag is enabled (boolean only)
 export async function isFeatureEnabled(
-  flagKey: FeatureFlags,
+  flagKey: FeatureFlags
 ): Promise<boolean> {
   const result = await getFeatureFlag(flagKey);
   return result.enabled;

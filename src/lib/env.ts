@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const EnvSchema = z.object({
   NEXT_PUBLIC_CONVEX_URL: z.string().url(),
@@ -7,8 +7,8 @@ const EnvSchema = z.object({
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
   NEXT_PUBLIC_APP_VERSION: z.string().optional(),
   NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   // Add missing environment variables
   FEATFLAG_STATSIG_SERVER_API_KEY: z.string().optional(),
   CLERK_SECRET_KEY: z.string().optional(),

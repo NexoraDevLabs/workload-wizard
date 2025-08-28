@@ -35,7 +35,7 @@ audit_logs: defineTable({
   entityName: v.optional(v.string()),
   performedBy: v.string(),
   performedByName: v.optional(v.string()),
-  organisationId: v.optional(v.id("organisations")),
+  organisationId: v.optional(v.id('organisations')),
   details: v.optional(v.string()),
   metadata: v.optional(v.string()),
   ipAddress: v.optional(v.string()),
@@ -61,31 +61,31 @@ import {
   logUserCreated,
   logUserDeleted,
   logUserUpdated,
-} from "@/lib/actions/auditActions";
+} from '@/lib/actions/auditActions';
 
-await logUserCreated(userId, userEmail, "User created via admin interface");
-await logUserDeleted(userId, userEmail, "User deleted by admin");
+await logUserCreated(userId, userEmail, 'User created via admin interface');
+await logUserDeleted(userId, userEmail, 'User deleted by admin');
 await logUserUpdated(
   userId,
   userEmail,
-  { role: "admin" },
-  "Role changed to admin",
+  { role: 'admin' },
+  'Role changed to admin'
 );
 ```
 
 ### Direct Audit Event
 
 ```typescript
-import { logAuditEvent } from "@/lib/actions/auditActions";
+import { logAuditEvent } from '@/lib/actions/auditActions';
 
 await logAuditEvent({
-  action: "custom_action",
-  entityType: "module",
+  action: 'custom_action',
+  entityType: 'module',
   entityId: moduleId,
   entityName: moduleName,
-  details: "Custom module operation performed",
-  metadata: { customData: "value" },
-  severity: "info",
+  details: 'Custom module operation performed',
+  metadata: { customData: 'value' },
+  severity: 'info',
 });
 ```
 

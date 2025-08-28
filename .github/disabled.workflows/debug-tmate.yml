@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       timeout_minutes:
-        description: "Session timeout (minutes)"
+        description: 'Session timeout (minutes)'
         required: false
-        default: "25"
+        default: '25'
   pull_request:
     types: [labeled]
 

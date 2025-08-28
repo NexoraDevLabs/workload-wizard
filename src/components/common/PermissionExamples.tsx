@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
   PermissionGate,
   PermissionButton,
@@ -20,13 +20,13 @@ import {
   EditUserButton,
   DeleteUserButton,
   AdminPageWrapper,
-} from "./index";
-import { usePermissions } from "@/hooks/usePermissions";
-import { useUserActions, useAdminActions } from "@/hooks/usePermissionActions";
-import { usePermissionActions } from "@/hooks/usePermissionActions";
+} from './index';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useUserActions, useAdminActions } from '@/hooks/usePermissionActions';
+import { usePermissionActions } from '@/hooks/usePermissionActions';
 
 export function PermissionExamples() {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const permissions = usePermissions();
   const userActions = useUserActions();
   const adminActions = useAdminActions();
@@ -34,7 +34,7 @@ export function PermissionExamples() {
 
   const handleAction = async (
     actionName: string,
-    action: () => Promise<any>,
+    action: () => Promise<any>
   ) => {
     try {
       const result = await action();
@@ -91,8 +91,8 @@ export function PermissionExamples() {
               <CardContent className="space-y-2">
                 <CreateUserButton
                   onClick={() =>
-                    handleAction("Create User", () =>
-                      Promise.resolve("User created"),
+                    handleAction('Create User', () =>
+                      Promise.resolve('User created')
                     )
                   }
                   size="sm"
@@ -102,8 +102,8 @@ export function PermissionExamples() {
 
                 <EditUserButton
                   onClick={() =>
-                    handleAction("Edit User", () =>
-                      Promise.resolve("User edited"),
+                    handleAction('Edit User', () =>
+                      Promise.resolve('User edited')
                     )
                   }
                   size="sm"
@@ -114,8 +114,8 @@ export function PermissionExamples() {
 
                 <DeleteUserButton
                   onClick={() =>
-                    handleAction("Delete User", () =>
-                      Promise.resolve("User deleted"),
+                    handleAction('Delete User', () =>
+                      Promise.resolve('User deleted')
                     )
                   }
                   size="sm"
@@ -189,10 +189,10 @@ export function PermissionExamples() {
                   <div className="space-y-2">
                     <button
                       onClick={() =>
-                        handleAction("Create User", () =>
+                        handleAction('Create User', () =>
                           userActions.createUser(() =>
-                            Promise.resolve("User created"),
-                          ),
+                            Promise.resolve('User created')
+                          )
                         )
                       }
                       className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -202,10 +202,10 @@ export function PermissionExamples() {
 
                     <button
                       onClick={() =>
-                        handleAction("Edit User", () =>
+                        handleAction('Edit User', () =>
                           userActions.editUser(() =>
-                            Promise.resolve("User edited"),
-                          ),
+                            Promise.resolve('User edited')
+                          )
                         )
                       }
                       className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
@@ -220,10 +220,10 @@ export function PermissionExamples() {
                   <div className="space-y-2">
                     <button
                       onClick={() =>
-                        handleAction("Manage Permissions", () =>
+                        handleAction('Manage Permissions', () =>
                           adminActions.managePermissions(() =>
-                            Promise.resolve("Permissions managed"),
-                          ),
+                            Promise.resolve('Permissions managed')
+                          )
                         )
                       }
                       className="px-3 py-1 text-sm bg-purple-500 text-white rounded hover:bg-purple-600"
@@ -248,32 +248,32 @@ export function PermissionExamples() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <strong>Role:</strong> {permissions.userRole || "Loading..."}
+                  <strong>Role:</strong> {permissions.userRole || 'Loading...'}
                 </div>
                 <div>
-                  <strong>Can View Users:</strong>{" "}
-                  {permissions.canViewUsers() ? "✅" : "❌"}
+                  <strong>Can View Users:</strong>{' '}
+                  {permissions.canViewUsers() ? '✅' : '❌'}
                 </div>
                 <div>
-                  <strong>Can Create Users:</strong>{" "}
-                  {permissions.canCreateUsers() ? "✅" : "❌"}
+                  <strong>Can Create Users:</strong>{' '}
+                  {permissions.canCreateUsers() ? '✅' : '❌'}
                 </div>
                 <div>
-                  <strong>Can Edit Users:</strong>{" "}
-                  {permissions.canEditUsers() ? "✅" : "❌"}
+                  <strong>Can Edit Users:</strong>{' '}
+                  {permissions.canEditUsers() ? '✅' : '❌'}
                 </div>
                 <div>
-                  <strong>Can Delete Users:</strong>{" "}
-                  {permissions.canDeleteUsers() ? "✅" : "❌"}
+                  <strong>Can Delete Users:</strong>{' '}
+                  {permissions.canDeleteUsers() ? '✅' : '❌'}
                 </div>
                 <div>
-                  <strong>Can Manage Permissions:</strong>{" "}
-                  {permissions.canManagePermissions() ? "✅" : "❌"}
+                  <strong>Can Manage Permissions:</strong>{' '}
+                  {permissions.canManagePermissions() ? '✅' : '❌'}
                 </div>
 
                 <div>
-                  <strong>Is System Admin:</strong>{" "}
-                  {permissions.isSystemAdmin() ? "✅" : "❌"}
+                  <strong>Is System Admin:</strong>{' '}
+                  {permissions.isSystemAdmin() ? '✅' : '❌'}
                 </div>
               </div>
             </CardContent>

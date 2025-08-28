@@ -1,11 +1,11 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { requireOrgPermission } from "./permissions";
-import { writeAudit } from "./audit";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { requireOrgPermission } from './permissions';
+import { writeAudit } from './audit';
 
 // Get all roles for an organisation
 export const listByOrganisation = query({
-  args: { organisationId: v.id("organisations") },
+  args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     // Validate that the organisation exists
     const organisation = await ctx.db.get(args.organisationId);
@@ -15,10 +15,10 @@ export const listByOrganisation = query({
     }
 
     const roles = await ctx.db
-      .query("user_roles")
-      .filter((q) => q.eq(q.field("organisationId"), args.organisationId))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .order("asc")
+      .query('user_roles')
+      .filter((q) => q.eq(q.field('organisationId'), args.organisationId))
+      .filter((q) => q.eq(q.field('isActive'), true))
+      .order('asc')
       .collect();
 
     return roles;
@@ -27,7 +27,7 @@ export const listByOrganisation = query({
 
 // Get a specific role by ID
 export const getById = query({
-  args: { roleId: v.id("user_roles") },
+  args: { roleId: v.id('user_roles') },
   handler: async (ctx, args) => {
     const role = await ctx.db.get(args.roleId);
     return role;
@@ -46,24 +46,24 @@ export const create = mutation({
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
     const subject = identity?.subject;
-    if (!subject) throw new Error("Unauthenticated");
+    if (!subject) throw new Error('Unauthenticated');
 
     // Derive organisation from actor
     const actorUser = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", subject))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', subject))
       .first();
-    if (!actorUser) throw new Error("User not found");
+    if (!actorUser) throw new Error('User not found');
 
     // Authorise actor within derived org
     await requireOrgPermission(
       ctx,
       subject,
-      "permissions.manage",
-      String(actorUser.organisationId),
+      'permissions.manage',
+      String(actorUser.organisationId)
     );
 
-    const roleId = await ctx.db.insert("user_roles", {
+    const roleId = await ctx.db.insert('user_roles', {
       name: args.name,
       description: args.description,
       organisationId: actorUser.organisationId,
@@ -77,8 +77,8 @@ export const create = mutation({
 
     // Audit create
     await writeAudit(ctx, {
-      action: "role.created",
-      entityType: "role",
+      action: 'role.created',
+      entityType: 'role',
       entityId: String(roleId),
       entityName: args.name,
       performedBy: subject,
@@ -88,7 +88,7 @@ export const create = mutation({
         permissions: args.permissions,
         isDefault: !!args.isDefault,
       }),
-      severity: "info",
+      severity: 'info',
     });
 
     return roleId;
@@ -98,7 +98,7 @@ export const create = mutation({
 // Update an organisational role
 export const update = mutation({
   args: {
-    roleId: v.id("user_roles"),
+    roleId: v.id('user_roles'),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     permissions: v.optional(v.array(v.string())),
@@ -110,15 +110,15 @@ export const update = mutation({
 
     const identity = await ctx.auth.getUserIdentity();
     const subject = identity?.subject;
-    if (!subject) throw new Error("Unauthenticated");
+    if (!subject) throw new Error('Unauthenticated');
 
     const existing = await ctx.db.get(roleId);
-    if (!existing) throw new Error("Role not found");
+    if (!existing) throw new Error('Role not found');
     await requireOrgPermission(
       ctx,
       subject,
-      "permissions.manage",
-      String(existing.organisationId),
+      'permissions.manage',
+      String(existing.organisationId)
     );
 
     await ctx.db.patch(roleId, {
@@ -128,15 +128,15 @@ export const update = mutation({
 
     // Audit update
     await writeAudit(ctx, {
-      action: "role.updated",
-      entityType: "role",
+      action: 'role.updated',
+      entityType: 'role',
       entityId: String(roleId),
       entityName: updates.name ?? existing.name,
       performedBy: subject,
       organisationId: existing.organisationId,
-      details: "Updated role",
+      details: 'Updated role',
       metadata: JSON.stringify(updates),
-      severity: "info",
+      severity: 'info',
     });
 
     return roleId;
@@ -145,20 +145,20 @@ export const update = mutation({
 
 // Delete an organisational role (soft delete)
 export const remove = mutation({
-  args: { roleId: v.id("user_roles") },
+  args: { roleId: v.id('user_roles') },
   handler: async (ctx, args) => {
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
     const subject = identity?.subject;
-    if (!subject) throw new Error("Unauthenticated");
+    if (!subject) throw new Error('Unauthenticated');
 
     const existing = await ctx.db.get(args.roleId);
-    if (!existing) throw new Error("Role not found");
+    if (!existing) throw new Error('Role not found');
     await requireOrgPermission(
       ctx,
       subject,
-      "permissions.manage",
-      String(existing.organisationId),
+      'permissions.manage',
+      String(existing.organisationId)
     );
 
     await ctx.db.patch(args.roleId, {
@@ -167,14 +167,14 @@ export const remove = mutation({
     });
 
     await writeAudit(ctx, {
-      action: "role.deleted",
-      entityType: "role",
+      action: 'role.deleted',
+      entityType: 'role',
       entityId: String(args.roleId),
       entityName: existing.name,
       performedBy: subject,
       organisationId: existing.organisationId,
       details: `Deleted role "${existing.name}"`,
-      severity: "warning",
+      severity: 'warning',
     });
 
     return args.roleId;
@@ -185,7 +185,7 @@ export const remove = mutation({
 export const assignToUser = mutation({
   args: {
     userId: v.string(),
-    roleId: v.id("user_roles"),
+    roleId: v.id('user_roles'),
     assignedBy: v.string(),
   },
   handler: async (ctx, args) => {
@@ -194,47 +194,47 @@ export const assignToUser = mutation({
     // Validate role and derive organisation from it
     const role = await ctx.db.get(args.roleId);
     if (!role || !role.isActive) {
-      throw new Error("Role not found or inactive");
+      throw new Error('Role not found or inactive');
     }
     const organisation = await ctx.db.get(role.organisationId);
     if (!organisation || !organisation.isActive) {
-      throw new Error("Organisation not found or inactive");
+      throw new Error('Organisation not found or inactive');
     }
 
     // Authorisation within derived org
     await requireOrgPermission(
       ctx,
       args.assignedBy,
-      "permissions.manage",
-      String(role.organisationId),
+      'permissions.manage',
+      String(role.organisationId)
     );
 
     // Validate that the user exists and is a member of the organisation
     const user = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.userId))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     const membership = await ctx.db
-      .query("user_organisations")
-      .withIndex("by_user_org", (q) =>
-        q.eq("userId", args.userId).eq("organisationId", role.organisationId),
+      .query('user_organisations')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', args.userId).eq('organisationId', role.organisationId)
       )
       .first();
     if (!membership) {
-      throw new Error("User is not a member of the specified organisation");
+      throw new Error('User is not a member of the specified organisation');
     }
 
     // First, deactivate any existing role assignments for this user in this organisation
     const existingAssignments = await ctx.db
-      .query("user_role_assignments")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .filter((q) => q.eq(q.field("organisationId"), role.organisationId))
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('user_role_assignments')
+      .filter((q) => q.eq(q.field('userId'), args.userId))
+      .filter((q) => q.eq(q.field('organisationId'), role.organisationId))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
 
     for (const assignment of existingAssignments) {
@@ -245,7 +245,7 @@ export const assignToUser = mutation({
     }
 
     // Create new role assignment
-    const assignmentId = await ctx.db.insert("user_role_assignments", {
+    const assignmentId = await ctx.db.insert('user_role_assignments', {
       userId: args.userId,
       roleId: args.roleId,
       organisationId: role.organisationId,
@@ -257,15 +257,15 @@ export const assignToUser = mutation({
 
     // Audit
     await writeAudit(ctx, {
-      action: "user.role_changed",
-      entityType: "user",
+      action: 'user.role_changed',
+      entityType: 'user',
       entityId: args.userId,
       entityName: user.fullName ?? user.email ?? args.userId,
       performedBy: args.assignedBy,
       organisationId: role.organisationId,
       details: `Assigned role "${role.name}"`,
       metadata: JSON.stringify({ roleId: role._id, roleName: role.name }),
-      severity: "info",
+      severity: 'info',
     });
 
     return assignmentId;
@@ -276,55 +276,55 @@ export const assignToUser = mutation({
 export const assignMultipleToUser = mutation({
   args: {
     userId: v.string(),
-    roleIds: v.array(v.id("user_roles")),
+    roleIds: v.array(v.id('user_roles')),
     assignedBy: v.string(),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
 
     if (!Array.isArray(args.roleIds) || args.roleIds.length === 0) {
-      throw new Error("No roles provided");
+      throw new Error('No roles provided');
     }
 
     // Validate roles and derive organisation; ensure all roles belong to same org
     const roles = await Promise.all(args.roleIds.map((rid) => ctx.db.get(rid)));
     if (roles.some((r) => !r)) {
-      throw new Error("One or more roles not found");
+      throw new Error('One or more roles not found');
     }
     if (roles.some((r) => !r!.isActive)) {
-      throw new Error("One or more roles invalid or inactive");
+      throw new Error('One or more roles invalid or inactive');
     }
     const orgId = roles[0]!.organisationId;
     if (roles.some((r) => String(r!.organisationId) !== String(orgId))) {
-      throw new Error("Roles must belong to the same organisation");
+      throw new Error('Roles must belong to the same organisation');
     }
 
     const organisation = await ctx.db.get(orgId);
     if (!organisation || !organisation.isActive) {
-      throw new Error("Organisation not found or inactive");
+      throw new Error('Organisation not found or inactive');
     }
 
     // Authorisation within derived org
     await requireOrgPermission(
       ctx,
       args.assignedBy,
-      "permissions.manage",
-      String(orgId),
+      'permissions.manage',
+      String(orgId)
     );
 
     const user = await ctx.db
-      .query("users")
-      .filter((q) => q.eq(q.field("subject"), args.userId))
-      .filter((q) => q.eq(q.field("organisationId"), orgId))
+      .query('users')
+      .filter((q) => q.eq(q.field('subject'), args.userId))
+      .filter((q) => q.eq(q.field('organisationId'), orgId))
       .first();
-    if (!user) throw new Error("User not found in the specified organisation");
+    if (!user) throw new Error('User not found in the specified organisation');
 
     // Deactivate all existing assignments first
     const existingAssignments = await ctx.db
-      .query("user_role_assignments")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .filter((q) => q.eq(q.field("organisationId"), orgId))
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('user_role_assignments')
+      .filter((q) => q.eq(q.field('userId'), args.userId))
+      .filter((q) => q.eq(q.field('organisationId'), orgId))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
     for (const assignment of existingAssignments) {
       await ctx.db.patch(assignment._id, { isActive: false, updatedAt: now });
@@ -332,7 +332,7 @@ export const assignMultipleToUser = mutation({
 
     // Create assignments for all provided roles
     for (const rid of args.roleIds) {
-      await ctx.db.insert("user_role_assignments", {
+      await ctx.db.insert('user_role_assignments', {
         userId: args.userId,
         roleId: rid,
         organisationId: orgId,
@@ -345,15 +345,15 @@ export const assignMultipleToUser = mutation({
 
     // Audit summary
     await writeAudit(ctx, {
-      action: "user.role_changed",
-      entityType: "user",
+      action: 'user.role_changed',
+      entityType: 'user',
       entityId: args.userId,
       entityName: user.fullName ?? user.email ?? args.userId,
       performedBy: args.assignedBy,
       organisationId: orgId,
       details: `Assigned ${args.roleIds.length} role(s)`,
       metadata: JSON.stringify({ roleIds: args.roleIds }),
-      severity: "info",
+      severity: 'info',
     });
 
     return { assignedCount: args.roleIds.length };
@@ -368,16 +368,16 @@ export const getUserRole = query({
   handler: async (ctx, args) => {
     // Derive organisation from the user's record
     const target = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.userId))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
     if (!target) return null;
 
     const assignment = await ctx.db
-      .query("user_role_assignments")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .filter((q) => q.eq(q.field("organisationId"), target.organisationId))
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('user_role_assignments')
+      .filter((q) => q.eq(q.field('userId'), args.userId))
+      .filter((q) => q.eq(q.field('organisationId'), target.organisationId))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .first();
 
     if (!assignment) {
@@ -397,9 +397,9 @@ export const getUserRoles = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const assignments = await ctx.db
-      .query("user_role_assignments")
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('user_role_assignments')
+      .filter((q) => q.eq(q.field('userId'), args.userId))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
 
     const roles = await Promise.all(
@@ -411,7 +411,7 @@ export const getUserRoles = query({
           role,
           organisation,
         };
-      }),
+      })
     );
 
     return roles;

@@ -49,24 +49,24 @@ The permission system provides comprehensive UI state management that automatica
 Located in `src/lib/permission-gating.ts`, this class provides the main gating functionality:
 
 ```typescript
-import { createPermissionGating } from "@/lib/permission-gating";
+import { createPermissionGating } from '@/lib/permission-gating';
 
 const gating = createPermissionGating(userRole, organisationId);
 
 // Gate UI elements
-const elementState = gating.gateElement("users.create", {
+const elementState = gating.gateElement('users.create', {
   hideForbidden: true,
   isSystemAction: false,
 });
 
 // Gate buttons
-const buttonState = gating.gateButton("users.edit", {
+const buttonState = gating.gateButton('users.edit', {
   isSystemAction: false,
-  disabledText: "Insufficient permissions",
+  disabledText: 'Insufficient permissions',
 });
 
 // Gate form fields
-const fieldState = gating.gateField("users.delete", {
+const fieldState = gating.gateField('users.delete', {
   isSystemAction: false,
   readonly: false,
 });
@@ -174,7 +174,7 @@ The system automatically handles 403 responses:
 Permission errors automatically show user-friendly toast messages:
 
 ```typescript
-import { usePermissionActions } from "@/hooks/usePermissionActions";
+import { usePermissionActions } from '@/hooks/usePermissionActions';
 
 const { executeWithPermission } = usePermissionActions({
   showToastOnDenied: true,
@@ -182,14 +182,14 @@ const { executeWithPermission } = usePermissionActions({
 });
 
 await executeWithPermission(
-  "users.create",
+  'users.create',
   async () => {
     // Action logic here
   },
   {
-    actionName: "create user",
-    onDenied: () => console.log("Permission denied"),
-  },
+    actionName: 'create user',
+    onDenied: () => console.log('Permission denied'),
+  }
 );
 ```
 
@@ -203,18 +203,18 @@ export async function enhancedMiddleware(request: Request) {
   const response = await NextResponse.next();
 
   if (response.status === 403) {
-    if (request.url.includes("/api/")) {
+    if (request.url.includes('/api/')) {
       return NextResponse.json(
         {
-          error: "Forbidden",
-          redirectTo: "/unauthorised",
+          error: 'Forbidden',
+          redirectTo: '/unauthorised',
           message: "You don't have permission to access this resource",
         },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
-    return NextResponse.redirect(new URL("/unauthorised", request.url));
+    return NextResponse.redirect(new URL('/unauthorised', request.url));
   }
 
   return response;

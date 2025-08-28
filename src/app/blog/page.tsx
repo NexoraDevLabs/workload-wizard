@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { client } from "@/sanity/client";
-import { urlFor } from "@/sanity/lib/image";
-import { sanityEnabled } from "@/sanity/env";
-import { format } from "date-fns";
-import { CalendarDays, Clock, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { Tag, ArrowRight } from "lucide-react";
-import DynamicIslandHeader from "@/components/dynamic-header-island";
-import Footer from "@/components/Footer";
-import NewsletterSubscription from "@/components/NewsletterSubscription";
-import { useEffect, useState } from "react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { client } from '@/sanity/client';
+import { urlFor } from '@/sanity/lib/image';
+import { sanityEnabled } from '@/sanity/env';
+import { format } from 'date-fns';
+import { CalendarDays, Clock, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import { Tag, ArrowRight } from 'lucide-react';
+import DynamicIslandHeader from '@/components/dynamic-header-island';
+import Footer from '@/components/Footer';
+import NewsletterSubscription from '@/components/NewsletterSubscription';
+import { useEffect, useState } from 'react';
 
 // Helper function to extract slug value
 function getSlugValue(slug: string | { current: string }): string {
-  return typeof slug === "string" ? slug : slug?.current || "";
+  return typeof slug === 'string' ? slug : slug?.current || '';
 }
 
 type Post = {
@@ -49,10 +49,10 @@ async function getPosts(): Promise<Post[]> {
 
 function formatDate(iso: string) {
   try {
-    return new Intl.DateTimeFormat("en-GB", {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
+    return new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -166,7 +166,7 @@ export default function BlogIndexPage() {
                         src={urlFor(post.coverImage)
                           .width(600)
                           .height(448)
-                          .fit("crop")
+                          .fit('crop')
                           .url()}
                         alt={post.coverImage?.alt || post.title}
                         fill
@@ -210,7 +210,7 @@ export default function BlogIndexPage() {
                         <CalendarDays className="w-3 h-3" />
                         <span>{formatDate(post.publishedAt)}</span>
                       </div>
-                      {typeof post.readingTime === "number" && (
+                      {typeof post.readingTime === 'number' && (
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           <span>{post.readingTime} min read</span>
@@ -289,9 +289,9 @@ export default function BlogIndexPage() {
               source="blog"
               buttonText="Subscribe to Updates"
               buttonProps={{
-                size: "lg",
+                size: 'lg',
                 className:
-                  "bg-white text-blue-600 hover:bg-white/90 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600",
+                  'bg-white text-blue-600 hover:bg-white/90 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600',
               }}
             />
           </div>

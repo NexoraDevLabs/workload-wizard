@@ -1,5 +1,5 @@
-import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { defineSchema, defineTable } from 'convex/server';
+import { v } from 'convex/values';
 
 export default defineSchema({
   // 🧠 Academic Year
@@ -9,19 +9,19 @@ export default defineSchema({
     endDate: v.string(),
     isActive: v.boolean(),
     staging: v.boolean(),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     status: v.union(
-      v.literal("draft"),
-      v.literal("published"),
-      v.literal("archived"),
+      v.literal('draft'),
+      v.literal('published'),
+      v.literal('archived')
     ),
     isDefaultForOrg: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_organisation", ["organisationId"]) // filter by org
-    .index("by_org_status", ["organisationId", "status"]) // filter by org + status
-    .index("by_status", ["status"]), // sometimes filter by status alone
+    .index('by_organisation', ['organisationId']) // filter by org
+    .index('by_org_status', ['organisationId', 'status']) // filter by org + status
+    .index('by_status', ['status']), // sometimes filter by status alone
 
   // 🏛️ Organisation
   organisations: defineTable({
@@ -48,7 +48,7 @@ export default defineSchema({
     jobRole: v.optional(v.string()), // User's job role from onboarding
     department: v.optional(v.string()),
     phone: v.optional(v.string()),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     pictureUrl: v.optional(v.string()),
     subject: v.string(), // Clerk ID
     tokenIdentifier: v.optional(v.string()),
@@ -60,32 +60,32 @@ export default defineSchema({
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_subject", ["subject"])
-    .index("by_email", ["email"]),
+    .index('by_subject', ['subject'])
+    .index('by_email', ['email']),
 
   // 👤 User Preferences (per user per organisation)
   user_preferences: defineTable({
     userId: v.string(), // Clerk subject ID
-    organisationId: v.id("organisations"),
-    selectedAcademicYearId: v.optional(v.id("academic_years")),
+    organisationId: v.id('organisations'),
+    selectedAcademicYearId: v.optional(v.id('academic_years')),
     includeDrafts: v.optional(v.boolean()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_user", ["userId"]) // list all preferences for a user
-    .index("by_user_org", ["userId", "organisationId"]), // upsert/keyed by pair
+    .index('by_user', ['userId']) // list all preferences for a user
+    .index('by_user_org', ['userId', 'organisationId']), // upsert/keyed by pair
 
   // 👥 User ↔ Organisation memberships (supports multi-org membership)
   user_organisations: defineTable({
     userId: v.string(),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     isPrimary: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_user", ["userId"]) // list orgs for a user
-    .index("by_org", ["organisationId"]) // list users for an org
-    .index("by_user_org", ["userId", "organisationId"]), // membership existence check
+    .index('by_user', ['userId']) // list orgs for a user
+    .index('by_org', ['organisationId']) // list users for an org
+    .index('by_user_org', ['userId', 'organisationId']), // membership existence check
 
   // 📋 Audit Logs
   audit_logs: defineTable({
@@ -95,22 +95,22 @@ export default defineSchema({
     entityName: v.optional(v.string()), // Human-readable name of the entity
     performedBy: v.string(), // User ID who performed the action
     performedByName: v.optional(v.string()), // Human-readable name of the user who performed the action
-    organisationId: v.optional(v.id("organisations")), // Organisation context
+    organisationId: v.optional(v.id('organisations')), // Organisation context
     details: v.optional(v.string()), // Additional details about the action
     metadata: v.optional(v.string()), // JSON string for additional structured data
     ipAddress: v.optional(v.string()), // IP address of the request
     userAgent: v.optional(v.string()), // User agent of the request
     timestamp: v.float64(),
     severity: v.optional(v.string()), // 'info', 'warning', 'error', 'critical'
-    type: v.optional(v.union(v.literal("sys"), v.literal("org"))), // scope of action
-  }).index("by_timestamp", ["timestamp"]),
+    type: v.optional(v.union(v.literal('sys'), v.literal('org'))), // scope of action
+  }).index('by_timestamp', ['timestamp']),
 
   // 👤 User Profile
   user_profiles: defineTable({
     userId: v.string(),
     jobTitle: v.optional(v.string()),
     specialism: v.optional(v.string()),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   }),
@@ -122,7 +122,7 @@ export default defineSchema({
     isDefault: v.boolean(),
     isSystem: v.boolean(),
     permissions: v.array(v.string()),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
@@ -130,20 +130,20 @@ export default defineSchema({
 
   user_role_assignments: defineTable({
     userId: v.string(),
-    roleId: v.id("user_roles"),
-    organisationId: v.id("organisations"),
+    roleId: v.id('user_roles'),
+    organisationId: v.id('organisations'),
     assignedBy: v.string(),
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_user_org", ["userId", "organisationId"]),
+  }).index('by_user_org', ['userId', 'organisationId']),
 
   // 📘 Courses
   courses: defineTable({
     code: v.string(),
     name: v.string(),
-    organisationId: v.id("organisations"),
-    leaderProfileId: v.optional(v.id("lecturer_profiles")),
+    organisationId: v.id('organisations'),
+    leaderProfileId: v.optional(v.id('lecturer_profiles')),
     studentCount: v.optional(v.float64()),
     campuses: v.optional(v.array(v.string())),
     studentDistributionByCampus: v.optional(
@@ -151,65 +151,65 @@ export default defineSchema({
         v.object({
           campus: v.string(),
           count: v.float64(),
-        }),
-      ),
+        })
+      )
     ),
-    groupsInitialisedInAys: v.optional(v.array(v.id("academic_years"))),
+    groupsInitialisedInAys: v.optional(v.array(v.id('academic_years'))),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_organisation", ["organisationId"]),
+  }).index('by_organisation', ['organisationId']),
 
   // 📘 Course Years (Y1/Y2/... for a course)
   course_years: defineTable({
-    courseId: v.id("courses"),
+    courseId: v.id('courses'),
     yearNumber: v.float64(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_course", ["courseId"]),
+  }).index('by_course', ['courseId']),
 
   // 📚 Module Definitions
   modules: defineTable({
     code: v.string(),
     name: v.string(),
     credits: v.optional(v.number()),
-    leaderProfileId: v.optional(v.id("lecturer_profiles")),
+    leaderProfileId: v.optional(v.id('lecturer_profiles')),
     level: v.optional(v.number()),
     teachingHours: v.optional(v.number()),
     markingHours: v.optional(v.number()),
     campuses: v.optional(v.array(v.string())),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_organisation", ["organisationId"]),
+  }).index('by_organisation', ['organisationId']),
 
   // 🔗 Course Year <> Module links (junction table)
   course_year_modules: defineTable({
-    courseYearId: v.id("course_years"),
-    moduleId: v.id("modules"),
+    courseYearId: v.id('course_years'),
+    moduleId: v.id('modules'),
     isCore: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_course_year", ["courseYearId"]) // list modules for a course year
-    .index("by_module", ["moduleId"]) // list years using a module
-    .index("by_course_year_module", ["courseYearId", "moduleId"]), // enforce uniqueness in code
+    .index('by_course_year', ['courseYearId']) // list modules for a course year
+    .index('by_module', ['moduleId']) // list years using a module
+    .index('by_course_year_module', ['courseYearId', 'moduleId']), // enforce uniqueness in code
 
   // 🎓 Module Iterations
   module_iterations: defineTable({
-    moduleId: v.id("modules"),
-    academicYearId: v.id("academic_years"),
+    moduleId: v.id('modules'),
+    academicYearId: v.id('academic_years'),
     totalHours: v.float64(),
     weeks: v.array(v.number()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_module", ["moduleId"]) // list iterations for a module
-    .index("by_year", ["academicYearId"]) // list iterations for a year
-    .index("by_module_year", ["moduleId", "academicYearId"]), // enforce uniqueness in code
+    .index('by_module', ['moduleId']) // list iterations for a module
+    .index('by_year', ['academicYearId']) // list iterations for a year
+    .index('by_module_year', ['moduleId', 'academicYearId']), // enforce uniqueness in code
 
   // 👥 Module Groups (under a specific module iteration)
   module_groups: defineTable({
-    moduleIterationId: v.id("module_iterations"),
+    moduleIterationId: v.id('module_iterations'),
     name: v.string(),
     sizePlanned: v.optional(v.float64()),
     campusId: v.optional(v.string()),
@@ -217,7 +217,7 @@ export default defineSchema({
     weekPattern: v.optional(v.string()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_iteration", ["moduleIterationId"]),
+  }).index('by_iteration', ['moduleIterationId']),
 
   // 👨‍🏫 Lecturer Profiles
   lecturer_profiles: defineTable({
@@ -233,20 +233,20 @@ export default defineSchema({
     contractFamily: v.optional(v.string()),
     prefWorkingLocation: v.optional(v.string()),
     prefWorkingTime: v.optional(
-      v.union(v.literal("am"), v.literal("pm"), v.literal("all_day")),
+      v.union(v.literal('am'), v.literal('pm'), v.literal('all_day'))
     ),
     prefSpecialism: v.optional(v.string()),
     prefNotes: v.optional(v.string()),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_organisation", ["organisationId"]),
+  }).index('by_organisation', ['organisationId']),
 
   // 🧑‍🏫 Lecturer Instances
   lecturers: defineTable({
-    profileId: v.id("lecturer_profiles"),
-    academicYearId: v.id("academic_years"),
+    profileId: v.id('lecturer_profiles'),
+    academicYearId: v.id('academic_years'),
     teamId: v.optional(v.string()),
     isActive: v.boolean(),
     createdAt: v.float64(),
@@ -255,25 +255,25 @@ export default defineSchema({
 
   // 👥 Group Allocations (lecturer ↔ group for AY)
   group_allocations: defineTable({
-    groupId: v.id("module_groups"),
-    lecturerId: v.id("lecturer_profiles"),
-    academicYearId: v.id("academic_years"),
-    organisationId: v.id("organisations"),
-    type: v.union(v.literal("teaching"), v.literal("admin")),
+    groupId: v.id('module_groups'),
+    lecturerId: v.id('lecturer_profiles'),
+    academicYearId: v.id('academic_years'),
+    organisationId: v.id('organisations'),
+    type: v.union(v.literal('teaching'), v.literal('admin')),
     hoursComputed: v.float64(),
     hoursOverride: v.optional(v.float64()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_group", ["groupId"]) // list allocations for a group
-    .index("by_lecturer", ["lecturerId"]) // list allocations for a lecturer
-    .index("by_year", ["academicYearId"]) // list allocations for a year
-    .index("by_org_year", ["organisationId", "academicYearId"]),
+    .index('by_group', ['groupId']) // list allocations for a group
+    .index('by_lecturer', ['lecturerId']) // list allocations for a lecturer
+    .index('by_year', ['academicYearId']) // list allocations for a year
+    .index('by_org_year', ['organisationId', 'academicYearId']),
 
   // 🧮 Module Allocations
   module_allocations: defineTable({
     staffId: v.string(),
-    moduleIterationId: v.id("module_iterations"),
+    moduleIterationId: v.id('module_iterations'),
     type: v.string(), // 'teaching' | 'admin'
     hours: v.float64(),
     createdAt: v.float64(),
@@ -285,14 +285,14 @@ export default defineSchema({
     staffId: v.string(),
     categoryId: v.string(),
     hours: v.float64(),
-    academicYearId: v.id("academic_years"),
+    academicYearId: v.id('academic_years'),
     // Custom per-lecturer options
     isCustom: v.optional(v.boolean()),
     customLabel: v.optional(v.string()),
     comment: v.optional(v.string()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_year", ["academicYearId"]),
+  }).index('by_year', ['academicYearId']),
 
   admin_allocation_categories: defineTable({
     name: v.string(),
@@ -306,18 +306,18 @@ export default defineSchema({
 
   // 🏢 Organisation-specific Admin Allocation Categories (copied from system defaults at org creation)
   organisation_admin_allocation_categories: defineTable({
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     name: v.string(),
     description: v.optional(v.string()),
     minHours: v.optional(v.float64()),
     maxHours: v.optional(v.float64()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_organisation", ["organisationId"]),
+  }).index('by_organisation', ['organisationId']),
 
   // 🏢 Organisation Settings (per-organisation configurable options)
   organisation_settings: defineTable({
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     staffRoleOptions: v.array(v.string()),
     teamOptions: v.array(v.string()),
     campusOptions: v.optional(v.array(v.string())),
@@ -331,31 +331,31 @@ export default defineSchema({
           credits: v.number(),
           teaching: v.number(),
           marking: v.number(),
-        }),
-      ),
+        })
+      )
     ),
     roleMaxTeachingRules: v.optional(
       v.array(
         v.object({
           role: v.string(),
-          mode: v.union(v.literal("percent"), v.literal("fixed")),
+          mode: v.union(v.literal('percent'), v.literal('fixed')),
           value: v.float64(),
-        }),
-      ),
+        })
+      )
     ),
     contractFamilyOptions: v.optional(v.array(v.string())),
     familyMaxTeachingRules: v.optional(
       v.array(
         v.object({
           family: v.string(),
-          mode: v.union(v.literal("percent"), v.literal("fixed")),
+          mode: v.union(v.literal('percent'), v.literal('fixed')),
           value: v.float64(),
-        }),
-      ),
+        })
+      )
     ),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_organisation", ["organisationId"]),
+  }).index('by_organisation', ['organisationId']),
 
   // 🔐 System Permissions Registry
   system_permissions: defineTable({
@@ -366,7 +366,7 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_permission_id", ["id"]),
+  }).index('by_permission_id', ['id']),
 
   // 🧩 System Role Templates (used as defaults when creating organisations)
   system_role_templates: defineTable({
@@ -375,24 +375,24 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_name", ["name"]),
+  }).index('by_name', ['name']),
 
   // 🏢 Organisation Roles
   organisation_roles: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
-    organisationId: v.id("organisations"),
+    organisationId: v.id('organisations'),
     isDefault: v.boolean(), // Whether this is a default role for the org
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_organisation", ["organisationId"]),
+  }).index('by_organisation', ['organisationId']),
 
   // 🔗 Organisation Role Permissions (Junction Table)
   // NOTE: We use `user_roles` as the single source of truth for org-scoped roles.
   organisation_role_permissions: defineTable({
-    organisationId: v.id("organisations"),
-    roleId: v.id("user_roles"),
+    organisationId: v.id('organisations'),
+    roleId: v.id('user_roles'),
     permissionId: v.string(), // FK to system_permissions.id
     isGranted: v.boolean(), // true = granted, false = explicitly denied
     isOverride: v.boolean(), // Whether this overrides the system default
@@ -400,9 +400,9 @@ export default defineSchema({
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_role", ["roleId"])
-    .index("by_role_permission", ["roleId", "permissionId"])
-    .index("by_organisation", ["organisationId"]),
+    .index('by_role', ['roleId'])
+    .index('by_role_permission', ['roleId', 'permissionId'])
+    .index('by_organisation', ['organisationId']),
 
   // 🧪 Early Access Features (Admin-managed metadata)
   feature_flags: defineTable({
@@ -410,15 +410,15 @@ export default defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     stage: v.union(
-      v.literal("draft"),
-      v.literal("alpha"),
-      v.literal("beta"),
-      v.literal("concept"),
+      v.literal('draft'),
+      v.literal('alpha'),
+      v.literal('beta'),
+      v.literal('concept')
     ),
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_key", ["key"]),
+  }).index('by_key', ['key']),
 
   // 🧪 Per-user feature enrollments (drives Statsig user custom props)
   feature_enrollments: defineTable({
@@ -428,8 +428,8 @@ export default defineSchema({
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
-    .index("by_user", ["userId"]) // list all for user
-    .index("by_user_key", ["userId", "featureKey"]), // upsert key
+    .index('by_user', ['userId']) // list all for user
+    .index('by_user_key', ['userId', 'featureKey']), // upsert key
 
   // ⭐ Per-user Quick Access preferences
   quick_access_prefs: defineTable({
@@ -438,7 +438,7 @@ export default defineSchema({
     showNames: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_user", ["userId"]),
+  }).index('by_user', ['userId']),
 
   // 📩 Waitlist signups (for quick de-dupe before hitting external services)
   waitlist_signups: defineTable({
@@ -448,5 +448,5 @@ export default defineSchema({
     source: v.optional(v.string()),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index("by_email", ["email"]),
+  }).index('by_email', ['email']),
 });

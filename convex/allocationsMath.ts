@@ -1,5 +1,5 @@
 export type AllocationEntry = {
-  type: "teaching" | "admin";
+  type: 'teaching' | 'admin';
   hoursComputed?: number;
   hoursOverride?: number;
 };
@@ -11,20 +11,20 @@ export function computeHoursFromCredits(credits?: number): number {
 }
 
 export function computeTotals(entries: AllocationEntry[]) {
-  const sum = (filterType: AllocationEntry["type"]) =>
+  const sum = (filterType: AllocationEntry['type']) =>
     entries
       .filter((e) => e.type === filterType)
       .reduce(
         (acc, e) =>
           acc +
-          (typeof e.hoursOverride === "number"
+          (typeof e.hoursOverride === 'number'
             ? e.hoursOverride
             : e.hoursComputed || 0),
-        0,
+        0
       );
 
-  const allocatedTeaching = sum("teaching");
-  const allocatedAdmin = sum("admin");
+  const allocatedTeaching = sum('teaching');
+  const allocatedAdmin = sum('admin');
   return {
     allocatedTeaching,
     allocatedAdmin,

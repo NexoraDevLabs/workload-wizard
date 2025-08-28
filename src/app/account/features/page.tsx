@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
-import { useStatsigClient } from "@statsig/react-bindings";
-import { api } from "@/convex/_generated/api";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import { useUser } from '@clerk/nextjs';
+import { useMutation, useQuery } from 'convex/react';
+import { useStatsigClient } from '@statsig/react-bindings';
+import { api } from '@/convex/_generated/api';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Crown,
   Loader2,
@@ -25,12 +25,12 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 // Feature flags removed
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 interface EarlyAccessFeature {
   flagKey: string;
@@ -41,10 +41,10 @@ interface EarlyAccessFeature {
 }
 
 // Local storage key for feature flag overrides
-const LOCAL_FLAG_OVERRIDES_KEY = "feature-flag-overrides";
+const LOCAL_FLAG_OVERRIDES_KEY = 'feature-flag-overrides';
 
 function getLocalFlagOverrides(): Record<string, boolean> {
-  if (typeof window === "undefined") return {};
+  if (typeof window === 'undefined') return {};
 
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
@@ -56,7 +56,7 @@ function getLocalFlagOverrides(): Record<string, boolean> {
 }
 
 function setLocalFlagOverride(flagKey: string, enabled: boolean): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
   try {
     const overrides = getLocalFlagOverrides();
@@ -74,7 +74,7 @@ export default function AccountFeaturesPage() {
   const publicFeatures = useQuery(api.featureFlags.listPublic, {});
   const enrollments = useQuery(api.featureEnrollments.listForCurrentUser, {});
   const upsertEnrollment = useMutation(
-    api.featureEnrollments.upsertForCurrentUser,
+    api.featureEnrollments.upsertForCurrentUser
   );
   const { client } = useStatsigClient();
   const router = useRouter();
@@ -87,23 +87,23 @@ export default function AccountFeaturesPage() {
       setLoading(true);
 
       const enrollmentMap = new Map(
-        (enrollments || []).map((e) => [e.featureKey as string, !!e.enabled]),
+        (enrollments || []).map((e) => [e.featureKey, !!e.enabled])
       );
       const rows: EarlyAccessFeature[] = (publicFeatures || []).map((r) => ({
-        flagKey: r.key as string,
-        name: r.name as string,
-        description: (r.description as string) || "",
+        flagKey: r.key,
+        name: r.name,
+        description: (r.description as string) || '',
         stage: r.stage as string,
-        enrolled: enrollmentMap.get(r.key as string) || false,
+        enrolled: enrollmentMap.get(r.key) || false,
       }));
       setFeatures(rows);
       setLastRefresh(new Date());
     } catch (error) {
       // Use toast directly instead of in dependency
       toast({
-        title: "Error",
-        description: "Failed to load early access features. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load early access features. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -119,9 +119,9 @@ export default function AccountFeaturesPage() {
 
       // Dispatch custom event to notify other components
       window.dispatchEvent(
-        new CustomEvent("featureFlagChanged", {
+        new CustomEvent('featureFlagChanged', {
           detail: { flagKey, enabled },
-        }),
+        })
       );
 
       // Update local state
@@ -129,22 +129,22 @@ export default function AccountFeaturesPage() {
         prev.map((feature) =>
           feature.flagKey === flagKey
             ? { ...feature, enrolled: enabled }
-            : feature,
-        ),
+            : feature
+        )
       );
 
       const feature = features.find((f) => f.flagKey === flagKey);
       const featureName = feature?.name || flagKey;
 
       toast({
-        title: enabled ? "Feature Enabled" : "Feature Disabled",
-        description: `${enabled ? "Opted into" : "Opted out of"} ${featureName}`,
+        title: enabled ? 'Feature Enabled' : 'Feature Disabled',
+        description: `${enabled ? 'Opted into' : 'Opted out of'} ${featureName}`,
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: `Failed to ${enabled ? "enable" : "disable"} feature. Please try again.`,
-        variant: "destructive",
+        title: 'Error',
+        description: `Failed to ${enabled ? 'enable' : 'disable'} feature. Please try again.`,
+        variant: 'destructive',
       });
     } finally {
       setUpdating(null);
@@ -156,13 +156,13 @@ export default function AccountFeaturesPage() {
     try {
       // Build a fresh Statsig user and force client re-evaluation to reduce delay
       const enrolledMap = new Map(
-        (enrollments || []).map((e) => [e.featureKey as string, !!e.enabled]),
+        (enrollments || []).map((e) => [e.featureKey, !!e.enabled])
       );
       const enrolled: Record<string, boolean> = {};
       const flattened: Record<string, boolean> = {};
       for (const [k, v] of enrolledMap.entries()) {
         enrolled[k] = v;
-        const safe = `enrolled_${k.replace(/[^A-Za-z0-9_]/g, "_")}`;
+        const safe = `enrolled_${k.replace(/[^A-Za-z0-9_]/g, '_')}`;
         flattened[safe] = v;
       }
       const statsigUser = user
@@ -170,7 +170,7 @@ export default function AccountFeaturesPage() {
             userID: user.id,
             email: user.primaryEmailAddress?.emailAddress,
             custom: {
-              fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+              fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
               organisationId:
                 (user.publicMetadata?.organisationId as string) ?? undefined,
               role: (user.publicMetadata?.role as string) ?? undefined,
@@ -178,16 +178,16 @@ export default function AccountFeaturesPage() {
               ...flattened,
             },
           }
-        : { userID: "anonymous" };
+        : { userID: 'anonymous' };
       const anyClient = client as unknown as {
         updateUser?: (u: unknown) => Promise<unknown>;
       };
       await anyClient.updateUser?.(statsigUser);
-      client.logEvent("features_refresh");
+      client.logEvent('features_refresh');
     } catch {}
     toast({
-      title: "Refreshed",
-      description: "Features and flags re-synced.",
+      title: 'Refreshed',
+      description: 'Features and flags re-synced.',
     });
     router.refresh();
   };
@@ -207,9 +207,9 @@ export default function AccountFeaturesPage() {
   }, [isLoaded, user, loadFeatures]);
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Account", href: "/account" },
-    { label: "Features" },
+    { label: 'Home', href: '/' },
+    { label: 'Account', href: '/account' },
+    { label: 'Features' },
   ];
 
   const headerActions = (
@@ -221,7 +221,7 @@ export default function AccountFeaturesPage() {
         disabled={loading}
       >
         <RefreshCw
-          className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+          className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
         />
         Refresh
       </Button>
@@ -230,14 +230,14 @@ export default function AccountFeaturesPage() {
 
   const getStageBadgeVariant = (stage: string) => {
     switch (stage.toLowerCase()) {
-      case "concept":
-        return "secondary" as const;
-      case "beta":
-        return "default" as const;
-      case "alpha":
-        return "destructive" as const;
+      case 'concept':
+        return 'secondary' as const;
+      case 'beta':
+        return 'default' as const;
+      case 'alpha':
+        return 'destructive' as const;
       default:
-        return "outline" as const;
+        return 'outline' as const;
     }
   };
 
@@ -248,9 +248,9 @@ export default function AccountFeaturesPage() {
   const formatFeatureName = (name: string) => {
     // Convert kebab-case to Title Case
     return name
-      .split("-")
+      .split('-')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
+      .join(' ');
   };
 
   return (
@@ -276,17 +276,17 @@ export default function AccountFeaturesPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Available Features:</span>
               <Badge variant="outline">
-                {features.length}{" "}
-                {features.length === 1 ? "feature" : "features"}
+                {features.length}{' '}
+                {features.length === 1 ? 'feature' : 'features'}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Enrolled Features:</span>
               <Badge variant="outline">
-                {features.filter((f) => f.enrolled).length}{" "}
+                {features.filter((f) => f.enrolled).length}{' '}
                 {features.filter((f) => f.enrolled).length === 1
-                  ? "feature"
-                  : "features"}
+                  ? 'feature'
+                  : 'features'}
               </Badge>
             </div>
           </div>
@@ -326,10 +326,10 @@ export default function AccountFeaturesPage() {
                           {capitalizeStage(feature.stage)}
                         </Badge>
                         <Badge
-                          variant={feature.enrolled ? "default" : "secondary"}
+                          variant={feature.enrolled ? 'default' : 'secondary'}
                           className="text-xs"
                         >
-                          {feature.enrolled ? "Enrolled" : "Not Enrolled"}
+                          {feature.enrolled ? 'Enrolled' : 'Not Enrolled'}
                         </Badge>
                       </div>
 

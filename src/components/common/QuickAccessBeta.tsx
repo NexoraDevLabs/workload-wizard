@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import * as React from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 import {
   SidebarGroup,
@@ -10,18 +10,18 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 type QuickLink = { name: string; url: string };
 
@@ -29,7 +29,7 @@ export function QuickAccessBeta() {
   const prefs = useQuery(api.quickAccess.getForCurrentUser, {});
   const savePrefs = useMutation(api.quickAccess.saveForCurrentUser);
   const [links, setLinks] = React.useState<QuickLink[]>([]);
-  const [draft, setDraft] = React.useState<QuickLink>({ name: "", url: "" });
+  const [draft, setDraft] = React.useState<QuickLink>({ name: '', url: '' });
   const [showNames, setShowNames] = React.useState(true);
 
   React.useEffect(() => {
@@ -44,7 +44,7 @@ export function QuickAccessBeta() {
     const next = [...links, draft];
     setLinks(next);
     savePrefs({ links: next, showNames }).catch(() => {});
-    setDraft({ name: "", url: "" });
+    setDraft({ name: '', url: '' });
   };
   const clearAll = () => {
     setLinks([]);

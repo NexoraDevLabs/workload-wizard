@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { PermissionGate } from "@/components/common/PermissionGate";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { withToast } from "@/lib/utils";
+import { useUser } from '@clerk/nextjs';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { useEffect, useMemo, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { withToast } from '@/lib/utils';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function CreateLecturerProfilePage() {
   const { user } = useUser();
@@ -29,33 +29,33 @@ export default function CreateLecturerProfilePage() {
   const create = useMutation((api as any).staff.create);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    role: "Lecturer",
-    teamName: "",
-    fte: "1",
+    fullName: '',
+    email: '',
+    role: 'Lecturer',
+    teamName: '',
+    fte: '1',
   });
 
   const orgSettings = useQuery(
     (api as any).organisationSettings.getOrganisationSettings,
     {
-      userId: user?.id || "",
-    },
+      userId: user?.id || '',
+    }
   );
 
   const ROLE_OPTIONS = orgSettings?.staffRoleOptions ?? [
-    "Lecturer",
-    "Senior Lecturer",
-    "Teaching Fellow",
-    "Associate Lecturer",
-    "Professor",
+    'Lecturer',
+    'Senior Lecturer',
+    'Teaching Fellow',
+    'Associate Lecturer',
+    'Professor',
   ];
 
   const TEAM_OPTIONS = orgSettings?.teamOptions ?? [
-    "Computing",
-    "Engineering",
-    "Business",
-    "Design",
+    'Computing',
+    'Engineering',
+    'Business',
+    'Design',
   ];
 
   const BASE_MAX_TEACHING_AT_FTE_1 = orgSettings?.baseMaxTeachingAtFTE1 ?? 400; // hours at FTE=1
@@ -70,15 +70,15 @@ export default function CreateLecturerProfilePage() {
 
   const derivedMaxTeaching = useMemo(() => {
     // If a per-role rule exists, apply it; else use base = %100 of FTE1
-    const rules = (orgSettings as any)?.roleMaxTeachingRules as
-      | { role: string; mode: "percent" | "fixed"; value: number }[]
+    const rules = orgSettings?.roleMaxTeachingRules as
+      | { role: string; mode: 'percent' | 'fixed'; value: number }[]
       | undefined;
     const match = rules?.find((r) => r.role === form.role);
     const fte1 = BASE_TOTAL_CONTRACT_AT_FTE_1;
     let baseAtFte1: number;
     if (match) {
       baseAtFte1 =
-        match.mode === "percent" ? (match.value / 100) * fte1 : match.value;
+        match.mode === 'percent' ? (match.value / 100) * fte1 : match.value;
     } else {
       baseAtFte1 = BASE_MAX_TEACHING_AT_FTE_1;
     }
@@ -87,12 +87,12 @@ export default function CreateLecturerProfilePage() {
     fteNum,
     BASE_TOTAL_CONTRACT_AT_FTE_1,
     BASE_MAX_TEACHING_AT_FTE_1,
-    (orgSettings as any)?.roleMaxTeachingRules,
+    orgSettings?.roleMaxTeachingRules,
     form.role,
   ]);
   const derivedTotalContract = useMemo(
     () => Math.round(BASE_TOTAL_CONTRACT_AT_FTE_1 * fteNum),
-    [fteNum, BASE_TOTAL_CONTRACT_AT_FTE_1],
+    [fteNum, BASE_TOTAL_CONTRACT_AT_FTE_1]
   );
 
   // Keep form.role and form.teamName valid when org settings update
@@ -133,22 +133,22 @@ export default function CreateLecturerProfilePage() {
             email: form.email.trim(),
             role: form.role.trim(),
             teamName: form.teamName.trim(),
-            contract: fteNum >= 0.995 ? "FT" : "PT",
+            contract: fteNum >= 0.995 ? 'FT' : 'PT',
             fte: fteNum,
             maxTeachingHours: derivedMaxTeaching,
             totalContract: derivedTotalContract,
           } as any),
         {
           success: {
-            title: "Profile created",
-            description: "Lecturer profile created successfully!",
+            title: 'Profile created',
+            description: 'Lecturer profile created successfully!',
           },
-          error: { title: "Failed to create profile" },
+          error: { title: 'Failed to create profile' },
         },
-        toast,
+        toast
       );
 
-      window.location.href = "/staff";
+      window.location.href = '/staff';
     } catch (error) {
       // handled by withToast
     } finally {
@@ -159,8 +159,8 @@ export default function CreateLecturerProfilePage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Staff", href: "/staff" },
-        { label: "Create Profile" },
+        { label: 'Staff', href: '/staff' },
+        { label: 'Create Profile' },
       ]}
       title="Create Lecturer Profile"
     >
@@ -256,7 +256,7 @@ export default function CreateLecturerProfilePage() {
                     const raw = e.target.value;
                     const n = Number(raw);
                     if (Number.isNaN(n)) {
-                      setForm((f) => ({ ...f, fte: "0" }));
+                      setForm((f) => ({ ...f, fte: '0' }));
                       return;
                     }
                     const clamped = Math.max(0, Math.min(1, n));
@@ -303,7 +303,7 @@ export default function CreateLecturerProfilePage() {
                     disabled={!canSubmit || !user?.id || isLoading}
                     data-testid="staff-submit"
                   >
-                    {isLoading ? "Creating..." : "Create Profile"}
+                    {isLoading ? 'Creating...' : 'Create Profile'}
                   </Button>
                 </PermissionGate>
               </div>

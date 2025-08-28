@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { AlertTriangle, Trash2, X } from "lucide-react";
+} from '@/components/ui/card';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
   user: {
@@ -44,13 +44,13 @@ export function DeleteConfirmationModal({
     if (user.firstName && user.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
-    return user.email || "Unknown User";
+    return user.email || 'Unknown User';
   };
 
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: "rgba(0,0,0,0.06)" }}
+      style={{ background: 'rgba(0,0,0,0.06)' }}
     >
       <Card className="w-full max-w-md">
         <CardHeader className="pb-4">
@@ -91,13 +91,13 @@ export function DeleteConfirmationModal({
                     <strong>Name:</strong> {getUserDisplayName()}
                   </p>
                   <p>
-                    <strong>Email:</strong> {user.email || "N/A"}
+                    <strong>Email:</strong> {user.email || 'N/A'}
                   </p>
                   <p>
-                    <strong>Roles:</strong>{" "}
+                    <strong>Roles:</strong>{' '}
                     {user.roles && user.roles.length > 0
-                      ? user.roles.join(", ")
-                      : "No roles"}
+                      ? user.roles.join(', ')
+                      : 'No roles'}
                   </p>
                 </div>
                 <p className="text-xs text-red-600 mt-2">

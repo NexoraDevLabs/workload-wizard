@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { PortableText } from "next-sanity";
-import { client } from "@/sanity/lib/client";
-import { urlFor } from "@/sanity/lib/image";
-import { sanityEnabled } from "@/sanity/env";
-import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, Tag, ArrowLeft } from "lucide-react";
-import DynamicIslandHeader from "@/components/dynamic-header-island";
-import Footer from "@/components/Footer";
-import NewsletterSubscription from "@/components/NewsletterSubscription";
-import { useState, useEffect } from "react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { PortableText } from 'next-sanity';
+import { client } from '@/sanity/lib/client';
+import { urlFor } from '@/sanity/lib/image';
+import { sanityEnabled } from '@/sanity/env';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, User, Tag, ArrowLeft } from 'lucide-react';
+import DynamicIslandHeader from '@/components/dynamic-header-island';
+import Footer from '@/components/Footer';
+import NewsletterSubscription from '@/components/NewsletterSubscription';
+import { useState, useEffect } from 'react';
 
 type Post = {
   _id: string;
@@ -42,10 +42,10 @@ const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]{
 
 function formatDate(iso: string) {
   try {
-    return new Intl.DateTimeFormat("en-GB", {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
+    return new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -144,8 +144,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
               urlFor(fetchedPost.coverImage)
                 .width(1600)
                 .height(840)
-                .fit("crop")
-                .url(),
+                .fit('crop')
+                .url()
             );
           }
         }
@@ -251,14 +251,14 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             <div className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="font-medium text-slate-700 dark:text-slate-300">
-                {post.author?.name || "Unknown"}
+                {post.author?.name || 'Unknown'}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{formatDate(post.publishedAt)}</span>
             </div>
-            {typeof post.readingTime === "number" && (
+            {typeof post.readingTime === 'number' && (
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 <span>{post.readingTime} min read</span>
@@ -330,9 +330,9 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
               source="blog"
               buttonText="Subscribe to Updates"
               buttonProps={{
-                size: "lg",
+                size: 'lg',
                 className:
-                  "bg-white text-blue-600 hover:bg-white/90 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600",
+                  'bg-white text-blue-600 hover:bg-white/90 shadow-lg hover:shadow-xl transition-all duration-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600',
               }}
             />
           </div>

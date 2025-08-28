@@ -1,13 +1,13 @@
-import { CheckCircle, TrendingUp, Users2, Clock } from "lucide-react";
+import { CheckCircle, TrendingUp, Users2, Clock } from 'lucide-react';
 
 export default function Benefits() {
   const keyPoints = [
-    "Real-time workload visibility across all departments",
-    "Automated compliance with union agreements and regulations",
-    "Seamless integration with existing university systems",
-    "Mobile-first design for access anywhere, anytime",
-    "Comprehensive audit trails for all workload decisions",
-    "Customisable reporting for different stakeholder needs",
+    'Real-time workload visibility across all departments',
+    'Automated compliance with union agreements and regulations',
+    'Seamless integration with existing university systems',
+    'Mobile-first design for access anywhere, anytime',
+    'Comprehensive audit trails for all workload decisions',
+    'Customisable reporting for different stakeholder needs',
   ];
 
   return (

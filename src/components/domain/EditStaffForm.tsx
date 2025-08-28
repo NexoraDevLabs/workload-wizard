@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 interface LecturerProfile {
   _id: string;
@@ -54,59 +54,59 @@ export function EditStaffForm({
   const { user } = useUser();
   const orgSettings = useQuery(
     (api as any).organisationSettings.getOrganisationSettings,
-    user?.id ? { userId: user.id } : ("skip" as any),
+    user?.id ? { userId: user.id } : ('skip' as any)
   );
   const ROLE_OPTIONS = orgSettings?.staffRoleOptions ?? [
-    "Lecturer",
-    "Senior Lecturer",
-    "Teaching Fellow",
-    "Associate Lecturer",
-    "Professor",
+    'Lecturer',
+    'Senior Lecturer',
+    'Teaching Fellow',
+    'Associate Lecturer',
+    'Professor',
   ];
   const TEAM_OPTIONS = orgSettings?.teamOptions ?? [
-    "Computing",
-    "Engineering",
-    "Business",
-    "Design",
+    'Computing',
+    'Engineering',
+    'Business',
+    'Design',
   ];
   const FAMILY_OPTIONS = orgSettings?.contractFamilyOptions ?? [
-    "Academic Practitioner",
+    'Academic Practitioner',
   ];
   const roleItems = useMemo(() => {
-    const r = (profile.role || "").trim();
+    const r = (profile.role || '').trim();
     if (r && !ROLE_OPTIONS.includes(r)) return [r, ...ROLE_OPTIONS];
     return ROLE_OPTIONS;
   }, [ROLE_OPTIONS, profile.role]);
   const teamItems = useMemo(() => {
-    const t = (profile.teamName || "").trim();
+    const t = (profile.teamName || '').trim();
     if (t && !TEAM_OPTIONS.includes(t)) return [t, ...TEAM_OPTIONS];
     return TEAM_OPTIONS;
   }, [TEAM_OPTIONS, profile.teamName]);
   const familyItems = useMemo(() => {
-    const cf = (profile as any).contractFamily || "";
+    const cf = (profile as any).contractFamily || '';
     if (cf && !FAMILY_OPTIONS.includes(cf)) return [cf, ...FAMILY_OPTIONS];
     return FAMILY_OPTIONS;
   }, [FAMILY_OPTIONS, profile]);
   const CAMPUS_OPTIONS = orgSettings?.campusOptions ?? [];
   const campusItems = useMemo(() => {
-    const c = (profile.prefWorkingLocation || "").trim();
+    const c = (profile.prefWorkingLocation || '').trim();
     if (c && !CAMPUS_OPTIONS.includes(c)) return [c, ...CAMPUS_OPTIONS];
     return CAMPUS_OPTIONS;
   }, [CAMPUS_OPTIONS, profile.prefWorkingLocation]);
   const [form, setForm] = useState({
     fullName: profile.fullName,
     email: profile.email,
-    role: profile.role || "",
-    teamName: profile.teamName || "",
-    contractFamily: (profile as any).contractFamily || "",
+    role: profile.role || '',
+    teamName: profile.teamName || '',
+    contractFamily: (profile as any).contractFamily || '',
     contract: profile.contract,
     fte: profile.fte.toString(),
     maxTeachingHours: profile.maxTeachingHours.toString(),
     totalContract: profile.totalContract.toString(),
-    prefWorkingLocation: profile.prefWorkingLocation || "",
-    prefWorkingTime: ((profile as any).prefWorkingTime as any) || "",
-    prefSpecialism: profile.prefSpecialism || "",
-    prefNotes: profile.prefNotes || "",
+    prefWorkingLocation: profile.prefWorkingLocation || '',
+    prefWorkingTime: (profile as any).prefWorkingTime || '',
+    prefSpecialism: profile.prefSpecialism || '',
+    prefNotes: profile.prefNotes || '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,17 +115,17 @@ export function EditStaffForm({
     setForm({
       fullName: profile.fullName,
       email: profile.email,
-      role: profile.role || "",
-      teamName: profile.teamName || "",
-      contractFamily: (profile as any).contractFamily || "",
+      role: profile.role || '',
+      teamName: profile.teamName || '',
+      contractFamily: (profile as any).contractFamily || '',
       contract: profile.contract,
       fte: profile.fte.toString(),
       maxTeachingHours: profile.maxTeachingHours.toString(),
       totalContract: profile.totalContract.toString(),
-      prefWorkingLocation: profile.prefWorkingLocation || "",
-      prefWorkingTime: ((profile as any).prefWorkingTime as any) || "",
-      prefSpecialism: profile.prefSpecialism || "",
-      prefNotes: profile.prefNotes || "",
+      prefWorkingLocation: profile.prefWorkingLocation || '',
+      prefWorkingTime: (profile as any).prefWorkingTime || '',
+      prefSpecialism: profile.prefSpecialism || '',
+      prefNotes: profile.prefNotes || '',
     });
   }, [profile]);
 
@@ -276,7 +276,7 @@ export function EditStaffForm({
                   value={
                     (form as any).contractFamily ||
                     (profile as any).contractFamily ||
-                    ""
+                    ''
                   }
                   onValueChange={(v) =>
                     setForm((f) => ({ ...(f as any), contractFamily: v }))
@@ -400,7 +400,7 @@ export function EditStaffForm({
               <div className="space-y-2">
                 <Label htmlFor="prefWorkingTime">Preferred Working Time</Label>
                 <Select
-                  value={(form as any).prefWorkingTime || ""}
+                  value={(form as any).prefWorkingTime || ''}
                   onValueChange={(v) =>
                     setForm((f) => ({ ...(f as any), prefWorkingTime: v }))
                   }
@@ -441,7 +441,7 @@ export function EditStaffForm({
               Cancel
             </Button>
             <Button type="submit" disabled={!canSubmit || isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

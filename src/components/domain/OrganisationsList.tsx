@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -19,10 +19,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Trash2, RefreshCw, Edit, RefreshCcw, Rocket } from "lucide-react";
-import { EditOrganisationForm } from "./EditOrganisationForm";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/table';
+import { Trash2, RefreshCw, Edit, RefreshCcw, Rocket } from 'lucide-react';
+import { EditOrganisationForm } from './EditOrganisationForm';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 export function OrganisationsList() {
   const { toast } = useToast();
@@ -41,7 +41,7 @@ export function OrganisationsList() {
   const deleteOrganisation = useMutation(api.organisations.remove);
   const reseedOrg = useMutation(api.organisations.reseedDefaultsForOrg as any);
   const reseedAll = useMutation(
-    api.organisations.reseedDefaultsAcrossOrganisations as any,
+    api.organisations.reseedDefaultsAcrossOrganisations as any
   );
   const [editingOrganisation, setEditingOrganisation] = useState<any>(null);
   const [isSeeding, setIsSeeding] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function OrganisationsList() {
   const [confirmOrgId, setConfirmOrgId] = useState<string | null>(null);
 
   // Handle case where Convex might not be ready
-  if (organisations === undefined && typeof window !== "undefined") {
+  if (organisations === undefined && typeof window !== 'undefined') {
     return (
       <Card>
         <CardContent className="p-6">
@@ -63,15 +63,15 @@ export function OrganisationsList() {
   }
 
   const handleDeleteOrganisation = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this organisation?")) return;
+    if (!confirm('Are you sure you want to delete this organisation?')) return;
 
     try {
-      await deleteOrganisation({ id: id as unknown as Id<"organisations"> });
+      await deleteOrganisation({ id: id as unknown as Id<'organisations'> });
     } catch (err) {
       toast({
-        title: "Failed to delete organisation",
-        description: err instanceof Error ? err.message : "An error occurred",
-        variant: "destructive",
+        title: 'Failed to delete organisation',
+        description: err instanceof Error ? err.message : 'An error occurred',
+        variant: 'destructive',
       });
     }
   };
@@ -147,17 +147,17 @@ export function OrganisationsList() {
                     <AlertDialogAction
                       onClick={async () => {
                         try {
-                          setIsSeeding("all");
+                          setIsSeeding('all');
                           await reseedAll({} as any);
                           toast({
-                            title: "Defaults seeded across organisations",
+                            title: 'Defaults seeded across organisations',
                           });
                         } catch (e) {
                           toast({
-                            title: "Seeding failed",
+                            title: 'Seeding failed',
                             description:
-                              e instanceof Error ? e.message : "Unknown error",
-                            variant: "destructive",
+                              e instanceof Error ? e.message : 'Unknown error',
+                            variant: 'destructive',
                           });
                         } finally {
                           setIsSeeding(null);
@@ -211,15 +211,15 @@ export function OrganisationsList() {
                       <TableCell data-testid="org-code-cell">
                         {org.code}
                       </TableCell>
-                      <TableCell>{org.contactEmail || "N/A"}</TableCell>
+                      <TableCell>{org.contactEmail || 'N/A'}</TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            org.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : org.status === "inactive"
-                                ? "bg-gray-100 text-gray-800"
-                                : "bg-red-100 text-red-800"
+                            org.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : org.status === 'inactive'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-red-100 text-red-800'
                           }`}
                         >
                           {org.status.charAt(0).toUpperCase() +
@@ -284,20 +284,20 @@ export function OrganisationsList() {
                                       setIsSeeding(String(org._id));
                                       await reseedOrg({
                                         organisationId:
-                                          org._id as unknown as Id<"organisations">,
+                                          org._id as unknown as Id<'organisations'>,
                                       } as any);
                                       toast({
-                                        title: "Defaults seeded",
+                                        title: 'Defaults seeded',
                                         description: `${org.name} reseeded successfully`,
                                       });
                                     } catch (e) {
                                       toast({
-                                        title: "Seeding failed",
+                                        title: 'Seeding failed',
                                         description:
                                           e instanceof Error
                                             ? e.message
-                                            : "Unknown error",
-                                        variant: "destructive",
+                                            : 'Unknown error',
+                                        variant: 'destructive',
                                       });
                                     } finally {
                                       setIsSeeding(null);

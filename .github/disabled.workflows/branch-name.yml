@@ -5,10 +5,10 @@ on:
     branches: [dev, main]
     types: [opened, synchronize, reopened, edited]
     paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "README*"
-      - "public/**"
+      - '**/*.md'
+      - 'docs/**'
+      - 'README*'
+      - 'public/**'
 
 permissions:
   contents: read
@@ -27,8 +27,8 @@ jobs:
         uses: deepakputhraya/action-branch-name@v1.0.0
         with:
           # allow: feat/<slug> | fix/<slug> | test/<slug>
-          allowed_prefixes: "feat,fix,test"
+          allowed_prefixes: 'feat,fix,test'
           # branches to ignore completely (exact matches or regexes)
-          ignore: "main,dev,dependabot,renovate"
+          ignore: 'main,dev,dependabot,renovate'
           min_length: 5
           max_length: 100

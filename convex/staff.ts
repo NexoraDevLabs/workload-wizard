@@ -1,7 +1,7 @@
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
-import { requireOrgPermission } from "./permissions";
-import { writeAudit } from "./audit";
+import { mutation, query } from './_generated/server';
+import { v } from 'convex/values';
+import { requireOrgPermission } from './permissions';
+import { writeAudit } from './audit';
 
 // Create a new lecturer profile
 export const create = mutation({
@@ -17,7 +17,7 @@ export const create = mutation({
     contractFamily: v.optional(v.string()),
     prefWorkingLocation: v.optional(v.string()),
     prefWorkingTime: v.optional(
-      v.union(v.literal("am"), v.literal("pm"), v.literal("all_day")),
+      v.union(v.literal('am'), v.literal('pm'), v.literal('all_day'))
     ),
     prefSpecialism: v.optional(v.string()),
     prefNotes: v.optional(v.string()),
@@ -26,22 +26,22 @@ export const create = mutation({
   handler: async (ctx, args) => {
     // Derive organisationId from the actor's user record
     const actor = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.userId))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
-    if (!actor) throw new Error("Actor not found");
+    if (!actor) throw new Error('Actor not found');
 
     // Check permission within org context using derived organisationId
     await requireOrgPermission(
       ctx,
       args.userId,
-      "staff.create",
-      actor.organisationId,
+      'staff.create',
+      actor.organisationId
     );
 
     const now = Date.now();
 
-    const profileId = await ctx.db.insert("lecturer_profiles", {
+    const profileId = await ctx.db.insert('lecturer_profiles', {
       fullName: args.fullName,
       email: args.email,
       contract: args.contract,
@@ -67,8 +67,8 @@ export const create = mutation({
 
     // Audit create
     await writeAudit(ctx, {
-      action: "create",
-      entityType: "lecturer_profile",
+      action: 'create',
+      entityType: 'lecturer_profile',
       entityId: String(profileId),
       entityName: args.fullName,
       performedBy: args.userId,
@@ -80,8 +80,8 @@ export const create = mutation({
         maxTeachingHours: args.maxTeachingHours,
         totalContract: args.totalContract,
       }),
-      severity: "info",
-      type: "org",
+      severity: 'info',
+      type: 'org',
     });
 
     return profileId;
@@ -91,7 +91,7 @@ export const create = mutation({
 // Update lecturer profile
 export const edit = mutation({
   args: {
-    profileId: v.id("lecturer_profiles"),
+    profileId: v.id('lecturer_profiles'),
     fullName: v.optional(v.string()),
     email: v.optional(v.string()),
     contract: v.optional(v.string()),
@@ -105,7 +105,7 @@ export const edit = mutation({
     contractFamily: v.optional(v.string()),
     prefWorkingLocation: v.optional(v.string()),
     prefWorkingTime: v.optional(
-      v.union(v.literal("am"), v.literal("pm"), v.literal("all_day")),
+      v.union(v.literal('am'), v.literal('pm'), v.literal('all_day'))
     ),
     prefSpecialism: v.optional(v.string()),
     prefNotes: v.optional(v.string()),
@@ -115,13 +115,13 @@ export const edit = mutation({
     // Check permission within org context
     const profile = await ctx.db.get(args.profileId);
     if (!profile) {
-      throw new Error("Lecturer profile not found");
+      throw new Error('Lecturer profile not found');
     }
     await requireOrgPermission(
       ctx,
       args.userId,
-      "staff.edit",
-      profile.organisationId,
+      'staff.edit',
+      profile.organisationId
     );
 
     const updates: {
@@ -137,7 +137,7 @@ export const edit = mutation({
       teamName?: string;
       contractFamily?: string;
       prefWorkingLocation?: string;
-      prefWorkingTime?: "am" | "pm" | "all_day";
+      prefWorkingTime?: 'am' | 'pm' | 'all_day';
       prefSpecialism?: string;
       prefNotes?: string;
       updatedAt: number;
@@ -167,15 +167,15 @@ export const edit = mutation({
 
     // Audit update
     await writeAudit(ctx, {
-      action: "update",
-      entityType: "lecturer_profile",
+      action: 'update',
+      entityType: 'lecturer_profile',
       entityId: String(args.profileId),
       performedBy: args.userId,
       organisationId: profile.organisationId,
-      details: "Updated lecturer profile",
+      details: 'Updated lecturer profile',
       metadata: JSON.stringify(updates),
-      severity: "info",
-      type: "org",
+      severity: 'info',
+      type: 'org',
     });
 
     return args.profileId;
@@ -187,17 +187,17 @@ export const list = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     const actor = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", args.userId))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
-    if (!actor) throw new Error("Actor not found");
+    if (!actor) throw new Error('Actor not found');
 
     return await ctx.db
-      .query("lecturer_profiles")
-      .withIndex("by_organisation", (q) =>
-        q.eq("organisationId", actor.organisationId),
+      .query('lecturer_profiles')
+      .withIndex('by_organisation', (q) =>
+        q.eq('organisationId', actor.organisationId)
       )
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
   },
 });
@@ -209,16 +209,16 @@ export const listForActor = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return [];
     const actor = await ctx.db
-      .query("users")
-      .withIndex("by_subject", (q) => q.eq("subject", identity.subject))
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return [];
     return await ctx.db
-      .query("lecturer_profiles")
-      .withIndex("by_organisation", (q) =>
-        q.eq("organisationId", actor.organisationId),
+      .query('lecturer_profiles')
+      .withIndex('by_organisation', (q) =>
+        q.eq('organisationId', actor.organisationId)
       )
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
   },
 });
@@ -226,7 +226,7 @@ export const listForActor = query({
 // Get a single lecturer profile
 export const get = query({
   args: {
-    profileId: v.id("lecturer_profiles"),
+    profileId: v.id('lecturer_profiles'),
   },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.profileId);

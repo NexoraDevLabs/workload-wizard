@@ -1,11 +1,11 @@
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
-import { writeAudit } from "./audit";
-import { requireOrgPermission } from "./permissions";
+import { mutation, query } from './_generated/server';
+import { v } from 'convex/values';
+import { writeAudit } from './audit';
+import { requireOrgPermission } from './permissions';
 
 // List groups under a module iteration
 export const listByIteration = query({
-  args: { moduleIterationId: v.id("module_iterations") },
+  args: { moduleIterationId: v.id('module_iterations') },
   handler: async (ctx, args) => {
     // Enforce view via module org
     const iteration = await ctx.db.get(args.moduleIterationId);
@@ -19,16 +19,16 @@ export const listByIteration = query({
       await requireOrgPermission(
         ctx as any,
         identity.subject,
-        "groups.view",
-        (moduleDoc as any).organisationId,
+        'groups.view',
+        (moduleDoc as any).organisationId
       );
     }
     const groups = await ctx.db
-      .query("module_groups" as any)
-      .withIndex("by_iteration" as any, (q) =>
-        (q as any).eq("moduleIterationId", args.moduleIterationId as any),
+      .query('module_groups' as any)
+      .withIndex('by_iteration' as any, (q) =>
+        (q as any).eq('moduleIterationId', args.moduleIterationId as any)
       )
-      .order("asc")
+      .order('asc')
       .collect();
     return groups;
   },
@@ -37,30 +37,30 @@ export const listByIteration = query({
 // Create a group under an iteration
 export const create = mutation({
   args: {
-    moduleIterationId: v.id("module_iterations"),
+    moduleIterationId: v.id('module_iterations'),
     name: v.string(),
     sizePlanned: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
 
     const iteration = await ctx.db.get(args.moduleIterationId);
-    if (!iteration) throw new Error("Module iteration not found");
+    if (!iteration) throw new Error('Module iteration not found');
     const moduleDoc = await ctx.db.get(iteration.moduleId);
-    if (!moduleDoc) throw new Error("Module not found");
+    if (!moduleDoc) throw new Error('Module not found');
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "groups.create",
-      (moduleDoc as any).organisationId,
+      'groups.create',
+      (moduleDoc as any).organisationId
     );
 
     const now = Date.now();
-    const id = await (ctx.db as any).insert("module_groups", {
+    const id = await (ctx.db as any).insert('module_groups', {
       moduleIterationId: args.moduleIterationId,
       name: args.name,
-      ...(typeof args.sizePlanned === "number"
+      ...(typeof args.sizePlanned === 'number'
         ? { sizePlanned: args.sizePlanned }
         : {}),
       createdAt: now,
@@ -69,13 +69,13 @@ export const create = mutation({
 
     try {
       await writeAudit(ctx, {
-        action: "create",
-        entityType: "module_group",
+        action: 'create',
+        entityType: 'module_group',
         entityId: String(id),
         performedBy: identity.subject,
         details: `Created group ${args.name}`,
-        severity: "info",
-        type: "org",
+        severity: 'info',
+        type: 'org',
       });
     } catch {}
 
@@ -86,34 +86,34 @@ export const create = mutation({
 // Auto-create groups for an iteration given per-campus group counts.
 export const createAutoForIteration = mutation({
   args: {
-    moduleIterationId: v.id("module_iterations"),
+    moduleIterationId: v.id('module_iterations'),
     campusGroups: v.array(
-      v.object({ campus: v.optional(v.string()), groups: v.number() }),
+      v.object({ campus: v.optional(v.string()), groups: v.number() })
     ),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
 
     const iteration = await ctx.db.get(args.moduleIterationId);
-    if (!iteration) throw new Error("Module iteration not found");
+    if (!iteration) throw new Error('Module iteration not found');
     const moduleDoc = await ctx.db.get((iteration as any).moduleId);
-    if (!moduleDoc) throw new Error("Module not found");
+    if (!moduleDoc) throw new Error('Module not found');
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "groups.create",
-      (moduleDoc as any).organisationId,
+      'groups.create',
+      (moduleDoc as any).organisationId
     );
 
     const now = Date.now();
     let created = 0;
     for (const entry of args.campusGroups) {
-      const campus = (entry.campus || "").trim();
+      const campus = (entry.campus || '').trim();
       const total = Math.max(0, Math.floor(entry.groups || 0));
       for (let i = 1; i <= total; i++) {
         const name = campus ? `${campus} ${i}` : `Group ${i}`;
-        await (ctx.db as any).insert("module_groups", {
+        await (ctx.db as any).insert('module_groups', {
           moduleIterationId: args.moduleIterationId,
           name,
           ...(campus ? { campusId: campus } : {}),
@@ -126,13 +126,13 @@ export const createAutoForIteration = mutation({
 
     try {
       await writeAudit(ctx, {
-        action: "create",
-        entityType: "module_groups_auto",
+        action: 'create',
+        entityType: 'module_groups_auto',
         entityId: String(args.moduleIterationId),
         performedBy: identity.subject,
         details: `Auto-created ${created} groups`,
-        severity: "info",
-        type: "org",
+        severity: 'info',
+        type: 'org',
       });
     } catch {}
 
@@ -142,10 +142,10 @@ export const createAutoForIteration = mutation({
 
 // Delete a group
 export const remove = mutation({
-  args: { id: v.id("module_groups") },
+  args: { id: v.id('module_groups') },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error("Unauthenticated");
+    if (!identity?.subject) throw new Error('Unauthenticated');
     const existing = await (ctx.db as any).get(args.id as any);
     if (!existing) return args.id;
     const iteration = await ctx.db.get(existing.moduleIterationId);
@@ -156,19 +156,19 @@ export const remove = mutation({
     await requireOrgPermission(
       ctx as any,
       identity.subject,
-      "groups.delete",
-      (moduleDoc as any).organisationId,
+      'groups.delete',
+      (moduleDoc as any).organisationId
     );
     await (ctx.db as any).delete(args.id as any);
     try {
       await writeAudit(ctx, {
-        action: "delete",
-        entityType: "module_group",
+        action: 'delete',
+        entityType: 'module_group',
         entityId: String(args.id),
         performedBy: identity.subject,
         details: `Deleted group ${existing.name}`,
-        severity: "warning",
-        type: "org",
+        severity: 'warning',
+        type: 'org',
       });
     } catch {}
     return args.id;

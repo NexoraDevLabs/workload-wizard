@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useClerk, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useClerk, useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function OnboardingSuccessPage() {
   const { user, isLoaded } = useUser();
   const { session } = useClerk();
-  const [message, setMessage] = useState("Finalizing your account setup...");
+  const [message, setMessage] = useState('Finalizing your account setup...');
 
   // Check Convex user record for onboarding completion
   const currentUserData = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   );
 
   useEffect(() => {
@@ -29,15 +29,15 @@ export default function OnboardingSuccessPage() {
           try {
             await session?.reload();
           } catch {}
-          setMessage("Success! Redirecting to dashboard...");
-          window.location.replace("/dashboard");
+          setMessage('Success! Redirecting to dashboard...');
+          window.location.replace('/dashboard');
         };
         void doRedirect();
       } else {
         // Wait a bit and check again
         const timer = setTimeout(() => {
           // This will trigger a re-query
-          setMessage("Still setting up...");
+          setMessage('Still setting up...');
         }, 2000);
 
         return () => clearTimeout(timer);
@@ -45,7 +45,7 @@ export default function OnboardingSuccessPage() {
     } else if (isLoaded && !currentUserData) {
       // User not found in Convex, wait and try again
       const timer = setTimeout(() => {
-        setMessage("Setting up your account...");
+        setMessage('Setting up your account...');
       }, 2000);
 
       return () => clearTimeout(timer);
@@ -58,7 +58,7 @@ export default function OnboardingSuccessPage() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
         <p>{message}</p>
         <p className="text-sm text-muted-foreground mt-2">
-          If you are not redirected,{" "}
+          If you are not redirected,{' '}
           <a className="underline" href="/dashboard">
             click here
           </a>

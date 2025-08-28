@@ -1,6 +1,6 @@
-"use client";
-import TrustBar from "@/components/trust-bar";
-import JoinWaitlist from "./JoinWaitlist";
+'use client';
+import TrustBar from '@/components/trust-bar';
+import JoinWaitlist from './JoinWaitlist';
 
 export default function Hero() {
   return (

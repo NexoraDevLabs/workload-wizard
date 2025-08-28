@@ -1,43 +1,43 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { OrganisationForm } from "@/components/domain/OrganisationForm";
-import { OrganisationsList } from "@/components/domain/OrganisationsList";
-import { Button } from "@/components/ui/button";
-import { Plus, Settings } from "lucide-react";
-import { hasAnyRole } from "@/lib/utils";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+export const dynamic = 'force-dynamic';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { OrganisationForm } from '@/components/domain/OrganisationForm';
+import { OrganisationsList } from '@/components/domain/OrganisationsList';
+import { Button } from '@/components/ui/button';
+import { Plus, Settings } from 'lucide-react';
+import { hasAnyRole } from '@/lib/utils';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 export default function AdminOrganisationsPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const convexUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   );
 
   const hasByClerk =
-    hasAnyRole(user, ["sysadmin", "developer"]) ||
+    hasAnyRole(user, ['sysadmin', 'developer']) ||
     (user?.publicMetadata as Record<string, unknown> | undefined)?.[
-      "devLoginSession"
+      'devLoginSession'
     ] === true;
   const hasByConvex =
     !!convexUser &&
     Array.isArray(convexUser.systemRoles) &&
     convexUser.systemRoles.some(
-      (r: string) => r === "sysadmin" || r === "developer",
+      (r: string) => r === 'sysadmin' || r === 'developer'
     );
 
   useEffect(() => {
     if (isLoaded && !(hasByClerk || hasByConvex)) {
-      router.replace("/unauthorised");
+      router.replace('/unauthorised');
     }
   }, [isLoaded, hasByClerk, hasByConvex, router]);
 
@@ -48,9 +48,9 @@ export default function AdminOrganisationsPage() {
   }
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Admin", href: "/admin" },
-    { label: "Organisations" },
+    { label: 'Home', href: '/' },
+    { label: 'Admin', href: '/admin' },
+    { label: 'Organisations' },
   ];
 
   const headerActions = (

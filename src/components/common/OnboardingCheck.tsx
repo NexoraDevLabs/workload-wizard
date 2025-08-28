@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export function OnboardingCheck({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
@@ -14,7 +14,7 @@ export function OnboardingCheck({ children }: { children: React.ReactNode }) {
 
       // If user hasn't completed onboarding, redirect to onboarding page
       if (!hasCompletedOnboarding) {
-        router.push("/onboarding");
+        router.push('/onboarding');
         return;
       }
     }

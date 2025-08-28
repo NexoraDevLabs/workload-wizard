@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { AlertTriangle, Shield } from "lucide-react";
+} from '@/components/ui/dialog';
+import { AlertTriangle, Shield } from 'lucide-react';
 
 interface DeactivateConfirmationModalProps {
   profileName: string;
@@ -31,7 +31,7 @@ export function DeactivateConfirmationModal({
             <DialogTitle>Deactivate Lecturer Profile</DialogTitle>
           </div>
           <DialogDescription>
-            Are you sure you want to deactivate the profile for{" "}
+            Are you sure you want to deactivate the profile for{' '}
             <strong>{profileName}</strong>?
           </DialogDescription>
         </DialogHeader>

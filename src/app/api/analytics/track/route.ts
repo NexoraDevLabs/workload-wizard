@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 // Minimal proxy placeholder. Hook to PostHog server SDK later if desired.
 const BodySchema = z.object({
@@ -13,6 +14,6 @@ export async function POST(req: NextRequest) {
     // For now, accept and no-op (or log). In future, forward to PH proxy endpoint/server SDK.
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    return NextResponse.json({ error: 'Bad request' }, { status: 400 });
   }
 }

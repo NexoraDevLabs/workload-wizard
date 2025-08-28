@@ -5,10 +5,10 @@ on:
     branches: [dev, main]
     types: [opened, edited, reopened, synchronize]
     paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "README*"
-      - "public/**"
+      - '**/*.md'
+      - 'docs/**'
+      - 'README*'
+      - 'public/**'
 
 permissions:
   pull-requests: read
@@ -43,4 +43,4 @@ jobs:
             test
           requireScope: false
           subjectPattern: ^.{1,100}$
-          subjectPatternError: "❌ PR title must be ≤100 characters."
+          subjectPatternError: '❌ PR title must be ≤100 characters.'

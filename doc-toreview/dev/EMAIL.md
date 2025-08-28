@@ -54,17 +54,17 @@ See the Environment notes below for URL resolution and fallbacks.
 Edit `src/lib/services/emailService.ts` and plug your provider (Resend recommended). Example Resend implementation excerpt:
 
 ```ts
-import { Resend } from "resend";
+import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendUserInvitationEmail(
-  data: UserInvitationEmailData,
+  data: UserInvitationEmailData
 ): Promise<EmailResult> {
   const result = await resend.emails.send({
     from: process.env.FROM_EMAIL!,
     to: data.to,
-    subject: "Welcome to WorkloadWizard - Your Account Details",
+    subject: 'Welcome to WorkloadWizard - Your Account Details',
     html: generateInvitationEmailHTML(data),
     text: generateInvitationEmailText(data),
   });

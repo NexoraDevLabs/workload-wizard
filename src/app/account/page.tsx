@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { LoadingOverlay } from "@/components/loading-overlay";
-import { getUserRoles } from "@/lib/utils";
+import { useUser } from '@clerk/nextjs';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { LoadingOverlay } from '@/components/loading-overlay';
+import { getUserRoles } from '@/lib/utils';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import {
   User,
   Shield,
@@ -27,11 +27,11 @@ import {
   Users,
   Building,
   Sparkles,
-} from "lucide-react";
-import Link from "next/link";
+} from 'lucide-react';
+import Link from 'next/link';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function AccountPage() {
   const { user, isLoaded } = useUser();
@@ -48,8 +48,8 @@ export default function AccountPage() {
     );
   }
 
-  const userName = user.fullName || user.firstName || "User";
-  const userEmail = user.emailAddresses[0]?.emailAddress || "";
+  const userName = user.fullName || user.firstName || 'User';
+  const userEmail = user.emailAddresses[0]?.emailAddress || '';
   const userRoles = getUserRoles(user);
   const avatarUrl = user.imageUrl;
   const createdAt = user.createdAt;
@@ -57,34 +57,34 @@ export default function AccountPage() {
   // Generate initials from name
   const getInitials = (name: string) => {
     return name
-      .split(" ")
+      .split(' ')
       .map((part) => part.charAt(0))
-      .join("")
+      .join('')
       .toUpperCase()
       .slice(0, 2);
   };
 
   const formatDate = (date: Date | null) => {
-    if (!date) return "Unknown";
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    if (!date) return 'Unknown';
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     }).format(date);
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "orgadmin":
-        return "Organisation Admin";
-      case "sysadmin":
-        return "System Admin";
-      case "developer":
-        return "Developer";
-      case "user":
-        return "User";
-      case "trial":
-        return "Trial";
+      case 'orgadmin':
+        return 'Organisation Admin';
+      case 'sysadmin':
+        return 'System Admin';
+      case 'developer':
+        return 'Developer';
+      case 'user':
+        return 'User';
+      case 'trial':
+        return 'Trial';
       default:
         return role.charAt(0).toUpperCase() + role.slice(1);
     }
@@ -92,74 +92,74 @@ export default function AccountPage() {
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
-      case "orgadmin":
-        return "bg-red-100 text-red-800";
-      case "sysadmin":
-        return "bg-purple-100 text-purple-800";
-      case "developer":
-        return "bg-blue-100 text-blue-800";
-      case "user":
-        return "bg-green-100 text-green-800";
-      case "trial":
-        return "bg-yellow-100 text-yellow-800";
+      case 'orgadmin':
+        return 'bg-red-100 text-red-800';
+      case 'sysadmin':
+        return 'bg-purple-100 text-purple-800';
+      case 'developer':
+        return 'bg-blue-100 text-blue-800';
+      case 'user':
+        return 'bg-green-100 text-green-800';
+      case 'trial':
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const accountSections = [
     {
-      title: "Profile Management",
+      title: 'Profile Management',
       description:
-        "Update your personal information, profile picture, and contact details",
+        'Update your personal information, profile picture, and contact details',
       icon: User,
-      href: "/account/profile",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
+      href: '/account/profile',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-200',
     },
     {
-      title: "Security & Privacy",
+      title: 'Security & Privacy',
       description:
-        "Manage your password, two-factor authentication, and privacy settings",
+        'Manage your password, two-factor authentication, and privacy settings',
       icon: Shield,
-      href: "/account/security",
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
+      href: '/account/security',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
     },
     {
-      title: "Early Access Features",
-      description: "Manage your opt-in preferences for experimental features",
+      title: 'Early Access Features',
+      description: 'Manage your opt-in preferences for experimental features',
       icon: Sparkles,
-      href: "/account/features",
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
+      href: '/account/features',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
     },
     {
-      title: "Notifications",
-      description: "Configure email notifications and alert preferences",
+      title: 'Notifications',
+      description: 'Configure email notifications and alert preferences',
       icon: Bell,
-      href: "/account/notifications",
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-200",
+      href: '/account/notifications',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-200',
       comingSoon: true,
     },
     {
-      title: "API Keys",
-      description: "Manage your API keys and access tokens",
+      title: 'API Keys',
+      description: 'Manage your API keys and access tokens',
       icon: Key,
-      href: "/account/api-keys",
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      borderColor: "border-orange-200",
+      href: '/account/api-keys',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-200',
       comingSoon: true,
     },
   ];
 
-  const breadcrumbs = [{ label: "Home", href: "/" }, { label: "Account" }];
+  const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Account' }];
 
   return (
     <StandardizedSidebarLayout
@@ -227,22 +227,22 @@ export default function AccountPage() {
                   <div className="mt-1 space-y-1">
                     {userRoles && userRoles.length > 0 ? (
                       <>
-                        {userRoles.includes("sysadmin") && (
+                        {userRoles.includes('sysadmin') && (
                           <div className="text-xs text-purple-600">
                             • Full system administration access
                           </div>
                         )}
-                        {userRoles.includes("developer") && (
+                        {userRoles.includes('developer') && (
                           <div className="text-xs text-blue-600">
                             • Developer tools and debugging access
                           </div>
                         )}
-                        {userRoles.includes("orgadmin") && (
+                        {userRoles.includes('orgadmin') && (
                           <div className="text-xs text-red-600">
                             • Organisation management capabilities
                           </div>
                         )}
-                        {userRoles.includes("user") && (
+                        {userRoles.includes('user') && (
                           <div className="text-xs text-green-600">
                             • Standard user access
                           </div>

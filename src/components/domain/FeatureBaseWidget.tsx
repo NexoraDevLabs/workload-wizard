@@ -1,10 +1,10 @@
-"use client";
-import { useEffect, useMemo, useRef, useState } from "react";
-import Script from "next/script";
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { getEnv } from "@/lib/env";
+'use client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Script from 'next/script';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { getEnv } from '@/lib/env';
 
 declare global {
   interface Window {
@@ -17,7 +17,7 @@ type BootPayload = {
   email?: string | undefined;
   userId?: string | undefined;
   createdAt?: string | undefined;
-  theme?: "light" | "dark";
+  theme?: 'light' | 'dark';
   language?: string | undefined;
   userHash?: string | undefined;
   organisationId?: string | undefined;
@@ -33,24 +33,24 @@ function FeaturebaseMessengerInternal() {
   const { user, isLoaded } = useUser();
   const convexUser = useQuery(
     (api as any).users.getBySubject,
-    user?.id ? ({ subject: user.id } as any) : ("skip" as any),
+    user?.id ? ({ subject: user.id } as any) : ('skip' as any)
   ) as { systemRoles?: string[]; organisationId?: string } | undefined;
   const orgDoc = useQuery(
     (api as any).organisations.get,
     convexUser?.organisationId
       ? ({ organisationId: convexUser.organisationId } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   ) as { name?: string } | undefined;
   const roleAssignments = useQuery(
     (api as any).organisationalRoles.getUserRoles,
-    user?.id ? ({ userId: user.id } as any) : ("skip" as any),
+    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
   ) as Array<{ role?: { name?: string } }> | undefined;
 
   const context = useMemo(() => {
     const email = user?.primaryEmailAddress?.emailAddress || undefined;
     const fullName = user
       ? user.fullName?.trim() ||
-        `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+        `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
         undefined
       : undefined;
     const organisationId =
@@ -67,10 +67,10 @@ function FeaturebaseMessengerInternal() {
       .map((r) => r.role?.name)
       .filter(Boolean) as string[];
     const systemRoles = systemRolesArr.length
-      ? systemRolesArr.join(",")
+      ? systemRolesArr.join(',')
       : undefined;
     const orgRoles = orgAssignedRolesArr.length
-      ? orgAssignedRolesArr.join(",")
+      ? orgAssignedRolesArr.join(',')
       : undefined;
     return {
       email,
@@ -86,14 +86,14 @@ function FeaturebaseMessengerInternal() {
   const hasBootedRef = useRef<string | null>(null);
   const [userHash, setUserHash] = useState<string | undefined>(undefined);
   const identityField =
-    process.env.NEXT_PUBLIC_FEATUREBASE_IDENTITY_FIELD || "userId"; // 'email' | 'userId'
+    process.env.NEXT_PUBLIC_FEATUREBASE_IDENTITY_FIELD || 'userId'; // 'email' | 'userId'
 
   useEffect(() => {
     if (!isLoaded || !user?.id) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/featurebase/user-hash");
+        const res = await fetch('/api/featurebase/user-hash');
         if (res.ok) {
           const data = (await res.json()) as { userHash?: string };
           if (!cancelled) setUserHash(data.userHash);
@@ -107,31 +107,31 @@ function FeaturebaseMessengerInternal() {
 
   useEffect(() => {
     const win = window;
-    if (typeof win.Featurebase !== "function") {
+    if (typeof win.Featurebase !== 'function') {
       const fb: any = function (...args: any[]) {
         (fb.q = fb.q || []).push(args);
       };
-      win.Featurebase = fb as any;
+      win.Featurebase = fb;
     }
 
-    const appId = process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID || "";
+    const appId = process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID || '';
     const enableInDev =
-      process.env.NEXT_PUBLIC_FEATUREBASE_ENABLE_DEV === "true";
-    const isProd = process.env.NODE_ENV === "production";
+      process.env.NEXT_PUBLIC_FEATUREBASE_ENABLE_DEV === 'true';
+    const isProd = process.env.NODE_ENV === 'production';
     // Avoid noisy websocket errors in local dev unless explicitly enabled
     if (!appId || (!isProd && !enableInDev)) return;
     if (!isLoaded) return;
     // If we have an orgId but orgName hasn't resolved yet, wait to include it in first boot payload
     if (context.organisationId && !context.organisationName) return;
     // Enforce identifier presence according to configured identity field to avoid Featurebase preferring the wrong field
-    const identifier = identityField === "email" ? context.email : user?.id;
+    const identifier = identityField === 'email' ? context.email : user?.id;
     // If no identifier yet (e.g., on sign-in page), allow anonymous boot (no userHash, no identity fields)
 
     async function boot() {
       let latestHash: string | undefined = userHash;
       if (!latestHash && identifier) {
         try {
-          const res = await fetch("/api/featurebase/user-hash");
+          const res = await fetch('/api/featurebase/user-hash');
           if (res.ok) {
             const data = (await res.json()) as { userHash?: string };
             latestHash = data.userHash;
@@ -146,13 +146,13 @@ function FeaturebaseMessengerInternal() {
         appId,
         // Only include identity if we have it; otherwise boot anonymously
         ...(identifier
-          ? identityField === "email"
+          ? identityField === 'email'
             ? { email: context.email }
             : { userId: user?.id }
           : {}),
         createdAt: createdAtIso,
-        theme: "light",
-        language: "en",
+        theme: 'light',
+        language: 'en',
         ...(identifier && latestHash ? { userHash: latestHash } : {}),
         organisationId: context.organisationId,
         organisationName: context.organisationName,
@@ -168,19 +168,19 @@ function FeaturebaseMessengerInternal() {
         const v = (payload as any)[k];
         if (v === undefined) delete (payload as any)[k];
       });
-      const bootKey = `${identifier || "anon"}:${latestHash || "nohash"}:${
-        context.organisationName || "noname"
-      }:${(context as any).systemRoles || ""}:${(context as any).orgRoles || ""}`;
+      const bootKey = `${identifier || 'anon'}:${latestHash || 'nohash'}:${
+        context.organisationName || 'noname'
+      }:${(context as any).systemRoles || ''}:${(context as any).orgRoles || ''}`;
       if (hasBootedRef.current === bootKey) return;
       hasBootedRef.current = bootKey;
-      win.Featurebase!("boot", payload);
+      win.Featurebase!('boot', payload);
     }
 
     boot();
   }, [isLoaded, user, context, userHash, identityField]);
 
-  const enableInDev = process.env.NEXT_PUBLIC_FEATUREBASE_ENABLE_DEV === "true";
-  const isProd = process.env.NODE_ENV === "production";
+  const enableInDev = process.env.NEXT_PUBLIC_FEATUREBASE_ENABLE_DEV === 'true';
+  const isProd = process.env.NODE_ENV === 'production';
   const shouldLoadScript =
     Boolean(process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID) &&
     (isProd || enableInDev);
@@ -198,7 +198,7 @@ function FeaturebaseMessengerInternal() {
 
 export default function FeaturebaseMessenger() {
   // Avoid client hooks during SSR/prerender
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return null;
   }
 
@@ -206,7 +206,7 @@ export default function FeaturebaseMessenger() {
 
   // Check if we're in build time to avoid Clerk initialization
   const isBuildTime =
-    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === "pk_test_build_time_only";
+    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
 
   // If in build time, don't render anything
   if (isBuildTime) {

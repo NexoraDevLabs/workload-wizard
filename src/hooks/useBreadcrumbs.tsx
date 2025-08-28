@@ -1,13 +1,8 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import { usePathname } from "next/navigation";
+import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 export interface BreadcrumbItem {
   label: string;
@@ -22,7 +17,7 @@ interface BreadcrumbContextType {
 }
 
 const BreadcrumbContext = createContext<BreadcrumbContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export function BreadcrumbProvider({ children }: { children: ReactNode }) {
@@ -31,24 +26,24 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
 
   // Auto-generate breadcrumbs based on pathname
   useEffect(() => {
-    const pathSegments = pathname.split("/").filter(Boolean);
+    const pathSegments = pathname.split('/').filter(Boolean);
     const autoBreadcrumbs: BreadcrumbItem[] = [];
 
     if (pathSegments.length === 0) {
-      autoBreadcrumbs.push({ label: "Home", href: "/" });
+      autoBreadcrumbs.push({ label: 'Home', href: '/' });
     } else {
-      autoBreadcrumbs.push({ label: "Home", href: "/" });
+      autoBreadcrumbs.push({ label: 'Home', href: '/' });
 
-      let currentPath = "";
+      let currentPath = '';
       pathSegments.forEach((segment, index) => {
         currentPath += `/${segment}`;
         const isLast = index === pathSegments.length - 1;
 
         // Convert path segments to readable labels
         const label = segment
-          .split("-")
+          .split('-')
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
+          .join(' ');
 
         autoBreadcrumbs.push(isLast ? { label } : { label, href: currentPath });
       });
@@ -62,7 +57,7 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
   };
 
   const resetBreadcrumbs = () => {
-    setBreadcrumbs([{ label: "Home", href: "/" }]);
+    setBreadcrumbs([{ label: 'Home', href: '/' }]);
   };
 
   return (
@@ -82,7 +77,7 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
 export function useBreadcrumbs() {
   const context = useContext(BreadcrumbContext);
   if (context === undefined) {
-    throw new Error("useBreadcrumbs must be used within a BreadcrumbProvider");
+    throw new Error('useBreadcrumbs must be used within a BreadcrumbProvider');
   }
   return context;
 }

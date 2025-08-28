@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import {
   Users,
   Building2,
@@ -22,14 +22,14 @@ import {
   Calendar,
   BookOpen,
   ClipboardList,
-} from "lucide-react";
-import { hasAnyRole } from "@/lib/utils";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Badge } from "@/components/ui/badge";
+} from 'lucide-react';
+import { hasAnyRole } from '@/lib/utils';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Badge } from '@/components/ui/badge';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function OrganisationAdminPage() {
   const { user, isLoaded } = useUser();
@@ -37,45 +37,45 @@ export default function OrganisationAdminPage() {
 
   const convexUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : ("skip" as any),
+    user?.id ? { subject: user.id } : ('skip' as any)
   );
 
   useEffect(() => {
     if (!isLoaded) return;
     const hasByClerk =
-      hasAnyRole(user, ["orgadmin", "sysadmin", "developer"]) ||
+      hasAnyRole(user, ['orgadmin', 'sysadmin', 'developer']) ||
       (user?.publicMetadata as Record<string, unknown> | undefined)?.[
-        "devLoginSession"
+        'devLoginSession'
       ] === true;
     const hasByConvex =
       !!convexUser &&
       Array.isArray(convexUser.systemRoles) &&
       convexUser.systemRoles.some((r: string) =>
-        ["sysadmin", "developer"].includes(r),
+        ['sysadmin', 'developer'].includes(r)
       );
     if (!(hasByClerk || hasByConvex)) {
-      router.replace("/unauthorised");
+      router.replace('/unauthorised');
     }
   }, [isLoaded, user, convexUser, router]);
 
   if (!isLoaded) return <p>Loading...</p>;
 
   const hasByClerk =
-    hasAnyRole(user, ["orgadmin", "sysadmin", "developer"]) ||
+    hasAnyRole(user, ['orgadmin', 'sysadmin', 'developer']) ||
     (user?.publicMetadata as Record<string, unknown> | undefined)?.[
-      "devLoginSession"
+      'devLoginSession'
     ] === true;
   const hasByConvex =
     !!convexUser &&
     Array.isArray(convexUser.systemRoles) &&
     convexUser.systemRoles.some((r: string) =>
-      ["sysadmin", "developer"].includes(r),
+      ['sysadmin', 'developer'].includes(r)
     );
   if (!(hasByClerk || hasByConvex)) return null; // redirect in effect
 
-  const organisationId = (user?.publicMetadata?.organisationId as string) || "";
+  const organisationId = (user?.publicMetadata?.organisationId as string) || '';
 
-  const breadcrumbs = [{ label: "Home", href: "/" }, { label: "Organisation" }];
+  const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Organisation' }];
 
   return (
     <StandardizedSidebarLayout
@@ -216,17 +216,17 @@ export default function OrganisationAdminPage() {
           <CardContent>
             <div className="space-y-2">
               <p>
-                <strong>Organisation ID:</strong>{" "}
-                {organisationId || "Not assigned"}
+                <strong>Organisation ID:</strong>{' '}
+                {organisationId || 'Not assigned'}
               </p>
               <p>
-                <strong>Your Role:</strong>{" "}
-                {hasAnyRole(user, ["orgadmin"])
-                  ? "Organisation Admin"
-                  : "System Admin"}
+                <strong>Your Role:</strong>{' '}
+                {hasAnyRole(user, ['orgadmin'])
+                  ? 'Organisation Admin'
+                  : 'System Admin'}
               </p>
               <p>
-                <strong>Email:</strong>{" "}
+                <strong>Email:</strong>{' '}
                 {user?.emailAddresses?.[0]?.emailAddress}
               </p>
             </div>

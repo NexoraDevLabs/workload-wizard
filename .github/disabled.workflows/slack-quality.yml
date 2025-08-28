@@ -2,7 +2,7 @@ name: Slack - Quality notifications
 
 on:
   workflow_run:
-    workflows: ["Quality"]
+    workflows: ['Quality']
     types: [completed]
 
 permissions:

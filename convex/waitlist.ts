@@ -1,13 +1,13 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
 
 export const getByEmail = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
     const email = args.email.toLowerCase();
     return await ctx.db
-      .query("waitlist_signups")
-      .withIndex("by_email", (q) => q.eq("email", email))
+      .query('waitlist_signups')
+      .withIndex('by_email', (q) => q.eq('email', email))
       .first();
   },
 });
@@ -23,8 +23,8 @@ export const upsert = mutation({
     const now = Date.now();
     const email = args.email.toLowerCase();
     const existing = await ctx.db
-      .query("waitlist_signups")
-      .withIndex("by_email", (q) => q.eq("email", email))
+      .query('waitlist_signups')
+      .withIndex('by_email', (q) => q.eq('email', email))
       .first();
     if (existing) {
       const updates: Partial<{
@@ -49,7 +49,7 @@ export const upsert = mutation({
     if (args.organisation !== undefined)
       toInsert.organisation = args.organisation;
     if (args.source !== undefined) toInsert.source = args.source;
-    const id = await ctx.db.insert("waitlist_signups", toInsert);
+    const id = await ctx.db.insert('waitlist_signups', toInsert);
     return { already: false, id };
   },
 });

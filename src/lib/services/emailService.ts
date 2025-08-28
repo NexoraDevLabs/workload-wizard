@@ -1,44 +1,44 @@
-import { Resend } from "resend";
+import { Resend } from 'resend';
 
 // Initialize Resend with API key
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@workload-wiz.xyz";
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@workload-wiz.xyz';
 
 // Email configuration from environment variables
 const EMAIL_CONFIG = {
   // Base URL for the application
   BASE_URL:
     process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL?.replace("/sign-in", "") ||
-    "https://workload-wiz.xyz",
+    process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL?.replace('/sign-in', '') ||
+    'https://workload-wiz.xyz',
 
   // Sign-in URL
   SIGN_IN_URL:
     process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ||
-    "https://workload-wiz.xyz/sign-in",
+    'https://workload-wiz.xyz/sign-in',
 
   // Dashboard URL
   DASHBOARD_URL:
     process.env.NEXT_PUBLIC_DASHBOARD_URL ||
-    "https://workload-wiz.xyz/dashboard",
+    'https://workload-wiz.xyz/dashboard',
 
   // Support email
-  SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || "support@workload-wiz.xyz",
+  SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@workload-wiz.xyz',
 
   // Waitlist email
-  WAITLIST_EMAIL: process.env.WAITLIST_EMAIL || "sam@workload-wiz.xyz",
+  WAITLIST_EMAIL: process.env.WAITLIST_EMAIL || 'sam@workload-wiz.xyz',
 
   // Company name
-  COMPANY_NAME: process.env.COMPANY_NAME || "WorkloadWizard",
+  COMPANY_NAME: process.env.COMPANY_NAME || 'WorkloadWizard',
   // Company address (optional footer line)
-  COMPANY_ADDRESS: process.env.COMPANY_ADDRESS || "",
+  COMPANY_ADDRESS: process.env.COMPANY_ADDRESS || '',
 
   // App name
-  APP_NAME: process.env.APP_NAME || "WorkloadWizard",
+  APP_NAME: process.env.APP_NAME || 'WorkloadWizard',
   // Featurebase public portal
   FEATUREBASE_URL:
     process.env.NEXT_PUBLIC_FEATUREBASE_PORTAL_URL ||
-    "https://workloadwizard.featurebase.app",
+    'https://workloadwizard.featurebase.app',
 };
 
 // Get the base URL for emails - should match your sending domain
@@ -59,13 +59,13 @@ const getBaseUrl = () => {
   }
 
   // If FROM_EMAIL is set, try to extract domain
-  if (FROM_EMAIL && FROM_EMAIL.includes("@")) {
-    const domain = FROM_EMAIL.split("@")[1];
+  if (FROM_EMAIL && FROM_EMAIL.includes('@')) {
+    const domain = FROM_EMAIL.split('@')[1];
     return `https://${domain}`;
   }
 
   // Fallback to localhost for development
-  return "http://localhost:3000";
+  return 'http://localhost:3000';
 };
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
@@ -89,21 +89,21 @@ export interface EmailResult {
 
 // Resend email service implementation
 export async function sendUserInvitationEmail(
-  data: UserInvitationEmailData,
+  data: UserInvitationEmailData
 ): Promise<EmailResult> {
   // Disable outbound email in E2E runs to prevent side effects
-  if (process.env.NEXT_PUBLIC_E2E === "true") {
-    return { success: true, messageId: "e2e-disabled" };
+  if (process.env.NEXT_PUBLIC_E2E === 'true') {
+    return { success: true, messageId: 'e2e-disabled' };
   }
   if (!resend) {
-    return { success: false, error: "Resend not configured" };
+    return { success: false, error: 'Resend not configured' };
   }
 
   try {
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: data.to,
-      subject: "Welcome to WorkloadWizard - Your Account Details",
+      subject: 'Welcome to WorkloadWizard - Your Account Details',
       html: generateInvitationEmailHTML(data),
       text: generateInvitationEmailText(data),
     });
@@ -111,28 +111,28 @@ export async function sendUserInvitationEmail(
     if (result.error) {
       return {
         success: false,
-        error: result.error.message || "Failed to send email",
+        error: result.error.message || 'Failed to send email',
       };
     }
 
     return {
       success: true,
-      messageId: result.data?.id || "unknown",
+      messageId: result.data?.id || 'unknown',
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
 // Email template generators (can be used with any email service)
 export function generateInvitationEmailHTML(
-  data: UserInvitationEmailData,
+  data: UserInvitationEmailData
 ): string {
   const baseUrl = getBaseUrl();
-  const signInUrl = data.signInUrl.startsWith("http")
+  const signInUrl = data.signInUrl.startsWith('http')
     ? data.signInUrl
     : `${baseUrl}${data.signInUrl}`;
 
@@ -163,7 +163,7 @@ export function generateInvitationEmailHTML(
         <div class="content">
           <h2>Hello ${data.firstName} ${data.lastName},</h2>
           
-          <p>Your account has been created by ${data.adminName || "an administrator"}. Here are your login credentials:</p>
+          <p>Your account has been created by ${data.adminName || 'an administrator'}. Here are your login credentials:</p>
           
           <div class="credentials">
             <p><strong>Username:</strong> ${data.username}</p>
@@ -201,10 +201,10 @@ export function generateInvitationEmailHTML(
 }
 
 export function generateInvitationEmailText(
-  data: UserInvitationEmailData,
+  data: UserInvitationEmailData
 ): string {
   const baseUrl = getBaseUrl();
-  const signInUrl = data.signInUrl.startsWith("http")
+  const signInUrl = data.signInUrl.startsWith('http')
     ? data.signInUrl
     : `${baseUrl}${data.signInUrl}`;
 
@@ -213,7 +213,7 @@ Welcome to ${EMAIL_CONFIG.APP_NAME}!
 
 Hello ${data.firstName} ${data.lastName},
 
-Your account has been created by ${data.adminName || "an administrator"}. Here are your login credentials:
+Your account has been created by ${data.adminName || 'an administrator'}. Here are your login credentials:
 
 Username: ${data.username}
 Temporary Password: ${data.temporaryPassword}
@@ -245,14 +245,14 @@ export interface WaitlistWelcomeData {
 }
 
 export function generateWaitlistWelcomeEmailHTML(
-  data: WaitlistWelcomeData,
+  data: WaitlistWelcomeData
 ): string {
   const baseUrl = getBaseUrl();
   const featurebaseUrl = EMAIL_CONFIG.FEATUREBASE_URL;
   const roadmapUrl = `${featurebaseUrl}/roadmap`;
   const blogUrl = `${baseUrl}/blog`;
   const name = data.name?.trim();
-  const firstName = name ? name.split(/\s+/)[0] : "";
+  const firstName = name ? name.split(/\s+/)[0] : '';
 
   return `
 <!DOCTYPE html>
@@ -342,7 +342,7 @@ export function generateWaitlistWelcomeEmailHTML(
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                   <tr>
                     <td class="p-32">
-                      <p style="margin-bottom:14px;">Hey${firstName ? ` ${firstName}` : ""},</p>
+                      <p style="margin-bottom:14px;">Hey${firstName ? ` ${firstName}` : ''},</p>
                       <p style="margin-bottom:18px;">While you’re waiting, here are the best places to see what’s coming and follow progress:</p>
 
                       <!-- CTAs -->
@@ -403,7 +403,7 @@ export function generateWaitlistWelcomeEmailHTML(
             <tr>
               <td class="footer">
                 <small>© ${new Date().getFullYear()} ${EMAIL_CONFIG.COMPANY_NAME}</small><br>
-                <span class="apple-link"><small>${EMAIL_CONFIG.COMPANY_ADDRESS || ""}</small></span>
+                <span class="apple-link"><small>${EMAIL_CONFIG.COMPANY_ADDRESS || ''}</small></span>
               </td>
             </tr>
 
@@ -417,17 +417,17 @@ export function generateWaitlistWelcomeEmailHTML(
 }
 
 export function generateWaitlistWelcomeEmailText(
-  data: WaitlistWelcomeData,
+  data: WaitlistWelcomeData
 ): string {
   const baseUrl = getBaseUrl();
   const featurebaseUrl = EMAIL_CONFIG.FEATUREBASE_URL;
   const roadmapUrl = `${featurebaseUrl}/roadmap`;
   const blogUrl = `${baseUrl}/blog`;
   const name = data.name?.trim();
-  const firstName = name ? name.split(/\s+/)[0] : "";
+  const firstName = name ? name.split(/\s+/)[0] : '';
 
   return `
-Hey${firstName ? ` ${firstName}` : ""},
+Hey${firstName ? ` ${firstName}` : ''},
 
 Thanks for registering your interest. You're on the waitlist — we'll be in touch soon.
 
@@ -453,13 +453,13 @@ P.S. If you have any questions, just reply or drop me an email — I read them a
 }
 
 export async function sendWaitlistWelcomeEmail(
-  data: WaitlistWelcomeData,
+  data: WaitlistWelcomeData
 ): Promise<EmailResult> {
-  if (process.env.NEXT_PUBLIC_E2E === "true") {
-    return { success: true, messageId: "e2e-disabled" };
+  if (process.env.NEXT_PUBLIC_E2E === 'true') {
+    return { success: true, messageId: 'e2e-disabled' };
   }
   if (!resend) {
-    return { success: false, error: "Resend not configured" };
+    return { success: false, error: 'Resend not configured' };
   }
 
   try {
@@ -473,14 +473,14 @@ export async function sendWaitlistWelcomeEmail(
     if (result.error) {
       return {
         success: false,
-        error: result.error.message || "Failed to send email",
+        error: result.error.message || 'Failed to send email',
       };
     }
-    return { success: true, messageId: result.data?.id || "unknown" };
+    return { success: true, messageId: result.data?.id || 'unknown' };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

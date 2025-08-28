@@ -1,6 +1,7 @@
-import React, { ComponentType, forwardRef } from "react";
-import { usePermissionManager } from "@/hooks/usePermissionManager";
-import { type PermissionId } from "@/lib/permissions";
+import type { ComponentType } from 'react';
+import React, { forwardRef } from 'react';
+import { usePermissionManager } from '@/hooks/usePermissionManager';
+import { type PermissionId } from '@/lib/permissions';
 
 // Higher-order component for permission-aware components
 export function withPermission<P extends object>(
@@ -14,7 +15,7 @@ export function withPermission<P extends object>(
     redirectOnDeny?: boolean;
     fallback?: React.ReactNode;
     hideForbidden?: boolean;
-  } = {},
+  } = {}
 ) {
   const {
     organisationId,
@@ -77,7 +78,7 @@ export function withPermission<P extends object>(
 
   // Set display name for debugging
   const wrappedComponentName =
-    WrappedComponent.displayName || WrappedComponent.name || "Component";
+    WrappedComponent.displayName || WrappedComponent.name || 'Component';
   PermissionWrappedComponent.displayName = `withPermission(${wrappedComponentName})`;
 
   return PermissionWrappedComponent;
@@ -94,46 +95,46 @@ export function createPermissionAwareComponent<P extends object>(
     redirectOnDeny?: boolean;
     fallback?: React.ReactNode;
     hideForbidden?: boolean;
-  } = {},
+  } = {}
 ) {
   return <T extends ComponentType<P>>(Component: T) =>
     withPermission(Component, permission, options);
 }
 
 // Pre-configured permission wrappers for common use cases
-export const withUsersView = createPermissionAwareComponent("users.view", {
-  actionName: "view users",
+export const withUsersView = createPermissionAwareComponent('users.view', {
+  actionName: 'view users',
 });
 
-export const withUsersCreate = createPermissionAwareComponent("users.create", {
-  actionName: "create users",
+export const withUsersCreate = createPermissionAwareComponent('users.create', {
+  actionName: 'create users',
 });
 
-export const withUsersEdit = createPermissionAwareComponent("users.edit", {
-  actionName: "edit users",
+export const withUsersEdit = createPermissionAwareComponent('users.edit', {
+  actionName: 'edit users',
 });
 
-export const withUsersDelete = createPermissionAwareComponent("users.delete", {
-  actionName: "delete users",
+export const withUsersDelete = createPermissionAwareComponent('users.delete', {
+  actionName: 'delete users',
 });
 
 export const withPermissionsManage = createPermissionAwareComponent(
-  "permissions.manage",
+  'permissions.manage',
   {
-    actionName: "manage permissions",
-  },
+    actionName: 'manage permissions',
+  }
 );
 
 export const withOrganisationsManage = createPermissionAwareComponent(
-  "organisations.manage",
+  'organisations.manage',
   {
     isSystemAction: true,
-    actionName: "manage organisations",
-  },
+    actionName: 'manage organisations',
+  }
 );
 
-export const withAuditView = createPermissionAwareComponent("audit.view", {
-  actionName: "view audit logs",
+export const withAuditView = createPermissionAwareComponent('audit.view', {
+  actionName: 'view audit logs',
 });
 
 // Hook for using permission state in custom components
@@ -145,10 +146,10 @@ export function usePermissionState(
     actionName?: string;
     showToast?: boolean;
     redirectOnDeny?: boolean;
-  } = {},
+  } = {}
 ) {
   const { gateElement, canPerform } = usePermissionManager(
-    options.organisationId,
+    options.organisationId
   );
 
   const uiState = gateElement(permission, {

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import * as React from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Mail, Building2, User, Bell } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Mail, Building2, User, Bell } from 'lucide-react';
 
 type NewsletterSubscriptionProps = {
   /** Where this signup came from (stored server-side) */
@@ -31,37 +31,37 @@ type NewsletterSubscriptionProps = {
 };
 
 export default function NewsletterSubscription({
-  source = "header",
+  source = 'header',
   trigger,
-  buttonText = "Subscribe to updates",
+  buttonText = 'Subscribe to updates',
   buttonProps,
   onSuccess,
   initialOpen = false,
 }: NewsletterSubscriptionProps) {
   const { toast } = useToast();
   const [open, setOpen] = React.useState(initialOpen);
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
-  const [organisation, setOrganisation] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [organisation, setOrganisation] = React.useState('');
+  const [email, setEmail] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!firstName.trim()) {
-      toast({ title: "Please enter your first name" });
+      toast({ title: 'Please enter your first name' });
       return;
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast({ title: "Please enter a valid email" });
+      toast({ title: 'Please enter a valid email' });
       return;
     }
 
     try {
       setSubmitting(true);
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
           firstName: firstName.trim(),
@@ -70,7 +70,7 @@ export default function NewsletterSubscription({
           organisation: organisation?.trim() || undefined,
         }),
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) throw new Error('Request failed');
       const json = await res.json();
 
       if (json?.already) {
@@ -82,16 +82,16 @@ export default function NewsletterSubscription({
         toast({ title: "Thanks — you're now subscribed to updates" });
       }
 
-      setFirstName("");
-      setLastName("");
-      setOrganisation("");
-      setEmail("");
+      setFirstName('');
+      setLastName('');
+      setOrganisation('');
+      setEmail('');
       setOpen(false);
       onSuccess?.();
     } catch {
       toast({
-        title: "Something went wrong",
-        description: "Please try again later",
+        title: 'Something went wrong',
+        description: 'Please try again later',
       });
     } finally {
       setSubmitting(false);
@@ -129,8 +129,8 @@ export default function NewsletterSubscription({
               Subscribe to Blog Updates
             </DialogTitle>
             <p className="text-sm text-white/60">
-              Stay informed about{" "}
-              <span className="text-white font-medium">WorkloadWizard</span>{" "}
+              Stay informed about{' '}
+              <span className="text-white font-medium">WorkloadWizard</span>{' '}
               features and news.
             </p>
           </DialogHeader>
@@ -237,7 +237,7 @@ export default function NewsletterSubscription({
                   transition-all
                 "
               >
-                {submitting ? "Subscribing…" : "Subscribe"}
+                {submitting ? 'Subscribing…' : 'Subscribe'}
               </Button>
             </DialogFooter>
 
@@ -251,7 +251,7 @@ export default function NewsletterSubscription({
 
       {/* Darker overlay & autofill clean-up */}
       <style jsx global>{`
-        .fixed.inset-0[data-state="open"] {
+        .fixed.inset-0[data-state='open'] {
           background: rgba(2, 6, 23, 0.55);
         }
         input:focus {

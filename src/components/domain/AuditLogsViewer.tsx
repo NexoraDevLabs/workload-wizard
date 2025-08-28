@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -25,8 +25,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -34,9 +34,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { getAuditLogs, getAuditStats } from "@/lib/actions/auditActions";
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { getAuditLogs, getAuditStats } from '@/lib/actions/auditActions';
 import {
   Search,
   Filter,
@@ -59,18 +59,18 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Tooltip as UITooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 
 interface AuditLog {
   _id: string;
@@ -87,7 +87,7 @@ interface AuditLog {
   userAgent?: string;
   timestamp: number;
   severity?: string;
-  type?: "sys" | "org";
+  type?: 'sys' | 'org';
 }
 
 interface AuditStats {
@@ -113,54 +113,54 @@ interface AuditLogsResponse {
 }
 
 const ENTITY_TYPES = [
-  "user",
-  "organisation",
-  "module",
-  "academic_year",
-  "system",
-  "permission",
-  "role",
+  'user',
+  'organisation',
+  'module',
+  'academic_year',
+  'system',
+  'permission',
+  'role',
 ] as const;
 
 const ACTIONS = [
-  "create",
-  "update",
-  "delete",
-  "login",
-  "logout",
-  "permission.change",
-  "error",
-  "deactivate",
-  "reactivate",
-  "password.reset",
-  "email.update",
-  "status.change",
-  "maintenance",
-  "data.export",
-  "data.import",
-  "login.failed",
-  "account.locked",
-  "suspicious.activity",
-  "permission.assigned",
-  "permission.revoked",
-  "permission.pushed",
-  "role.created",
-  "role.updated",
-  "role.deleted",
+  'create',
+  'update',
+  'delete',
+  'login',
+  'logout',
+  'permission.change',
+  'error',
+  'deactivate',
+  'reactivate',
+  'password.reset',
+  'email.update',
+  'status.change',
+  'maintenance',
+  'data.export',
+  'data.import',
+  'login.failed',
+  'account.locked',
+  'suspicious.activity',
+  'permission.assigned',
+  'permission.revoked',
+  'permission.pushed',
+  'role.created',
+  'role.updated',
+  'role.deleted',
 ] as const;
 
-const SEVERITIES = ["info", "warning", "error", "critical"] as const;
+const SEVERITIES = ['info', 'warning', 'error', 'critical'] as const;
 
 const TIME_RANGES = [
-  { label: "Last Hour", value: 1 },
-  { label: "Last 24 Hours", value: 24 },
-  { label: "Last 7 Days", value: 168 },
-  { label: "Last 30 Days", value: 720 },
-  { label: "All Time", value: 0 },
+  { label: 'Last Hour', value: 1 },
+  { label: 'Last 24 Hours', value: 24 },
+  { label: 'Last 7 Days', value: 168 },
+  { label: 'Last 30 Days', value: 720 },
+  { label: 'All Time', value: 0 },
 ] as const;
 
 type ForcedFilters = {
-  type?: "sys" | "org";
+  type?: 'sys' | 'org';
   organisationId?: string;
 };
 
@@ -174,18 +174,18 @@ export function AuditLogsViewer({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalFilteredLogs, setTotalFilteredLogs] = useState(0);
   const [filters, setFilters] = useState({
-    entityType: "",
-    action: "",
-    severity: "",
-    type: "",
-    search: "",
+    entityType: '',
+    action: '',
+    severity: '',
+    type: '',
+    search: '',
     timeRange: 24,
     limit: 100, // fetch more so the visible slice is truly recent
   });
@@ -195,7 +195,7 @@ export function AuditLogsViewer({
       .split(separators)
       .filter(Boolean)
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
+      .join(' ');
 
   const formatActionLabel = (action: string) => formatWords(action, /[._]/g);
   const formatEntityTypeLabel = (entityType: string) =>
@@ -245,10 +245,10 @@ export function AuditLogsViewer({
           // Audit logs response received
 
           if (reset || page === 1) {
-            setLogs(logsArray as AuditLog[]);
+            setLogs(logsArray);
             setCurrentPage(1);
           } else {
-            setLogs((prev) => [...prev, ...(logsArray as AuditLog[])]);
+            setLogs((prev) => [...prev, ...logsArray]);
           }
           setHasMore(!!response?.hasMore);
           setNextCursor(response?.nextCursor ?? null);
@@ -262,14 +262,14 @@ export function AuditLogsViewer({
         }
       } catch (error) {
         setError(
-          error instanceof Error ? error.message : "Failed to load audit logs",
+          error instanceof Error ? error.message : 'Failed to load audit logs'
         );
         setLogs([]);
       } finally {
         setIsLoading(false);
       }
     },
-    [filters],
+    [filters]
   );
 
   const loadStats = useCallback(async () => {
@@ -283,8 +283,8 @@ export function AuditLogsViewer({
       // Update the total filtered logs count from stats
       if (
         auditStats &&
-        typeof auditStats === "object" &&
-        "totalLogs" in auditStats
+        typeof auditStats === 'object' &&
+        'totalLogs' in auditStats
       ) {
         setTotalFilteredLogs(auditStats.totalLogs);
       }
@@ -323,7 +323,7 @@ export function AuditLogsViewer({
         // For pages > currentPage, we need to load all intermediate pages
       }
     },
-    [loadLogs, currentPage],
+    [loadLogs, currentPage]
   );
 
   const formatTimestamp = (timestamp: number) => {
@@ -336,77 +336,77 @@ export function AuditLogsViewer({
     } else if (diffInHours < 24) {
       return `${Math.round(diffInHours)}h ago`;
     } else {
-      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     }
   };
 
   const getSeverityColor = (severity?: string) => {
     switch (severity) {
-      case "critical":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "error":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "warning":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "info":
+      case 'critical':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'error':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'warning':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'info':
       default:
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return 'bg-blue-100 text-blue-800 border-blue-200';
     }
   };
 
   const getActionColor = (action: string) => {
-    const a = action.replace(/_/g, ".");
+    const a = action.replace(/_/g, '.');
     switch (a) {
-      case "create":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "update":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "delete":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "login":
-        return "bg-purple-100 text-purple-800 border-purple-200";
-      case "logout":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      case "permission.change":
-      case "permission.assigned":
-      case "permission.revoked":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "error":
-      case "login.failed":
-      case "account.locked":
-      case "suspicious.activity":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "deactivate":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "reactivate":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "password.reset":
-      case "email.update":
-        return "bg-indigo-100 text-indigo-800 border-indigo-200";
-      case "maintenance":
-      case "data.export":
-      case "data.import":
-        return "bg-cyan-100 text-cyan-800 border-cyan-200";
+      case 'create':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'update':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'delete':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'login':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'logout':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'permission.change':
+      case 'permission.assigned':
+      case 'permission.revoked':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'error':
+      case 'login.failed':
+      case 'account.locked':
+      case 'suspicious.activity':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'deactivate':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'reactivate':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'password.reset':
+      case 'email.update':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'maintenance':
+      case 'data.export':
+      case 'data.import':
+        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getEntityIcon = (entityType: string) => {
     switch (entityType) {
-      case "user":
+      case 'user':
         return <User className="h-4 w-4" />;
-      case "organisation":
+      case 'organisation':
         return <Building2 className="h-4 w-4" />;
-      case "module":
+      case 'module':
         return <FileText className="h-4 w-4" />;
-      case "academic_year":
+      case 'academic_year':
         return <Calendar className="h-4 w-4" />;
-      case "system":
+      case 'system':
         return <Settings className="h-4 w-4" />;
-      case "permission":
+      case 'permission':
         return <Shield className="h-4 w-4" />;
-      case "role":
+      case 'role':
         return <Users className="h-4 w-4" />;
       default:
         return <Database className="h-4 w-4" />;
@@ -471,10 +471,10 @@ export function AuditLogsViewer({
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  setViewMode(viewMode === "table" ? "cards" : "table")
+                  setViewMode(viewMode === 'table' ? 'cards' : 'table')
                 }
               >
-                {viewMode === "table" ? (
+                {viewMode === 'table' ? (
                   <Grid3X3 className="h-4 w-4" />
                 ) : (
                   <List className="h-4 w-4" />
@@ -487,7 +487,7 @@ export function AuditLogsViewer({
                 disabled={isLoading}
               >
                 <RefreshCw
-                  className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                  className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
                 />
               </Button>
               <Button variant="outline" size="sm">
@@ -556,11 +556,11 @@ export function AuditLogsViewer({
                           Entity Type
                         </label>
                         <Select
-                          value={filters.entityType || "all"}
+                          value={filters.entityType || 'all'}
                           onValueChange={(value) =>
                             setFilters((prev) => ({
                               ...prev,
-                              entityType: value === "all" ? "" : value,
+                              entityType: value === 'all' ? '' : value,
                             }))
                           }
                         >
@@ -583,11 +583,11 @@ export function AuditLogsViewer({
                           Action
                         </label>
                         <Select
-                          value={filters.action || "all"}
+                          value={filters.action || 'all'}
                           onValueChange={(value) =>
                             setFilters((prev) => ({
                               ...prev,
-                              action: value === "all" ? "" : value,
+                              action: value === 'all' ? '' : value,
                             }))
                           }
                         >
@@ -611,11 +611,11 @@ export function AuditLogsViewer({
                           Severity
                         </label>
                         <Select
-                          value={filters.severity || "all"}
+                          value={filters.severity || 'all'}
                           onValueChange={(value) =>
                             setFilters((prev) => ({
                               ...prev,
-                              severity: value === "all" ? "" : value,
+                              severity: value === 'all' ? '' : value,
                             }))
                           }
                         >
@@ -640,14 +640,14 @@ export function AuditLogsViewer({
                             Scope
                           </label>
                           <Select
-                            value={filters.type || "all"}
+                            value={filters.type || 'all'}
                             onValueChange={(value) =>
                               setFilters((prev) => ({
                                 ...prev,
                                 type:
-                                  value === "all"
-                                    ? ""
-                                    : (value as "sys" | "org"),
+                                  value === 'all'
+                                    ? ''
+                                    : (value as 'sys' | 'org'),
                               }))
                             }
                           >
@@ -671,11 +671,11 @@ export function AuditLogsViewer({
                         onClick={() => {
                           setFilters((prev) => ({
                             ...prev,
-                            entityType: "",
-                            action: "",
-                            severity: "",
-                            type: "",
-                            search: "",
+                            entityType: '',
+                            action: '',
+                            severity: '',
+                            type: '',
+                            search: '',
                           }));
                         }}
                       >
@@ -699,7 +699,7 @@ export function AuditLogsViewer({
           {/* Logs Display */}
           {!isLoading && (
             <>
-              {viewMode === "table" ? (
+              {viewMode === 'table' ? (
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
@@ -756,17 +756,17 @@ export function AuditLogsViewer({
                                 <div className="font-medium">
                                   {(() => {
                                     const label = formatEntityTypeLabel(
-                                      log.entityType,
+                                      log.entityType
                                     );
                                     const href = (() => {
                                       switch (log.entityType) {
-                                        case "user":
+                                        case 'user':
                                           return `/admin/users`;
-                                        case "organisation":
+                                        case 'organisation':
                                           return `/admin/organisations`;
-                                        case "permission":
+                                        case 'permission':
                                           return `/admin/permissions`;
-                                        case "role":
+                                        case 'role':
                                           return `/admin/permissions`; // roles live under permissions UI
                                         default:
                                           return undefined;
@@ -830,7 +830,7 @@ export function AuditLogsViewer({
                                     </div>
                                     <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
                                       {log.details ||
-                                        "No additional details available"}
+                                        'No additional details available'}
                                     </div>
                                     {log.metadata && (
                                       <>
@@ -841,7 +841,7 @@ export function AuditLogsViewer({
                                           {JSON.stringify(
                                             JSON.parse(log.metadata),
                                             null,
-                                            2,
+                                            2
                                           )}
                                         </pre>
                                       </>
@@ -855,12 +855,12 @@ export function AuditLogsViewer({
                             <Badge
                               variant="outline"
                               className={
-                                log.type === "sys"
-                                  ? "border-purple-300 text-purple-700 bg-purple-50"
-                                  : "border-emerald-300 text-emerald-700 bg-emerald-50"
+                                log.type === 'sys'
+                                  ? 'border-purple-300 text-purple-700 bg-purple-50'
+                                  : 'border-emerald-300 text-emerald-700 bg-emerald-50'
                               }
                             >
-                              {log.type === "sys" ? "Sys" : "Org"}
+                              {log.type === 'sys' ? 'Sys' : 'Org'}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -901,7 +901,7 @@ export function AuditLogsViewer({
                                       </Label>
                                       <p className="text-sm text-gray-600">
                                         {new Date(
-                                          log.timestamp,
+                                          log.timestamp
                                         ).toLocaleString()}
                                       </p>
                                     </div>
@@ -924,7 +924,7 @@ export function AuditLogsViewer({
                                         {getEntityIcon(log.entityType)}
                                         <span className="text-sm">
                                           {formatEntityTypeLabel(
-                                            log.entityType,
+                                            log.entityType
                                           )}
                                         </span>
                                         {log.entityName && (
@@ -950,9 +950,9 @@ export function AuditLogsViewer({
                                         Scope
                                       </Label>
                                       <p className="text-sm">
-                                        {log.type === "sys"
-                                          ? "System"
-                                          : "Organisation"}
+                                        {log.type === 'sys'
+                                          ? 'System'
+                                          : 'Organisation'}
                                       </p>
                                     </div>
                                     {log.details && (
@@ -974,7 +974,7 @@ export function AuditLogsViewer({
                                           {JSON.stringify(
                                             JSON.parse(log.metadata),
                                             null,
-                                            2,
+                                            2
                                           )}
                                         </pre>
                                       </div>
@@ -985,7 +985,7 @@ export function AuditLogsViewer({
                                           IP Address
                                         </Label>
                                         <p className="text-sm font-mono">
-                                          {log.ipAddress || "N/A"}
+                                          {log.ipAddress || 'N/A'}
                                         </p>
                                       </div>
                                       <div>
@@ -995,7 +995,7 @@ export function AuditLogsViewer({
                                         {log.severity && (
                                           <Badge
                                             className={getSeverityColor(
-                                              log.severity,
+                                              log.severity
                                             )}
                                           >
                                             {log.severity}
@@ -1050,12 +1050,12 @@ export function AuditLogsViewer({
                             <Badge
                               variant="outline"
                               className={
-                                log.type === "sys"
-                                  ? "border-purple-300 text-purple-700 bg-purple-50"
-                                  : "border-emerald-300 text-emerald-700 bg-emerald-50"
+                                log.type === 'sys'
+                                  ? 'border-purple-300 text-purple-700 bg-purple-50'
+                                  : 'border-emerald-300 text-emerald-700 bg-emerald-50'
                               }
                             >
-                              {log.type === "sys" ? "Sys" : "Org"}
+                              {log.type === 'sys' ? 'Sys' : 'Org'}
                             </Badge>
                           </div>
                           <div>
@@ -1096,7 +1096,7 @@ export function AuditLogsViewer({
                                       </Label>
                                       <p className="text-sm text-gray-600">
                                         {new Date(
-                                          log.timestamp,
+                                          log.timestamp
                                         ).toLocaleString()}
                                       </p>
                                     </div>
@@ -1143,9 +1143,9 @@ export function AuditLogsViewer({
                                         Scope
                                       </Label>
                                       <p className="text-sm">
-                                        {log.type === "sys"
-                                          ? "System"
-                                          : "Organisation"}
+                                        {log.type === 'sys'
+                                          ? 'System'
+                                          : 'Organisation'}
                                       </p>
                                     </div>
                                     {log.details && (
@@ -1167,7 +1167,7 @@ export function AuditLogsViewer({
                                           {JSON.stringify(
                                             JSON.parse(log.metadata),
                                             null,
-                                            2,
+                                            2
                                           )}
                                         </pre>
                                       </div>
@@ -1178,7 +1178,7 @@ export function AuditLogsViewer({
                                           IP Address
                                         </Label>
                                         <p className="text-sm font-mono">
-                                          {log.ipAddress || "N/A"}
+                                          {log.ipAddress || 'N/A'}
                                         </p>
                                       </div>
                                       <div>
@@ -1188,7 +1188,7 @@ export function AuditLogsViewer({
                                         {log.severity && (
                                           <Badge
                                             className={getSeverityColor(
-                                              log.severity,
+                                              log.severity
                                             )}
                                           >
                                             {log.severity}
@@ -1220,11 +1220,11 @@ export function AuditLogsViewer({
                               (currentPage - 1) * filters.limit + 1;
                             const endItem = Math.min(
                               currentPage * filters.limit,
-                              totalFilteredLogs,
+                              totalFilteredLogs
                             );
                             return `Showing ${startItem}-${endItem} of ${totalFilteredLogs} logs`;
                           })()
-                        : "No logs found"}
+                        : 'No logs found'}
                     </span>
                     {hasMore && (
                       <span className="text-gray-500"> (more available)</span>
@@ -1343,8 +1343,8 @@ export function AuditLogsViewer({
                     filters.action ||
                     filters.severity ||
                     filters.type
-                      ? "Try adjusting your filters or search terms."
-                      : "No audit logs match the current criteria."}
+                      ? 'Try adjusting your filters or search terms.'
+                      : 'No audit logs match the current criteria.'}
                   </p>
                 </div>
               )}

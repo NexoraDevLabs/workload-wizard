@@ -1,4 +1,4 @@
-import posthog from "posthog-js";
+import posthog from 'posthog-js';
 
 /**
  * Enhanced Analytics Service with PostHog integration
@@ -9,7 +9,7 @@ export class AnalyticsService {
 
   constructor() {
     this.isInitialized =
-      typeof posthog !== "undefined" && typeof posthog.capture === "function";
+      typeof posthog !== 'undefined' && typeof posthog.capture === 'function';
   }
 
   /**
@@ -60,7 +60,7 @@ export class AnalyticsService {
       posthog.capture(eventName, {
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -74,11 +74,11 @@ export class AnalyticsService {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("$pageview", {
+      posthog.capture('$pageview', {
         $current_url: path,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -93,17 +93,17 @@ export class AnalyticsService {
   trackPerformance(
     metricName: string,
     value: number,
-    properties?: Record<string, any>,
+    properties?: Record<string, any>
   ): void {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("performance_metric", {
+      posthog.capture('performance_metric', {
         metric_name: metricName,
         metric_value: value,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -117,13 +117,13 @@ export class AnalyticsService {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("error_occurred", {
+      posthog.capture('error_occurred', {
         error_message: error.message,
         error_name: error.name,
         error_stack: error.stack,
         ...context,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (trackingError) {
       // Silent fail for analytics
@@ -137,11 +137,11 @@ export class AnalyticsService {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("user_action", {
+      posthog.capture('user_action', {
         action_name: action,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -155,10 +155,10 @@ export class AnalyticsService {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("session_started", {
+      posthog.capture('session_started', {
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -172,10 +172,10 @@ export class AnalyticsService {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("session_ended", {
+      posthog.capture('session_ended', {
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -189,11 +189,11 @@ export class AnalyticsService {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("form_started", {
+      posthog.capture('form_started', {
         form_name: formName,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -206,17 +206,17 @@ export class AnalyticsService {
   trackFormSubmit(
     formName: string,
     success: boolean,
-    properties?: Record<string, any>,
+    properties?: Record<string, any>
   ): void {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("form_submitted", {
+      posthog.capture('form_submitted', {
         form_name: formName,
         form_success: success,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -229,17 +229,17 @@ export class AnalyticsService {
   trackNavigation(
     from: string,
     to: string,
-    properties?: Record<string, any>,
+    properties?: Record<string, any>
   ): void {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("navigation", {
+      posthog.capture('navigation', {
         from_page: from,
         to_page: to,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -252,17 +252,17 @@ export class AnalyticsService {
   trackSearch(
     query: string,
     resultsCount?: number,
-    properties?: Record<string, any>,
+    properties?: Record<string, any>
   ): void {
     if (!this.checkInitialization()) return;
 
     try {
-      posthog.capture("search_performed", {
+      posthog.capture('search_performed', {
         search_query: query,
         results_count: resultsCount,
         ...properties,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       });
     } catch (error) {
       // Silent fail for analytics
@@ -279,7 +279,7 @@ export class AnalyticsService {
       return {
         distinct_id: posthog.get_distinct_id(),
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       };
     } catch (error) {
       // Silent fail for analytics
@@ -295,7 +295,7 @@ export class AnalyticsService {
 
     try {
       const navigation = performance.getEntriesByType(
-        "navigation",
+        'navigation'
       )[0] as PerformanceNavigationTiming;
 
       return {
@@ -303,12 +303,12 @@ export class AnalyticsService {
         dom_content_loaded:
           navigation?.domContentLoadedEventEnd -
           navigation?.domContentLoadedEventStart,
-        first_paint: performance.getEntriesByName("first-paint")[0]?.startTime,
+        first_paint: performance.getEntriesByName('first-paint')[0]?.startTime,
         first_contentful_paint: performance.getEntriesByName(
-          "first-contentful-paint",
+          'first-contentful-paint'
         )[0]?.startTime,
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development",
+        environment: process.env.NODE_ENV || 'development',
       };
     } catch (error) {
       // Silent fail for analytics

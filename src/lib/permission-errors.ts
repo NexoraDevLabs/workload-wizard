@@ -1,10 +1,10 @@
-import { redirect } from "next/navigation";
-import { toast } from "@/hooks/use-toast";
+import { redirect } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 
 // Server-side permission error handler
 export function handlePermissionError(
   error: Error,
-  redirectTo = "/unauthorised",
+  redirectTo = '/unauthorised'
 ) {
   if ((error as any).statusCode === 403) {
     redirect(redirectTo);
@@ -16,11 +16,11 @@ export function handlePermissionError(
 export function handleClientPermissionError(
   error: Error,
   action: string,
-  redirectTo = "/unauthorised",
+  redirectTo = '/unauthorised'
 ) {
-  if ((error as any).statusCode === 403 || error.message === "Forbidden") {
+  if ((error as any).statusCode === 403 || error.message === 'Forbidden') {
     // Use global toast helpers (non-hook) in non-React context
-    toast.error("Access denied", `You don't have permission to ${action}.`);
+    toast.error('Access denied', `You don't have permission to ${action}.`);
 
     // Redirect after a short delay to allow toast to show
     setTimeout(() => {
@@ -38,8 +38,8 @@ export function handleClientPermissionError(
 export function isPermissionError(error: Error): boolean {
   return (
     (error as any).statusCode === 403 ||
-    error.message === "Forbidden" ||
-    error.message.includes("permission") ||
-    error.message.includes("access denied")
+    error.message === 'Forbidden' ||
+    error.message.includes('permission') ||
+    error.message.includes('access denied')
   );
 }

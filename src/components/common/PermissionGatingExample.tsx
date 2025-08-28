@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { usePermissionGating } from "@/hooks/usePermissionGating";
-import { PERMISSIONS } from "@/lib/permissions";
+} from '@/components/ui/card';
+import { usePermissionGating } from '@/hooks/usePermissionGating';
+import { PERMISSIONS } from '@/lib/permissions';
 
 /**
  * Example component demonstrating centralized permission gating
@@ -26,19 +26,19 @@ export function PermissionGatingExample({
     usePermissionGating(organisationId);
 
   // Example: Gate a button based on permission
-  const buttonState = gateButton("users.create", {
+  const buttonState = gateButton('users.create', {
     isSystemAction: false,
-    disabledText: "Only admins can create users",
+    disabledText: 'Only admins can create users',
   });
 
   // Example: Gate a form field
-  const fieldState = gateField("users.edit", {
+  const fieldState = gateField('users.edit', {
     isSystemAction: false,
     readonly: false,
   });
 
   // Example: Gate an entire element
-  const elementState = gateElement("organisations.manage", {
+  const elementState = gateElement('organisations.manage', {
     hideForbidden: true,
     isSystemAction: true,
   });
@@ -97,14 +97,14 @@ export function PermissionGatingExample({
             <h4 className="font-medium mb-2">Permission Status</h4>
             <div className="space-y-1 text-sm">
               <div>
-                Can create users: {hasPermission("users.create") ? "✅" : "❌"}
+                Can create users: {hasPermission('users.create') ? '✅' : '❌'}
               </div>
               <div>
-                Can edit users: {hasPermission("users.edit") ? "✅" : "❌"}
+                Can edit users: {hasPermission('users.edit') ? '✅' : '❌'}
               </div>
               <div>
-                Can manage organisations:{" "}
-                {hasPermission("organisations.manage", true) ? "✅" : "❌"}
+                Can manage organisations:{' '}
+                {hasPermission('organisations.manage', true) ? '✅' : '❌'}
               </div>
             </div>
           </div>

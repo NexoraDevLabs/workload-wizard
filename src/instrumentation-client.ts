@@ -1,20 +1,20 @@
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 // E2E guard
 const E2E =
-  (typeof window !== "undefined" && (window as any).__E2E__ === true) ||
-  process.env.NEXT_PUBLIC_E2E === "true";
+  (typeof window !== 'undefined' && (window as any).__E2E__ === true) ||
+  process.env.NEXT_PUBLIC_E2E === 'true';
 
 // PostHog configuration with basic features
 if (
   !E2E &&
-  typeof window !== "undefined" &&
+  typeof window !== 'undefined' &&
   process.env.NEXT_PUBLIC_POSTHOG_KEY
 ) {
-  import("posthog-js").then((posthog) => {
+  import('posthog-js').then((posthog) => {
     posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host:
-        process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com",
+        process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
     });
   });
 }
@@ -27,10 +27,10 @@ if (!E2E && process.env.NEXT_PUBLIC_SENTRY_DSN) {
     tracesSampleRate: 1.0,
 
     // Environment
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV || 'development',
 
     // Release version
-    release: process.env.NEXT_PUBLIC_APP_VERSION || "v0.4.0",
+    release: process.env.NEXT_PUBLIC_APP_VERSION || 'v0.4.0',
 
     // Integrations
     integrations: [

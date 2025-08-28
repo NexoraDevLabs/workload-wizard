@@ -203,7 +203,7 @@ expect(loadTime).toBeLessThan(3000); // 3 seconds
 
 ```typescript
 // Example screenshot test
-await expect(page).toHaveScreenshot("dashboard-layout.png", {
+await expect(page).toHaveScreenshot('dashboard-layout.png', {
   fullPage: true,
   timeout: 10000,
 });
@@ -266,15 +266,15 @@ export const test = base.extend<{ seedDemoData: void }>({
   seedDemoData: [
     async ({}, use) => {
       // Auto-seed demo data before tests
-      const assumeAdmin = process.env.E2E_ASSUME_ADMIN === "true";
+      const assumeAdmin = process.env.E2E_ASSUME_ADMIN === 'true';
       if (assumeAdmin) {
         // Reset and seed demo data
-        await ctx.post("/api/admin/dev-tools/reset");
-        await ctx.post("/api/admin/dev-tools/seed");
+        await ctx.post('/api/admin/dev-tools/reset');
+        await ctx.post('/api/admin/dev-tools/seed');
       }
       await use();
     },
-    { scope: "worker", auto: true },
+    { scope: 'worker', auto: true },
   ],
 });
 ```
@@ -311,8 +311,8 @@ ls -la test-results/
 
 ```typescript
 // In test setup
-await page.goto("/admin/dev-tools");
-const adminBtn = page.getByRole("button", { name: /^Admin$/ });
+await page.goto('/admin/dev-tools');
+const adminBtn = page.getByRole('button', { name: /^Admin$/ });
 if (await adminBtn.isVisible()) await adminBtn.click();
 await page.waitForTimeout(1000); // Wait for role switch
 ```
@@ -404,10 +404,10 @@ pnpm test:all
 
 ```typescript
 // tests/new-feature.spec.ts
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 
-describe("New Feature", () => {
-  it("should work correctly", () => {
+describe('New Feature', () => {
+  it('should work correctly', () => {
     expect(true).toBe(true);
   });
 });
@@ -417,11 +417,11 @@ describe("New Feature", () => {
 
 ```typescript
 // tests/e2e/new-feature.spec.ts
-import { test, expect } from "./fixtures";
+import { test, expect } from './fixtures';
 
-test("new feature workflow", async ({ page }) => {
-  await page.goto("/new-feature");
-  await expect(page.getByRole("heading")).toBeVisible();
+test('new feature workflow', async ({ page }) => {
+  await page.goto('/new-feature');
+  await expect(page.getByRole('heading')).toBeVisible();
 });
 ```
 
@@ -429,11 +429,11 @@ test("new feature workflow", async ({ page }) => {
 
 ```typescript
 // Add to tests/e2e/performance.spec.ts
-test("new feature performance", async ({ page }) => {
+test('new feature performance', async ({ page }) => {
   const startTime = Date.now();
 
-  await page.goto("/new-feature");
-  await expect(page.getByRole("heading")).toBeVisible();
+  await page.goto('/new-feature');
+  await expect(page.getByRole('heading')).toBeVisible();
 
   const loadTime = Date.now() - startTime;
   expect(loadTime).toBeLessThan(3000);
@@ -444,9 +444,9 @@ test("new feature performance", async ({ page }) => {
 
 ```typescript
 // Add to tests/e2e/visual-regression.spec.ts
-test("new feature visual consistency", async ({ page }) => {
-  await page.goto("/new-feature");
-  await expect(page).toHaveScreenshot("new-feature-page.png", {
+test('new feature visual consistency', async ({ page }) => {
+  await page.goto('/new-feature');
+  await expect(page).toHaveScreenshot('new-feature-page.png', {
     fullPage: true,
     timeout: 10000,
   });

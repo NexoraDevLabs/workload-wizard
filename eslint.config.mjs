@@ -1,54 +1,55 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+// eslint.config.js
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import globals from 'globals';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  // Ignore generated and build artifacts
-  { ignores: ["**/.next/**", "convex/_generated/**", "**/dist/**"] },
-  // Base Next.js + TypeScript rules
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  // Project-wide tweaks
+export default tseslint.config(
+  // Ignore build artefacts
   {
-    rules: {
-      "prefer-const": "warn",
-    },
-  },
-  // Loosen TS strictness temporarily to allow hygiene CI to pass; will be tightened in TS hardening PR
-  {
-    files: ["**/*.ts", "**/*.tsx"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unsafe-function-type": "off",
-      "@typescript-eslint/no-empty-object-type": "off",
-      "@typescript-eslint/no-wrapper-object-types": "off",
-    },
-  },
-  // JS-only overrides: do not apply TS-specific rules to JS utilities
-  {
-    files: ["**/*.js"],
-    rules: {
-      "@typescript-eslint/no-require-imports": "off",
-    },
-  },
-  // Test/e2e overrides: allow ts-nocheck and relax noisy rules in tests
-  {
-    files: [
-      "tests/**/*.spec.ts",
-      "tests/**/*.spec.tsx",
-      "tests/e2e/**/*.ts",
-      "tests/e2e/**/*.tsx",
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '.next/**',
+      'coverage/**',
+      '**/_generated/**',
     ],
-    rules: {
-      "@typescript-eslint/ban-ts-comment": "off",
+  },
+
+  // JS files
+  {
+    files: ['**/*.{js,jsx}'],
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
     },
   },
-];
 
-export default eslintConfig;
+  // TS / TSX files
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      ...tseslint.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked, // enables type-aware rules
+    ],
+    languageOptions: {
+      parserOptions: {
+        // Uses tsconfig without requiring a fixed path
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: { ...globals.browser, ...globals.node, ...globals.vitest }, // Vitest globals if you use them
+    },
+    rules: {
+      '@typescript-eslint/consistent-type-imports': [
+        'warn',
+        { prefer: 'type-imports' },
+      ],
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+    },
+  }
+);

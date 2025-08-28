@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { clerkClient, currentUser } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { clerkClient, currentUser } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 import {
   logRoleAssignedToUser,
   logRoleRevokedFromUser,
-} from "@/lib/actions/auditActions";
-import type { Id } from "@/convex/_generated/dataModel";
-import { z } from "zod";
+} from '@/lib/actions/auditActions';
+import type { Id } from '@/convex/_generated/dataModel';
+import { z } from 'zod';
 
 const BodySchema = z.object({
   userId: z.string().min(1),
@@ -25,7 +26,7 @@ const BodySchema = z.object({
   organisationalRoleId: z.string().optional(),
   organisationalRoleIds: z.array(z.string()).optional(),
 });
-import { getOrganisationIdFromSession } from "@/lib/authz";
+import { getOrganisationIdFromSession } from '@/lib/authz';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -34,7 +35,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -48,8 +49,8 @@ export async function POST(request: NextRequest) {
 
     if (!currentUserData) {
       return NextResponse.json(
-        { error: "Unauthorised: User not authenticated" },
-        { status: 401 },
+        { error: 'Unauthorised: User not authenticated' },
+        { status: 401 }
       );
     }
 
@@ -57,17 +58,17 @@ export async function POST(request: NextRequest) {
     const userRole = currentUserData.publicMetadata?.role as string;
     const userRoles = (currentUserData.publicMetadata?.roles as string[]) || [];
     const isAdmin =
-      userRole === "sysadmin" ||
-      userRole === "developer" ||
+      userRole === 'sysadmin' ||
+      userRole === 'developer' ||
       (userRoles &&
-        (userRoles.includes("sysadmin") || userRoles.includes("developer")));
+        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
     const isOrgAdmin =
-      userRole === "orgadmin" || userRoles.includes("orgadmin");
+      userRole === 'orgadmin' || userRoles.includes('orgadmin');
 
     if (!isAdmin && !isOrgAdmin) {
       return NextResponse.json(
-        { error: "Unauthorised: Admin access required" },
-        { status: 403 },
+        { error: 'Unauthorised: Admin access required' },
+        { status: 403 }
       );
     }
 
@@ -75,15 +76,15 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === "object" && "errors" in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in (err as any)) {
         return NextResponse.json(
-          { error: "Invalid request body", details: (err as any).errors },
-          { status: 400 },
+          { error: 'Invalid request body', details: (err as any).errors },
+          { status: 400 }
         );
       }
       return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 },
+        { error: 'Invalid request body' },
+        { status: 400 }
       );
     }
 
@@ -109,17 +110,17 @@ export async function POST(request: NextRequest) {
       const targetRoles =
         (targetUserPreview.publicMetadata?.roles as string[]) || [];
       const targetIsSystem =
-        targetRoles.includes("sysadmin") || targetRoles.includes("developer");
+        targetRoles.includes('sysadmin') || targetRoles.includes('developer');
       const addingSystem = systemRoles.some(
-        (r: string) => r === "sysadmin" || r === "developer",
+        (r: string) => r === 'sysadmin' || r === 'developer'
       );
       if (targetIsSystem || addingSystem) {
         return NextResponse.json(
           {
             error:
-              "Unauthorised: Org admins cannot modify system roles or users with system roles",
+              'Unauthorised: Org admins cannot modify system roles or users with system roles',
           },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
@@ -138,9 +139,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Unauthorised: Can only update users in your own organisation",
+              'Unauthorised: Can only update users in your own organisation',
           },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
@@ -224,7 +225,7 @@ export async function POST(request: NextRequest) {
           api.users.getBySubject,
           {
             subject: currentUserData.id,
-          },
+          }
         );
 
         if (!currentConvexUser) {
@@ -233,7 +234,7 @@ export async function POST(request: NextRequest) {
         } else {
           // Prepare Convex updates
           const previousSystemRoles: string[] = Array.isArray(
-            convexUser.systemRoles,
+            convexUser.systemRoles
           )
             ? convexUser.systemRoles
             : [];
@@ -248,9 +249,9 @@ export async function POST(request: NextRequest) {
           // Apply organisation change to Convex when admin
           if (isAdmin && organisationId) {
             (convexUpdates as any).organisationId =
-              organisationId as unknown as Id<"organisations">;
+              organisationId as unknown as Id<'organisations'>;
           }
-          if (typeof isActive === "boolean") convexUpdates.isActive = isActive;
+          if (typeof isActive === 'boolean') convexUpdates.isActive = isActive;
 
           if (Object.keys(convexUpdates).length > 0) {
             await getConvexClient().mutation(api.users.update, {
@@ -266,7 +267,7 @@ export async function POST(request: NextRequest) {
               await getConvexClient().mutation(api.users.ensureMembership, {
                 userId,
                 organisationId:
-                  organisationId as unknown as Id<"organisations">,
+                  organisationId as unknown as Id<'organisations'>,
                 isPrimary: true,
               } as any);
             } catch (e) {
@@ -277,17 +278,17 @@ export async function POST(request: NextRequest) {
           // Log system role changes
           if (Array.isArray(systemRoles)) {
             const added = systemRoles.filter(
-              (r: string) => !previousSystemRoles.includes(r),
+              (r: string) => !previousSystemRoles.includes(r)
             );
             const removed = previousSystemRoles.filter(
-              (r: string) => !systemRoles.includes(r),
+              (r: string) => !systemRoles.includes(r)
             );
             const userLabel = convexUser.fullName || convexUser.email;
             for (const role of added) {
-              await logRoleAssignedToUser(userId, userLabel, role, "system");
+              await logRoleAssignedToUser(userId, userLabel, role, 'system');
             }
             for (const role of removed) {
-              await logRoleRevokedFromUser(userId, userLabel, role, "system");
+              await logRoleRevokedFromUser(userId, userLabel, role, 'system');
             }
           }
         }
@@ -311,9 +312,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
               {
                 error:
-                  "Unauthorized: Cannot assign roles outside your organisation",
+                  'Unauthorized: Cannot assign roles outside your organisation',
               },
-              { status: 403 },
+              { status: 403 }
             );
           }
           // Assign multiple roles when provided; skip on empty to avoid server error
@@ -322,9 +323,9 @@ export async function POST(request: NextRequest) {
               api.organisationalRoles.assignMultipleToUser,
               {
                 userId,
-                roleIds: organisationalRoleIds as unknown as Id<"user_roles">[],
+                roleIds: organisationalRoleIds as unknown as Id<'user_roles'>[],
                 assignedBy: currentUserData.id,
-              },
+              }
             );
           }
         }
@@ -344,23 +345,23 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
               {
                 error:
-                  "Unauthorized: Cannot assign roles outside your organisation",
+                  'Unauthorized: Cannot assign roles outside your organisation',
               },
-              { status: 403 },
+              { status: 403 }
             );
           }
           const existingAssignment = await getConvexClient().query(
             api.organisationalRoles.getUserRole,
-            { userId },
+            { userId }
           );
 
           await getConvexClient().mutation(
             api.organisationalRoles.assignToUser,
             {
               userId,
-              roleId: organisationalRoleId as unknown as Id<"user_roles">,
+              roleId: organisationalRoleId as unknown as Id<'user_roles'>,
               assignedBy: currentUserData.id,
-            },
+            }
           );
 
           // Audit revoke + assign
@@ -368,7 +369,7 @@ export async function POST(request: NextRequest) {
             api.users.getBySubject,
             {
               subject: userId,
-            },
+            }
           );
           const userLabel = convexUserAfter?.fullName || convexUserAfter?.email;
           if (
@@ -380,28 +381,28 @@ export async function POST(request: NextRequest) {
               userId,
               userLabel,
               existingAssignment.role.name,
-              "organisation",
+              'organisation',
               {
                 organisationId: targetOrganisationId,
                 roleId: existingAssignment.role._id,
-              },
+              }
             );
           }
           try {
             const newRole = await getConvexClient().query(
               api.organisationalRoles.getById,
-              { roleId: organisationalRoleId as unknown as Id<"user_roles"> },
+              { roleId: organisationalRoleId as unknown as Id<'user_roles'> }
             );
             if (newRole?.name) {
               await logRoleAssignedToUser(
                 userId,
                 userLabel,
                 newRole.name,
-                "organisation",
+                'organisation',
                 {
                   organisationId: targetOrganisationId,
                   roleId: organisationalRoleId,
-                },
+                }
               );
             }
           } catch {}
@@ -412,15 +413,15 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "User updated successfully" },
-      { status: 200 },
+      { message: 'User updated successfully' },
+      { status: 200 }
     );
   } catch (error) {
     // Error updating user
 
     return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 },
+      { error: 'Failed to update user' },
+      { status: 500 }
     );
   }
 }

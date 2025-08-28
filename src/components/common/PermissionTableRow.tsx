@@ -1,7 +1,8 @@
-import React, { ReactNode, forwardRef } from "react";
-import { usePermissionManager } from "@/hooks/usePermissionManager";
-import { type PermissionId } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from 'react';
+import React, { forwardRef } from 'react';
+import { usePermissionManager } from '@/hooks/usePermissionManager';
+import { type PermissionId } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 
 interface PermissionTableRowProps {
   permission: PermissionId;
@@ -33,7 +34,7 @@ export const PermissionTableRow = forwardRef<
       hideForbidden = false,
       className,
     },
-    ref,
+    ref
   ) => {
     const { gateRow, canPerform } = usePermissionManager(organisationId);
 
@@ -72,10 +73,10 @@ export const PermissionTableRow = forwardRef<
         {children}
       </tr>
     );
-  },
+  }
 );
 
-PermissionTableRow.displayName = "PermissionTableRow";
+PermissionTableRow.displayName = 'PermissionTableRow';
 
 // Permission-aware table cell components
 interface PermissionTableCellProps {
@@ -89,7 +90,7 @@ interface PermissionTableCellProps {
   fallback?: ReactNode;
   hideForbidden?: boolean;
   className?: string;
-  as?: "td" | "th";
+  as?: 'td' | 'th';
 }
 
 export const PermissionTableCell = forwardRef<
@@ -108,9 +109,9 @@ export const PermissionTableCell = forwardRef<
       fallback = null,
       hideForbidden = false,
       className,
-      as: Component = "td",
+      as: Component = 'td',
     },
-    ref,
+    ref
   ) => {
     const { gateRow, canPerform } = usePermissionManager(organisationId);
 
@@ -144,15 +145,15 @@ export const PermissionTableCell = forwardRef<
         {children}
       </Component>
     );
-  },
+  }
 );
 
-PermissionTableCell.displayName = "PermissionTableCell";
+PermissionTableCell.displayName = 'PermissionTableCell';
 
 // Convenience components for common permissions
 export const UsersViewRow = forwardRef<
   HTMLTableRowElement,
-  Omit<PermissionTableRowProps, "permission">
+  Omit<PermissionTableRowProps, 'permission'>
 >((props, ref) => (
   <PermissionTableRow
     ref={ref}
@@ -164,7 +165,7 @@ export const UsersViewRow = forwardRef<
 
 export const UsersEditRow = forwardRef<
   HTMLTableRowElement,
-  Omit<PermissionTableRowProps, "permission">
+  Omit<PermissionTableRowProps, 'permission'>
 >((props, ref) => (
   <PermissionTableRow
     ref={ref}
@@ -176,7 +177,7 @@ export const UsersEditRow = forwardRef<
 
 export const UsersDeleteRow = forwardRef<
   HTMLTableRowElement,
-  Omit<PermissionTableRowProps, "permission">
+  Omit<PermissionTableRowProps, 'permission'>
 >((props, ref) => (
   <PermissionTableRow
     ref={ref}
@@ -187,6 +188,6 @@ export const UsersDeleteRow = forwardRef<
 ));
 
 // Set display names
-UsersViewRow.displayName = "UsersViewRow";
-UsersEditRow.displayName = "UsersEditRow";
-UsersDeleteRow.displayName = "UsersDeleteRow";
+UsersViewRow.displayName = 'UsersViewRow';
+UsersEditRow.displayName = 'UsersEditRow';
+UsersDeleteRow.displayName = 'UsersDeleteRow';

@@ -6,7 +6,7 @@ on:
   push:
     branches: [dev, main]
   schedule:
-    - cron: "12 15 * * *"
+    - cron: '12 15 * * *'
   workflow_dispatch:
 
 permissions:
@@ -73,7 +73,7 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           publishToken: ${{ env.SEMGREP_APP_TOKEN }}
-          generateSarif: "1"
+          generateSarif: '1'
           config: p/ci
         env:
           SEMGREP_APP_TOKEN: ${{ env.SEMGREP_APP_TOKEN }}
@@ -83,7 +83,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         uses: returntocorp/semgrep-action@v1
         with:
-          generateSarif: "1"
+          generateSarif: '1'
           config: p/ci
 
       - name: Detect Code Scanning status
@@ -130,6 +130,6 @@ jobs:
       - name: Remove old artifacts (keep latest 10 and all tag builds)
         uses: c-hive/gha-remove-artifacts@v1.4.0
         with:
-          age: "14 days"
+          age: '14 days'
           skip-recent: 10
           skip-tags: true

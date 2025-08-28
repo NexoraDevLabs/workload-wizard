@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Button } from "@/components/ui/button";
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -28,7 +28,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,17 +47,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Save, X, Paperclip, Settings } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { Plus, Edit, Trash2, Save, X, Paperclip, Settings } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useMutation, useQuery } from "convex/react";
-import type { Id } from "@/convex/_generated/dataModel";
-import { api } from "@/convex/_generated/api";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/tooltip';
+import { useMutation, useQuery } from 'convex/react';
+import type { Id } from '@/convex/_generated/dataModel';
+import { api } from '@/convex/_generated/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface Role {
   _id: string;
@@ -84,7 +84,7 @@ interface RoleWithPermissions extends Role {
     description: string;
     isGranted: boolean;
     isOverride: boolean;
-    source: "system_default" | "custom";
+    source: 'system_default' | 'custom';
   }>;
 }
 
@@ -96,19 +96,19 @@ export default function OrganisationRolesPage() {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   // Form state
-  const [roleName, setRoleName] = useState("");
-  const [roleDescription, setRoleDescription] = useState("");
+  const [roleName, setRoleName] = useState('');
+  const [roleDescription, setRoleDescription] = useState('');
 
   // Get current user's organisation
   const currentUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   );
 
   // Get organisation roles (server derives org from actor)
   const organisationRoles = useQuery(
     api.permissions.getOrganisationRoles,
-    currentUser?.organisationId ? {} : "skip",
+    currentUser?.organisationId ? {} : 'skip'
   );
 
   // Get system permissions
@@ -116,8 +116,8 @@ export default function OrganisationRolesPage() {
   const stagedForRole = useQuery(
     api.permissions.getOrganisationPermissions,
     editingRole?._id
-      ? { roleId: editingRole._id as unknown as Id<"user_roles"> }
-      : "skip",
+      ? { roleId: editingRole._id as unknown as Id<'user_roles'> }
+      : 'skip'
   );
 
   // Mutations
@@ -125,7 +125,7 @@ export default function OrganisationRolesPage() {
   const updateRole = useMutation(api.permissions.updateOrganisationRole);
   const deleteRole = useMutation(api.permissions.deleteOrganisationRole);
   const updateRolePermissions = useMutation(
-    api.permissions.updateRolePermissions,
+    api.permissions.updateRolePermissions
   );
 
   const { toast } = useToast();
@@ -150,23 +150,23 @@ export default function OrganisationRolesPage() {
           : {}),
       });
 
-      setRoleName("");
-      setRoleDescription("");
+      setRoleName('');
+      setRoleDescription('');
       setSelectedPermissions([]);
       setIsCreateDialogOpen(false);
 
       toast({
-        title: "Role Created",
+        title: 'Role Created',
         description: `Role "${roleName.trim()}" has been created successfully.`,
       });
     } catch (error) {
       toast({
-        title: "Failed to create role",
+        title: 'Failed to create role',
         description:
           error instanceof Error
             ? error.message
-            : "An error occurred while creating the role.",
-        variant: "destructive",
+            : 'An error occurred while creating the role.',
+        variant: 'destructive',
       });
     }
   };
@@ -174,7 +174,7 @@ export default function OrganisationRolesPage() {
   const handleEditRole = (role: Role) => {
     setEditingRole(role);
     setRoleName(role.name);
-    setRoleDescription(role.description || "");
+    setRoleDescription(role.description || '');
     setSelectedPermissions(role.permissions);
     setIsEditDialogOpen(true);
   };
@@ -184,7 +184,7 @@ export default function OrganisationRolesPage() {
 
     try {
       await updateRole({
-        roleId: editingRole._id as unknown as Id<"user_roles">,
+        roleId: editingRole._id as unknown as Id<'user_roles'>,
         name: roleName.trim(),
         ...(roleDescription.trim()
           ? { description: roleDescription.trim() }
@@ -201,23 +201,23 @@ export default function OrganisationRolesPage() {
       });
 
       setEditingRole(null);
-      setRoleName("");
-      setRoleDescription("");
+      setRoleName('');
+      setRoleDescription('');
       setSelectedPermissions([]);
       setIsEditDialogOpen(false);
 
       toast({
-        title: "Role Updated",
+        title: 'Role Updated',
         description: `Role "${roleName.trim()}" has been updated successfully.`,
       });
     } catch (error) {
       toast({
-        title: "Failed to update role",
+        title: 'Failed to update role',
         description:
           error instanceof Error
             ? error.message
-            : "An error occurred while updating the role.",
-        variant: "destructive",
+            : 'An error occurred while updating the role.',
+        variant: 'destructive',
       });
     }
   };
@@ -225,7 +225,7 @@ export default function OrganisationRolesPage() {
   const handleDeleteRole = async (roleId: string) => {
     try {
       await deleteRole({
-        roleId: roleId as unknown as Id<"user_roles">,
+        roleId: roleId as unknown as Id<'user_roles'>,
         ...(user?.id ? { performedBy: user.id } : {}),
         ...(user?.fullName || user?.emailAddresses?.[0]?.emailAddress
           ? {
@@ -237,17 +237,17 @@ export default function OrganisationRolesPage() {
       });
 
       toast({
-        title: "Role Deleted",
-        description: "Role has been deleted successfully.",
+        title: 'Role Deleted',
+        description: 'Role has been deleted successfully.',
       });
     } catch (error) {
       toast({
-        title: "Failed to delete role",
+        title: 'Failed to delete role',
         description:
           error instanceof Error
             ? error.message
-            : "An error occurred while deleting the role.",
-        variant: "destructive",
+            : 'An error occurred while deleting the role.',
+        variant: 'destructive',
       });
     }
   };
@@ -256,11 +256,11 @@ export default function OrganisationRolesPage() {
     roleId: string,
     permissionId: string,
     isGranted: boolean,
-    acceptStaged?: boolean,
+    acceptStaged?: boolean
   ) => {
     try {
       await updateRolePermissions({
-        roleId: roleId as unknown as Id<"user_roles">,
+        roleId: roleId as unknown as Id<'user_roles'>,
         permissionId,
         isGranted,
         ...(acceptStaged ? { acceptStaged: !!acceptStaged } : {}),
@@ -275,17 +275,17 @@ export default function OrganisationRolesPage() {
       });
 
       toast({
-        title: "Permission Updated",
-        description: `Permission has been ${isGranted ? "granted" : "revoked"} successfully.`,
+        title: 'Permission Updated',
+        description: `Permission has been ${isGranted ? 'granted' : 'revoked'} successfully.`,
       });
     } catch (error) {
       toast({
-        title: "Failed to update permission",
+        title: 'Failed to update permission',
         description:
           error instanceof Error
             ? error.message
-            : "An error occurred while updating the permission.",
-        variant: "destructive",
+            : 'An error occurred while updating the permission.',
+        variant: 'destructive',
       });
     }
   };
@@ -298,22 +298,22 @@ export default function OrganisationRolesPage() {
 
   const getPermissionSource = (roleName: string, permissionId: string) => {
     const permission = systemPermissions?.find((p) => p.id === permissionId);
-    if (!permission) return "custom";
+    if (!permission) return 'custom';
 
     return permission.defaultRoles.includes(roleName)
-      ? "system_default"
-      : "custom";
+      ? 'system_default'
+      : 'custom';
   };
 
   const getPermissionDetails = (role: Role): RoleWithPermissions => {
     const permissionDetails =
       systemPermissions?.map((perm) => {
         const isGranted = role.permissions.includes(perm.id);
-        const source: "system_default" | "custom" =
-          getPermissionSource(role.name, perm.id) === "system_default"
-            ? "system_default"
-            : "custom";
-        const isOverride = source === "custom" && isGranted;
+        const source: 'system_default' | 'custom' =
+          getPermissionSource(role.name, perm.id) === 'system_default'
+            ? 'system_default'
+            : 'custom';
+        const isOverride = source === 'custom' && isGranted;
 
         return {
           id: perm.id,
@@ -342,9 +342,9 @@ export default function OrganisationRolesPage() {
   }
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Organisation", href: "/organisation" },
-    { label: "Roles" },
+    { label: 'Home', href: '/' },
+    { label: 'Organisation', href: '/organisation' },
+    { label: 'Roles' },
   ];
 
   const headerActions = (
@@ -416,8 +416,8 @@ export default function OrganisationRolesPage() {
                         } else {
                           setSelectedPermissions(
                             selectedPermissions.filter(
-                              (p) => p !== permission.id,
-                            ),
+                              (p) => p !== permission.id
+                            )
                           );
                         }
                       }}
@@ -515,7 +515,7 @@ export default function OrganisationRolesPage() {
                                   <Checkbox
                                     id={`edit-${permission.id}`}
                                     checked={selectedPermissions.includes(
-                                      permission.id,
+                                      permission.id
                                     )}
                                     onCheckedChange={(checked) => {
                                       if (checked) {
@@ -526,8 +526,8 @@ export default function OrganisationRolesPage() {
                                       } else {
                                         setSelectedPermissions(
                                           selectedPermissions.filter(
-                                            (p) => p !== permission.id,
-                                          ),
+                                            (p) => p !== permission.id
+                                          )
                                         );
                                       }
                                     }}
@@ -613,44 +613,44 @@ export default function OrganisationRolesPage() {
                         <TableCell>
                           <Badge
                             variant={
-                              permission.isGranted ? "default" : "secondary"
+                              permission.isGranted ? 'default' : 'secondary'
                             }
                           >
-                            {permission.isGranted ? "Granted" : "Denied"}
+                            {permission.isGranted ? 'Granted' : 'Denied'}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                {permission.source === "system_default" ? (
+                                {permission.source === 'system_default' ? (
                                   <Paperclip className="w-4 h-4 text-blue-500" />
                                 ) : (
                                   <Settings className="w-4 h-4 text-green-500" />
                                 )}
                               </TooltipTrigger>
                               <TooltipContent>
-                                {permission.source === "system_default"
-                                  ? "Default: granted to this role by the system permission defaults"
-                                  : "Custom: explicitly assigned to this role in your organisation"}
+                                {permission.source === 'system_default'
+                                  ? 'Default: granted to this role by the system permission defaults'
+                                  : 'Custom: explicitly assigned to this role in your organisation'}
                               </TooltipContent>
                             </Tooltip>
                             <span className="text-sm">
-                              {permission.source === "system_default"
-                                ? "System Default"
-                                : "Custom"}
+                              {permission.source === 'system_default'
+                                ? 'System Default'
+                                : 'Custom'}
                             </span>
                             <Badge
                               variant={
-                                permission.source === "system_default"
-                                  ? "secondary"
-                                  : "outline"
+                                permission.source === 'system_default'
+                                  ? 'secondary'
+                                  : 'outline'
                               }
                               className="text-[10px] uppercase"
                             >
-                              {permission.source === "system_default"
-                                ? "default"
-                                : "custom"}
+                              {permission.source === 'system_default'
+                                ? 'default'
+                                : 'custom'}
                             </Badge>
                           </div>
                         </TableCell>
@@ -662,16 +662,16 @@ export default function OrganisationRolesPage() {
                                 handlePermissionToggle(
                                   role._id,
                                   permission.id,
-                                  !!checked,
+                                  !!checked
                                 )
                               }
                               disabled={
-                                permission.source === "system_default" &&
+                                permission.source === 'system_default' &&
                                 !permission.isOverride
                               }
                             />
                             {!permission.isGranted &&
-                              permission.source === "system_default" && (
+                              permission.source === 'system_default' && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span>
@@ -704,7 +704,7 @@ export default function OrganisationRolesPage() {
                                       <div className="text-xs">
                                         <span className="font-semibold">
                                           Group:
-                                        </span>{" "}
+                                        </span>{' '}
                                         {permission.group}
                                       </div>
                                       <div className="text-xs text-muted-foreground">
@@ -746,13 +746,13 @@ export default function OrganisationRolesPage() {
             </DialogHeader>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="font-semibold">Permission:</span>{" "}
+                <span className="font-semibold">Permission:</span>{' '}
                 <code className="bg-muted px-1 py-0.5 rounded">
                   {confirmApply.details.id}
                 </code>
               </div>
               <div>
-                <span className="font-semibold">Group:</span>{" "}
+                <span className="font-semibold">Group:</span>{' '}
                 {confirmApply.details.group}
               </div>
               <div className="text-muted-foreground">
@@ -769,7 +769,7 @@ export default function OrganisationRolesPage() {
                     confirmApply.roleId,
                     confirmApply.permissionId,
                     true,
-                    true,
+                    true
                   );
                   setConfirmApply(null);
                 }}

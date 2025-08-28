@@ -1,17 +1,17 @@
 // Example usage of StandardizedSidebarLayout
 
-"use client";
+'use client';
 
-import { StandardizedSidebarLayout } from "./StandardizedSidebarLayout";
-import { Button } from "@/components/ui/button";
-import { Plus, Settings } from "lucide-react";
+import { StandardizedSidebarLayout } from './StandardizedSidebarLayout';
+import { Button } from '@/components/ui/button';
+import { Plus, Settings } from 'lucide-react';
 
 export function ExamplePageWithLayout() {
   // Define breadcrumbs for this page
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Admin", href: "/admin" },
-    { label: "Users" },
+    { label: 'Home', href: '/' },
+    { label: 'Admin', href: '/admin' },
+    { label: 'Users' },
   ];
 
   // Define header actions (optional)
@@ -67,9 +67,9 @@ export function MinimalExamplePage() {
 // Example with custom breadcrumbs only
 export function CustomBreadcrumbsExample() {
   const customBreadcrumbs = [
-    { label: "Dashboard", href: "/dashboard" },
-    { label: "Reports", href: "/reports" },
-    { label: "Monthly Report" },
+    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Reports', href: '/reports' },
+    { label: 'Monthly Report' },
   ];
 
   return (

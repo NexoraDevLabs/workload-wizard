@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
-import { useParams } from "next/navigation";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import type { Doc } from "@/convex/_generated/dataModel";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
+import { useParams } from 'next/navigation';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Doc } from '@/convex/_generated/dataModel';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -22,14 +22,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -37,51 +37,51 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
-import { withToast } from "@/lib/utils";
-import { GenericDeleteModal } from "@/components/domain/GenericDeleteModal";
-import { useAcademicYear } from "@/components/providers/AcademicYearProvider";
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { withToast } from '@/lib/utils';
+import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
-  const courseId = params?.id as string;
+  const courseId = params?.id;
   const { toast } = useToast();
   const { currentYear } = useAcademicYear();
 
   const course = useQuery(
     api.courses.getById,
-    courseId ? ({ id: courseId as any } as any) : ("skip" as any),
+    courseId ? ({ id: courseId as any } as any) : ('skip' as any)
   );
   const years = useQuery(
     api.courses.listYears,
-    courseId ? ({ courseId: courseId as any } as any) : ("skip" as any),
+    courseId ? ({ courseId: courseId as any } as any) : ('skip' as any)
   );
   const addYear = useMutation(api.courses.addYear);
 
-  const [yearInput, setYearInput] = useState<string>("1");
+  const [yearInput, setYearInput] = useState<string>('1');
   const [isAddingYear, setIsAddingYear] = useState(false);
   const [studentsOpen, setStudentsOpen] = useState(false);
-  const [studentTotal, setStudentTotal] = useState<string>("");
+  const [studentTotal, setStudentTotal] = useState<string>('');
   const [campusRows, setCampusRows] = useState<
     Array<{ campus: string; count: string }>
   >([]);
   const settings = useQuery(
     (api as any).organisationSettings.getForActor,
-    {} as any,
+    {} as any
   );
   const updateCourse = useMutation(api.courses.update);
   const initialiseSplit = useMutation(
-    (api as any).courses.initialiseRecommendedGroups,
+    (api as any).courses.initialiseRecommendedGroups
   );
   const canAdd = useMemo(() => {
     const val = Number(yearInput);
     const formatOk = Number.isFinite(val) && val >= 1 && val <= 10;
     const exists = Array.isArray(years)
-      ? (years as any[]).some((y) => Number((y as any).yearNumber) === val)
+      ? years.some((y) => Number(y.yearNumber) === val)
       : false;
     return formatOk && !exists;
   }, [yearInput, years]);
@@ -89,10 +89,10 @@ export default function CourseDetailPage() {
   // Compute recommendations early (guard when course isn't loaded yet),
   // so hooks order stays stable across renders.
   const recommendedByCampus = useMemo(() => {
-    const maxSize = (settings as any)?.maxClassSizePerGroup || 25;
+    const maxSize = settings?.maxClassSizePerGroup || 25;
     if (!course)
       return [] as Array<{ campus: string; groups: number; count: number }>;
-    const dist = ((course as any).studentDistributionByCampus || []) as Array<{
+    const dist = (course.studentDistributionByCampus || []) as Array<{
       campus: string;
       count: number;
     }>;
@@ -109,8 +109,8 @@ export default function CourseDetailPage() {
     return (
       <StandardizedSidebarLayout
         breadcrumbs={[
-          { label: "Courses", href: "/courses" },
-          { label: "Loading..." },
+          { label: 'Courses', href: '/courses' },
+          { label: 'Loading...' },
         ]}
         title="Course"
       >
@@ -121,21 +121,21 @@ export default function CourseDetailPage() {
 
   // Seed modal state from course when opening
   const openStudentsEditor = () => {
-    setStudentTotal(String((course as any).studentCount || ""));
-    const dist = ((course as any).studentDistributionByCampus || []) as Array<{
+    setStudentTotal(String(course.studentCount || ''));
+    const dist = (course.studentDistributionByCampus || []) as Array<{
       campus: string;
       count: number;
     }>;
     if (Array.isArray(dist) && dist.length > 0) {
       setCampusRows(
-        dist.map((d) => ({ campus: d.campus, count: String(d.count) })),
+        dist.map((d) => ({ campus: d.campus, count: String(d.count) }))
       );
-    } else if (Array.isArray((course as any).campuses)) {
+    } else if (Array.isArray(course.campuses)) {
       setCampusRows(
-        ((course as any).campuses as string[]).map((c) => ({
+        (course.campuses as string[]).map((c) => ({
           campus: c,
-          count: "",
-        })),
+          count: '',
+        }))
       );
     } else {
       setCampusRows([]);
@@ -146,10 +146,10 @@ export default function CourseDetailPage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Courses", href: "/courses" },
-        { label: (course as any).code },
+        { label: 'Courses', href: '/courses' },
+        { label: course.code },
       ]}
-      title={`${(course as any).code} — ${(course as any).name}`}
+      title={`${course.code} — ${course.name}`}
     >
       <Tabs defaultValue="years" className="w-full">
         <TabsContent value="years">
@@ -169,30 +169,30 @@ export default function CourseDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 sm:grid-cols-3 text-sm">
-                {(course as any).leaderProfileId && (
+                {course.leaderProfileId && (
                   <div>
                     <div className="text-muted-foreground">Leader Profile</div>
                     <div className="mt-1">
                       <code className="rounded bg-muted px-1 py-0.5">
-                        {String((course as any).leaderProfileId)}
+                        {String(course.leaderProfileId)}
                       </code>
                     </div>
                   </div>
                 )}
-                {typeof (course as any).studentCount === "number" && (
+                {typeof course.studentCount === 'number' && (
                   <div>
                     <div className="text-muted-foreground">Students</div>
                     <div className="mt-1 font-medium">
-                      {(course as any).studentCount}
+                      {course.studentCount}
                     </div>
                   </div>
                 )}
-                {Array.isArray((course as any).campuses) &&
-                  (course as any).campuses!.length > 0 && (
+                {Array.isArray(course.campuses) &&
+                  course.campuses!.length > 0 && (
                     <div>
                       <div className="text-muted-foreground">Campuses</div>
                       <div className="mt-1 flex flex-wrap gap-2">
-                        {(course as any).campuses!.map((c: string) => (
+                        {course.campuses!.map((c: string) => (
                           <Badge key={c} variant="secondary">
                             {c}
                           </Badge>
@@ -213,15 +213,15 @@ export default function CourseDetailPage() {
                     Course code
                   </div>
                   <div className="mt-1 text-xl font-semibold">
-                    {(course as any).code}
+                    {course.code}
                   </div>
                 </div>
                 <div className="rounded-md border p-3">
                   <div className="text-xs text-muted-foreground">Students</div>
                   <div className="mt-1 text-xl font-semibold tabular-nums">
-                    {typeof (course as any).studentCount === "number"
-                      ? (course as any).studentCount
-                      : "–"}
+                    {typeof course.studentCount === 'number'
+                      ? course.studentCount
+                      : '–'}
                   </div>
                 </div>
               </div>
@@ -259,18 +259,18 @@ export default function CourseDetailPage() {
                           await withToast(
                             () =>
                               initialiseSplit({
-                                courseId: (course as any)._id as any,
+                                courseId: course._id,
                                 academicYearId: (currentYear as any)._id,
                               } as any),
                             {
                               success: {
-                                title: "Initialised",
+                                title: 'Initialised',
                                 description:
-                                  "Group split initialised for this AY.",
+                                  'Group split initialised for this AY.',
                               },
-                              error: { title: "Failed to initialise" },
+                              error: { title: 'Failed to initialise' },
                             },
-                            toast,
+                            toast
                           );
                         } catch {}
                       }}
@@ -292,11 +292,11 @@ export default function CourseDetailPage() {
             setStudentTotal={setStudentTotal}
             campusRows={campusRows}
             setCampusRows={setCampusRows}
-            campusOptions={(settings as any)?.campusOptions}
+            campusOptions={settings?.campusOptions}
             onSave={async () => {
               const total = Number(studentTotal);
               const rows = campusRows
-                .filter((r) => r.campus && r.count.trim() !== "")
+                .filter((r) => r.campus && r.count.trim() !== '')
                 .map((r) => ({
                   campus: r.campus,
                   count: Number(r.count) || 0,
@@ -305,23 +305,23 @@ export default function CourseDetailPage() {
                 await withToast(
                   () =>
                     updateCourse({
-                      id: (course as any)._id as any,
-                      code: (course as any).code,
-                      name: (course as any).name,
+                      id: course._id,
+                      code: course.code,
+                      name: course.name,
                       ...(isNaN(total) ? {} : { studentCount: total }),
                       studentDistributionByCampus: rows as any,
-                      ...(Array.isArray((course as any).campuses)
-                        ? { campuses: (course as any).campuses }
+                      ...(Array.isArray(course.campuses)
+                        ? { campuses: course.campuses }
                         : {}),
                     } as any),
                   {
                     success: {
-                      title: "Saved",
-                      description: "Student distribution updated.",
+                      title: 'Saved',
+                      description: 'Student distribution updated.',
                     },
-                    error: { title: "Save failed" },
+                    error: { title: 'Save failed' },
                   },
-                  toast,
+                  toast
                 );
                 setStudentsOpen(false);
               } catch {}
@@ -349,9 +349,7 @@ export default function CourseDetailPage() {
                   {(() => {
                     const val = Number(yearInput);
                     const exists = Array.isArray(years)
-                      ? (years as any[]).some(
-                          (y) => Number((y as any).yearNumber) === val,
-                        )
+                      ? years.some((y) => Number(y.yearNumber) === val)
                       : false;
                     return Number.isFinite(val) && exists ? (
                       <p className="text-xs text-destructive">
@@ -373,25 +371,25 @@ export default function CourseDetailPage() {
                       } as any);
                       setYearInput(String(yearNumber + 1));
                       toast({
-                        title: "Year added",
+                        title: 'Year added',
                         description: `Year ${yearNumber} has been added successfully.`,
-                        variant: "success",
+                        variant: 'success',
                       });
                     } catch (error) {
                       toast({
-                        title: "Failed to add year",
+                        title: 'Failed to add year',
                         description:
                           error instanceof Error
                             ? error.message
-                            : "An error occurred",
-                        variant: "destructive",
+                            : 'An error occurred',
+                        variant: 'destructive',
                       });
                     } finally {
                       setIsAddingYear(false);
                     }
                   }}
                 >
-                  {isAddingYear ? "Adding..." : "Add Year"}
+                  {isAddingYear ? 'Adding...' : 'Add Year'}
                 </Button>
               </div>
             </CardContent>
@@ -418,7 +416,7 @@ export default function CourseDetailPage() {
                       </CardHeader>
                       <CardContent>
                         <CourseYearModules
-                          yearId={y._id as any}
+                          yearId={y._id}
                           recommendedList={(recommendedByCampus as any) || []}
                         />
                       </CardContent>
@@ -447,13 +445,13 @@ function CourseYearModules({
 }) {
   const { toast } = useToast();
   const attached = useQuery(api.modules.listForCourseYear, {
-    courseYearId: yearId as string & { __tableName: "course_years" },
+    courseYearId: yearId as string & { __tableName: 'course_years' },
   } as any);
   const allModules = useQuery(api.modules.listByOrganisation);
   const attach = useMutation(api.modules.attachToCourseYear);
   const detach = useMutation(api.modules.detachFromCourseYear);
 
-  const [selected, setSelected] = useState<string>("");
+  const [selected, setSelected] = useState<string>('');
   const [isCore, setIsCore] = useState<boolean>(true);
   const [isAttaching, setIsAttaching] = useState(false);
   const [isDetaching, setIsDetaching] = useState(false);
@@ -470,7 +468,7 @@ function CourseYearModules({
 
   const available = useMemo(() => {
     const used = new Set(
-      (attached || []).map((a: any) => String(a.module?._id)),
+      (attached || []).map((a: any) => String(a.module?._id))
     );
     return (allModules || []).filter((m: any) => !used.has(String(m._id)));
   }, [attached, allModules]);
@@ -494,7 +492,7 @@ function CourseYearModules({
           </Select>
           {!!selected &&
             (attached || []).some(
-              (a: any) => String(a.module?._id) === selected,
+              (a: any) => String(a.module?._id) === selected
             ) && (
               <p className="text-xs text-destructive mt-1">
                 Module already attached to this year
@@ -506,10 +504,10 @@ function CourseYearModules({
           <button
             type="button"
             data-testid="core-toggle-btn"
-            className={`px-3 py-2 border rounded-md text-sm ${isCore ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+            className={`px-3 py-2 border rounded-md text-sm ${isCore ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
             onClick={() => setIsCore((v) => !v)}
           >
-            {isCore ? "Core" : "Optional"}
+            {isCore ? 'Core' : 'Optional'}
           </button>
         </div>
         <Button
@@ -517,7 +515,7 @@ function CourseYearModules({
           disabled={
             !selected ||
             (attached || []).some(
-              (a: any) => String(a.module?._id) === selected,
+              (a: any) => String(a.module?._id) === selected
             ) ||
             isAttaching
           }
@@ -533,20 +531,20 @@ function CourseYearModules({
                   }),
                 {
                   success: {
-                    title: "Module attached",
-                    description: "Module has been attached successfully.",
+                    title: 'Module attached',
+                    description: 'Module has been attached successfully.',
                   },
-                  error: { title: "Failed to attach module" },
+                  error: { title: 'Failed to attach module' },
                 },
-                toast,
+                toast
               );
-              setSelected("");
+              setSelected('');
             } finally {
               setIsAttaching(false);
             }
           }}
         >
-          {isAttaching ? "Attaching..." : "Attach"}
+          {isAttaching ? 'Attaching...' : 'Attach'}
         </Button>
       </div>
       <Separator />
@@ -563,8 +561,8 @@ function CourseYearModules({
               >
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted text-sm">
                   <span className="font-medium">{a.module?.code}</span>
-                  <Badge variant={a.link.isCore ? "default" : "secondary"}>
-                    {a.link.isCore ? "Core" : "Optional"}
+                  <Badge variant={a.link.isCore ? 'default' : 'secondary'}>
+                    {a.link.isCore ? 'Core' : 'Optional'}
                   </Badge>
                   <ModuleIterationAndGroupsAndAllocations
                     moduleId={String(a.module?._id)}
@@ -576,8 +574,8 @@ function CourseYearModules({
                     onClick={() => {
                       setDetaching({
                         moduleId: String(a.module?._id),
-                        moduleCode: String(a.module?.code || "Unknown"),
-                        moduleName: String(a.module?.name || ""),
+                        moduleCode: String(a.module?.code || 'Unknown'),
+                        moduleName: String(a.module?.name || ''),
                       });
                     }}
                   >
@@ -610,12 +608,12 @@ function CourseYearModules({
                   }),
                 {
                   success: {
-                    title: "Module detached",
+                    title: 'Module detached',
                     description: `${detaching.moduleCode} has been detached successfully.`,
                   },
-                  error: { title: "Failed to detach module" },
+                  error: { title: 'Failed to detach module' },
                 },
-                toast,
+                toast
               );
               setDetaching(null);
             } finally {
@@ -645,7 +643,7 @@ function ModuleIterationAndGroupsAndAllocations({
     api.modules.getIterationForYear,
     currentYear?._id
       ? ({ moduleId: moduleId as any, academicYearId: currentYear._id } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
   const createIteration = useMutation(api.modules.createIterationForYear);
 
@@ -655,18 +653,18 @@ function ModuleIterationAndGroupsAndAllocations({
   const groups = useQuery(
     (api as any).groups.listByIteration,
     hasIteration
-      ? ({ moduleIterationId: (iteration as any)._id } as any)
-      : ("skip" as any),
+      ? ({ moduleIterationId: iteration._id } as any)
+      : ('skip' as any)
   );
   const createGroup = useMutation((api as any).groups.create);
   const autoCreateGroups = useMutation(
-    (api as any).groups.createAutoForIteration,
+    (api as any).groups.createAutoForIteration
   );
 
   // Allocations UI bits
   const profiles = useQuery(
     (api as any).staff.list,
-    user?.id ? ({ userId: user.id } as any) : ("skip" as any),
+    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
   );
   const assign = useMutation((api as any).allocations.assignLecturer);
   const removeAllocation = useMutation((api as any).allocations.remove);
@@ -678,9 +676,9 @@ function ModuleIterationAndGroupsAndAllocations({
     groups: number;
     count: number;
   }>;
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [selectedLecturerId, setSelectedLecturerId] = useState<string>("");
-  const [hoursOverride, setHoursOverride] = useState<string>("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+  const [selectedLecturerId, setSelectedLecturerId] = useState<string>('');
+  const [hoursOverride, setHoursOverride] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [detaching, setDetaching] = useState<{
@@ -692,7 +690,7 @@ function ModuleIterationAndGroupsAndAllocations({
     (api as any).allocations.listForGroup,
     selectedGroupId
       ? ({ groupId: selectedGroupId as any } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   ) as Array<{ allocation: any; lecturer: any }> | undefined;
 
   // Get module teaching hours for preview
@@ -700,7 +698,7 @@ function ModuleIterationAndGroupsAndAllocations({
     (api as any).allocations.getModuleTeachingHours,
     selectedGroupId
       ? ({ groupId: selectedGroupId as any } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   // Get lecturer totals for instant updates
@@ -711,13 +709,13 @@ function ModuleIterationAndGroupsAndAllocations({
           lecturerId: selectedLecturerId as any,
           academicYearId: (currentYear as any)?._id,
         } as any)
-      : ("skip" as any),
+      : ('skip' as any)
   );
 
   const resetDialogState = () => {
-    setSelectedGroupId("");
-    setSelectedLecturerId("");
-    setHoursOverride("");
+    setSelectedGroupId('');
+    setSelectedLecturerId('');
+    setHoursOverride('');
     setIsSubmitting(false);
   };
 
@@ -740,7 +738,7 @@ function ModuleIterationAndGroupsAndAllocations({
         <>
           <Badge variant="outline">AY: {currentYear.name}</Badge>
           <Link
-            href={`/courses/${String((params as any)?.id)}/iterations/${String((iteration as any)?._id)}`}
+            href={`/courses/${String((params as any)?.id)}/iterations/${String(iteration?._id)}`}
             className="text-xs underline"
           >
             View details
@@ -751,35 +749,35 @@ function ModuleIterationAndGroupsAndAllocations({
             variant="secondary"
             disabled={isCreatingGroup}
             onClick={async () => {
-              const name = prompt("Group name?");
+              const name = prompt('Group name?');
               if (!name) return;
               setIsCreatingGroup(true);
               try {
                 await withToast(
                   () =>
                     createGroup({
-                      moduleIterationId: (iteration as any)._id,
+                      moduleIterationId: iteration._id,
                       name,
                     } as any),
                   {
                     success: {
-                      title: "Group created",
+                      title: 'Group created',
                       description: `Group "${name}" has been created successfully.`,
                     },
-                    error: { title: "Failed to create group" },
+                    error: { title: 'Failed to create group' },
                   },
-                  toast,
+                  toast
                 );
               } finally {
                 setIsCreatingGroup(false);
               }
             }}
           >
-            {isCreatingGroup ? "Creating..." : "+ Add Group"}
+            {isCreatingGroup ? 'Creating...' : '+ Add Group'}
           </Button>
           {Array.isArray(groups) && groups.length > 0 ? (
             <Badge variant="secondary" data-testid="groups-count">
-              {groups.length} group{groups.length > 1 ? "s" : ""}
+              {groups.length} group{groups.length > 1 ? 's' : ''}
             </Badge>
           ) : null}
           {Array.isArray(groups) && groups.length > 0 ? (
@@ -809,8 +807,8 @@ function ModuleIterationAndGroupsAndAllocations({
                         <div>
                           <span className="text-muted-foreground">Group:</span>
                           <div className="font-medium">
-                            {(groups as any[])?.find(
-                              (g) => String(g._id) === selectedGroupId,
+                            {groups?.find(
+                              (g) => String(g._id) === selectedGroupId
                             )?.name || selectedGroupId}
                           </div>
                         </div>
@@ -822,7 +820,7 @@ function ModuleIterationAndGroupsAndAllocations({
                           </span>
                           <div className="font-medium">
                             {(profiles as any[])?.find(
-                              (p) => String(p._id) === selectedLecturerId,
+                              (p) => String(p._id) === selectedLecturerId
                             )?.fullName || selectedLecturerId}
                           </div>
                         </div>
@@ -842,7 +840,7 @@ function ModuleIterationAndGroupsAndAllocations({
                         <SelectValue placeholder="Select group" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(groups as any[]).map((g) => (
+                        {groups.map((g) => (
                           <SelectItem key={String(g._id)} value={String(g._id)}>
                             {g.name || String(g._id)}
                           </SelectItem>
@@ -896,7 +894,7 @@ function ModuleIterationAndGroupsAndAllocations({
                           </span>
                         ) : (
                           <span className="text-muted-foreground">
-                            Override: {hoursOverride}h (computed:{" "}
+                            Override: {hoursOverride}h (computed:{' '}
                             {moduleHours?.computedHours || 0}h)
                           </span>
                         )}
@@ -945,7 +943,7 @@ function ModuleIterationAndGroupsAndAllocations({
                       {hoursOverride.trim() && (
                         <div className="pt-2 border-t">
                           <div className="text-xs text-muted-foreground">
-                            Override Hours:{" "}
+                            Override Hours:{' '}
                             <span className="font-medium text-foreground">
                               {hoursOverride}
                             </span>
@@ -994,7 +992,7 @@ function ModuleIterationAndGroupsAndAllocations({
                       !selectedGroupId ||
                       !selectedLecturerId ||
                       isSubmitting ||
-                      (hoursOverride.trim() !== "" &&
+                      (hoursOverride.trim() !== '' &&
                         (isNaN(Number(hoursOverride)) ||
                           Number(hoursOverride) < 0 ||
                           Number(hoursOverride) > 1000))
@@ -1006,13 +1004,13 @@ function ModuleIterationAndGroupsAndAllocations({
                           groupId: selectedGroupId as any,
                           lecturerId: selectedLecturerId as any,
                           academicYearId: (currentYear as any)._id,
-                          type: "teaching",
+                          type: 'teaching',
                           ...(hoursOverride.trim()
                             ? { hoursOverride: Number(hoursOverride) }
                             : {}),
                         } as any);
                         toast({
-                          title: "Lecturer assigned",
+                          title: 'Lecturer assigned',
                           description: `Lecturer ${selectedLecturerId} assigned to group ${selectedGroupId} for ${currentYear.name}.`,
                         });
                         handleDialogClose(false);
@@ -1020,18 +1018,18 @@ function ModuleIterationAndGroupsAndAllocations({
                         const errorMessage =
                           e instanceof Error
                             ? e.message
-                            : "Unknown error occurred";
+                            : 'Unknown error occurred';
                         toast({
-                          title: "Error assigning lecturer",
+                          title: 'Error assigning lecturer',
                           description: `Failed to assign lecturer: ${errorMessage}`,
-                          variant: "destructive",
+                          variant: 'destructive',
                         });
                       } finally {
                         setIsSubmitting(false);
                       }
                     }}
                   >
-                    {isSubmitting ? "Assigning..." : "Assign"}
+                    {isSubmitting ? 'Assigning...' : 'Assign'}
                   </Button>
                 </DialogFooter>
                 {!!selectedGroupId && (
@@ -1060,11 +1058,11 @@ function ModuleIterationAndGroupsAndAllocations({
                         <TableBody>
                           {listAllocations.map(({ allocation, lecturer }) => {
                             const hours =
-                              typeof allocation.hoursOverride === "number"
+                              typeof allocation.hoursOverride === 'number'
                                 ? `${allocation.hoursOverride} (override)"`
-                                : typeof allocation.hoursComputed === "number"
+                                : typeof allocation.hoursComputed === 'number'
                                   ? String(allocation.hoursComputed)
-                                  : "-";
+                                  : '-';
                             return (
                               <TableRow
                                 key={String(allocation._id)}
@@ -1095,20 +1093,20 @@ function ModuleIterationAndGroupsAndAllocations({
                                     className="text-xs underline"
                                     onClick={async () => {
                                       const input = prompt(
-                                        "Change allocation type (teaching/admin)",
-                                        allocation.type,
+                                        'Change allocation type (teaching/admin)',
+                                        allocation.type
                                       );
                                       if (input === null) return;
                                       const next = input.trim().toLowerCase();
                                       if (
-                                        next !== "teaching" &&
-                                        next !== "admin"
+                                        next !== 'teaching' &&
+                                        next !== 'admin'
                                       ) {
                                         toast({
-                                          title: "Invalid type",
+                                          title: 'Invalid type',
                                           description:
                                             "Type must be 'teaching' or 'admin'",
-                                          variant: "destructive",
+                                          variant: 'destructive',
                                         });
                                         return;
                                       }
@@ -1120,12 +1118,12 @@ function ModuleIterationAndGroupsAndAllocations({
                                           } as any),
                                         {
                                           success: {
-                                            title: "Allocation updated",
+                                            title: 'Allocation updated',
                                             description: `Type set to ${next}`,
                                           },
-                                          error: { title: "Update failed" },
+                                          error: { title: 'Update failed' },
                                         },
-                                        toast,
+                                        toast
                                       );
                                     }}
                                   >
@@ -1136,15 +1134,15 @@ function ModuleIterationAndGroupsAndAllocations({
                                     className="text-xs underline"
                                     onClick={async () => {
                                       const input = prompt(
-                                        "Set hours override (leave blank to clear)",
+                                        'Set hours override (leave blank to clear)',
                                         typeof allocation.hoursOverride ===
-                                          "number"
+                                          'number'
                                           ? String(allocation.hoursOverride)
-                                          : "",
+                                          : ''
                                       );
                                       if (input === null) return; // cancelled
                                       const trimmed = input.trim();
-                                      if (trimmed === "") {
+                                      if (trimmed === '') {
                                         await withToast(
                                           () =>
                                             updateAllocation({
@@ -1153,13 +1151,13 @@ function ModuleIterationAndGroupsAndAllocations({
                                             } as any),
                                           {
                                             success: {
-                                              title: "Override cleared",
+                                              title: 'Override cleared',
                                               description:
-                                                "Hours override removed; using computed hours.",
+                                                'Hours override removed; using computed hours.',
                                             },
-                                            error: { title: "Update failed" },
+                                            error: { title: 'Update failed' },
                                           },
-                                          toast,
+                                          toast
                                         );
                                       } else {
                                         const value = Number(trimmed);
@@ -1169,10 +1167,10 @@ function ModuleIterationAndGroupsAndAllocations({
                                           value > 1000
                                         ) {
                                           toast({
-                                            title: "Update failed",
+                                            title: 'Update failed',
                                             description:
-                                              "Enter a number between 0 and 1000",
-                                            variant: "destructive",
+                                              'Enter a number between 0 and 1000',
+                                            variant: 'destructive',
                                           });
                                           return;
                                         }
@@ -1184,12 +1182,12 @@ function ModuleIterationAndGroupsAndAllocations({
                                             } as any),
                                           {
                                             success: {
-                                              title: "Allocation updated",
+                                              title: 'Allocation updated',
                                               description: `Override set to ${value}h`,
                                             },
-                                            error: { title: "Update failed" },
+                                            error: { title: 'Update failed' },
                                           },
-                                          toast,
+                                          toast
                                         );
                                       }
                                     }}
@@ -1202,7 +1200,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                     onClick={async () => {
                                       if (
                                         confirm(
-                                          `Are you sure you want to remove ${lecturer?.fullName || allocation.lecturerId} from this group?`,
+                                          `Are you sure you want to remove ${lecturer?.fullName || allocation.lecturerId} from this group?`
                                         )
                                       ) {
                                         await withToast(
@@ -1212,15 +1210,15 @@ function ModuleIterationAndGroupsAndAllocations({
                                             } as any),
                                           {
                                             success: {
-                                              title: "Allocation removed",
+                                              title: 'Allocation removed',
                                               description: `Lecturer ${lecturer?.fullName || allocation.lecturerId} removed from group.`,
                                             },
                                             error: {
                                               title:
-                                                "Error removing allocation",
+                                                'Error removing allocation',
                                             },
                                           },
-                                          toast,
+                                          toast
                                         );
                                       }
                                     }}
@@ -1303,13 +1301,13 @@ function ModuleIterationAndGroupsAndAllocations({
                     <Button
                       onClick={async () => {
                         const root = document.querySelector(
-                          '[data-testid="auto-create-groups-dialog"]',
-                        ) as HTMLElement | null;
+                          '[data-testid="auto-create-groups-dialog"]'
+                        );
                         if (!root) return;
                         const inputs = Array.from(
                           root.querySelectorAll(
-                            'input[data-testid^="auto-groups-"]',
-                          ),
+                            'input[data-testid^="auto-groups-"]'
+                          )
                         ) as HTMLInputElement[];
                         let campusGroups: Array<{
                           campus?: string | undefined;
@@ -1320,16 +1318,16 @@ function ModuleIterationAndGroupsAndAllocations({
                             campus: recList[idx]?.campus,
                             groups: Math.max(
                               0,
-                              Math.floor(Number(inp.value || "0")),
+                              Math.floor(Number(inp.value || '0'))
                             ),
                           }));
                         } else {
                           const single = root.querySelector(
-                            'input[data-testid="auto-groups-single"]',
+                            'input[data-testid="auto-groups-single"]'
                           ) as HTMLInputElement | null;
                           const n = Math.max(
                             0,
-                            Math.floor(Number(single?.value || "0")),
+                            Math.floor(Number(single?.value || '0'))
                           );
                           campusGroups = [
                             { campus: undefined, groups: n } as {
@@ -1341,14 +1339,14 @@ function ModuleIterationAndGroupsAndAllocations({
                         await withToast(
                           () =>
                             autoCreateGroups({
-                              moduleIterationId: (iteration as any)._id,
+                              moduleIterationId: iteration._id,
                               campusGroups: campusGroups as any,
                             } as any),
                           {
-                            success: { title: "Groups created" },
-                            error: { title: "Failed to create groups" },
+                            success: { title: 'Groups created' },
+                            error: { title: 'Failed to create groups' },
                           },
-                          toast,
+                          toast
                         );
                         setAutoOpen(false);
                       }}
@@ -1378,20 +1376,20 @@ function ModuleIterationAndGroupsAndAllocations({
                   } as any),
                 {
                   success: {
-                    title: "Iteration created",
+                    title: 'Iteration created',
                     description:
-                      "Module iteration has been created successfully.",
+                      'Module iteration has been created successfully.',
                   },
-                  error: { title: "Failed to create iteration" },
+                  error: { title: 'Failed to create iteration' },
                 },
-                toast,
+                toast
               );
             } finally {
               setIsCreating(false);
             }
           }}
         >
-          {isCreating ? "Creating…" : "Create iteration (selected AY)"}
+          {isCreating ? 'Creating…' : 'Create iteration (selected AY)'}
         </Button>
       )}
     </div>
@@ -1420,7 +1418,7 @@ function StudentsEditor({
 }) {
   const totalAssigned = campusRows.reduce(
     (sum, r) => sum + (Number(r.count) || 0),
-    0,
+    0
   );
   const remaining = (Number(studentTotal) || 0) - totalAssigned;
   return (
@@ -1438,7 +1436,7 @@ function StudentsEditor({
               inputMode="numeric"
             />
             <div
-              className={`text-xs ${remaining === 0 ? "text-muted-foreground" : remaining < 0 ? "text-destructive" : "text-blue-600"}`}
+              className={`text-xs ${remaining === 0 ? 'text-muted-foreground' : remaining < 0 ? 'text-destructive' : 'text-blue-600'}`}
             >
               Remaining to allocate: {remaining}
             </div>
@@ -1451,7 +1449,7 @@ function StudentsEditor({
                 size="sm"
                 variant="outline"
                 onClick={() =>
-                  setCampusRows([...campusRows, { campus: "", count: "" }])
+                  setCampusRows([...campusRows, { campus: '', count: '' }])
                 }
               >
                 Add campus

@@ -32,7 +32,7 @@ We intentionally do not initialise `posthog-js` in production here. All analytic
 // instrumentation-client.ts (excerpt)
 // Avoid direct posthog.init in production
 if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-  console.warn("PostHog key not found in environment variables");
+  console.warn('PostHog key not found in environment variables');
 }
 ```
 
@@ -69,8 +69,8 @@ Create an EAF in PostHog with key `beta_features`. The dev page `/dev/posthog-te
 Minimal usage:
 
 ```tsx
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { FeatureFlags } from "@/lib/feature-flags/types";
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { FeatureFlags } from '@/lib/feature-flags/types';
 
 export function BetaBanner() {
   const { enabled } = useFeatureFlag(FeatureFlags.BETA_FEATURES);

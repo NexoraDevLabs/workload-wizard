@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Card,
@@ -6,9 +6,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   Shield,
   Lock,
@@ -16,9 +16,9 @@ import {
   Database,
   Users,
   AlertTriangle,
-} from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+} from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -335,11 +335,11 @@ export default function PrivacyPolicyPage() {
                     <strong>Email:</strong> support@workload-wiz.xyz
                   </p>
                   <p>
-                    <strong>Data Protection Officer:</strong>{" "}
+                    <strong>Data Protection Officer:</strong>{' '}
                     dpo@workload-wiz.xyz
                   </p>
                   <p>
-                    <strong>Support:</strong> Available through our{" "}
+                    <strong>Support:</strong> Available through our{' '}
                     <a
                       href="/support"
                       className="text-blue-500 hover:text-blue-600"

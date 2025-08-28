@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { Calendar, CheckCircle } from "lucide-react";
-import Link from "next/link";
+import { Button } from '@/components/ui/button';
+import { Calendar, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const CTA = () => {
   const benefits = [
-    "No setup fees or hidden costs",
-    "30-day free trial with full features",
-    "White-glove onboarding included",
-    "Cancel anytime, no questions asked",
+    'No setup fees or hidden costs',
+    '30-day free trial with full features',
+    'White-glove onboarding included',
+    'Cancel anytime, no questions asked',
   ];
 
   return (

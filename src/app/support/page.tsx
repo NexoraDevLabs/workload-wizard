@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import DynamicIslandHeader from "@/components/dynamic-header-island";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import DynamicIslandHeader from '@/components/dynamic-header-island';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   ExternalLink,
   HelpCircle,
@@ -12,32 +12,32 @@ import {
   Mail,
   Phone,
   MessageCircle,
-} from "lucide-react";
-import Link from "next/link";
-import Footer from "@/components/Footer";
-import { useCallback } from "react";
+} from 'lucide-react';
+import Link from 'next/link';
+import Footer from '@/components/Footer';
+import { useCallback } from 'react';
 
 export default function SupportPage() {
   const openFeaturebaseWidget = useCallback(() => {
-    if (typeof window !== "undefined" && window.Featurebase) {
+    if (typeof window !== 'undefined' && window.Featurebase) {
       try {
         const fb = window.Featurebase as any;
-        const appId = process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID || "";
+        const appId = process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID || '';
 
         // PRE-CLEANUP: Remove any existing CSS effects BEFORE opening the widget
         const backdropElements = document.querySelectorAll(
-          '[class*="backdrop-blur"], [class*="animate-pulse"], [class*="transform-gpu"]',
+          '[class*="backdrop-blur"], [class*="animate-pulse"], [class*="transform-gpu"]'
         );
         backdropElements.forEach((el) => {
           // Remove problematic classes
           el.classList.remove(
-            "backdrop-blur",
-            "backdrop-blur-sm",
-            "backdrop-blur-md",
-            "backdrop-blur-lg",
-            "backdrop-blur-xl",
+            'backdrop-blur',
+            'backdrop-blur-sm',
+            'backdrop-blur-md',
+            'backdrop-blur-lg',
+            'backdrop-blur-xl'
           );
-          el.classList.remove("animate-pulse", "transform-gpu");
+          el.classList.remove('animate-pulse', 'transform-gpu');
 
           // Force reset any inline styles that might be causing issues
           const htmlEl = el as HTMLElement;
@@ -46,30 +46,30 @@ export default function SupportPage() {
             htmlEl.style.filter ||
             htmlEl.style.transform
           ) {
-            htmlEl.style.backdropFilter = "none";
-            htmlEl.style.filter = "none";
-            htmlEl.style.transform = "none";
+            htmlEl.style.backdropFilter = 'none';
+            htmlEl.style.filter = 'none';
+            htmlEl.style.transform = 'none';
           }
         });
 
         // Initialize the widget
-        fb("init", {
+        fb('init', {
           appId: appId,
-          theme: "light",
-          language: "en",
+          theme: 'light',
+          language: 'en',
         });
 
         // Wait for initialization, then open
         setTimeout(() => {
           // Try API methods first
           try {
-            fb("open");
+            fb('open');
           } catch (error) {
             // Silent fallback
           }
 
           try {
-            fb("openFeedbackWidget");
+            fb('openFeedbackWidget');
           } catch (error) {
             // Silent fallback
           }
@@ -79,27 +79,27 @@ export default function SupportPage() {
             // Always try manual DOM manipulation as a fallback
             try {
               const wrapper = document.getElementById(
-                "featurebase-iframe-wrapper",
+                'featurebase-iframe-wrapper'
               );
               const iframe = document.querySelector(
-                ".featurebase-messenger-iframe",
+                '.featurebase-messenger-iframe'
               ) as HTMLIFrameElement;
 
               if (wrapper && iframe) {
                 // More thorough cleanup of any active CSS effects
                 const backdropElements = document.querySelectorAll(
-                  '[class*="backdrop-blur"], [class*="animate-pulse"], [class*="transform-gpu"]',
+                  '[class*="backdrop-blur"], [class*="animate-pulse"], [class*="transform-gpu"]'
                 );
                 backdropElements.forEach((el) => {
                   // Remove problematic classes
                   el.classList.remove(
-                    "backdrop-blur",
-                    "backdrop-blur-sm",
-                    "backdrop-blur-md",
-                    "backdrop-blur-lg",
-                    "backdrop-blur-xl",
+                    'backdrop-blur',
+                    'backdrop-blur-sm',
+                    'backdrop-blur-md',
+                    'backdrop-blur-lg',
+                    'backdrop-blur-xl'
                   );
-                  el.classList.remove("animate-pulse", "transform-gpu");
+                  el.classList.remove('animate-pulse', 'transform-gpu');
 
                   // Force reset any inline styles that might be causing issues
                   const htmlEl = el as HTMLElement;
@@ -108,9 +108,9 @@ export default function SupportPage() {
                     htmlEl.style.filter ||
                     htmlEl.style.transform
                   ) {
-                    htmlEl.style.backdropFilter = "none";
-                    htmlEl.style.filter = "none";
-                    htmlEl.style.transform = "none";
+                    htmlEl.style.backdropFilter = 'none';
+                    htmlEl.style.filter = 'none';
+                    htmlEl.style.transform = 'none';
                   }
                 });
 
@@ -118,14 +118,14 @@ export default function SupportPage() {
                 wrapper.offsetHeight;
 
                 wrapper.className = wrapper.className.replace(
-                  "featurebase-messenger-frame-wrapper-closed",
-                  "featurebase-messenger-frame-wrapper-open",
+                  'featurebase-messenger-frame-wrapper-closed',
+                  'featurebase-messenger-frame-wrapper-open'
                 );
 
                 // Wait for iframe to load its content, then apply cleanup to iframe content
                 if (
                   iframe.contentDocument &&
-                  iframe.contentDocument.readyState === "complete"
+                  iframe.contentDocument.readyState === 'complete'
                 ) {
                   // Iframe is already loaded, apply cleanup immediately
                   cleanupIframeContent(iframe);
@@ -133,7 +133,7 @@ export default function SupportPage() {
                   navigateToMessagesTab(iframe);
                 } else {
                   // Wait for iframe to load
-                  iframe.addEventListener("load", () => {
+                  iframe.addEventListener('load', () => {
                     setTimeout(() => {
                       cleanupIframeContent(iframe);
                       // Try to navigate to Messages tab
@@ -148,23 +148,23 @@ export default function SupportPage() {
                     if (iframe.contentDocument && iframe.contentDocument.body) {
                       const lateElements =
                         iframe.contentDocument.querySelectorAll(
-                          '[class*="backdrop-blur"], [class*="animate-pulse"]',
+                          '[class*="backdrop-blur"], [class*="animate-pulse"]'
                         );
                       lateElements.forEach((el) => {
                         const htmlEl = el as HTMLElement;
                         htmlEl.classList.remove(
-                          "backdrop-blur",
-                          "backdrop-blur-sm",
-                          "backdrop-blur-md",
-                          "backdrop-blur-lg",
-                          "backdrop-blur-xl",
+                          'backdrop-blur',
+                          'backdrop-blur-sm',
+                          'backdrop-blur-md',
+                          'backdrop-blur-lg',
+                          'backdrop-blur-xl'
                         );
-                        htmlEl.classList.remove("animate-pulse");
+                        htmlEl.classList.remove('animate-pulse');
                         if (htmlEl.style.backdropFilter)
-                          htmlEl.style.backdropFilter = "none";
-                        if (htmlEl.style.filter) htmlEl.style.filter = "none";
+                          htmlEl.style.backdropFilter = 'none';
+                        if (htmlEl.style.filter) htmlEl.style.filter = 'none';
                         if (htmlEl.style.transform)
-                          htmlEl.style.transform = "none";
+                          htmlEl.style.transform = 'none';
                       });
                     }
                   } catch (error) {
@@ -174,17 +174,17 @@ export default function SupportPage() {
               }
             } catch (error) {
               // Silent fallback - open in new tab
-              window.open("https://workloadwizard.featurebase.app/", "_blank");
+              window.open('https://workloadwizard.featurebase.app/', '_blank');
             }
           }, 1000); // Wait 1 second for CSS effects to clear
         }, 500); // Initial delay for initialization
       } catch (error) {
         // If all else fails, open in new tab
-        window.open("https://workloadwizard.featurebase.app/", "_blank");
+        window.open('https://workloadwizard.featurebase.app/', '_blank');
       }
     } else {
       // Widget not available, open in new tab
-      window.open("https://workloadwizard.featurebase.app/", "_blank");
+      window.open('https://workloadwizard.featurebase.app/', '_blank');
     }
   }, []);
 
@@ -194,29 +194,29 @@ export default function SupportPage() {
       if (iframe.contentDocument && iframe.contentDocument.body) {
         // Find and remove any backdrop-blur elements within the iframe
         const iframeBackdropElements = iframe.contentDocument.querySelectorAll(
-          '[class*="backdrop-blur"], [class*="animate-pulse"]',
+          '[class*="backdrop-blur"], [class*="animate-pulse"]'
         );
         iframeBackdropElements.forEach((el) => {
           const htmlEl = el as HTMLElement;
           htmlEl.classList.remove(
-            "backdrop-blur",
-            "backdrop-blur-sm",
-            "backdrop-blur-md",
-            "backdrop-blur-lg",
-            "backdrop-blur-xl",
+            'backdrop-blur',
+            'backdrop-blur-sm',
+            'backdrop-blur-md',
+            'backdrop-blur-lg',
+            'backdrop-blur-xl'
           );
-          htmlEl.classList.remove("animate-pulse");
+          htmlEl.classList.remove('animate-pulse');
 
           // Reset inline styles
-          if (htmlEl.style.backdropFilter) htmlEl.style.backdropFilter = "none";
-          if (htmlEl.style.filter) htmlEl.style.filter = "none";
-          if (htmlEl.style.transform) htmlEl.style.transform = "none";
+          if (htmlEl.style.backdropFilter) htmlEl.style.backdropFilter = 'none';
+          if (htmlEl.style.filter) htmlEl.style.filter = 'none';
+          if (htmlEl.style.transform) htmlEl.style.transform = 'none';
         });
 
         // Force iframe content to repaint
-        iframe.contentDocument.body.style.display = "none";
+        iframe.contentDocument.body.style.display = 'none';
         iframe.contentDocument.body.offsetHeight;
-        iframe.contentDocument.body.style.display = "";
+        iframe.contentDocument.body.style.display = '';
       }
     } catch (error) {
       // Silent fallback - iframe might be cross-origin
@@ -241,15 +241,15 @@ export default function SupportPage() {
                 'button[innerText*="Send us a message"]',
                 'button[textContent*="Send us a message"]',
                 '[class*="group"][class*="overflow-hidden"] button',
-                "button.group.overflow-hidden",
+                'button.group.overflow-hidden',
                 // More specific selectors based on the actual button structure
-                "button.group.overflow-hidden.main-transition.rounded-lg.transform-gpu.animate-slide-down",
+                'button.group.overflow-hidden.main-transition.rounded-lg.transform-gpu.animate-slide-down',
                 'button[class*="group"][class*="overflow-hidden"][class*="main-transition"]',
                 // Look for button with specific text content
                 'button:has(span:contains("Send us a message"))',
                 'button span:contains("Send us a message")',
                 // Generic button with text content
-                "button",
+                'button',
                 'button[role="button"]',
               ];
 
@@ -267,11 +267,11 @@ export default function SupportPage() {
 
               // If we didn't find it with selectors, try to find by text content
               if (!sendMessageButton) {
-                const allButtons = doc.querySelectorAll("button");
+                const allButtons = doc.querySelectorAll('button');
                 for (const button of allButtons) {
                   const buttonText =
-                    button.textContent || button.innerText || "";
-                  if (buttonText.toLowerCase().includes("send us a message")) {
+                    button.textContent || button.innerText || '';
+                  if (buttonText.toLowerCase().includes('send us a message')) {
                     sendMessageButton = button;
                     break;
                   }
@@ -289,7 +289,7 @@ export default function SupportPage() {
               // Try multiple strategies to find and click the Messages tab
               const messagesTabSelectors = [
                 '[data-testid="messages-tab"]',
-                ".messages-tab",
+                '.messages-tab',
                 '[aria-label*="Messages"]',
                 'button[title*="Messages"]',
                 'button[aria-label*="Messages"]',
@@ -325,12 +325,12 @@ export default function SupportPage() {
                       // Try multiple strategies to find the new chat button
                       const newChatSelectors = [
                         '[data-testid="new-chat"]',
-                        ".new-chat",
+                        '.new-chat',
                         'button[title*="Send us a message"]',
                         '[aria-label*="Send us a message"]',
-                        ".new-conversation",
+                        '.new-conversation',
                         'button[aria-label*="New conversation"]',
-                        ".start-chat",
+                        '.start-chat',
                         'button[aria-label*="Start chat"]',
                         // More generic selectors
                         '[class*="new-chat"]',
@@ -360,7 +360,7 @@ export default function SupportPage() {
               } else {
                 // Try to find any clickable elements that might be the Messages tab
                 const allButtons = doc.querySelectorAll(
-                  'button, a, [role="button"]',
+                  'button, a, [role="button"]'
                 );
               }
             }
@@ -376,45 +376,45 @@ export default function SupportPage() {
 
   const supportLinks = [
     {
-      title: "Help Centre",
-      href: "https://workloadwizard.featurebase.app/help",
+      title: 'Help Centre',
+      href: 'https://workloadwizard.featurebase.app/help',
       description:
-        "Comprehensive guides, FAQs, and how-tos for WorkloadWizard.",
+        'Comprehensive guides, FAQs, and how-tos for WorkloadWizard.',
       icon: HelpCircle,
     },
     {
-      title: "Feedback & Suggestions",
-      href: "https://workloadwizard.featurebase.app/",
-      description: "Submit feedback, upvote ideas, and track feature requests.",
+      title: 'Feedback & Suggestions',
+      href: 'https://workloadwizard.featurebase.app/',
+      description: 'Submit feedback, upvote ideas, and track feature requests.',
       icon: MessageSquare,
     },
     {
-      title: "Product Roadmap",
-      href: "https://workloadwizard.featurebase.app/roadmap",
+      title: 'Product Roadmap',
+      href: 'https://workloadwizard.featurebase.app/roadmap',
       description:
         "See what we're building next and what's currently in progress.",
       icon: Map,
     },
     {
-      title: "Changelog",
-      href: "https://workloadwizard.featurebase.app/changelog",
-      description: "Recent improvements, bug fixes, and feature releases.",
+      title: 'Changelog',
+      href: 'https://workloadwizard.featurebase.app/changelog',
+      description: 'Recent improvements, bug fixes, and feature releases.',
       icon: FileText,
     },
   ];
 
   const contactMethods = [
     {
-      title: "Email Support",
-      description: "Get help via email",
-      contact: "support@workload-wiz.xyz",
+      title: 'Email Support',
+      description: 'Get help via email',
+      contact: 'support@workload-wiz.xyz',
       icon: Mail,
-      href: "mailto:support@workload-wiz.xyz",
+      href: 'mailto:support@workload-wiz.xyz',
     },
     {
-      title: "Live Chat",
-      description: "Chat with our support team",
-      contact: "Available during business hours",
+      title: 'Live Chat',
+      description: 'Chat with our support team',
+      contact: 'Available during business hours',
       icon: MessageCircle,
       onClick: openFeaturebaseWidget,
     },

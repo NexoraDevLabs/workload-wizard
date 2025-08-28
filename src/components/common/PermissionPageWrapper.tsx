@@ -1,8 +1,9 @@
-import { ReactNode, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { usePermissions } from "@/hooks/usePermissions";
-import { useToast } from "@/hooks/use-toast";
-import { type PermissionId } from "@/lib/permissions";
+import type { ReactNode } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useToast } from '@/hooks/use-toast';
+import { type PermissionId } from '@/lib/permissions';
 
 interface PermissionPageWrapperProps {
   children: ReactNode;
@@ -25,7 +26,7 @@ export function PermissionPageWrapper({
   showToastOnDenied = true,
   loadingFallback = null,
 }: PermissionPageWrapperProps) {
-  const permissions = usePermissions(organisationId as string | undefined);
+  const permissions = usePermissions(organisationId);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -39,15 +40,15 @@ export function PermissionPageWrapper({
       // Handle permission denied
       if (showToastOnDenied) {
         toast({
-          title: "Access Denied",
+          title: 'Access Denied',
           description: "You don't have permission to access this page",
-          variant: "destructive",
+          variant: 'destructive',
         });
       }
 
       // Redirect to unauthorised page if enabled
       if (redirectOnDenied) {
-        router.push("/unauthorised");
+        router.push('/unauthorised');
       }
     }
   }, [hasAccess, showToastOnDenied, redirectOnDenied, router, toast]);
@@ -77,7 +78,7 @@ export function UsersPageWrapper({
   children,
   organisationId,
   ...props
-}: Omit<PermissionPageWrapperProps, "permission">) {
+}: Omit<PermissionPageWrapperProps, 'permission'>) {
   return (
     <PermissionPageWrapper
       permission="users.view"
@@ -93,7 +94,7 @@ export function AdminPageWrapper({
   children,
   organisationId,
   ...props
-}: Omit<PermissionPageWrapperProps, "permission">) {
+}: Omit<PermissionPageWrapperProps, 'permission'>) {
   return (
     <PermissionPageWrapper
       permission="permissions.manage"
@@ -108,7 +109,7 @@ export function AdminPageWrapper({
 export function SystemAdminPageWrapper({
   children,
   ...props
-}: Omit<PermissionPageWrapperProps, "permission" | "organisationId">) {
+}: Omit<PermissionPageWrapperProps, 'permission' | 'organisationId'>) {
   return (
     <PermissionPageWrapper
       permission="permissions.manage"

@@ -103,7 +103,7 @@ import {
   PermissionPageWrapper,
   AdminPageWrapper,
   UsersPageWrapper,
-} from "@/components/common";
+} from '@/components/common';
 
 // Wrap a page with permission check
 export default function AdminDashboard() {
@@ -135,26 +135,26 @@ export default function AdminDashboard() {
 Enhanced hook with centralized gating utilities.
 
 ```tsx
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from '@/hooks/usePermissions';
 
 function MyComponent() {
-  const permissions = usePermissions("org123");
+  const permissions = usePermissions('org123');
 
   // Basic permission checks
   const canCreate = permissions.canCreateUsers();
   const canEdit = permissions.canEditUsers();
 
   // Centralized gating utilities
-  const uiState = permissions.gateUIState("users.create", {
+  const uiState = permissions.gateUIState('users.create', {
     hideForbidden: true,
   });
 
-  const buttonState = permissions.gateButtonState("users.edit", {
-    disabledText: "Insufficient permissions",
+  const buttonState = permissions.gateButtonState('users.edit', {
+    disabledText: 'Insufficient permissions',
   });
 
-  const actionState = permissions.gateActionState("users.delete", {
-    actionName: "delete users",
+  const actionState = permissions.gateActionState('users.delete', {
+    actionName: 'delete users',
   });
 
   return (
@@ -175,7 +175,7 @@ import {
   usePermissionActions,
   useUserActions,
   useAdminActions,
-} from "@/hooks/usePermissionActions";
+} from '@/hooks/usePermissionActions';
 
 function MyComponent() {
   const { executeWithPermission } = usePermissionActions();
@@ -184,16 +184,16 @@ function MyComponent() {
 
   const handleCreateUser = async () => {
     const result = await executeWithPermission(
-      "users.create",
+      'users.create',
       async () => {
         // Your action logic here
         return await createUser(userData);
       },
       {
-        actionName: "create a new user",
-        onDenied: () => console.log("Permission denied"),
-        onError: (error) => console.error("Action failed:", error),
-      },
+        actionName: 'create a new user',
+        onDenied: () => console.log('Permission denied'),
+        onError: (error) => console.error('Action failed:', error),
+      }
     );
 
     if (result) {
@@ -229,11 +229,11 @@ function MyComponent() {
 ### 1. Basic Permission Checks
 
 ```tsx
-import { requireOrgPermission, requireSystemPermission } from "@/lib/authz";
+import { requireOrgPermission, requireSystemPermission } from '@/lib/authz';
 
 // Organization-level permission
 export async function POST(request: Request) {
-  await requireOrgPermission("users.create");
+  await requireOrgPermission('users.create');
 
   // Your API logic here
   return Response.json({ success: true });
@@ -241,7 +241,7 @@ export async function POST(request: Request) {
 
 // System-level permission
 export async function GET(request: Request) {
-  await requireSystemPermission("organisations.manage");
+  await requireSystemPermission('organisations.manage');
 
   // Your API logic here
   return Response.json({ organisations: [] });
@@ -251,12 +251,12 @@ export async function GET(request: Request) {
 ### 2. Enhanced Permission Checking with Redirects
 
 ```tsx
-import { requirePermissionWithRedirect } from "@/lib/authz";
+import { requirePermissionWithRedirect } from '@/lib/authz';
 
 export async function POST(request: Request) {
-  await requirePermissionWithRedirect("users.delete", {
-    organisationId: "org123",
-    redirectTo: "/unauthorised",
+  await requirePermissionWithRedirect('users.delete', {
+    organisationId: 'org123',
+    redirectTo: '/unauthorised',
   });
 
   // Your API logic here
@@ -274,48 +274,48 @@ import {
   gateUIState,
   gateButtonState,
   gateActionState,
-} from "@/lib/permissions";
+} from '@/lib/permissions';
 
 // Check permission directly
-const canDelete = hasPermission(userRole, "users.delete", orgId);
+const canDelete = hasPermission(userRole, 'users.delete', orgId);
 
 // Get UI state
-const uiState = gateUIState(userRole, "users.create", {
+const uiState = gateUIState(userRole, 'users.create', {
   organisationId: orgId,
   hideForbidden: true,
 });
 
 // Get button state
-const buttonState = gateButtonState(userRole, "users.edit", {
+const buttonState = gateButtonState(userRole, 'users.edit', {
   organisationId: orgId,
-  disabledText: "Insufficient permissions",
+  disabledText: 'Insufficient permissions',
 });
 
 // Get action state
-const actionState = gateActionState(userRole, "users.delete", {
+const actionState = gateActionState(userRole, 'users.delete', {
   organisationId: orgId,
-  actionName: "delete users",
+  actionName: 'delete users',
 });
 ```
 
 ### 2. Client-Side Permission Checker
 
 ```tsx
-import { createClientPermissionChecker } from "@/lib/authz";
+import { createClientPermissionChecker } from '@/lib/authz';
 
 function MyComponent({ userRole, organisationId }) {
   const permissionChecker = createClientPermissionChecker(
     userRole,
-    organisationId,
+    organisationId
   );
 
   const handleAction = () => {
     try {
-      permissionChecker.requirePermission("users.create");
+      permissionChecker.requirePermission('users.create');
       // Execute action
     } catch (error) {
       // Handle permission denied
-      console.log("Permission denied:", error.message);
+      console.log('Permission denied:', error.message);
     }
   };
 
@@ -379,7 +379,7 @@ const canCreate = permissions.canCreateUsers();
 
 // Use usePermissionActions for executing actions
 const { executeWithPermission } = usePermissionActions();
-const result = await executeWithPermission("users.create", createUserAction);
+const result = await executeWithPermission('users.create', createUserAction);
 ```
 
 ### 3. Error Handling
@@ -394,7 +394,7 @@ const result = await executeWithPermission("users.create", createUserAction);
 </PermissionGate>;
 
 // Handle permission denials gracefully
-const result = await executeWithPermission("users.create", action, {
+const result = await executeWithPermission('users.create', action, {
   onDenied: () => {
     // Custom handling for permission denied
   },
@@ -412,7 +412,7 @@ const result = await executeWithPermission("users.create", action, {
 
    ```tsx
    // Old
-   if (hasPermission(userRole, "users.create")) {
+   if (hasPermission(userRole, 'users.create')) {
      return <CreateButton />;
    }
 
@@ -441,8 +441,8 @@ const result = await executeWithPermission("users.create", action, {
    ```tsx
    // Old
    try {
-     if (!hasPermission(userRole, "users.delete")) {
-       throw new Error("Permission denied");
+     if (!hasPermission(userRole, 'users.delete')) {
+       throw new Error('Permission denied');
      }
      // Action logic
    } catch (error) {
@@ -450,7 +450,7 @@ const result = await executeWithPermission("users.create", action, {
    }
 
    // New
-   const result = await executeWithPermission("users.delete", action);
+   const result = await executeWithPermission('users.delete', action);
    ```
 
 ## Examples

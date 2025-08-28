@@ -1,6 +1,6 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { hasPermission, type PermissionId } from "./permissions";
-import { redirect } from "next/navigation";
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { hasPermission, type PermissionId } from './permissions';
+import { redirect } from 'next/navigation';
 
 export type SessionUser = {
   userId: string;
@@ -11,7 +11,7 @@ export type SessionUser = {
 function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
   if (
     value &&
-    typeof value === "object" &&
+    typeof value === 'object' &&
     key in (value as Record<string, unknown>)
   ) {
     return (value as Record<string, unknown>)[key] as T;
@@ -21,25 +21,25 @@ function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
 
 export async function getSessionUser(): Promise<SessionUser> {
   const session = await auth();
-  if (!session?.userId) throw new Error("Unauthenticated");
+  if (!session?.userId) throw new Error('Unauthenticated');
   const user = await currentUser();
 
   const organisationId =
     extractFromUnknown<string>(
       session.sessionClaims as unknown,
-      "organisationId",
+      'organisationId'
     ) ||
     extractFromUnknown<string>(
       user?.publicMetadata as unknown,
-      "organisationId",
+      'organisationId'
     );
 
   const role =
-    extractFromUnknown<string>(session.sessionClaims as unknown, "role") ||
-    extractFromUnknown<string>(user?.publicMetadata as unknown, "role") ||
-    "user";
+    extractFromUnknown<string>(session.sessionClaims as unknown, 'role') ||
+    extractFromUnknown<string>(user?.publicMetadata as unknown, 'role') ||
+    'user';
 
-  if (!organisationId) throw new Error("Missing organisationId");
+  if (!organisationId) throw new Error('Missing organisationId');
   return { userId: session.userId, organisationId, role };
 }
 
@@ -50,7 +50,7 @@ export async function getOrganisationIdFromSession(): Promise<string> {
 export async function requireSystemPermission(permissionId: PermissionId) {
   const { role } = await getSessionUser();
   if (!hasPermission(role, permissionId, undefined, true)) {
-    const error = new Error("Forbidden");
+    const error = new Error('Forbidden');
     (error as any).statusCode = 403;
     throw error;
   }
@@ -59,13 +59,13 @@ export async function requireSystemPermission(permissionId: PermissionId) {
 
 export async function requireOrgPermission(
   permissionId: PermissionId,
-  organisationId?: string,
+  organisationId?: string
 ) {
   const { role, organisationId: userOrgId } = await getSessionUser();
   const targetOrgId = organisationId || userOrgId;
 
   if (!hasPermission(role, permissionId, targetOrgId, false)) {
-    const error = new Error("Forbidden");
+    const error = new Error('Forbidden');
     (error as any).statusCode = 403;
     throw error;
   }
@@ -76,7 +76,7 @@ export async function requireOrgPermission(
 export async function checkPermission(
   permissionId: PermissionId,
   organisationId?: string,
-  isSystemAction = false,
+  isSystemAction = false
 ): Promise<boolean> {
   try {
     const { role, organisationId: userOrgId } = await getSessionUser();
@@ -94,12 +94,12 @@ export async function requirePermissionWithRedirect(
     organisationId?: string;
     isSystemAction?: boolean;
     redirectTo?: string;
-  } = {},
+  } = {}
 ) {
   const {
     organisationId,
     isSystemAction = false,
-    redirectTo = "/unauthorised",
+    redirectTo = '/unauthorised',
   } = options;
 
   try {
@@ -121,7 +121,7 @@ export async function requirePermissionWithRedirect(
 // Client-side permission checking utility
 export function createClientPermissionChecker(
   userRole: string | undefined,
-  organisationId?: string,
+  organisationId?: string
 ) {
   return {
     hasPermission: (permissionId: PermissionId, isSystemAction = false) =>
@@ -131,7 +131,7 @@ export function createClientPermissionChecker(
       if (
         !hasPermission(userRole, permissionId, organisationId, isSystemAction)
       ) {
-        throw new Error("Insufficient permissions");
+        throw new Error('Insufficient permissions');
       }
       return true;
     },

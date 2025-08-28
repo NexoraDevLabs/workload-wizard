@@ -14,17 +14,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NEXT_TELEMETRY_DISABLED: "1"
-  NODE_OPTIONS: "--max_old_space_size=4096"
-  NEXT_DISABLE_SOURCEMAPS: "1"
+  NEXT_TELEMETRY_DISABLED: '1'
+  NODE_OPTIONS: '--max_old_space_size=4096'
+  NEXT_DISABLE_SOURCEMAPS: '1'
 
-  NEXT_PUBLIC_CONVEX_URL: "https://example.invalid"
-  CONVEX_DEPLOYMENT: "https://example.invalid"
-  FEATFLAG_STATSIG_SERVER_API_KEY: "test_server_key"
-  STATSIG_SERVER_SECRET_KEY: "test_server_key"
-  STATSIG_SERVER_API_KEY: "test_server_key"
-  CLERK_WEBHOOK_SECRET: "test_webhook_secret"
-  WEBHOOK_SECRET: "test_webhook_secret"
+  NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
+  CONVEX_DEPLOYMENT: 'https://example.invalid'
+  FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
+  STATSIG_SERVER_SECRET_KEY: 'test_server_key'
+  STATSIG_SERVER_API_KEY: 'test_server_key'
+  CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+  WEBHOOK_SECRET: 'test_webhook_secret'
 
 jobs:
   run:
@@ -50,7 +50,7 @@ jobs:
         id: node_pnpm
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
           cache: pnpm
 
       - name: Setup Node (npm cache)
@@ -58,7 +58,7 @@ jobs:
         id: node_npm
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
           cache: npm
 
       - name: Enable corepack / setup pnpm

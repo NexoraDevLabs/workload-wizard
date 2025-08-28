@@ -1,42 +1,42 @@
-import { Calendar, Users, BarChart3, Shield, Clock, Zap } from "lucide-react";
+import { Calendar, Users, BarChart3, Shield, Clock, Zap } from 'lucide-react';
 
 const Features = () => {
   const features = [
     {
       icon: Calendar,
-      title: "Smart Scheduling",
+      title: 'Smart Scheduling',
       description:
-        "Intelligent workload distribution across academic terms with automated conflict detection.",
+        'Intelligent workload distribution across academic terms with automated conflict detection.',
     },
     {
       icon: Users,
-      title: "Staff Management",
+      title: 'Staff Management',
       description:
-        "Comprehensive staff profiles with skills, availability, and workload capacity tracking.",
+        'Comprehensive staff profiles with skills, availability, and workload capacity tracking.',
     },
     {
       icon: BarChart3,
-      title: "Advanced Analytics",
+      title: 'Advanced Analytics',
       description:
-        "Real-time dashboards and reports to visualise workload patterns and optimise resource allocation.",
+        'Real-time dashboards and reports to visualise workload patterns and optimise resource allocation.',
     },
     {
       icon: Shield,
-      title: "Privacy First",
+      title: 'Privacy First',
       description:
-        "Built with privacy by design. Your academic data stays secure and under your control.",
+        'Built with privacy by design. Your academic data stays secure and under your control.',
     },
     {
       icon: Clock,
-      title: "Time Tracking",
+      title: 'Time Tracking',
       description:
-        "Accurate time logging with automated calculations for teaching, research, and administrative duties.",
+        'Accurate time logging with automated calculations for teaching, research, and administrative duties.',
     },
     {
       icon: Zap,
-      title: "Quick Setup",
+      title: 'Quick Setup',
       description:
-        "Get started in minutes with our intuitive setup wizard and pre-configured templates.",
+        'Get started in minutes with our intuitive setup wizard and pre-configured templates.',
     },
   ];
 

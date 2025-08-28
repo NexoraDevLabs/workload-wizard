@@ -1,5 +1,5 @@
 ---
-applyTo: "src/**/*.{ts,tsx}"
+applyTo: 'src/**/*.{ts,tsx}'
 ---
 
 - Prefer Server Components; use `"use client"` only when needed (event handlers, imperative APIs).

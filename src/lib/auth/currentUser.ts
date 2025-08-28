@@ -1,6 +1,6 @@
-"use server";
+'use server';
 
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser } from '@clerk/nextjs/server';
 
 export async function getCurrentUserDetails() {
   const user = await currentUser();
@@ -10,7 +10,7 @@ export async function getCurrentUserDetails() {
   return {
     id: user.id,
     email: user.emailAddresses[0]?.emailAddress,
-    fullName: user.firstName + " " + user.lastName,
+    fullName: user.firstName + ' ' + user.lastName,
     organisationId: user.publicMetadata?.organisationId as string | undefined,
     role: user.publicMetadata?.role as string | undefined,
   };
@@ -24,7 +24,7 @@ export async function getUserOrgOrThrow() {
   const user = await currentUser();
 
   if (!user) {
-    throw new Error("Unauthorised: User not authenticated");
+    throw new Error('Unauthorised: User not authenticated');
   }
 
   const organisationId = user.publicMetadata?.organisationId as
@@ -32,13 +32,13 @@ export async function getUserOrgOrThrow() {
     | undefined;
 
   if (!organisationId) {
-    throw new Error("Unauthorised: User must be assigned to an organisation");
+    throw new Error('Unauthorised: User must be assigned to an organisation');
   }
 
   return {
     id: user.id,
     email: user.emailAddresses[0]?.emailAddress,
-    fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+    fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
     organisationId,
     role: user.publicMetadata?.role as string | undefined,
   };
@@ -50,12 +50,12 @@ export async function getUserOrgOrThrow() {
  * Use this for actions that require specific organisation access
  */
 export async function getUserOrgOrThrowWithValidation(
-  requiredOrganisationId: string,
+  requiredOrganisationId: string
 ) {
   const user = await getUserOrgOrThrow();
 
   if (user.organisationId !== requiredOrganisationId) {
-    throw new Error("Unauthorised: Access denied to this organisation");
+    throw new Error('Unauthorised: Access denied to this organisation');
   }
 
   return user;

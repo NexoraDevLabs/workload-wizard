@@ -19,8 +19,8 @@ NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
 ## Usage (client)
 
 ```tsx
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { FeatureFlags } from "@/lib/feature-flags/types";
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { FeatureFlags } from '@/lib/feature-flags/types';
 
 export function Example() {
   const { enabled, loading } = useFeatureFlag(FeatureFlags.BETA_FEATURES);
@@ -32,8 +32,8 @@ export function Example() {
 ## Usage (server)
 
 ```ts
-import { getServerFeatureFlag } from "@/lib/feature-flags";
-import { FeatureFlags } from "@/lib/feature-flags/types";
+import { getServerFeatureFlag } from '@/lib/feature-flags';
+import { FeatureFlags } from '@/lib/feature-flags/types';
 
 const flag = await getServerFeatureFlag(FeatureFlags.BETA_FEATURES, {
   distinctId: userId,

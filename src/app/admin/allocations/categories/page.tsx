@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { withToast } from "@/lib/utils";
-import { z } from "zod";
+import { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { withToast } from '@/lib/utils';
+import { z } from 'zod';
 
 export default function AdminAllocationCategoriesPage() {
   const { toast } = useToast();
@@ -18,7 +18,7 @@ export default function AdminAllocationCategoriesPage() {
   const upsert = useMutation((api as any).allocations.upsertAdminCategory);
   const remove = useMutation((api as any).allocations.removeAdminCategory);
   const pushToOrgs = useMutation(
-    (api as any).allocations.pushAdminCategoriesToOrganisations,
+    (api as any).allocations.pushAdminCategoriesToOrganisations
   );
 
   const [isSaving, setIsSaving] = useState<string | null>(null);
@@ -29,46 +29,46 @@ export default function AdminAllocationCategoriesPage() {
     description: string;
     minHours?: string;
     maxHours?: string;
-  }>({ name: "", description: "" });
+  }>({ name: '', description: '' });
 
   const handleEdit = (cat: any) => {
     setForm({
       id: String(cat._id),
       name: cat.name,
-      description: cat.description || "",
-      minHours: typeof cat.minHours === "number" ? String(cat.minHours) : "",
-      maxHours: typeof cat.maxHours === "number" ? String(cat.maxHours) : "",
+      description: cat.description || '',
+      minHours: typeof cat.minHours === 'number' ? String(cat.minHours) : '',
+      maxHours: typeof cat.maxHours === 'number' ? String(cat.maxHours) : '',
     });
   };
 
-  const handleReset = () => setForm({ name: "", description: "" });
+  const handleReset = () => setForm({ name: '', description: '' });
 
   const Schema = z.object({
     id: z.string().optional(),
     name: z
       .string()
       .trim()
-      .min(1, "Name is required")
-      .max(100, "Max 100 chars"),
+      .min(1, 'Name is required')
+      .max(100, 'Max 100 chars'),
     description: z
       .string()
       .trim()
-      .max(200, "Max 200 chars")
+      .max(200, 'Max 200 chars')
       .optional()
-      .or(z.literal("").transform(() => undefined)),
+      .or(z.literal('').transform(() => undefined)),
     minHours: z
       .string()
       .optional()
-      .transform((v) => (v === undefined || v === "" ? undefined : Number(v)))
+      .transform((v) => (v === undefined || v === '' ? undefined : Number(v)))
       .refine((v) => v === undefined || (Number.isFinite(v) && v >= 0), {
-        message: "minHours must be a non-negative number",
+        message: 'minHours must be a non-negative number',
       }),
     maxHours: z
       .string()
       .optional()
-      .transform((v) => (v === undefined || v === "" ? undefined : Number(v)))
+      .transform((v) => (v === undefined || v === '' ? undefined : Number(v)))
       .refine((v) => v === undefined || (Number.isFinite(v) && v >= 0), {
-        message: "maxHours must be a non-negative number",
+        message: 'maxHours must be a non-negative number',
       }),
   });
 
@@ -77,15 +77,15 @@ export default function AdminAllocationCategoriesPage() {
     if (!parsed.success) {
       const first = parsed.error.issues[0];
       toast({
-        title: "Validation error",
+        title: 'Validation error',
         description: first
-          ? `${first.path.join(".")}: ${first.message}`
-          : "Invalid form",
-        variant: "destructive",
+          ? `${first.path.join('.')}: ${first.message}`
+          : 'Invalid form',
+        variant: 'destructive',
       });
       return;
     }
-    setIsSaving(form.id || "new");
+    setIsSaving(form.id || 'new');
     try {
       await withToast(
         () =>
@@ -103,10 +103,10 @@ export default function AdminAllocationCategoriesPage() {
               : {}),
           } as any),
         {
-          success: { title: form.id ? "Category updated" : "Category created" },
-          error: { title: "Save failed" },
+          success: { title: form.id ? 'Category updated' : 'Category created' },
+          error: { title: 'Save failed' },
         },
-        toast,
+        toast
       );
       handleReset();
     } finally {
@@ -115,16 +115,16 @@ export default function AdminAllocationCategoriesPage() {
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm("Delete this category?")) return;
+    if (!confirm('Delete this category?')) return;
     setIsRemoving(id);
     try {
       await withToast(
         () => remove({ id: id as any }),
         {
-          success: { title: "Category deleted" },
-          error: { title: "Delete failed" },
+          success: { title: 'Category deleted' },
+          error: { title: 'Delete failed' },
         },
-        toast,
+        toast
       );
     } finally {
       setIsRemoving(null);
@@ -134,8 +134,8 @@ export default function AdminAllocationCategoriesPage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
-        { label: "Admin", href: "/admin" },
-        { label: "Admin Allocation Categories" },
+        { label: 'Admin', href: '/admin' },
+        { label: 'Admin Allocation Categories' },
       ]}
       title="Admin Allocation Categories"
       subtitle="Manage categories for per-lecturer admin allocations"
@@ -144,7 +144,7 @@ export default function AdminAllocationCategoriesPage() {
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>
-              {form.id ? "Edit Category" : "Create Category"}
+              {form.id ? 'Edit Category' : 'Create Category'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -173,7 +173,7 @@ export default function AdminAllocationCategoriesPage() {
                   <Input
                     type="number"
                     min="0"
-                    value={form.minHours ?? ""}
+                    value={form.minHours ?? ''}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, minHours: e.target.value }))
                     }
@@ -184,7 +184,7 @@ export default function AdminAllocationCategoriesPage() {
                   <Input
                     type="number"
                     min="0"
-                    value={form.maxHours ?? ""}
+                    value={form.maxHours ?? ''}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, maxHours: e.target.value }))
                     }
@@ -193,7 +193,7 @@ export default function AdminAllocationCategoriesPage() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} disabled={!!isSaving}>
-                  {isSaving ? "Saving…" : form.id ? "Update" : "Create"}
+                  {isSaving ? 'Saving…' : form.id ? 'Update' : 'Create'}
                 </Button>
                 {form.id && (
                   <Button variant="outline" onClick={handleReset}>
@@ -218,11 +218,11 @@ export default function AdminAllocationCategoriesPage() {
                       () => pushToOrgs({} as any),
                       {
                         success: {
-                          title: "Pushed to organisations (non-destructive)",
+                          title: 'Pushed to organisations (non-destructive)',
                         },
-                        error: { title: "Push failed" },
+                        error: { title: 'Push failed' },
                       },
-                      toast,
+                      toast
                     );
                   }}
                 >
@@ -234,17 +234,17 @@ export default function AdminAllocationCategoriesPage() {
                   onClick={async () => {
                     if (
                       !confirm(
-                        "Force apply will overwrite existing org categories with these defaults where names match. Continue?",
+                        'Force apply will overwrite existing org categories with these defaults where names match. Continue?'
                       )
                     )
                       return;
                     await withToast(
                       () => pushToOrgs({ forceApply: true } as any),
                       {
-                        success: { title: "Synced to organisations (force)" },
-                        error: { title: "Sync failed" },
+                        success: { title: 'Synced to organisations (force)' },
+                        error: { title: 'Sync failed' },
                       },
-                      toast,
+                      toast
                     );
                   }}
                 >

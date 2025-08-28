@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { Resend } from "resend";
-import { sendWaitlistWelcomeEmail } from "@/lib/services/emailService";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { Resend } from 'resend';
+import { sendWaitlistWelcomeEmail } from '@/lib/services/emailService';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 const BodySchema = z.object({
   email: z.string().email(),
@@ -15,11 +16,11 @@ const BodySchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const { email, name, source, organisation } = BodySchema.parse(
-      await req.json(),
+      await req.json()
     );
 
     // Do not actually send in E2E runs
-    if (process.env.NEXT_PUBLIC_E2E === "true") {
+    if (process.env.NEXT_PUBLIC_E2E === 'true') {
       return NextResponse.json({ ok: true, e2e: true });
     }
 
@@ -38,14 +39,14 @@ export async function POST(req: NextRequest) {
     }
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || ""; // Optional: add contacts to Resend Audience
-    const RESEND_AUDIENCE_NAME = process.env.RESEND_AUDIENCE_NAME || ""; // Optional fallback by name
+    const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || ''; // Optional: add contacts to Resend Audience
+    const RESEND_AUDIENCE_NAME = process.env.RESEND_AUDIENCE_NAME || ''; // Optional fallback by name
 
     if (!RESEND_API_KEY) {
       // RESEND_API_KEY not configured
       return NextResponse.json(
-        { error: "Email service not configured" },
-        { status: 500 },
+        { error: 'Email service not configured' },
+        { status: 500 }
       );
     }
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
         const alreadyExists = Array.isArray((list as any)?.data)
           ? ((list as any).data as any[]).some(
               (c: any) =>
-                String(c?.email || "").toLowerCase() === email.toLowerCase(),
+                String(c?.email || '').toLowerCase() === email.toLowerCase()
             )
           : false;
         if (alreadyExists) {
@@ -90,16 +91,16 @@ export async function POST(req: NextRequest) {
       if (name && name.trim()) {
         const parts = name.trim().split(/\s+/);
         basePayload.firstName = parts[0];
-        const last = parts.slice(1).join(" ") || undefined;
+        const last = parts.slice(1).join(' ') || undefined;
         if (last) basePayload.lastName = last;
       }
       // Try with tags if supported
       const withTags = { ...basePayload };
-      const tags: string[] = ["waitlist"];
+      const tags: string[] = ['waitlist'];
       if (source && source.trim()) tags.push(`source:${source}`);
       if (organisation && organisation.trim())
         tags.push(`org:${organisation.trim()}`);
-      (withTags as any).tags = tags;
+      withTags.tags = tags;
       try {
         await resend.contacts.create(withTags);
       } catch (e: any) {
@@ -139,8 +140,8 @@ export async function POST(req: NextRequest) {
       } catch {
         // Failed to send welcome email
         return NextResponse.json(
-          { error: "Failed to send welcome email" },
-          { status: 500 },
+          { error: 'Failed to send welcome email' },
+          { status: 500 }
         );
       }
     }
@@ -149,8 +150,8 @@ export async function POST(req: NextRequest) {
   } catch {
     // Failed to add to waitlist
     return NextResponse.json(
-      { error: "Failed to add to waitlist" },
-      { status: 500 },
+      { error: 'Failed to add to waitlist' },
+      { status: 500 }
     );
   }
 }

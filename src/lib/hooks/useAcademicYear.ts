@@ -1,1 +1,1 @@
-export { useAcademicYear } from "@/components/providers/AcademicYearProvider";
+export { useAcademicYear } from '@/components/providers/AcademicYearProvider';

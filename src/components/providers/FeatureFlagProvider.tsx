@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useEffect, useRef } from 'react';
+import { useUser } from '@clerk/nextjs';
 import {
   identifyUserForFeatureFlags,
   bootstrapFeatureFlags,
-} from "@/lib/feature-flags/auth-integration";
-import { getEnv } from "@/lib/env";
+} from '@/lib/feature-flags/auth-integration';
+import { getEnv } from '@/lib/env';
 
 interface FeatureFlagProviderProps {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ function FeatureFlagProviderInternal({ children }: FeatureFlagProviderProps) {
     // Only identify user if they've changed or haven't been identified yet
     const currentUserId = user?.id || null;
     if (currentUserId !== lastUserId.current) {
-      if (process.env.NODE_ENV !== "production") {
+      if (process.env.NODE_ENV !== 'production') {
         // Reduce noisy logs in prod
         // User changed, identifying in PostHog
       }
@@ -51,7 +51,7 @@ function FeatureFlagProviderInternal({ children }: FeatureFlagProviderProps) {
  */
 export function FeatureFlagProvider({ children }: FeatureFlagProviderProps) {
   // Global kill-switch (set in CI for main deploys)
-  if (process.env.NEXT_PUBLIC_DISABLE_FEATURE_FLAGS === "1") {
+  if (process.env.NEXT_PUBLIC_DISABLE_FEATURE_FLAGS === '1') {
     return <>{children}</>;
   }
 
@@ -59,11 +59,11 @@ export function FeatureFlagProvider({ children }: FeatureFlagProviderProps) {
 
   // Check if we're in build time to avoid Clerk initialization
   const isBuildTime =
-    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === "pk_test_build_time_only";
+    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
 
   // Avoid running Clerk-dependent hooks during SSR/prerender
   // We only bootstrap flags and call useUser on the client
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return <>{children}</>;
   }
 

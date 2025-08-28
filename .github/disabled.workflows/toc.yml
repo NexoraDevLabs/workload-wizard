@@ -26,7 +26,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARGET_PATHS: README.md,docs/**/*.md
-          TOC_TITLE: "## Table of contents"
+          TOC_TITLE: '## Table of contents'
           # adds <!-- START doctoc --> markers if absent
 
       - name: Commit changes if any

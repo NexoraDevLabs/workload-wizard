@@ -1,5 +1,5 @@
 ---
-applyTo: "convex/**/*.ts"
+applyTo: 'convex/**/*.ts'
 ---
 
 - Keep validators with `v.*`; validate all mutation args; avoid `any`.

@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { PermissionGate } from "@/components/common/PermissionGate";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { PermissionGate } from '@/components/common/PermissionGate';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function OrganisationSettingsPage() {
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Organisation", href: "/organisation" },
-    { label: "Settings" },
+    { label: 'Home', href: '/' },
+    { label: 'Organisation', href: '/organisation' },
+    { label: 'Settings' },
   ];
 
   const { user } = useUser();
@@ -28,28 +28,28 @@ export default function OrganisationSettingsPage() {
   const settings = useQuery(
     anyApi.organisationSettings.getOrganisationSettings,
     {
-      userId: user?.id || "",
-    },
+      userId: user?.id || '',
+    }
   );
   const upsert = useMutation(
-    anyApi.organisationSettings.upsertOrganisationSettings,
+    anyApi.organisationSettings.upsertOrganisationSettings
   );
 
   const [roleOptions, setRoleOptions] = useState<string[] | null>(null);
   const [teamOptions, setTeamOptions] = useState<string[] | null>(null);
   const [campusOptions, setCampusOptions] = useState<string[] | null>(null);
   const [familyOptions, setFamilyOptions] = useState<string[] | null>(null);
-  const [newRole, setNewRole] = useState("");
-  const [newTeam, setNewTeam] = useState("");
-  const [newCampus, setNewCampus] = useState("");
-  const [newFamily, setNewFamily] = useState("");
+  const [newRole, setNewRole] = useState('');
+  const [newTeam, setNewTeam] = useState('');
+  const [newCampus, setNewCampus] = useState('');
+  const [newFamily, setNewFamily] = useState('');
   const [fte1ContractHours, setFte1ContractHours] = useState<string | null>(
-    null,
+    null
   );
   const [maxGroupSize, setMaxGroupSize] = useState<string | null>(null);
 
   const [familyRules, setFamilyRules] = useState<
-    { family: string; mode: "percent" | "fixed"; value: number }[] | null
+    { family: string; mode: 'percent' | 'fixed'; value: number }[] | null
   >(null);
 
   const effective = useMemo(() => {
@@ -121,7 +121,7 @@ export default function OrganisationSettingsPage() {
                       if (!current.includes(val)) {
                         setRoleOptions([...(current as string[]), val]);
                       }
-                      setNewRole("");
+                      setNewRole('');
                     }}
                   >
                     Add
@@ -145,14 +145,14 @@ export default function OrganisationSettingsPage() {
                                 roleOptions ??
                                 settings?.staffRoleOptions ??
                                 []
-                              ).filter((x: string) => x !== r),
+                              ).filter((x: string) => x !== r)
                             )
                           }
                         >
                           ×
                         </Button>
                       </div>
-                    ),
+                    )
                   )}
                 </div>
               </div>
@@ -174,7 +174,7 @@ export default function OrganisationSettingsPage() {
                       if (!current.includes(val)) {
                         setTeamOptions([...(current as string[]), val]);
                       }
-                      setNewTeam("");
+                      setNewTeam('');
                     }}
                   >
                     Add
@@ -198,14 +198,14 @@ export default function OrganisationSettingsPage() {
                                 teamOptions ??
                                 settings?.teamOptions ??
                                 []
-                              ).filter((x: string) => x !== t),
+                              ).filter((x: string) => x !== t)
                             )
                           }
                         >
                           ×
                         </Button>
                       </div>
-                    ),
+                    )
                   )}
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function OrganisationSettingsPage() {
                       if (!current.includes(val)) {
                         setCampusOptions([...(current as string[]), val]);
                       }
-                      setNewCampus("");
+                      setNewCampus('');
                     }}
                   >
                     Add
@@ -251,14 +251,14 @@ export default function OrganisationSettingsPage() {
                                 campusOptions ??
                                 settings?.campusOptions ??
                                 []
-                              ).filter((x: string) => x !== c),
+                              ).filter((x: string) => x !== c)
                             )
                           }
                         >
                           ×
                         </Button>
                       </div>
-                    ),
+                    )
                   )}
                 </div>
               </div>
@@ -280,7 +280,7 @@ export default function OrganisationSettingsPage() {
                       if (!current.includes(val)) {
                         setFamilyOptions([...(current as string[]), val]);
                       }
-                      setNewFamily("");
+                      setNewFamily('');
                     }}
                   >
                     Add
@@ -304,14 +304,14 @@ export default function OrganisationSettingsPage() {
                                 familyOptions ??
                                 settings?.contractFamilyOptions ??
                                 []
-                              ).filter((x: string) => x !== f),
+                              ).filter((x: string) => x !== f)
                             )
                           }
                         >
                           ×
                         </Button>
                       </div>
-                    ),
+                    )
                   )}
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function OrganisationSettingsPage() {
                   value={String(
                     fte1ContractHours !== null
                       ? fte1ContractHours
-                      : (settings?.baseTotalContractAtFTE1 ?? 1498),
+                      : (settings?.baseTotalContractAtFTE1 ?? 1498)
                   )}
                   onChange={(e) => setFte1ContractHours(e.target.value)}
                   min={0}
@@ -340,7 +340,7 @@ export default function OrganisationSettingsPage() {
                   value={String(
                     maxGroupSize !== null
                       ? maxGroupSize
-                      : (settings?.maxClassSizePerGroup ?? 25),
+                      : (settings?.maxClassSizePerGroup ?? 25)
                   )}
                   onChange={(e) => setMaxGroupSize(e.target.value)}
                   min={1}
@@ -363,10 +363,10 @@ export default function OrganisationSettingsPage() {
                   (
                     r: {
                       family: string;
-                      mode: "percent" | "fixed";
+                      mode: 'percent' | 'fixed';
                       value: number;
                     },
-                    idx: number,
+                    idx: number
                   ) => (
                     <div
                       key={`${r.family}-${idx}`}
@@ -382,13 +382,13 @@ export default function OrganisationSettingsPage() {
                           className="w-full h-9 rounded-md border px-2"
                           value={r.mode}
                           onChange={(e) => {
-                            const v = e.target.value as "percent" | "fixed";
+                            const v = e.target.value as 'percent' | 'fixed';
                             const list = [
                               ...(familyRules ??
                                 settings?.familyMaxTeachingRules ??
                                 []),
                             ];
-                            list[idx] = { ...list[idx], mode: v } as any;
+                            list[idx] = { ...list[idx], mode: v };
                             setFamilyRules(list);
                           }}
                         >
@@ -408,7 +408,7 @@ export default function OrganisationSettingsPage() {
                                 settings?.familyMaxTeachingRules ??
                                 []),
                             ];
-                            list[idx] = { ...list[idx], value: num } as any;
+                            list[idx] = { ...list[idx], value: num };
                             setFamilyRules(list);
                           }}
                           min={0}
@@ -424,7 +424,7 @@ export default function OrganisationSettingsPage() {
                               settings?.familyMaxTeachingRules ??
                               [];
                             const list = base.filter(
-                              (x: any, i: number) => i !== idx,
+                              (x: any, i: number) => i !== idx
                             );
                             setFamilyRules(list);
                           }}
@@ -434,7 +434,7 @@ export default function OrganisationSettingsPage() {
                         </Button>
                       </div>
                     </div>
-                  ),
+                  )
                 )}
               </div>
               <div className="grid grid-cols-12 gap-2 items-end">
@@ -442,7 +442,7 @@ export default function OrganisationSettingsPage() {
                   <Label className="text-xs">Family</Label>
                   <select
                     className="w-full h-9 rounded-md border px-2"
-                    value={""}
+                    value={''}
                     onChange={(e) => {
                       const fam = e.target.value;
                       if (!fam) return;
@@ -451,10 +451,10 @@ export default function OrganisationSettingsPage() {
                       if (!current.some((rr: any) => rr.family === fam)) {
                         setFamilyRules([
                           ...(current as any[]),
-                          { family: fam, mode: "percent", value: 0 },
+                          { family: fam, mode: 'percent', value: 0 },
                         ]);
                       }
-                      e.currentTarget.value = "";
+                      e.currentTarget.value = '';
                     }}
                   >
                     <option value="">Select family</option>

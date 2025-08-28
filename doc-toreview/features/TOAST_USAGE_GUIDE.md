@@ -7,7 +7,7 @@ This project uses a standardized toast notification system built with **Sonner**
 ### Import the toast hook:
 
 ```typescript
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 ```
 
 ### Use in your component:
@@ -47,9 +47,9 @@ const { toast, dismiss } = useToast();
 
 // Show a toast
 toast({
-  title: "Title",
-  description: "Description",
-  variant: "default" | "destructive" | "success",
+  title: 'Title',
+  description: 'Description',
+  variant: 'default' | 'destructive' | 'success',
 });
 
 // Dismiss a specific toast
@@ -59,19 +59,19 @@ dismiss(toastId);
 ### 2. Direct Toast Functions
 
 ```typescript
-import { toast } from "@/hooks/use-toast";
+import { toast } from '@/hooks/use-toast';
 
 // Success toast
-toast.success("Success message", "Optional description");
+toast.success('Success message', 'Optional description');
 
 // Error toast
-toast.error("Error message", "Optional description");
+toast.error('Error message', 'Optional description');
 
 // Info toast
-toast.info("Info message", "Optional description");
+toast.info('Info message', 'Optional description');
 
 // Warning toast
-toast.warning("Warning message", "Optional description");
+toast.warning('Warning message', 'Optional description');
 
 // Dismiss toast
 toast.dismiss(toastId);
@@ -83,8 +83,8 @@ toast.dismiss(toastId);
 
 ```typescript
 toast({
-  title: "Notification",
-  description: "This is a default notification",
+  title: 'Notification',
+  description: 'This is a default notification',
 });
 ```
 
@@ -92,9 +92,9 @@ toast({
 
 ```typescript
 toast({
-  title: "Success!",
-  description: "Operation completed successfully",
-  variant: "success",
+  title: 'Success!',
+  description: 'Operation completed successfully',
+  variant: 'success',
 });
 ```
 
@@ -102,9 +102,9 @@ toast({
 
 ```typescript
 toast({
-  title: "Error",
-  description: "Something went wrong",
-  variant: "destructive",
+  title: 'Error',
+  description: 'Something went wrong',
+  variant: 'destructive',
 });
 ```
 
@@ -115,9 +115,9 @@ toast({
 ```typescript
 try {
   await someOperation();
-  alert("Success!");
+  alert('Success!');
 } catch (error) {
-  alert("Error: " + error.message);
+  alert('Error: ' + error.message);
 }
 ```
 
@@ -126,9 +126,9 @@ try {
 ```typescript
 try {
   await someOperation();
-  toast.success("Success!");
+  toast.success('Success!');
 } catch (error) {
-  toast.error("Error", error instanceof Error ? error.message : undefined);
+  toast.error('Error', error instanceof Error ? error.message : undefined);
 }
 ```
 
@@ -191,9 +191,9 @@ To customize toast behavior, modify the `Toaster` component in `src/components/u
 const handleSubmit = async (data: FormData) => {
   try {
     await submitForm(data);
-    toast.success("Form submitted successfully!");
+    toast.success('Form submitted successfully!');
   } catch (error) {
-    toast.error("Submission failed", error.message);
+    toast.error('Submission failed', error.message);
   }
 };
 ```
@@ -204,10 +204,10 @@ const handleSubmit = async (data: FormData) => {
 const handleDelete = async (id: string) => {
   try {
     await deleteItem(id);
-    toast.success("Item deleted successfully");
+    toast.success('Item deleted successfully');
     // Refresh data or update UI
   } catch (error) {
-    toast.error("Failed to delete item", error.message);
+    toast.error('Failed to delete item', error.message);
   }
 };
 ```
@@ -218,9 +218,9 @@ const handleDelete = async (id: string) => {
 const handleCopy = async () => {
   try {
     await navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+    toast.success('Copied to clipboard!');
   } catch (error) {
-    toast.error("Failed to copy", "Please try again");
+    toast.error('Failed to copy', 'Please try again');
   }
 };
 ```

@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { withToast } from "@/lib/utils";
+} from '@/components/ui/select';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { withToast } from '@/lib/utils';
 
 interface Organisation {
   _id: string;
@@ -59,22 +59,22 @@ export function EditOrganisationForm({
     const formData = new FormData(event.currentTarget);
     const dataBase = {
       id: organisation._id,
-      name: formData.get("name") as string,
-      code: formData.get("code") as string,
-      status: formData.get("status") as string,
+      name: formData.get('name') as string,
+      code: formData.get('code') as string,
+      status: formData.get('status') as string,
     };
     const optional = {
-      ...((formData.get("contactEmail") as string)
-        ? { contactEmail: formData.get("contactEmail") as string }
+      ...((formData.get('contactEmail') as string)
+        ? { contactEmail: formData.get('contactEmail') as string }
         : {}),
-      ...((formData.get("contactPhone") as string)
-        ? { contactPhone: formData.get("contactPhone") as string }
+      ...((formData.get('contactPhone') as string)
+        ? { contactPhone: formData.get('contactPhone') as string }
         : {}),
-      ...((formData.get("domain") as string)
-        ? { domain: formData.get("domain") as string }
+      ...((formData.get('domain') as string)
+        ? { domain: formData.get('domain') as string }
         : {}),
-      ...((formData.get("website") as string)
-        ? { website: formData.get("website") as string }
+      ...((formData.get('website') as string)
+        ? { website: formData.get('website') as string }
         : {}),
     } as Partial<Organisation>;
 
@@ -87,12 +87,12 @@ export function EditOrganisationForm({
           } as any),
         {
           success: {
-            title: "Organisation updated",
-            description: "Organisation updated successfully!",
+            title: 'Organisation updated',
+            description: 'Organisation updated successfully!',
           },
-          error: { title: "Failed to update organisation" },
+          error: { title: 'Failed to update organisation' },
         },
-        toast,
+        toast
       );
       onUpdate();
       onClose();
@@ -150,7 +150,7 @@ export function EditOrganisationForm({
                 id="contactEmail"
                 name="contactEmail"
                 type="email"
-                defaultValue={organisation.contactEmail || ""}
+                defaultValue={organisation.contactEmail || ''}
                 placeholder="admin@university.ac.uk"
               />
             </div>
@@ -160,7 +160,7 @@ export function EditOrganisationForm({
               <Input
                 id="contactPhone"
                 name="contactPhone"
-                defaultValue={organisation.contactPhone || ""}
+                defaultValue={organisation.contactPhone || ''}
                 placeholder="+44 1223 763 000"
               />
             </div>
@@ -170,7 +170,7 @@ export function EditOrganisationForm({
               <Input
                 id="domain"
                 name="domain"
-                defaultValue={organisation.domain || ""}
+                defaultValue={organisation.domain || ''}
                 placeholder="university.ac.uk"
               />
             </div>
@@ -180,7 +180,7 @@ export function EditOrganisationForm({
               <Input
                 id="website"
                 name="website"
-                defaultValue={organisation.website || ""}
+                defaultValue={organisation.website || ''}
                 placeholder="https://university.ac.uk"
               />
             </div>
@@ -210,7 +210,7 @@ export function EditOrganisationForm({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading} className="flex-1">
-                {isLoading ? "Updating..." : "Update Organisation"}
+                {isLoading ? 'Updating...' : 'Update Organisation'}
               </Button>
             </div>
           </form>

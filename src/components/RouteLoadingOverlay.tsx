@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { LoadingOverlay } from "@/components/loading-overlay";
+import { useEffect, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { LoadingOverlay } from '@/components/loading-overlay';
 
 const MIN_VISIBLE_MS = 600;
 
@@ -36,7 +36,7 @@ export function RouteLoadingOverlay() {
 
   // Route change: show overlay on any pathname or query change
   useEffect(() => {
-    const key = `${pathname}?${searchParams?.toString() ?? ""}`;
+    const key = `${pathname}?${searchParams?.toString() ?? ''}`;
     if (prevKeyRef.current !== null && prevKeyRef.current !== key) {
       showForMinimum();
     }

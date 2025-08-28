@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { AppSidebar } from "@/components/app-sidebar";
+import * as React from 'react';
+import { AppSidebar } from '@/components/app-sidebar';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,13 +9,13 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 export interface BreadcrumbItem {
   label: string;
@@ -54,7 +54,7 @@ export function StandardizedSidebarLayout({
                   {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={index}>
                       <BreadcrumbItem
-                        className={index === 0 ? "hidden md:block" : ""}
+                        className={index === 0 ? 'hidden md:block' : ''}
                       >
                         {crumb.href && index < breadcrumbs.length - 1 ? (
                           <BreadcrumbLink href={crumb.href}>
@@ -66,7 +66,7 @@ export function StandardizedSidebarLayout({
                       </BreadcrumbItem>
                       {index < breadcrumbs.length - 1 && (
                         <BreadcrumbSeparator
-                          className={index === 0 ? "hidden md:block" : ""}
+                          className={index === 0 ? 'hidden md:block' : ''}
                         />
                       )}
                     </React.Fragment>

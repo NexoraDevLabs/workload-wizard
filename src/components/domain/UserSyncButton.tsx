@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { syncUsersFromClerk, getSyncStatus } from "@/lib/actions/syncUsers";
-import { RefreshCw, CheckCircle, AlertCircle, Users } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/card';
+import { syncUsersFromClerk, getSyncStatus } from '@/lib/actions/syncUsers';
+import { RefreshCw, CheckCircle, AlertCircle, Users } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface SyncStatus {
   clerkUserCount: number;
@@ -41,10 +41,10 @@ export function UserSyncButton() {
       await checkSyncStatus();
     } catch (error) {
       toast({
-        title: "Sync failed",
+        title: 'Sync failed',
         description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -163,26 +163,26 @@ export function UserSyncButton() {
                 {lastSyncResult.results && (
                   <div className="mt-2">
                     <p>
-                      Created:{" "}
+                      Created:{' '}
                       {
                         lastSyncResult.results.filter(
-                          (r) => r.status === "created",
+                          (r) => r.status === 'created'
                         ).length
                       }
                     </p>
                     <p>
-                      Skipped:{" "}
+                      Skipped:{' '}
                       {
                         lastSyncResult.results.filter(
-                          (r) => r.status === "skipped",
+                          (r) => r.status === 'skipped'
                         ).length
                       }
                     </p>
                     <p>
-                      Failed:{" "}
+                      Failed:{' '}
                       {
                         lastSyncResult.results.filter(
-                          (r) => r.status === "failed",
+                          (r) => r.status === 'failed'
                         ).length
                       }
                     </p>

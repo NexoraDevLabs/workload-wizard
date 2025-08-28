@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # 05:00 UTC ≈ 06:00 London during BST
-    - cron: "0 5 * * 1-5"
+    - cron: '0 5 * * 1-5'
 
 permissions:
   contents: write
@@ -38,7 +38,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
-          RENOVATE_GIT_AUTHOR: "Nexoroid <nexoroid[bot]@users.noreply.github.com>"
+          RENOVATE_GIT_AUTHOR: 'Nexoroid <nexoroid[bot]@users.noreply.github.com>'
           LOG_LEVEL: info
 
       # --- Collect metadata for a richer summary ---

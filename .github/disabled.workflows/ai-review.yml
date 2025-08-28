@@ -52,23 +52,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # Tell PR-Agent which PR actions should trigger a run
-          GITHUB_ACTION_CONFIG.PR_ACTIONS: "opened,reopened,ready_for_review,labeled,synchronize"
-          github_action_config.auto_review: "true"
+          GITHUB_ACTION_CONFIG.PR_ACTIONS: 'opened,reopened,ready_for_review,labeled,synchronize'
+          github_action_config.auto_review: 'true'
 
           # Model & behaviour (cheap)
-          config.model: "openai/gpt-4o-mini"
+          config.model: 'openai/gpt-4o-mini'
 
           # Reviewer settings (reduce tokens)
-          PR_REVIEWER.DIFF_ONLY: "true"
-          PR_REVIEWER.MAX_FILES: "25"
-          PR_REVIEWER.MAX_FILE_SIZE_KB: "250"
-          PR_REVIEWER.SKIP_LARGE_PRS: "true"
-          PR_REVIEWER.INLINE_COMMENTS: "true"
-          PR_REVIEWER.MAX_COMMENTS: "12"
+          PR_REVIEWER.DIFF_ONLY: 'true'
+          PR_REVIEWER.MAX_FILES: '25'
+          PR_REVIEWER.MAX_FILE_SIZE_KB: '250'
+          PR_REVIEWER.SKIP_LARGE_PRS: 'true'
+          PR_REVIEWER.INLINE_COMMENTS: 'true'
+          PR_REVIEWER.MAX_COMMENTS: '12'
 
           # Locale & CODEOWNERS
-          general.language: "en-GB"
-          general.respect_codeowners: "true"
+          general.language: 'en-GB'
+          general.respect_codeowners: 'true'
 
       - name: Add "ai:reviewed" label
         if: ${{ success() }}

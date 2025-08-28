@@ -1,12 +1,12 @@
-import { ReactNode, forwardRef } from "react";
-import { Button } from "@/components/ui/button";
-import type { ComponentProps } from "react";
-import { usePermissionManager } from "@/hooks/usePermissionManager";
-import { type PermissionId } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+import { forwardRef } from 'react';
+import { Button } from '@/components/ui/button';
+import type { ComponentProps, ReactNode } from 'react';
+import { usePermissionManager } from '@/hooks/usePermissionManager';
+import { type PermissionId } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 
 interface PermissionButtonProps
-  extends Omit<ComponentProps<typeof Button>, "disabled"> {
+  extends Omit<ComponentProps<typeof Button>, 'disabled'> {
   permission: PermissionId;
   organisationId?: string;
   isSystemAction?: boolean;
@@ -31,14 +31,14 @@ export const PermissionButton = forwardRef<
       actionName,
       fallback = null,
       hideForbidden = false,
-      disabledText = "Insufficient permissions",
+      disabledText = 'Insufficient permissions',
       showToast = true,
       redirectOnDeny = false,
       children,
       className,
       ...props
     },
-    ref,
+    ref
   ) => {
     const { gateButton, canPerform } = usePermissionManager(organisationId);
 
@@ -79,23 +79,23 @@ export const PermissionButton = forwardRef<
         disabled={buttonState.disabled}
         title={buttonState.disabledText}
         className={cn(
-          buttonState.disabled && "opacity-50 cursor-not-allowed",
-          className,
+          buttonState.disabled && 'opacity-50 cursor-not-allowed',
+          className
         )}
         {...props}
       >
         {children}
       </Button>
     );
-  },
+  }
 );
 
-PermissionButton.displayName = "PermissionButton";
+PermissionButton.displayName = 'PermissionButton';
 
 // Convenience components for common permission checks
 export const UsersViewButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -107,7 +107,7 @@ export const UsersViewButton = forwardRef<
 
 export const UsersCreateButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -119,7 +119,7 @@ export const UsersCreateButton = forwardRef<
 
 export const UsersEditButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -131,7 +131,7 @@ export const UsersEditButton = forwardRef<
 
 export const UsersDeleteButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -143,7 +143,7 @@ export const UsersDeleteButton = forwardRef<
 
 export const PermissionsManageButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -155,7 +155,7 @@ export const PermissionsManageButton = forwardRef<
 
 export const OrganisationsManageButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -168,7 +168,7 @@ export const OrganisationsManageButton = forwardRef<
 
 export const AuditViewButton = forwardRef<
   HTMLButtonElement,
-  Omit<PermissionButtonProps, "permission">
+  Omit<PermissionButtonProps, 'permission'>
 >((props, ref) => (
   <PermissionButton
     ref={ref}
@@ -179,11 +179,11 @@ export const AuditViewButton = forwardRef<
 ));
 
 // Set display names for convenience components
-UsersViewButton.displayName = "UsersViewButton";
-UsersCreateButton.displayName = "UsersCreateButton";
-UsersEditButton.displayName = "UsersEditButton";
-UsersDeleteButton.displayName = "UsersDeleteButton";
-PermissionsManageButton.displayName = "PermissionsManageButton";
+UsersViewButton.displayName = 'UsersViewButton';
+UsersCreateButton.displayName = 'UsersCreateButton';
+UsersEditButton.displayName = 'UsersEditButton';
+UsersDeleteButton.displayName = 'UsersDeleteButton';
+PermissionsManageButton.displayName = 'PermissionsManageButton';
 
-OrganisationsManageButton.displayName = "OrganisationsManageButton";
-AuditViewButton.displayName = "AuditViewButton";
+OrganisationsManageButton.displayName = 'OrganisationsManageButton';
+AuditViewButton.displayName = 'AuditViewButton';

@@ -1,17 +1,17 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { ensureDefaultsForOrg } from "./permissions";
-import { writeAudit } from "./audit";
-import type { Id } from "./_generated/dataModel";
+import { v } from 'convex/values';
+import { mutation, query } from './_generated/server';
+import { ensureDefaultsForOrg } from './permissions';
+import { writeAudit } from './audit';
+import type { Id } from './_generated/dataModel';
 
 // Get all organisations
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const organisations = await ctx.db
-      .query("organisations")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .order("desc")
+      .query('organisations')
+      .filter((q) => q.eq(q.field('isActive'), true))
+      .order('desc')
       .collect();
 
     return organisations;
@@ -20,42 +20,42 @@ export const list = query({
 
 // Reseed defaults for a specific organisation
 export const reseedDefaultsForOrg = mutation({
-  args: { organisationId: v.id("organisations") },
+  args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject ?? "system";
+    const subject = identity?.subject ?? 'system';
 
     // Roles & permissions
     await ensureDefaultsForOrg(
       ctx as any,
-      args.organisationId as Id<"organisations">,
+      args.organisationId as Id<'organisations'>
     );
 
     // Admin allocation categories from system defaults
     await (ctx as any).runMutation(
-      { path: "allocations/seedOrgAdminCategories" },
-      { organisationId: args.organisationId },
+      { path: 'allocations/seedOrgAdminCategories' },
+      { organisationId: args.organisationId }
     );
 
     // Ensure organisation settings exist
     const existingSettings = await ctx.db
-      .query("organisation_settings")
-      .withIndex("by_organisation", (q) =>
-        q.eq("organisationId", args.organisationId),
+      .query('organisation_settings')
+      .withIndex('by_organisation', (q) =>
+        q.eq('organisationId', args.organisationId)
       )
       .first();
     if (!existingSettings) {
-      await ctx.db.insert("organisation_settings", {
+      await ctx.db.insert('organisation_settings', {
         organisationId: args.organisationId,
         staffRoleOptions: [
-          "Lecturer",
-          "Senior Lecturer",
-          "Teaching Fellow",
-          "Associate Lecturer",
-          "Professor",
+          'Lecturer',
+          'Senior Lecturer',
+          'Teaching Fellow',
+          'Associate Lecturer',
+          'Professor',
         ],
-        teamOptions: ["Computing", "Engineering", "Business", "Design"],
+        teamOptions: ['Computing', 'Engineering', 'Business', 'Design'],
         baseMaxTeachingAtFTE1: 400,
         baseTotalContractAtFTE1: 550,
         createdAt: now,
@@ -65,14 +65,14 @@ export const reseedDefaultsForOrg = mutation({
 
     try {
       await writeAudit(ctx, {
-        action: "reseed.defaults",
-        entityType: "organisation",
+        action: 'reseed.defaults',
+        entityType: 'organisation',
         entityId: String(args.organisationId),
         performedBy: subject,
         organisationId: args.organisationId,
-        details: "Reseeded defaults (roles, categories, settings)",
-        severity: "info",
-        type: "sys",
+        details: 'Reseeded defaults (roles, categories, settings)',
+        severity: 'info',
+        type: 'sys',
       });
     } catch {}
 
@@ -85,14 +85,14 @@ export const reseedDefaultsAcrossOrganisations = mutation({
   args: {},
   handler: async (ctx) => {
     const orgs = await ctx.db
-      .query("organisations")
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('organisations')
+      .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
     let processed = 0;
     for (const org of orgs) {
       await (ctx as any).runMutation(
-        { path: "organisations/reseedDefaultsForOrg" },
-        { organisationId: org._id },
+        { path: 'organisations/reseedDefaultsForOrg' },
+        { organisationId: org._id }
       );
       processed++;
     }
@@ -102,7 +102,7 @@ export const reseedDefaultsAcrossOrganisations = mutation({
 
 // Get organisation by ID
 export const getById = query({
-  args: { id: v.id("organisations") },
+  args: { id: v.id('organisations') },
   handler: async (ctx, args) => {
     const organisation = await ctx.db.get(args.id);
     return organisation;
@@ -124,7 +124,7 @@ export const create = mutation({
     const identity = await ctx.auth.getUserIdentity();
     const subject = identity?.subject;
 
-    const organisationId = await ctx.db.insert("organisations", {
+    const organisationId = await ctx.db.insert('organisations', {
       name: args.name,
       code: args.code,
       ...(args.contactEmail ? { contactEmail: args.contactEmail } : {}),
@@ -132,7 +132,7 @@ export const create = mutation({
       ...(args.domain ? { domain: args.domain } : {}),
       ...(args.website ? { website: args.website } : {}),
       isActive: true,
-      status: "active",
+      status: 'active',
       createdAt: now,
       updatedAt: now,
     });
@@ -147,8 +147,8 @@ export const create = mutation({
     // Seed organisation admin allocation categories from system defaults
     try {
       await (ctx as any).runMutation(
-        { path: "allocations/seedOrgAdminCategories" },
-        { organisationId },
+        { path: 'allocations/seedOrgAdminCategories' },
+        { organisationId }
       );
     } catch (err) {
       // Failed to seed org admin allocation categories
@@ -157,16 +157,16 @@ export const create = mutation({
     // Seed default organisation settings
     try {
       const now2 = Date.now();
-      await ctx.db.insert("organisation_settings", {
+      await ctx.db.insert('organisation_settings', {
         organisationId,
         staffRoleOptions: [
-          "Lecturer",
-          "Senior Lecturer",
-          "Teaching Fellow",
-          "Associate Lecturer",
-          "Professor",
+          'Lecturer',
+          'Senior Lecturer',
+          'Teaching Fellow',
+          'Associate Lecturer',
+          'Professor',
         ],
-        teamOptions: ["Computing", "Engineering", "Business", "Design"],
+        teamOptions: ['Computing', 'Engineering', 'Business', 'Design'],
         baseMaxTeachingAtFTE1: 400,
         baseTotalContractAtFTE1: 550,
         createdAt: now2,
@@ -179,15 +179,15 @@ export const create = mutation({
     // Audit create
     try {
       await writeAudit(ctx, {
-        action: "create",
-        entityType: "organisation",
+        action: 'create',
+        entityType: 'organisation',
         entityId: String(organisationId),
         entityName: args.name,
-        performedBy: subject ?? "system",
+        performedBy: subject ?? 'system',
         organisationId: organisationId,
         details: `Organisation created (${args.code})`,
-        severity: "info",
-        type: "sys",
+        severity: 'info',
+        type: 'sys',
       });
     } catch {}
 
@@ -198,7 +198,7 @@ export const create = mutation({
 // Update organisation
 export const update = mutation({
   args: {
-    id: v.id("organisations"),
+    id: v.id('organisations'),
     name: v.optional(v.string()),
     code: v.optional(v.string()),
     contactEmail: v.optional(v.string()),
@@ -211,7 +211,7 @@ export const update = mutation({
     const { id, ...updates } = args;
     const now = Date.now();
     const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject ?? "system";
+    const subject = identity?.subject ?? 'system';
 
     await ctx.db.patch(id, {
       ...updates,
@@ -221,15 +221,15 @@ export const update = mutation({
     // Audit update
     try {
       await writeAudit(ctx, {
-        action: "update",
-        entityType: "organisation",
+        action: 'update',
+        entityType: 'organisation',
         entityId: String(id),
         performedBy: subject,
         organisationId: id,
-        details: "Organisation updated",
+        details: 'Organisation updated',
         metadata: JSON.stringify(updates),
-        severity: "info",
-        type: "sys",
+        severity: 'info',
+        type: 'sys',
       });
     } catch {}
 
@@ -239,28 +239,28 @@ export const update = mutation({
 
 // Delete organisation (soft delete)
 export const remove = mutation({
-  args: { id: v.id("organisations") },
+  args: { id: v.id('organisations') },
   handler: async (ctx, args) => {
     const now = Date.now();
     await ctx.db.patch(args.id, {
       isActive: false,
-      status: "inactive",
+      status: 'inactive',
       updatedAt: now,
     });
 
     // Audit delete
     try {
       const identity = await ctx.auth.getUserIdentity();
-      const subject = identity?.subject ?? "system";
+      const subject = identity?.subject ?? 'system';
       await writeAudit(ctx, {
-        action: "delete",
-        entityType: "organisation",
+        action: 'delete',
+        entityType: 'organisation',
         entityId: String(args.id),
         performedBy: subject,
         organisationId: args.id,
-        details: "Organisation deactivated",
-        severity: "warning",
-        type: "sys",
+        details: 'Organisation deactivated',
+        severity: 'warning',
+        type: 'sys',
       });
     } catch {}
 
@@ -273,9 +273,9 @@ export const getByCode = query({
   args: { code: v.string() },
   handler: async (ctx, args) => {
     const organisation = await ctx.db
-      .query("organisations")
-      .filter((q) => q.eq(q.field("code"), args.code))
-      .filter((q) => q.eq(q.field("isActive"), true))
+      .query('organisations')
+      .filter((q) => q.eq(q.field('code'), args.code))
+      .filter((q) => q.eq(q.field('isActive'), true))
       .first();
 
     return organisation;
@@ -284,7 +284,7 @@ export const getByCode = query({
 
 // Get a single organisation by ID
 export const get = query({
-  args: { organisationId: v.id("organisations") },
+  args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.organisationId);
   },

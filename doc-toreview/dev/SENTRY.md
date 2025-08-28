@@ -131,7 +131,7 @@ Sentry.init({
 
 ```ts
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
 
   // Performance monitoring
   enableTracing: true,
@@ -149,8 +149,8 @@ Sentry.init({
     if (event.exception) {
       const exception = event.exception.values?.[0];
       if (
-        exception?.type === "NetworkError" &&
-        exception?.value?.includes("fetch")
+        exception?.type === 'NetworkError' &&
+        exception?.value?.includes('fetch')
       ) {
         return null; // Filter out network fetch errors
       }
@@ -159,8 +159,8 @@ Sentry.init({
     // Add custom context
     event.tags = {
       ...event.tags,
-      service: "workload-wizard-server",
-      component: "api",
+      service: 'workload-wizard-server',
+      component: 'api',
     };
 
     return event;
@@ -172,7 +172,7 @@ Sentry.init({
 
 ```ts
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
 
   // Performance monitoring
   enableTracing: true,
@@ -185,9 +185,9 @@ Sentry.init({
   beforeSend(event, hint) {
     event.tags = {
       ...event.tags,
-      service: "workload-wizard-edge",
-      component: "middleware",
-      runtime: "edge",
+      service: 'workload-wizard-edge',
+      component: 'middleware',
+      runtime: 'edge',
     };
 
     return event;
@@ -217,7 +217,7 @@ NODE_ENV=development
 #### Basic Error Capture
 
 ```ts
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 try {
   // Your code here
@@ -231,8 +231,8 @@ try {
 ```ts
 Sentry.captureException(error, {
   tags: {
-    component: "user-form",
-    action: "submit",
+    component: 'user-form',
+    action: 'submit',
     user_id: userId,
   },
   extra: {
@@ -245,8 +245,8 @@ Sentry.captureException(error, {
 #### Manual Error Creation
 
 ```ts
-const customError = new Error("Custom error message");
-customError.name = "CustomErrorType";
+const customError = new Error('Custom error message');
+customError.name = 'CustomErrorType';
 Sentry.captureException(customError);
 ```
 
@@ -256,14 +256,14 @@ Sentry.captureException(customError);
 
 ```ts
 const transaction = Sentry.startTransaction({
-  name: "user-registration",
-  op: "user.registration",
+  name: 'user-registration',
+  op: 'user.registration',
 });
 
 // Add child spans
 const dbSpan = transaction.startChildSpan({
-  name: "database-insert",
-  op: "db.insert",
+  name: 'database-insert',
+  op: 'db.insert',
 });
 
 // Simulate work
@@ -280,29 +280,29 @@ transaction.finish();
 try {
   if (Sentry.metrics) {
     // Increment counter
-    Sentry.metrics.increment("user.registration.count", 1, {
+    Sentry.metrics.increment('user.registration.count', 1, {
       tags: {
-        source: "web-form",
-        plan: "free",
+        source: 'web-form',
+        plan: 'free',
       },
     });
 
     // Set gauge
-    Sentry.metrics.gauge("user.registration.time", 1500, {
+    Sentry.metrics.gauge('user.registration.time', 1500, {
       tags: {
-        source: "web-form",
+        source: 'web-form',
       },
     });
 
     // Record distribution
-    Sentry.metrics.distribution("user.registration.size", 1024, {
+    Sentry.metrics.distribution('user.registration.size', 1024, {
       tags: {
-        source: "web-form",
+        source: 'web-form',
       },
     });
   }
 } catch (error) {
-  console.log("Custom metrics not supported:", error);
+  console.log('Custom metrics not supported:', error);
 }
 ```
 
@@ -311,7 +311,7 @@ try {
 #### Trigger Feedback Form
 
 ```ts
-import { feedbackIntegration } from "@sentry/nextjs";
+import { feedbackIntegration } from '@sentry/nextjs';
 
 // The feedback form will automatically appear
 // Users can submit bug reports, feature requests, etc.
@@ -321,10 +321,10 @@ import { feedbackIntegration } from "@sentry/nextjs";
 
 ```ts
 const feedbackId = await Sentry.captureUserFeedback({
-  name: "John Doe",
-  email: "john@example.com",
-  comments: "The login form is not working properly",
-  eventId: "event-id-from-error",
+  name: 'John Doe',
+  email: 'john@example.com',
+  comments: 'The login form is not working properly',
+  eventId: 'event-id-from-error',
 });
 ```
 
@@ -334,12 +334,12 @@ const feedbackId = await Sentry.captureUserFeedback({
 
 ```ts
 Sentry.addBreadcrumb({
-  category: "user-action",
-  message: "User clicked submit button",
-  level: "info",
+  category: 'user-action',
+  message: 'User clicked submit button',
+  level: 'info',
   data: {
-    button_id: "submit-btn",
-    form_name: "registration",
+    button_id: 'submit-btn',
+    form_name: 'registration',
     timestamp: new Date().toISOString(),
   },
 });
@@ -349,19 +349,19 @@ Sentry.addBreadcrumb({
 
 ```ts
 Sentry.setUser({
-  id: "user-123",
-  email: "user@example.com",
-  username: "johndoe",
-  role: "admin",
+  id: 'user-123',
+  email: 'user@example.com',
+  username: 'johndoe',
+  role: 'admin',
 });
 ```
 
 #### Custom Context
 
 ```ts
-Sentry.setContext("request", {
-  method: "POST",
-  url: "/api/users",
+Sentry.setContext('request', {
+  method: 'POST',
+  url: '/api/users',
   headers: request.headers,
   body: request.body,
 });
@@ -370,9 +370,9 @@ Sentry.setContext("request", {
 #### Custom Tags
 
 ```ts
-Sentry.setTag("environment", process.env.NODE_ENV);
-Sentry.setTag("version", process.env.NEXT_PUBLIC_APP_VERSION);
-Sentry.setTag("user_type", "premium");
+Sentry.setTag('environment', process.env.NODE_ENV);
+Sentry.setTag('version', process.env.NEXT_PUBLIC_APP_VERSION);
+Sentry.setTag('user_type', 'premium');
 ```
 
 ## Testing the Integration

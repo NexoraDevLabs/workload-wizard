@@ -1,11 +1,11 @@
 // components/trust-bar.tsx
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 
 type Item = {
   label: string;
@@ -15,19 +15,19 @@ type Item = {
 
 const items: Item[] = [
   {
-    label: "Built in the UK",
-    hint: "Designed and developed in the United Kingdom with higher education in mind.",
-    dotClass: "bg-emerald-400",
+    label: 'Built in the UK',
+    hint: 'Designed and developed in the United Kingdom with higher education in mind.',
+    dotClass: 'bg-emerald-400',
   },
   {
-    label: "Privacy-first",
-    hint: "We only collect the minimum data required and never sell or share it.",
-    dotClass: "bg-sky-400",
+    label: 'Privacy-first',
+    hint: 'We only collect the minimum data required and never sell or share it.',
+    dotClass: 'bg-sky-400',
   },
   {
-    label: "No spreadsheets",
-    hint: "Move away from fragile Excel workflows with a platform made for workload planning.",
-    dotClass: "bg-fuchsia-400",
+    label: 'No spreadsheets',
+    hint: 'Move away from fragile Excel workflows with a platform made for workload planning.',
+    dotClass: 'bg-fuchsia-400',
   },
 ];
 

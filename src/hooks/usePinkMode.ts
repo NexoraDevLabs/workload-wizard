@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { getFeatureFlag } from "@/lib/feature-flags/client";
-import { FeatureFlags } from "@/lib/feature-flags/types";
+import { useEffect, useState, useCallback } from 'react';
+import { getFeatureFlag } from '@/lib/feature-flags/client';
+import { FeatureFlags } from '@/lib/feature-flags/types';
 
 // Key for local storage overrides
-const LOCAL_FLAG_OVERRIDES_KEY = "feature-flag-overrides";
+const LOCAL_FLAG_OVERRIDES_KEY = 'feature-flag-overrides';
 
 export function usePinkMode() {
   const [isPinkModeEnabled, setIsPinkModeEnabled] = useState(false);
@@ -14,7 +14,7 @@ export function usePinkMode() {
   // Function to check pink mode status
   const checkPinkMode = useCallback(async () => {
     // For SSR safety, check if we're in browser environment
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       setIsLoading(false);
       return;
     }
@@ -28,14 +28,14 @@ export function usePinkMode() {
 
       // Apply or remove the pink-mode class from the document
       if (enabled) {
-        document.documentElement.classList.add("pink-mode");
+        document.documentElement.classList.add('pink-mode');
       } else {
-        document.documentElement.classList.remove("pink-mode");
+        document.documentElement.classList.remove('pink-mode');
       }
     } catch (error) {
       // Default to disabled if there's an error
       setIsPinkModeEnabled(false);
-      document.documentElement.classList.remove("pink-mode");
+      document.documentElement.classList.remove('pink-mode');
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +44,7 @@ export function usePinkMode() {
   // Function to check local storage directly (for immediate updates)
   const checkLocalStorage = useCallback(() => {
     // For SSR safety, check if we're in browser environment
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     try {
       const overridesStr = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
@@ -57,9 +57,9 @@ export function usePinkMode() {
           setIsPinkModeEnabled(enabled);
 
           if (enabled) {
-            document.documentElement.classList.add("pink-mode");
+            document.documentElement.classList.add('pink-mode');
           } else {
-            document.documentElement.classList.remove("pink-mode");
+            document.documentElement.classList.remove('pink-mode');
           }
         }
       }
@@ -75,7 +75,7 @@ export function usePinkMode() {
   // Listen for storage changes (when localStorage is updated from other tabs/windows)
   useEffect(() => {
     // For SSR safety, check if we're in browser environment
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === LOCAL_FLAG_OVERRIDES_KEY) {
@@ -84,20 +84,20 @@ export function usePinkMode() {
     };
 
     // Listen for storage events from other tabs/windows
-    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
 
     // Also listen for custom events (for same-tab updates)
     const handleCustomStorageChange = () => {
       checkLocalStorage();
     };
 
-    window.addEventListener("featureFlagChanged", handleCustomStorageChange);
+    window.addEventListener('featureFlagChanged', handleCustomStorageChange);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener(
-        "featureFlagChanged",
-        handleCustomStorageChange,
+        'featureFlagChanged',
+        handleCustomStorageChange
       );
     };
   }, [checkLocalStorage]);
@@ -105,7 +105,7 @@ export function usePinkMode() {
   // Function to manually refresh the pink mode status
   const refreshPinkMode = async () => {
     // For SSR safety, check if we're in browser environment
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     setIsLoading(true);
     try {
@@ -115,9 +115,9 @@ export function usePinkMode() {
       setIsPinkModeEnabled(enabled);
 
       if (enabled) {
-        document.documentElement.classList.add("pink-mode");
+        document.documentElement.classList.add('pink-mode');
       } else {
-        document.documentElement.classList.remove("pink-mode");
+        document.documentElement.classList.remove('pink-mode');
       }
     } catch (error) {
       // Failed to refresh pink mode status

@@ -12,25 +12,25 @@ import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
-} from "convex/server";
-import type * as academicYears from "../academicYears.js";
-import type * as allocations from "../allocations.js";
-import type * as allocationsMath from "../allocationsMath.js";
-import type * as audit from "../audit.js";
-import type * as courses from "../courses.js";
-import type * as devTools from "../devTools.js";
-import type * as featureEnrollments from "../featureEnrollments.js";
-import type * as featureFlags from "../featureFlags.js";
-import type * as groups from "../groups.js";
-import type * as modules from "../modules.js";
-import type * as organisationSettings from "../organisationSettings.js";
-import type * as organisationalRoles from "../organisationalRoles.js";
-import type * as organisations from "../organisations.js";
-import type * as permissions from "../permissions.js";
-import type * as quickAccess from "../quickAccess.js";
-import type * as staff from "../staff.js";
-import type * as users from "../users.js";
-import type * as waitlist from "../waitlist.js";
+} from 'convex/server';
+import type * as academicYears from '../academicYears.js';
+import type * as allocations from '../allocations.js';
+import type * as allocationsMath from '../allocationsMath.js';
+import type * as audit from '../audit.js';
+import type * as courses from '../courses.js';
+import type * as devTools from '../devTools.js';
+import type * as featureEnrollments from '../featureEnrollments.js';
+import type * as featureFlags from '../featureFlags.js';
+import type * as groups from '../groups.js';
+import type * as modules from '../modules.js';
+import type * as organisationSettings from '../organisationSettings.js';
+import type * as organisationalRoles from '../organisationalRoles.js';
+import type * as organisations from '../organisations.js';
+import type * as permissions from '../permissions.js';
+import type * as quickAccess from '../quickAccess.js';
+import type * as staff from '../staff.js';
+import type * as users from '../users.js';
+import type * as waitlist from '../waitlist.js';
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -62,9 +62,9 @@ declare const fullApi: ApiFromModules<{
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "public">
+  FunctionReference<any, 'public'>
 >;
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, "internal">
+  FunctionReference<any, 'internal'>
 >;

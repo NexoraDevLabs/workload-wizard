@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { Resend } from "resend";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { Resend } from 'resend';
 
 const BodySchema = z.object({
   email: z.string().email(),
@@ -16,26 +17,26 @@ export async function POST(req: NextRequest) {
       BodySchema.parse(await req.json());
 
     // Do not actually send in E2E runs
-    if (process.env.NEXT_PUBLIC_E2E === "true") {
+    if (process.env.NEXT_PUBLIC_E2E === 'true') {
       return NextResponse.json({ ok: true, e2e: true });
     }
 
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || "";
+    const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
 
     if (!RESEND_API_KEY) {
       // RESEND_API_KEY not configured
       return NextResponse.json(
-        { error: "Email service not configured" },
-        { status: 500 },
+        { error: 'Email service not configured' },
+        { status: 500 }
       );
     }
 
     if (!RESEND_AUDIENCE_ID) {
       // RESEND_NEWSLETTER_AUDIENCE_ID not configured
       return NextResponse.json(
-        { error: "Newsletter audience not configured" },
-        { status: 500 },
+        { error: 'Newsletter audience not configured' },
+        { status: 500 }
       );
     }
 
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       const alreadyExists = Array.isArray((list as any)?.data)
         ? ((list as any).data as any[]).some(
             (c: any) =>
-              String(c?.email || "").toLowerCase() === email.toLowerCase(),
+              String(c?.email || '').toLowerCase() === email.toLowerCase()
           )
         : false;
       if (alreadyExists) {
@@ -73,24 +74,24 @@ export async function POST(req: NextRequest) {
 
     // Add tags for segmentation
     const withTags = { ...basePayload };
-    const tags: string[] = ["newsletter"];
+    const tags: string[] = ['newsletter'];
     if (source && source.trim()) tags.push(`source:${source}`);
     if (organisation && organisation.trim())
       tags.push(`org:${organisation.trim()}`);
-    (withTags as any).tags = tags;
+    withTags.tags = tags;
 
     try {
       await resend.contacts.create(withTags);
     } catch {
       return NextResponse.json(
-        { error: "Failed to subscribe to newsletter" },
-        { status: 500 },
+        { error: 'Failed to subscribe to newsletter' },
+        { status: 500 }
       );
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     // Newsletter subscription error
-    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    return NextResponse.json({ error: 'Bad request' }, { status: 400 });
   }
 }

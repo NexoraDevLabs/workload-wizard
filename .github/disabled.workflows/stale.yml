@@ -2,7 +2,7 @@ name: Close Stale Issues
 
 on:
   schedule:
-    - cron: "32 3 * * *" # runs daily at 03:32 UTC
+    - cron: '32 3 * * *' # runs daily at 03:32 UTC
   workflow_dispatch: {}
 
 permissions:
@@ -40,12 +40,12 @@ jobs:
           days-before-close: 7
 
           # Labels
-          stale-issue-label: "stale"
-          stale-pr-label: "stale"
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
 
           # Exemptions (won’t be marked stale)
-          exempt-issue-labels: "priority:critical,priority:high,status:in-progress,status:blocked"
-          exempt-pr-labels: "priority:critical,priority:high,status:in-progress,status:blocked"
+          exempt-issue-labels: 'priority:critical,priority:high,status:in-progress,status:blocked'
+          exempt-pr-labels: 'priority:critical,priority:high,status:in-progress,status:blocked'
 
           # Behaviour
           remove-stale-when-updated: true
@@ -69,7 +69,7 @@ jobs:
             Closing this PR due to inactivity. You can reopen when it’s ready for another review.
 
           # Optional: only sweep open items
-          only-labels: ""
+          only-labels: ''
 
   cleanup_artifacts:
     name: Artifact janitor
@@ -86,6 +86,6 @@ jobs:
       - name: Remove old artifacts (keep latest 10 and all tag builds)
         uses: c-hive/gha-remove-artifacts@v1.4.0
         with:
-          age: "14 days"
+          age: '14 days'
           skip-recent: 10
           skip-tags: true

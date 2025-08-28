@@ -1,5 +1,5 @@
-import { useUser } from "@clerk/nextjs";
-import { useMemo } from "react";
+import { useUser } from '@clerk/nextjs';
+import { useMemo } from 'react';
 import {
   hasPermission,
   canViewUsers,
@@ -11,15 +11,15 @@ import {
   gateButtonState,
   gateActionState,
   type PermissionId,
-} from "@/lib/permissions";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+} from '@/lib/permissions';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 export function usePermissions(organisationId?: string) {
   const { user } = useUser();
   const convexUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   ) as { systemRoles?: string[] } | undefined;
 
   // Derive an effective role from publicMetadata.role or roles[] (prefer strongest)
@@ -27,7 +27,7 @@ export function usePermissions(organisationId?: string) {
     const single = user?.publicMetadata?.role as string | undefined;
     const many = (user?.publicMetadata?.roles as string[] | undefined) || [];
     const systemRoles = Array.isArray(convexUser?.systemRoles)
-      ? (convexUser?.systemRoles as string[])
+      ? convexUser?.systemRoles
       : [];
     const combined = new Set<string>([
       ...many,
@@ -36,14 +36,14 @@ export function usePermissions(organisationId?: string) {
     ]);
     // Prioritise high-privilege roles if present (include dev/developer aliases)
     const priority = [
-      "systemadmin",
-      "sysadmin",
-      "admin",
-      "developer",
-      "dev",
-      "orgadmin",
-      "lecturer",
-      "user",
+      'systemadmin',
+      'sysadmin',
+      'admin',
+      'developer',
+      'dev',
+      'orgadmin',
+      'lecturer',
+      'user',
     ];
     const found = priority.find((r) => combined.has(r));
     return found || undefined;
@@ -69,11 +69,11 @@ export function usePermissions(organisationId?: string) {
 
       // Role checks
       isSystemAdmin: () =>
-        userRole === "systemadmin" ||
-        userRole === "sysadmin" ||
-        userRole === "admin",
-      isOrgAdmin: () => userRole === "orgadmin",
-      isLecturer: () => userRole === "lecturer",
+        userRole === 'systemadmin' ||
+        userRole === 'sysadmin' ||
+        userRole === 'admin',
+      isOrgAdmin: () => userRole === 'orgadmin',
+      isLecturer: () => userRole === 'lecturer',
 
       // Centralized gating utilities
       gateUIState: (
@@ -82,7 +82,7 @@ export function usePermissions(organisationId?: string) {
           isSystemAction?: boolean;
           fallbackValue?: any;
           hideForbidden?: boolean;
-        },
+        }
       ) => gateUIState(userRole, permissionId, { organisationId, ...options }),
 
       gateButtonState: (
@@ -90,7 +90,7 @@ export function usePermissions(organisationId?: string) {
         options?: {
           isSystemAction?: boolean;
           disabledText?: string;
-        },
+        }
       ) =>
         gateButtonState(userRole, permissionId, { organisationId, ...options }),
 
@@ -99,7 +99,7 @@ export function usePermissions(organisationId?: string) {
         options?: {
           isSystemAction?: boolean;
           actionName?: string;
-        },
+        }
       ) =>
         gateActionState(userRole, permissionId, { organisationId, ...options }),
 
@@ -107,7 +107,7 @@ export function usePermissions(organisationId?: string) {
       userRole,
       organisationId,
     }),
-    [userRole, organisationId],
+    [userRole, organisationId]
   );
 
   return permissions;

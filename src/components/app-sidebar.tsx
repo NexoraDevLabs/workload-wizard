@@ -1,16 +1,14 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useUser } from "@clerk/nextjs";
-import { getUserRoles } from "@/lib/utils";
+import * as React from 'react';
+import { useUser } from '@clerk/nextjs';
+import { getUserRoles } from '@/lib/utils';
 import {
   Building2,
   Home,
-  Settings,
   Shield,
   Users,
   FileText,
-  UserCheck,
   Building,
   Zap,
   User,
@@ -18,15 +16,15 @@ import {
   Database,
   Bug,
   Terminal,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { NavMain } from "@/components/nav-main";
-import { QuickAccessBeta } from "@/components/common/QuickAccessBeta";
-import { useGateValue } from "@statsig/react-bindings";
-import { FeatureFlagKey } from "@/flags";
-import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
-import { YearSwitcher } from "@/components/common/YearSwitcher";
+import { NavMain } from '@/components/nav-main';
+import { QuickAccessBeta } from '@/components/common/QuickAccessBeta';
+import { useGateValue } from '@statsig/react-bindings';
+// FeatureFlagKey will be imported dynamically to avoid build-time issues
+import { NavUser } from '@/components/nav-user';
+import { TeamSwitcher } from '@/components/team-switcher';
+import { YearSwitcher } from '@/components/common/YearSwitcher';
 import {
   Sidebar,
   SidebarContent,
@@ -34,20 +32,20 @@ import {
   SidebarHeader,
   SidebarRail,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 // Generate role-based navigation data
 const getNavigationData = (userRoles?: string[]) => {
   const baseNav = [
     {
-      title: "Dashboard",
-      url: "/dashboard",
+      title: 'Dashboard',
+      url: '/dashboard',
       icon: Home,
       isActive: true,
     },
     {
-      title: "Account",
-      url: "/account",
+      title: 'Account',
+      url: '/account',
       icon: User,
     },
     // Staff entries are injected below based on role
@@ -57,113 +55,113 @@ const getNavigationData = (userRoles?: string[]) => {
   const roleNav = [];
 
   // Admin navigation (for both sysadmin and developer)
-  if (userRoles?.some((role) => role === "sysadmin" || role === "developer")) {
+  if (userRoles?.some((role) => role === 'sysadmin' || role === 'developer')) {
     roleNav.push({
-      title: "Admin",
-      url: "/admin",
+      title: 'Admin',
+      url: '/admin',
       icon: Shield,
       items: [
         {
-          title: "Dashboard",
-          url: "/admin",
+          title: 'Dashboard',
+          url: '/admin',
         },
         {
-          title: "Users Management",
-          url: "/admin/users",
+          title: 'Users Management',
+          url: '/admin/users',
         },
         {
-          title: "Organisations",
-          url: "/admin/organisations",
+          title: 'Organisations',
+          url: '/admin/organisations',
         },
         {
-          title: "Allocation Categories",
-          url: "/admin/allocations/categories",
+          title: 'Allocation Categories',
+          url: '/admin/allocations/categories',
         },
         ...// Show Permissions page to sysadmin or developer (support both single and array roles via getUserRoles)
-        (userRoles?.some((r) => r === "sysadmin" || r === "developer")
-          ? [{ title: "Permissions", url: "/admin/permissions" }]
+        (userRoles?.some((r) => r === 'sysadmin' || r === 'developer')
+          ? [{ title: 'Permissions', url: '/admin/permissions' }]
           : []),
         {
-          title: "Audit Logs",
-          url: "/admin/audit-logs",
+          title: 'Audit Logs',
+          url: '/admin/audit-logs',
         },
       ],
     });
   }
 
   // Developer-specific tools (only for developer role)
-  if (userRoles?.includes("developer")) {
+  if (userRoles?.includes('developer')) {
     // Add developer-specific tools
     roleNav.push({
-      title: "Dev Tools",
-      url: "/dev",
+      title: 'Dev Tools',
+      url: '/dev',
       icon: Code,
       items: [
         {
-          title: "Dashboard",
-          url: "/dev",
+          title: 'Dashboard',
+          url: '/dev',
         },
         {
-          title: "Dev Tools",
-          url: "/dev/tools",
+          title: 'Dev Tools',
+          url: '/dev/tools',
         },
         {
-          title: "Feature Flags",
-          url: "/dev/features",
+          title: 'Feature Flags',
+          url: '/dev/features',
         },
         {
-          title: "Permission Tests",
-          url: "/dev/permission-test",
+          title: 'Permission Tests',
+          url: '/dev/permission-test',
         },
         {
-          title: "PostHog Test Dashboard",
-          url: "/dev/posthog-test",
+          title: 'PostHog Test Dashboard',
+          url: '/dev/posthog-test',
         },
         {
-          title: "Statsig Test",
-          url: "/dev/statsig-test",
+          title: 'Statsig Test',
+          url: '/dev/statsig-test',
         },
       ],
     });
   }
 
   // Orgadmin navigation
-  if (userRoles?.some((role) => role === "orgadmin")) {
+  if (userRoles?.some((role) => role === 'orgadmin')) {
     roleNav.push({
-      title: "Organisation",
-      url: "/organisation",
+      title: 'Organisation',
+      url: '/organisation',
       icon: Building,
       items: [
         {
-          title: "Dashboard",
-          url: "/organisation",
+          title: 'Dashboard',
+          url: '/organisation',
         },
         {
-          title: "Users",
-          url: "/organisation/users",
+          title: 'Users',
+          url: '/organisation/users',
         },
         {
-          title: "Roles",
-          url: "/organisation/roles",
+          title: 'Roles',
+          url: '/organisation/roles',
         },
         {
-          title: "Settings",
-          url: "/organisation/settings",
+          title: 'Settings',
+          url: '/organisation/settings',
         },
         {
-          title: "Academic Years",
-          url: "/organisation/academic-years",
+          title: 'Academic Years',
+          url: '/organisation/academic-years',
         },
         {
-          title: "Courses",
-          url: "/courses",
+          title: 'Courses',
+          url: '/courses',
         },
-        { title: "Modules", url: "/modules" },
-        { title: "Staff", url: "/staff" },
-        { title: "Audit Logs", url: "/organisation/audit-logs" },
+        { title: 'Modules', url: '/modules' },
+        { title: 'Staff', url: '/staff' },
+        { title: 'Audit Logs', url: '/organisation/audit-logs' },
         {
-          title: "Admin Allocations",
-          url: "/organisation/settings/admin-allocations",
+          title: 'Admin Allocations',
+          url: '/organisation/settings/admin-allocations',
         },
       ],
     });
@@ -171,29 +169,28 @@ const getNavigationData = (userRoles?: string[]) => {
 
   // For non-admin users, show only Staff -> My Profile
   const isAdminLike = userRoles?.some(
-    (role) =>
-      role === "orgadmin" || role === "sysadmin" || role === "developer",
+    (role) => role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
   );
   if (!isAdminLike) {
     roleNav.push({
-      title: "Staff",
-      url: "/staff",
+      title: 'Staff',
+      url: '/staff',
       icon: Users,
-      items: [{ title: "My Profile", url: "/staff/me" }],
+      items: [{ title: 'My Profile', url: '/staff/me' }],
     });
   }
 
   return {
     user: {
-      name: "Admin User",
-      email: "admin@workload.com",
-      avatar: "/avatars/admin.jpg",
+      name: 'Admin User',
+      email: 'admin@workload.com',
+      avatar: '/avatars/admin.jpg',
     },
     teams: [
       {
-        name: "WorkloadWizard",
+        name: 'WorkloadWizard',
         logo: Zap,
-        plan: "Enterprise",
+        plan: 'Enterprise',
       },
     ],
     navMain: [...baseNav, ...roleNav],
@@ -206,65 +203,65 @@ const getProjectsData = (userRoles?: string[]) => {
   const projects = [];
 
   // Admin projects (for both sysadmin and developer)
-  if (userRoles?.some((role) => role === "sysadmin" || role === "developer")) {
+  if (userRoles?.some((role) => role === 'sysadmin' || role === 'developer')) {
     projects.push(
       {
-        name: "User Management",
-        url: "/admin/users",
+        name: 'User Management',
+        url: '/admin/users',
         icon: Users,
       },
       {
-        name: "Organisation Setup",
-        url: "/admin/organisations",
+        name: 'Organisation Setup',
+        url: '/admin/organisations',
         icon: Building2,
       },
       {
-        name: "Audit & Compliance",
-        url: "/admin/audit-logs",
+        name: 'Audit & Compliance',
+        url: '/admin/audit-logs',
         icon: FileText,
-      },
+      }
     );
   }
 
   // Developer-specific projects (only for developer role)
-  if (userRoles?.includes("developer")) {
+  if (userRoles?.includes('developer')) {
     projects.push(
       {
-        name: "Database Tools",
-        url: "/dev/database",
+        name: 'Database Tools',
+        url: '/dev/database',
         icon: Database,
       },
       {
-        name: "API Testing",
-        url: "/dev/api",
+        name: 'API Testing',
+        url: '/dev/api',
         icon: Terminal,
       },
       {
-        name: "Debug Console",
-        url: "/dev/debug",
+        name: 'Debug Console',
+        url: '/dev/debug',
         icon: Bug,
-      },
+      }
     );
   }
 
   // Orgadmin projects
-  if (userRoles?.includes("orgadmin")) {
+  if (userRoles?.includes('orgadmin')) {
     projects.push(
       {
-        name: "Team Management",
-        url: "/organisation/users",
+        name: 'Team Management',
+        url: '/organisation/users',
         icon: Users,
       },
       {
-        name: "Role Configuration",
-        url: "/organisation/roles",
+        name: 'Role Configuration',
+        url: '/organisation/roles',
         icon: Shield,
       },
       {
-        name: "Organisation Settings",
-        url: "/organisation/settings",
+        name: 'Organisation Settings',
+        url: '/organisation/settings',
         icon: Building2,
-      },
+      }
     );
   }
 
@@ -280,13 +277,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const data = getNavigationData(userRoles);
 
   // Feature flag evaluated on client via Statsig provider
-  const showQuickAccess = useGateValue(FeatureFlagKey.QUICK_ACCESS_BETA);
+  const showQuickAccess = useGateValue('quick_access_beta');
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
-        {state === "expanded" && (
+        {state === 'expanded' && (
           <div className="px-2">
             <YearSwitcher compact />
           </div>

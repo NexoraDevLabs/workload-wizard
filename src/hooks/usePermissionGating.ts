@@ -1,10 +1,10 @@
-import { useMemo } from "react";
-import { usePermissions } from "./usePermissions";
+import { useMemo } from 'react';
+import { usePermissions } from './usePermissions';
 import {
   createPermissionGating,
   type PermissionGatingUtil,
-} from "@/lib/permission-gating";
-import { type PermissionId } from "@/lib/permissions";
+} from '@/lib/permission-gating';
+import { type PermissionId } from '@/lib/permissions';
 
 /**
  * Hook that provides centralized permission gating for org vs system roles
@@ -24,7 +24,7 @@ export function usePermissionGating(organisationId?: string) {
         hideForbidden?: boolean;
         fallbackValue?: any;
         isSystemAction?: boolean;
-      } = {},
+      } = {}
     ) => gatingUtil.gateElement(permissionId, options);
   }, [gatingUtil]);
 
@@ -34,7 +34,7 @@ export function usePermissionGating(organisationId?: string) {
       options: {
         isSystemAction?: boolean;
         disabledText?: string;
-      } = {},
+      } = {}
     ) => gatingUtil.gateButton(permissionId, options);
   }, [gatingUtil]);
 
@@ -44,7 +44,7 @@ export function usePermissionGating(organisationId?: string) {
       options: {
         isSystemAction?: boolean;
         readonly?: boolean;
-      } = {},
+      } = {}
     ) => gatingUtil.gateField(permissionId, options);
   }, [gatingUtil]);
 

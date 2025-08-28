@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { ChevronRight, type LucideIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
-import posthog from "posthog-js";
+import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import posthog from 'posthog-js';
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from '@/components/ui/collapsible';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -20,7 +20,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 export function NavMain({
   items,
@@ -41,9 +41,9 @@ export function NavMain({
   // Synchronously initialize from localStorage to avoid flicker
   const initialisedFromStorageRef = useRef(false);
   const [openItems, setOpenItems] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
+    if (typeof window === 'undefined') return new Set();
     try {
-      const saved = localStorage.getItem("sidebar-nav-state");
+      const saved = localStorage.getItem('sidebar-nav-state');
       if (saved) {
         const parsed = JSON.parse(saved) as string[];
         initialisedFromStorageRef.current = true;
@@ -64,23 +64,23 @@ export function NavMain({
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
-    if (openItems.size > 0 || localStorage.getItem("sidebar-nav-state")) {
+    if (openItems.size > 0 || localStorage.getItem('sidebar-nav-state')) {
       localStorage.setItem(
-        "sidebar-nav-state",
-        JSON.stringify(Array.from(openItems)),
+        'sidebar-nav-state',
+        JSON.stringify(Array.from(openItems))
       );
     }
   }, [openItems]);
 
   const handleMainItemClick = (item: (typeof items)[0]) => {
-    posthog.capture("main-nav-item-clicked", {
+    posthog.capture('main-nav-item-clicked', {
       item_title: item.title,
       item_url: item.url,
       has_sub_items: !!item.items && item.items.length > 0,
       sidebar_state: state,
     });
     // If sidebar is collapsed, navigate directly to the URL
-    if (state === "collapsed") {
+    if (state === 'collapsed') {
       router.push(item.url);
       return;
     }
@@ -129,7 +129,7 @@ export function NavMain({
                     tooltip={item.title}
                     onClick={(e) => {
                       // Prevent default collapsible behavior when collapsed
-                      if (state === "collapsed") {
+                      if (state === 'collapsed') {
                         e.preventDefault();
                         handleMainItemClick(item);
                       }
@@ -148,7 +148,7 @@ export function NavMain({
                           <a
                             href={subItem.url}
                             onClick={() => {
-                              posthog.capture("sub-nav-item-clicked", {
+                              posthog.capture('sub-nav-item-clicked', {
                                 sub_item_title: subItem.title,
                                 sub_item_url: subItem.url,
                                 parent_item_title: item.title,

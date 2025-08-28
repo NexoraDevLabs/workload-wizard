@@ -391,10 +391,10 @@ use: {
 
 ```typescript
 // In test files
-await expect(page).toHaveScreenshot("custom.png", {
+await expect(page).toHaveScreenshot('custom.png', {
   fullPage: true,
   timeout: 15000,
-  mask: [page.locator(".sensitive-data")],
+  mask: [page.locator('.sensitive-data')],
 });
 ```
 

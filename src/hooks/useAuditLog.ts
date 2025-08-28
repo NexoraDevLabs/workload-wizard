@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useCallback } from "react";
-import { logAuditEvent } from "@/lib/actions/auditActions";
+import { useCallback } from 'react';
+import { logAuditEvent } from '@/lib/actions/auditActions';
 
 export interface UseAuditLogOptions {
   entityType: string;
@@ -17,7 +17,7 @@ export function useAuditLog(options: UseAuditLogOptions) {
       action: string,
       details?: string,
       metadata?: Record<string, unknown>,
-      severity?: "info" | "warning" | "error" | "critical",
+      severity?: 'info' | 'warning' | 'error' | 'critical'
     ) => {
       try {
         await logAuditEvent({
@@ -33,44 +33,44 @@ export function useAuditLog(options: UseAuditLogOptions) {
         // Failed to log audit event
       }
     },
-    [entityType, entityId, entityName],
+    [entityType, entityId, entityName]
   );
 
   const logCreate = useCallback(
     (details?: string, metadata?: Record<string, unknown>) => {
-      return logAction("create", details, metadata, "info");
+      return logAction('create', details, metadata, 'info');
     },
-    [logAction],
+    [logAction]
   );
 
   const logUpdate = useCallback(
     (changes: Record<string, unknown>, details?: string) => {
-      return logAction("update", details, { changes }, "info");
+      return logAction('update', details, { changes }, 'info');
     },
-    [logAction],
+    [logAction]
   );
 
   const logDelete = useCallback(
     (details?: string, metadata?: Record<string, unknown>) => {
-      return logAction("delete", details, metadata, "warning");
+      return logAction('delete', details, metadata, 'warning');
     },
-    [logAction],
+    [logAction]
   );
 
   const logError = useCallback(
     (error: Error, context: string) => {
       return logAction(
-        "error",
+        'error',
         `Error in ${context}: ${error.message}`,
         {
           errorName: error.name,
           errorStack: error.stack,
           context,
         },
-        "error",
+        'error'
       );
     },
-    [logAction],
+    [logAction]
   );
 
   return {

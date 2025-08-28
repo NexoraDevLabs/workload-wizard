@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
 import {
   StatsigProvider,
   useClientBootstrapInit,
-} from "@statsig/react-bindings";
+} from '@statsig/react-bindings';
 
 type StatsigBootstrap = {
   user: Record<string, unknown>;
@@ -33,9 +33,9 @@ export function DynamicStatsigProvider({
   datafile?: StatsigBootstrap | null;
 }) {
   const sdkKey =
-    (process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY as string | undefined) ||
-    (process.env.FEATFLAG_STATSIG_CLIENT_KEY as string | undefined) ||
-    "";
+    process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY ||
+    process.env.FEATFLAG_STATSIG_CLIENT_KEY ||
+    '';
 
   if (!sdkKey) {
     // Graceful no-op: render without Statsig to avoid client errors
@@ -57,7 +57,7 @@ export function DynamicStatsigProvider({
 
   // Fallback: initialize on client without bootstrap
   return (
-    <StatsigProvider sdkKey={sdkKey} user={{ userID: "anonymous" }}>
+    <StatsigProvider sdkKey={sdkKey} user={{ userID: 'anonymous' }}>
       {children}
     </StatsigProvider>
   );

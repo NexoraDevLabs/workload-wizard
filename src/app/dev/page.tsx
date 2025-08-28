@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
   TestTube,
   Flag,
@@ -12,60 +12,60 @@ import {
   Shield,
   FileText,
   Palette,
-} from "lucide-react";
-import Link from "next/link";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+} from 'lucide-react';
+import Link from 'next/link';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 
 const devTools = [
   {
-    title: "PostHog Test Dashboard",
+    title: 'PostHog Test Dashboard',
     description:
-      "Comprehensive testing for PostHog events, feature flags, user identification, and proxy configuration",
-    href: "/dev/posthog-test",
+      'Comprehensive testing for PostHog events, feature flags, user identification, and proxy configuration',
+    href: '/dev/posthog-test',
     icon: TestTube,
-    status: "active",
-    category: "Analytics",
+    status: 'active',
+    category: 'Analytics',
   },
   {
-    title: "Permission Tests",
+    title: 'Permission Tests',
     description:
-      "Test permissions and their default roles across all organisations",
-    href: "/dev/permission-test",
+      'Test permissions and their default roles across all organisations',
+    href: '/dev/permission-test',
     icon: Shield,
-    status: "active",
-    category: "Features",
+    status: 'active',
+    category: 'Features',
   },
   {
-    title: "Feature Flag Management",
+    title: 'Feature Flag Management',
     description:
-      "Manage and preview all feature flags (PostHog and local) with comprehensive controls",
-    href: "/dev/features",
+      'Manage and preview all feature flags (PostHog and local) with comprehensive controls',
+    href: '/dev/features',
     icon: Flag,
-    status: "active",
-    category: "Features",
+    status: 'active',
+    category: 'Features',
   },
   {
-    title: "Statsig Test",
-    description: "Test Statsig feature flags and user targeting",
-    href: "/dev/statsig-test",
+    title: 'Statsig Test',
+    description: 'Test Statsig feature flags and user targeting',
+    href: '/dev/statsig-test',
     icon: Flag,
-    status: "active",
-    category: "Features",
+    status: 'active',
+    category: 'Features',
   },
 ];
 
 const breadcrumbs = [
-  { label: "Home", href: "/" },
-  { label: "Dev", href: "/dev" },
+  { label: 'Home', href: '/' },
+  { label: 'Dev', href: '/dev' },
 ];
 
 const categories = [
-  "All",
-  "Analytics",
-  "Features",
-  "UI",
-  "Database",
-  "Security",
+  'All',
+  'Analytics',
+  'Features',
+  'UI',
+  'Database',
+  'Security',
 ];
 
 export default function DevPage() {
@@ -93,7 +93,7 @@ export default function DevPage() {
               <span className="text-sm font-medium">Active</span>
             </div>
             <p className="text-2xl font-bold">
-              {devTools.filter((tool) => tool.status === "active").length}
+              {devTools.filter((tool) => tool.status === 'active').length}
             </p>
           </CardContent>
         </Card>
@@ -122,7 +122,7 @@ export default function DevPage() {
                     <CardTitle className="text-base">{tool.title}</CardTitle>
                   </div>
                   <Badge
-                    variant={tool.status === "active" ? "default" : "secondary"}
+                    variant={tool.status === 'active' ? 'default' : 'secondary'}
                   >
                     {tool.status}
                   </Badge>
@@ -136,7 +136,7 @@ export default function DevPage() {
                   {tool.description}
                 </p>
                 <Button asChild size="sm" className="w-full">
-                  <Link href={tool.href || "/"}>Open Tool</Link>
+                  <Link href={tool.href || '/'}>Open Tool</Link>
                 </Button>
               </CardContent>
             </Card>

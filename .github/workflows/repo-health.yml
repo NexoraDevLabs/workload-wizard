@@ -248,9 +248,9 @@ jobs:
         if: steps.check.outputs.missing_any == 'true' && github.event_name != 'pull_request'
         uses: peter-evans/create-issue-from-file@v5
         with:
-          title: "[Repo Health] Missing repo hygiene items"
+          title: '[Repo Health] Missing repo hygiene items'
           content-filepath: repo-health-report.md
-          labels: "repo-health,automated"
-          assignees: ""
+          labels: 'repo-health,automated'
+          assignees: ''
           token: ${{ steps.choose-token.outputs.token }}
           search-existing: open

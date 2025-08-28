@@ -1,12 +1,12 @@
-import { useCallback } from "react";
-import { usePermissions } from "./usePermissions";
-import { useToast } from "./use-toast";
+import { useCallback } from 'react';
+import { usePermissions } from './usePermissions';
+import { useToast } from './use-toast';
 import {
   createPermissionManager,
   type PermissionId,
   type UIGateOptions,
   type UIGateResult,
-} from "@/lib/permissions";
+} from '@/lib/permissions';
 
 export function usePermissionManager(organisationId?: string) {
   const permissions = usePermissions(organisationId);
@@ -14,26 +14,26 @@ export function usePermissionManager(organisationId?: string) {
 
   // Create toast handler for permission manager
   const toastHandler = useCallback(
-    (message: string, variant: "error" | "warning" | "info") => {
+    (message: string, variant: 'error' | 'warning' | 'info') => {
       const titleMap = {
-        error: "Access Denied",
-        warning: "Permission Warning",
-        info: "Permission Info",
+        error: 'Access Denied',
+        warning: 'Permission Warning',
+        info: 'Permission Info',
       } as const;
       toast({
         title: titleMap[variant],
         description: message,
-        variant: variant === "error" ? "destructive" : "default",
+        variant: variant === 'error' ? 'destructive' : 'default',
       });
     },
-    [toast],
+    [toast]
   );
 
   // Create permission manager instance
   const manager = createPermissionManager(
     permissions.userRole,
     organisationId,
-    toastHandler,
+    toastHandler
   );
 
   // Enhanced gating functions with automatic toast and redirect handling
@@ -41,35 +41,35 @@ export function usePermissionManager(organisationId?: string) {
     (permissionId: PermissionId, options: UIGateOptions = {}): UIGateResult => {
       return manager.gateElement(permissionId, options);
     },
-    [manager],
+    [manager]
   );
 
   const gateButton = useCallback(
     (permissionId: PermissionId, options: UIGateOptions = {}) => {
       return manager.gateButton(permissionId, options);
     },
-    [manager],
+    [manager]
   );
 
   const gateAction = useCallback(
     (permissionId: PermissionId, options: UIGateOptions = {}) => {
       return manager.gateAction(permissionId, options);
     },
-    [manager],
+    [manager]
   );
 
   const gateField = useCallback(
     (permissionId: PermissionId, options: UIGateOptions = {}) => {
       return manager.gateField(permissionId, options);
     },
-    [manager],
+    [manager]
   );
 
   const gateRow = useCallback(
     (permissionId: PermissionId, options: UIGateOptions = {}) => {
       return manager.gateRow(permissionId, options);
     },
-    [manager],
+    [manager]
   );
 
   // Action execution with permission checking
@@ -78,14 +78,14 @@ export function usePermissionManager(organisationId?: string) {
       permissionId: PermissionId,
       action: () => void | Promise<void>,
       actionName: string,
-      options: UIGateOptions = {},
+      options: UIGateOptions = {}
     ) => {
       if (manager.canPerformAction(permissionId, actionName, options)) {
         return action();
       }
       return false;
     },
-    [manager],
+    [manager]
   );
 
   // Check if user can perform action (for conditional rendering)
@@ -93,7 +93,7 @@ export function usePermissionManager(organisationId?: string) {
     (permissionId: PermissionId, options: UIGateOptions = {}): boolean => {
       return manager.gateElement(permissionId, options).hasAccess;
     },
-    [manager],
+    [manager]
   );
 
   // Check if user should see element (for conditional rendering)
@@ -102,7 +102,7 @@ export function usePermissionManager(organisationId?: string) {
       const result = manager.gateElement(permissionId, options);
       return result.hasAccess && !result.shouldHide;
     },
-    [manager],
+    [manager]
   );
 
   // Get permission context for debugging
@@ -110,7 +110,7 @@ export function usePermissionManager(organisationId?: string) {
     (permissionId: PermissionId) => {
       return manager.getContext(permissionId);
     },
-    [manager],
+    [manager]
   );
 
   return {

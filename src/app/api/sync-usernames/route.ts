@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { syncUsernamesFromClerk } from "@/lib/actions/syncUsernamesFromClerk";
+import { NextResponse } from 'next/server';
+import { syncUsernamesFromClerk } from '@/lib/actions/syncUsernamesFromClerk';
 
 export async function POST() {
   try {
@@ -13,9 +13,9 @@ export async function POST() {
       {
         success: false,
         error:
-          error instanceof Error ? error.message : "Failed to sync usernames",
+          error instanceof Error ? error.message : 'Failed to sync usernames',
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

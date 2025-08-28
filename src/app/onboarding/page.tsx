@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useUser, useClerk } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
+import { useUser, useClerk } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 import {
   Select,
@@ -18,8 +18,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   WandSparkles,
   Check,
@@ -31,40 +31,40 @@ import {
   Shield,
   Eye,
   EyeOff,
-} from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { cn } from "@/lib/utils";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+} from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { cn } from '@/lib/utils';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 const onboardingSteps = [
   {
-    id: "personal",
-    title: "Personal Info",
-    description: "Basic information about you",
+    id: 'personal',
+    title: 'Personal Info',
+    description: 'Basic information about you',
     icon: User,
   },
   {
-    id: "organisation",
-    title: "Organisation",
-    description: "Your institution details",
+    id: 'organisation',
+    title: 'Organisation',
+    description: 'Your institution details',
     icon: Building,
   },
   {
-    id: "security",
-    title: "Security",
-    description: "Secure your account",
+    id: 'security',
+    title: 'Security',
+    description: 'Secure your account',
     icon: Shield,
   },
   {
-    id: "preferences",
-    title: "Preferences",
-    description: "Customise your experience",
+    id: 'preferences',
+    title: 'Preferences',
+    description: 'Customise your experience',
     icon: Settings,
   },
   {
-    id: "complete",
-    title: "Get Started",
+    id: 'complete',
+    title: 'Get Started',
     description: "You're all set!",
     icon: BookOpen,
   },
@@ -81,12 +81,12 @@ export default function OnboardingPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
 
   // Query current user from Convex using their Clerk ID (subject)
   const currentUserData = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   );
 
   // Get org ID from Convex user data or fallback to Clerk
@@ -100,23 +100,23 @@ export default function OnboardingPage() {
   // Query organization name from Convex using the org ID
   const organization = useQuery(
     api.organisations.getById,
-    orgId && typeof orgId === "string"
-      ? { id: orgId as string & { __tableName: "organisations" } }
-      : "skip",
+    orgId && typeof orgId === 'string'
+      ? { id: orgId as string & { __tableName: 'organisations' } }
+      : 'skip'
   );
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    role: "",
-    customRole: "",
-    email: "",
-    phone: "",
-    department: "",
-    organization: "",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    firstName: '',
+    lastName: '',
+    role: '',
+    customRole: '',
+    email: '',
+    phone: '',
+    department: '',
+    organization: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
     notifications: true,
     newsletter: false,
   });
@@ -124,7 +124,7 @@ export default function OnboardingPage() {
 
   // Password strength calculation function
   const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: "", color: "" };
+    if (!password) return { strength: 0, label: '', color: '' };
 
     let score = 0;
     if (password.length >= 8) score++;
@@ -134,12 +134,12 @@ export default function OnboardingPage() {
     if (/[^A-Za-z0-9]/.test(password)) score++;
 
     const strengthMap = [
-      { strength: 0, label: "Very Weak", color: "text-red-500" },
-      { strength: 1, label: "Weak", color: "text-orange-500" },
-      { strength: 2, label: "Fair", color: "text-yellow-500" },
-      { strength: 3, label: "Good", color: "text-blue-500" },
-      { strength: 4, label: "Strong", color: "text-green-500" },
-      { strength: 5, label: "Very Strong", color: "text-green-600" },
+      { strength: 0, label: 'Very Weak', color: 'text-red-500' },
+      { strength: 1, label: 'Weak', color: 'text-orange-500' },
+      { strength: 2, label: 'Fair', color: 'text-yellow-500' },
+      { strength: 3, label: 'Good', color: 'text-blue-500' },
+      { strength: 4, label: 'Strong', color: 'text-green-500' },
+      { strength: 5, label: 'Very Strong', color: 'text-green-600' },
     ];
 
     return strengthMap[Math.min(score, 5)];
@@ -148,37 +148,37 @@ export default function OnboardingPage() {
   // Pre-populate form data from user information
   useEffect(() => {
     if (user) {
-      const userFirstName = user.firstName || "";
-      const userLastName = user.lastName || "";
-      const userEmail = user.emailAddresses?.[0]?.emailAddress || "";
+      const userFirstName = user.firstName || '';
+      const userLastName = user.lastName || '';
+      const userEmail = user.emailAddresses?.[0]?.emailAddress || '';
 
       // Get organisation name from Convex query result
-      const userOrganization = organization?.name || "";
+      const userOrganization = organization?.name || '';
 
       // Pre-populate available data
       setFormData({
         firstName: userFirstName,
         lastName: userLastName,
-        role: "",
-        customRole: "",
+        role: '',
+        customRole: '',
         email: userEmail,
-        phone: "",
-        department: "",
+        phone: '',
+        department: '',
         organization: userOrganization,
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
         notifications: true,
         newsletter: false,
       });
 
       // Identify missing required fields for Step 1 only
       const missing = [];
-      if (!userFirstName) missing.push("firstName");
-      if (!userLastName) missing.push("lastName");
-      if (!userEmail) missing.push("email");
+      if (!userFirstName) missing.push('firstName');
+      if (!userLastName) missing.push('lastName');
+      if (!userEmail) missing.push('email');
       // Role is always missing initially for Step 1 (department and organization are on later steps)
-      missing.push("role");
+      missing.push('role');
 
       setMissingFields(missing);
     }
@@ -265,31 +265,31 @@ export default function OnboardingPage() {
     (step: number) => {
       switch (step) {
         case 0: // Personal Information
-          const requiredFields = ["firstName", "lastName", "email", "role"];
+          const requiredFields = ['firstName', 'lastName', 'email', 'role'];
           // Add customRole if "other" is selected
-          if (formData.role === "other") {
-            requiredFields.push("customRole");
+          if (formData.role === 'other') {
+            requiredFields.push('customRole');
           }
           // Add email validation if email is provided
           if (
             formData.email &&
             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
           ) {
-            requiredFields.push("invalidEmail");
+            requiredFields.push('invalidEmail');
           }
           return requiredFields;
         case 1: // Work Information
-          const workFields = ["department"];
+          const workFields = ['department'];
           // Only require organisation if it's not pre-populated
           if (!formData.organization) {
-            workFields.push("organization");
+            workFields.push('organization');
           }
           return workFields;
         case 2: // Security
           const securityFields = [
-            "currentPassword",
-            "newPassword",
-            "confirmPassword",
+            'currentPassword',
+            'newPassword',
+            'confirmPassword',
           ];
           // Additional validation: passwords must match and meet strength requirements
           if (
@@ -297,10 +297,10 @@ export default function OnboardingPage() {
             formData.confirmPassword &&
             formData.newPassword !== formData.confirmPassword
           ) {
-            return [...securityFields, "passwordMismatch"];
+            return [...securityFields, 'passwordMismatch'];
           }
           if (formData.newPassword && formData.newPassword.length < 8) {
-            return [...securityFields, "passwordTooWeak"];
+            return [...securityFields, 'passwordTooWeak'];
           }
           return securityFields;
         case 3: // Preferences
@@ -317,7 +317,7 @@ export default function OnboardingPage() {
       formData.newPassword,
       formData.confirmPassword,
       formData.email,
-    ],
+    ]
   );
 
   // Update missing fields when step changes
@@ -325,7 +325,7 @@ export default function OnboardingPage() {
     const requiredFields = getRequiredFieldsForStep(currentStep);
     const missing = requiredFields.filter((field) => {
       const value = formData[field as keyof typeof formData];
-      return typeof value !== "string" || value.trim() === "";
+      return typeof value !== 'string' || value.trim() === '';
     });
     setMissingFields(missing);
   }, [currentStep, formData, getRequiredFieldsForStep]);
@@ -338,7 +338,7 @@ export default function OnboardingPage() {
 
   const handleNext = () => {
     if (currentStep < onboardingSteps.length - 1) {
-      setError(""); // Clear any previous errors
+      setError(''); // Clear any previous errors
       setCurrentStep(currentStep + 1);
     }
   };
@@ -356,9 +356,9 @@ export default function OnboardingPage() {
 
     try {
       // First, update user profile information (name, email) if changed
-      const userFirstName = user.firstName || "";
-      const userLastName = user.lastName || "";
-      const userEmail = user.emailAddresses?.[0]?.emailAddress || "";
+      const userFirstName = user.firstName || '';
+      const userLastName = user.lastName || '';
+      const userEmail = user.emailAddresses?.[0]?.emailAddress || '';
 
       // Check if name or email has actually changed (trim whitespace for comparison)
       const nameChanged =
@@ -379,9 +379,9 @@ export default function OnboardingPage() {
           // Update email only if it actually changed
           if (emailChanged) {
             try {
-              const response = await fetch("/api/update-user-email", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+              const response = await fetch('/api/update-user-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   userId: user.id,
                   newEmail: formData.email.trim(),
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
 
               if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to update email");
+                throw new Error(errorData.error || 'Failed to update email');
               }
 
               // Reload user data to get updated email
@@ -399,13 +399,13 @@ export default function OnboardingPage() {
               setError(
                 emailError instanceof Error
                   ? emailError.message
-                  : "Failed to update email. Please try again.",
+                  : 'Failed to update email. Please try again.'
               );
               return;
             }
           }
         } catch (profileError) {
-          setError("Failed to update profile information. Please try again.");
+          setError('Failed to update profile information. Please try again.');
           return;
         }
       }
@@ -418,13 +418,13 @@ export default function OnboardingPage() {
       ) {
         // Validate password match
         if (formData.newPassword !== formData.confirmPassword) {
-          setError("New password and confirm password do not match.");
+          setError('New password and confirm password do not match.');
           return;
         }
 
         // Validate password strength
         if (formData.newPassword.length < 8) {
-          setError("Password must be at least 8 characters long.");
+          setError('Password must be at least 8 characters long.');
           return;
         }
 
@@ -436,25 +436,25 @@ export default function OnboardingPage() {
         } catch (passwordError) {
           // Provide specific error messages for password issues
           let errorMessage =
-            "Failed to update password. Please check your current password.";
+            'Failed to update password. Please check your current password.';
           if (passwordError instanceof Error) {
-            if (passwordError.message.includes("current password")) {
-              errorMessage = "Current password is incorrect. Please try again.";
-            } else if (passwordError.message.includes("weak")) {
+            if (passwordError.message.includes('current password')) {
+              errorMessage = 'Current password is incorrect. Please try again.';
+            } else if (passwordError.message.includes('weak')) {
               errorMessage =
-                "Password is too weak. Please choose a stronger password.";
-            } else if (passwordError.message.includes("recent")) {
+                'Password is too weak. Please choose a stronger password.';
+            } else if (passwordError.message.includes('recent')) {
               errorMessage =
-                "Cannot reuse a recent password. Please choose a different password.";
+                'Cannot reuse a recent password. Please choose a different password.';
             } else if (
-              passwordError.message.includes("breach") ||
-              passwordError.message.includes("compromised")
+              passwordError.message.includes('breach') ||
+              passwordError.message.includes('compromised')
             ) {
               errorMessage =
-                "This password has been found in online breaches. Please choose a different, more secure password.";
-            } else if (passwordError.message.includes("_baseFetch")) {
+                'This password has been found in online breaches. Please choose a different, more secure password.';
+            } else if (passwordError.message.includes('_baseFetch')) {
               errorMessage =
-                "Network error occurred. Please check your connection and try again.";
+                'Network error occurred. Please check your connection and try again.';
             }
           }
           setError(errorMessage);
@@ -471,10 +471,10 @@ export default function OnboardingPage() {
       } = formData;
 
       // Update user metadata to mark onboarding as complete via API
-      const response = await fetch("/api/complete-onboarding", {
-        method: "POST",
+      const response = await fetch('/api/complete-onboarding', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           onboardingData: safeOnboardingData,
@@ -502,16 +502,16 @@ export default function OnboardingPage() {
 
       // Redirect to success page which will handle the final redirect
       // This gives time for the session to update
-      window.location.replace("/onboarding-success");
+      window.location.replace('/onboarding-success');
     } catch (error) {
-      setError("Failed to complete onboarding. Please try again.");
+      setError('Failed to complete onboarding. Please try again.');
     } finally {
       setIsCompleting(false);
     }
   };
 
   const handleLogout = async () => {
-    await signOut(() => router.push("/sign-in"));
+    await signOut(() => router.push('/sign-in'));
   };
 
   // Check if current step is valid
@@ -519,18 +519,18 @@ export default function OnboardingPage() {
     const requiredFields = getRequiredFieldsForStep(currentStep);
     return requiredFields.every((field) => {
       // Special handling for password validation
-      if (field === "passwordMismatch") {
+      if (field === 'passwordMismatch') {
         return formData.newPassword === formData.confirmPassword;
       }
-      if (field === "passwordTooWeak") {
+      if (field === 'passwordTooWeak') {
         return formData.newPassword.length >= 8;
       }
-      if (field === "invalidEmail") {
+      if (field === 'invalidEmail') {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       }
 
       const value = formData[field as keyof typeof formData];
-      return typeof value === "string" && value.trim() !== "";
+      return typeof value === 'string' && value.trim() !== '';
     });
   };
 
@@ -539,14 +539,14 @@ export default function OnboardingPage() {
     const newFormData = { ...formData, [field]: value };
 
     // Special handling for role field
-    if (field === "role") {
-      if (newFormData.customRole && value !== "other") {
-        newFormData.customRole = "";
+    if (field === 'role') {
+      if (newFormData.customRole && value !== 'other') {
+        newFormData.customRole = '';
       }
     }
 
     // Skip validation for optional fields
-    if (field === "phone") {
+    if (field === 'phone') {
       setFormData(newFormData);
       return;
     }
@@ -561,7 +561,7 @@ export default function OnboardingPage() {
         fieldName === field
           ? value
           : newFormData[fieldName as keyof typeof newFormData];
-      return typeof fieldValue !== "string" || fieldValue.trim() === "";
+      return typeof fieldValue !== 'string' || fieldValue.trim() === '';
     });
 
     setMissingFields(missing);
@@ -598,7 +598,7 @@ export default function OnboardingPage() {
               {formData.firstName || formData.lastName ? (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
                   We&apos;ve pre-filled some information from your account.
-                  Please complete any highlighted fields marked with{" "}
+                  Please complete any highlighted fields marked with{' '}
                   <span className="text-orange-500 font-medium">*</span>
                 </div>
               ) : null}
@@ -610,13 +610,13 @@ export default function OnboardingPage() {
                   <Label
                     htmlFor="firstName"
                     className={
-                      missingFields.includes("firstName")
-                        ? "text-orange-600"
-                        : ""
+                      missingFields.includes('firstName')
+                        ? 'text-orange-600'
+                        : ''
                     }
                   >
-                    First Name{" "}
-                    {missingFields.includes("firstName") && (
+                    First Name{' '}
+                    {missingFields.includes('firstName') && (
                       <span className="text-orange-500">*</span>
                     )}
                   </Label>
@@ -624,13 +624,13 @@ export default function OnboardingPage() {
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) =>
-                      updateFormData("firstName", e.target.value)
+                      updateFormData('firstName', e.target.value)
                     }
                     placeholder="Enter your first name"
                     className={
-                      missingFields.includes("firstName")
-                        ? "border-orange-300 focus:border-orange-500"
-                        : ""
+                      missingFields.includes('firstName')
+                        ? 'border-orange-300 focus:border-orange-500'
+                        : ''
                     }
                   />
                 </div>
@@ -638,25 +638,25 @@ export default function OnboardingPage() {
                   <Label
                     htmlFor="lastName"
                     className={
-                      missingFields.includes("lastName")
-                        ? "text-orange-600"
-                        : ""
+                      missingFields.includes('lastName')
+                        ? 'text-orange-600'
+                        : ''
                     }
                   >
-                    Last Name{" "}
-                    {missingFields.includes("lastName") && (
+                    Last Name{' '}
+                    {missingFields.includes('lastName') && (
                       <span className="text-orange-500">*</span>
                     )}
                   </Label>
                   <Input
                     id="lastName"
                     value={formData.lastName}
-                    onChange={(e) => updateFormData("lastName", e.target.value)}
+                    onChange={(e) => updateFormData('lastName', e.target.value)}
                     placeholder="Enter your last name"
                     className={
-                      missingFields.includes("lastName")
-                        ? "border-orange-300 focus:border-orange-500"
-                        : ""
+                      missingFields.includes('lastName')
+                        ? 'border-orange-300 focus:border-orange-500'
+                        : ''
                     }
                   />
                 </div>
@@ -667,20 +667,20 @@ export default function OnboardingPage() {
                   <Label
                     htmlFor="role"
                     className={
-                      missingFields.includes("role") ? "text-orange-600" : ""
+                      missingFields.includes('role') ? 'text-orange-600' : ''
                     }
                   >
-                    Job Role{" "}
-                    {missingFields.includes("role") && (
+                    Job Role{' '}
+                    {missingFields.includes('role') && (
                       <span className="text-orange-500">*</span>
                     )}
                   </Label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value) => updateFormData("role", value)}
+                    onValueChange={(value) => updateFormData('role', value)}
                   >
                     <SelectTrigger
-                      className={`w-full ${missingFields.includes("role") ? "border-orange-300 focus:border-orange-500" : ""}`}
+                      className={`w-full ${missingFields.includes('role') ? 'border-orange-300 focus:border-orange-500' : ''}`}
                     >
                       <SelectValue placeholder="Select your job role" />
                     </SelectTrigger>
@@ -696,18 +696,18 @@ export default function OnboardingPage() {
                   </Select>
                 </div>
 
-                {formData.role === "other" ? (
+                {formData.role === 'other' ? (
                   <div className="space-y-2">
                     <Label
                       htmlFor="customRole"
                       className={
-                        missingFields.includes("customRole")
-                          ? "text-orange-600"
-                          : ""
+                        missingFields.includes('customRole')
+                          ? 'text-orange-600'
+                          : ''
                       }
                     >
-                      Custom Job Role{" "}
-                      {missingFields.includes("customRole") && (
+                      Custom Job Role{' '}
+                      {missingFields.includes('customRole') && (
                         <span className="text-orange-500">*</span>
                       )}
                     </Label>
@@ -715,13 +715,13 @@ export default function OnboardingPage() {
                       id="customRole"
                       value={formData.customRole}
                       onChange={(e) =>
-                        updateFormData("customRole", e.target.value)
+                        updateFormData('customRole', e.target.value)
                       }
                       placeholder="Enter your job role"
                       className={
-                        missingFields.includes("customRole")
-                          ? "border-orange-300 focus:border-orange-500"
-                          : ""
+                        missingFields.includes('customRole')
+                          ? 'border-orange-300 focus:border-orange-500'
+                          : ''
                       }
                     />
                   </div>
@@ -735,11 +735,11 @@ export default function OnboardingPage() {
                   <Label
                     htmlFor="email"
                     className={
-                      missingFields.includes("email") ? "text-orange-600" : ""
+                      missingFields.includes('email') ? 'text-orange-600' : ''
                     }
                   >
-                    Email Address{" "}
-                    {missingFields.includes("email") && (
+                    Email Address{' '}
+                    {missingFields.includes('email') && (
                       <span className="text-orange-500">*</span>
                     )}
                   </Label>
@@ -747,15 +747,15 @@ export default function OnboardingPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => updateFormData("email", e.target.value)}
+                    onChange={(e) => updateFormData('email', e.target.value)}
                     placeholder="Enter your email address"
                     className={
-                      missingFields.includes("email")
-                        ? "border-orange-300 focus:border-orange-500"
-                        : ""
+                      missingFields.includes('email')
+                        ? 'border-orange-300 focus:border-orange-500'
+                        : ''
                     }
                   />
-                  {formData.email && missingFields.includes("invalidEmail") && (
+                  {formData.email && missingFields.includes('invalidEmail') && (
                     <p className="text-xs text-red-600">
                       Please enter a valid email address
                     </p>
@@ -763,7 +763,7 @@ export default function OnboardingPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">
-                    Phone Number{" "}
+                    Phone Number{' '}
                     <span className="text-xs text-muted-foreground">
                       (optional)
                     </span>
@@ -772,7 +772,7 @@ export default function OnboardingPage() {
                     id="phone"
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => updateFormData("phone", e.target.value)}
+                    onChange={(e) => updateFormData('phone', e.target.value)}
                     placeholder="Enter your phone number (optional)"
                   />
                 </div>
@@ -804,13 +804,13 @@ export default function OnboardingPage() {
                 <Label
                   htmlFor="organization"
                   className={
-                    missingFields.includes("organization")
-                      ? "text-orange-600"
-                      : ""
+                    missingFields.includes('organization')
+                      ? 'text-orange-600'
+                      : ''
                   }
                 >
-                  Organisation/Institution{" "}
-                  {missingFields.includes("organization") && (
+                  Organisation/Institution{' '}
+                  {missingFields.includes('organization') && (
                     <span className="text-orange-500">*</span>
                   )}
                   {formData.organization && (
@@ -823,10 +823,10 @@ export default function OnboardingPage() {
                   id="organization"
                   value={formData.organization}
                   onChange={(e) =>
-                    updateFormData("organization", e.target.value)
+                    updateFormData('organization', e.target.value)
                   }
                   placeholder="Enter your organisation name"
-                  className={`${missingFields.includes("organization") ? "border-orange-300 focus:border-orange-500" : ""} ${formData.organization ? "bg-muted" : ""}`}
+                  className={`${missingFields.includes('organization') ? 'border-orange-300 focus:border-orange-500' : ''} ${formData.organization ? 'bg-muted' : ''}`}
                   readOnly={!!formData.organization}
                 />
                 {formData.organization && (
@@ -841,25 +841,25 @@ export default function OnboardingPage() {
                 <Label
                   htmlFor="department"
                   className={
-                    missingFields.includes("department")
-                      ? "text-orange-600"
-                      : ""
+                    missingFields.includes('department')
+                      ? 'text-orange-600'
+                      : ''
                   }
                 >
-                  Department/Faculty{" "}
-                  {missingFields.includes("department") && (
+                  Department/Faculty{' '}
+                  {missingFields.includes('department') && (
                     <span className="text-orange-500">*</span>
                   )}
                 </Label>
                 <Input
                   id="department"
                   value={formData.department}
-                  onChange={(e) => updateFormData("department", e.target.value)}
+                  onChange={(e) => updateFormData('department', e.target.value)}
                   placeholder="Enter your department"
                   className={
-                    missingFields.includes("department")
-                      ? "border-orange-300 focus:border-orange-500"
-                      : ""
+                    missingFields.includes('department')
+                      ? 'border-orange-300 focus:border-orange-500'
+                      : ''
                   }
                 />
               </div>
@@ -888,26 +888,26 @@ export default function OnboardingPage() {
                 <Label
                   htmlFor="currentPassword"
                   className={
-                    missingFields.includes("currentPassword")
-                      ? "text-orange-600"
-                      : ""
+                    missingFields.includes('currentPassword')
+                      ? 'text-orange-600'
+                      : ''
                   }
                 >
-                  Current Password{" "}
-                  {missingFields.includes("currentPassword") && (
+                  Current Password{' '}
+                  {missingFields.includes('currentPassword') && (
                     <span className="text-orange-500">*</span>
                   )}
                 </Label>
                 <div className="relative">
                   <Input
                     id="currentPassword"
-                    type={showCurrentPassword ? "text" : "password"}
+                    type={showCurrentPassword ? 'text' : 'password'}
                     value={formData.currentPassword}
                     onChange={(e) =>
-                      updateFormData("currentPassword", e.target.value)
+                      updateFormData('currentPassword', e.target.value)
                     }
                     placeholder="Enter your current password"
-                    className={`pr-10 ${missingFields.includes("currentPassword") ? "border-orange-300 focus:border-orange-500" : ""}`}
+                    className={`pr-10 ${missingFields.includes('currentPassword') ? 'border-orange-300 focus:border-orange-500' : ''}`}
                   />
                   <Button
                     type="button"
@@ -929,26 +929,26 @@ export default function OnboardingPage() {
                 <Label
                   htmlFor="newPassword"
                   className={
-                    missingFields.includes("newPassword")
-                      ? "text-orange-600"
-                      : ""
+                    missingFields.includes('newPassword')
+                      ? 'text-orange-600'
+                      : ''
                   }
                 >
-                  New Password{" "}
-                  {missingFields.includes("newPassword") && (
+                  New Password{' '}
+                  {missingFields.includes('newPassword') && (
                     <span className="text-orange-500">*</span>
                   )}
                 </Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
+                    type={showNewPassword ? 'text' : 'password'}
                     value={formData.newPassword}
                     onChange={(e) =>
-                      updateFormData("newPassword", e.target.value)
+                      updateFormData('newPassword', e.target.value)
                     }
                     placeholder="Enter your new password"
-                    className={`pr-10 ${missingFields.includes("newPassword") ? "border-orange-300 focus:border-orange-500" : ""}`}
+                    className={`pr-10 ${missingFields.includes('newPassword') ? 'border-orange-300 focus:border-orange-500' : ''}`}
                   />
                   <Button
                     type="button"
@@ -973,8 +973,8 @@ export default function OnboardingPage() {
                       {(() => {
                         const s = getPasswordStrength(formData.newPassword);
                         return (
-                          <p className={`text-sm ${s?.color || ""}`}>
-                            Password strength: {s?.label || ""}
+                          <p className={`text-sm ${s?.color || ''}`}>
+                            Password strength: {s?.label || ''}
                           </p>
                         );
                       })()}
@@ -987,9 +987,9 @@ export default function OnboardingPage() {
                                 key={level}
                                 className={`h-1 flex-1 rounded ${
                                   level <= (s?.strength || 0)
-                                    ? s?.color?.replace("text-", "bg-") ||
-                                      "bg-gray-200"
-                                    : "bg-gray-200"
+                                    ? s?.color?.replace('text-', 'bg-') ||
+                                      'bg-gray-200'
+                                    : 'bg-gray-200'
                                 }`}
                               />
                             ))}
@@ -1032,26 +1032,26 @@ export default function OnboardingPage() {
                 <Label
                   htmlFor="confirmPassword"
                   className={
-                    missingFields.includes("confirmPassword")
-                      ? "text-orange-600"
-                      : ""
+                    missingFields.includes('confirmPassword')
+                      ? 'text-orange-600'
+                      : ''
                   }
                 >
-                  Confirm New Password{" "}
-                  {missingFields.includes("confirmPassword") && (
+                  Confirm New Password{' '}
+                  {missingFields.includes('confirmPassword') && (
                     <span className="text-orange-500">*</span>
                   )}
                 </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) =>
-                      updateFormData("confirmPassword", e.target.value)
+                      updateFormData('confirmPassword', e.target.value)
                     }
                     placeholder="Confirm your new password"
-                    className={`pr-10 ${missingFields.includes("confirmPassword") ? "border-orange-300 focus:border-orange-500" : ""}`}
+                    className={`pr-10 ${missingFields.includes('confirmPassword') ? 'border-orange-300 focus:border-orange-500' : ''}`}
                   />
                   <Button
                     type="button"
@@ -1183,7 +1183,7 @@ export default function OnboardingPage() {
             <div className="flex items-center gap-3 mb-6">
               <div
                 className="flex aspect-square size-10 items-center justify-center rounded-lg text-white"
-                style={{ backgroundColor: "#0F59FF" }}
+                style={{ backgroundColor: '#0F59FF' }}
               >
                 <WandSparkles className="size-5" />
               </div>
@@ -1206,19 +1206,19 @@ export default function OnboardingPage() {
                 <div
                   key={step.id}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg transition-colors",
-                    isCurrent && "bg-primary text-primary-foreground",
-                    isCompleted && "bg-muted",
-                    !isCurrent && !isCompleted && "hover:bg-muted/50",
+                    'flex items-center gap-3 p-3 rounded-lg transition-colors',
+                    isCurrent && 'bg-primary text-primary-foreground',
+                    isCompleted && 'bg-muted',
+                    !isCurrent && !isCompleted && 'hover:bg-muted/50'
                   )}
                 >
                   <div
                     className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors",
-                      isCompleted && "bg-green-500 border-green-500 text-white",
+                      'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors',
+                      isCompleted && 'bg-green-500 border-green-500 text-white',
                       isCurrent &&
-                        "border-primary-foreground text-primary-foreground",
-                      !isCurrent && !isCompleted && "border-muted-foreground",
+                        'border-primary-foreground text-primary-foreground',
+                      !isCurrent && !isCompleted && 'border-muted-foreground'
                     )}
                   >
                     {isCompleted ? (
@@ -1230,18 +1230,18 @@ export default function OnboardingPage() {
                   <div className="flex-1 min-w-0">
                     <p
                       className={cn(
-                        "font-medium text-sm",
-                        isCurrent && "text-primary-foreground",
+                        'font-medium text-sm',
+                        isCurrent && 'text-primary-foreground'
                       )}
                     >
                       {step.title}
                     </p>
                     <p
                       className={cn(
-                        "text-xs",
+                        'text-xs',
                         isCurrent
-                          ? "text-primary-foreground/80"
-                          : "text-muted-foreground",
+                          ? 'text-primary-foreground/80'
+                          : 'text-muted-foreground'
                       )}
                     >
                       {step.description}
@@ -1278,7 +1278,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {Math.round(
-                      ((currentStep + 1) / onboardingSteps.length) * 100,
+                      ((currentStep + 1) / onboardingSteps.length) * 100
                     )}
                     % Complete
                   </div>
@@ -1322,7 +1322,7 @@ export default function OnboardingPage() {
 
                     {currentStep === onboardingSteps.length - 1 ? (
                       <Button onClick={handleComplete} disabled={isCompleting}>
-                        {isCompleting ? "Setting up..." : "Get Started"}
+                        {isCompleting ? 'Setting up...' : 'Get Started'}
                       </Button>
                     ) : (
                       <Button

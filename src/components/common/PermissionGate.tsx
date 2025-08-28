@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ReactNode } from "react";
-import { usePermissionManager } from "@/hooks/usePermissionManager";
-import { type PermissionId } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from 'react';
+import { usePermissionManager } from '@/hooks/usePermissionManager';
+import { type PermissionId } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 
 interface PermissionGateProps {
   children: ReactNode;
@@ -68,8 +68,8 @@ export function PermissionGate({
     return (
       <div
         className={cn(
-          "opacity-50 pointer-events-none",
-          disabledText && "cursor-not-allowed",
+          'opacity-50 pointer-events-none',
+          disabledText && 'cursor-not-allowed'
         )}
         title={disabledText}
       >
@@ -89,16 +89,16 @@ export function UsersViewGate({
   hide,
   disabled,
   disabledText = "You don't have permission to view users",
-  actionName = "view users",
+  actionName = 'view users',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission">) {
+}: Omit<PermissionGateProps, 'permission'>) {
   return (
     <PermissionGate
       permission="users.view"
-      {...(organisationId ? { organisationId: organisationId as string } : {})}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(organisationId ? { organisationId: organisationId } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}
@@ -117,16 +117,16 @@ export function UsersCreateGate({
   hide,
   disabled,
   disabledText = "You don't have permission to create users",
-  actionName = "create users",
+  actionName = 'create users',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission">) {
+}: Omit<PermissionGateProps, 'permission'>) {
   return (
     <PermissionGate
       permission="users.create"
-      {...(organisationId ? { organisationId: organisationId as string } : {})}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(organisationId ? { organisationId: organisationId } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}
@@ -145,16 +145,16 @@ export function UsersEditGate({
   hide,
   disabled,
   disabledText = "You don't have permission to edit users",
-  actionName = "edit users",
+  actionName = 'edit users',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission">) {
+}: Omit<PermissionGateProps, 'permission'>) {
   return (
     <PermissionGate
       permission="users.edit"
-      {...(organisationId ? { organisationId: organisationId as string } : {})}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(organisationId ? { organisationId: organisationId } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}
@@ -173,16 +173,16 @@ export function UsersDeleteGate({
   hide,
   disabled,
   disabledText = "You don't have permission to delete users",
-  actionName = "delete users",
+  actionName = 'delete users',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission">) {
+}: Omit<PermissionGateProps, 'permission'>) {
   return (
     <PermissionGate
       permission="users.delete"
-      {...(organisationId ? { organisationId: organisationId as string } : {})}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(organisationId ? { organisationId: organisationId } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}
@@ -201,16 +201,16 @@ export function PermissionsManageGate({
   hide,
   disabled,
   disabledText = "You don't have permission to manage permissions",
-  actionName = "manage permissions",
+  actionName = 'manage permissions',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission">) {
+}: Omit<PermissionGateProps, 'permission'>) {
   return (
     <PermissionGate
       permission="permissions.manage"
-      {...(organisationId ? { organisationId: organisationId as string } : {})}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(organisationId ? { organisationId: organisationId } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}
@@ -228,16 +228,16 @@ export function OrganisationsManageGate({
   hide,
   disabled,
   disabledText = "You don't have permission to manage organisations",
-  actionName = "manage organisations",
+  actionName = 'manage organisations',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission" | "organisationId">) {
+}: Omit<PermissionGateProps, 'permission' | 'organisationId'>) {
   return (
     <PermissionGate
       permission="organisations.manage"
       isSystemAction={true}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}
@@ -256,16 +256,16 @@ export function AuditViewGate({
   hide,
   disabled,
   disabledText = "You don't have permission to view audit logs",
-  actionName = "view audit logs",
+  actionName = 'view audit logs',
   showToast = false,
   redirectOnDeny = false,
-}: Omit<PermissionGateProps, "permission">) {
+}: Omit<PermissionGateProps, 'permission'>) {
   return (
     <PermissionGate
       permission="audit.view"
-      {...(organisationId ? { organisationId: organisationId as string } : {})}
-      {...(typeof hide === "boolean" ? { hide } : {})}
-      {...(typeof disabled === "boolean" ? { disabled } : {})}
+      {...(organisationId ? { organisationId: organisationId } : {})}
+      {...(typeof hide === 'boolean' ? { hide } : {})}
+      {...(typeof disabled === 'boolean' ? { disabled } : {})}
       {...(fallback ? { fallback } : {})}
       {...(disabledText ? { disabledText } : {})}
       {...(actionName ? { actionName } : {})}

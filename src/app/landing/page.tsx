@@ -1,12 +1,12 @@
-"use client";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { WandSparkles } from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { useAuth } from "@clerk/nextjs";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+'use client';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { WandSparkles } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useAuth } from '@clerk/nextjs';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,42 +14,42 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 export default function LandingPage() {
   const { isSignedIn } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [organisation, setOrganisation] = useState("");
-  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [organisation, setOrganisation] = useState('');
+  const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!firstName.trim()) {
-      toast({ title: "Enter your first name" });
+      toast({ title: 'Enter your first name' });
       return;
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast({ title: "Enter a valid email" });
+      toast({ title: 'Enter a valid email' });
       return;
     }
     try {
       setSubmitting(true);
-      const res = await fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
           name: `${firstName} ${lastName}`.trim(),
-          source: "landing",
+          source: 'landing',
           organisation: organisation?.trim() || undefined,
         }),
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) throw new Error('Request failed');
       const json = await res.json();
       if (json?.already) {
         toast({
@@ -59,15 +59,15 @@ export default function LandingPage() {
       } else {
         toast({ title: "Thanks — we'll be in touch" });
       }
-      setFirstName("");
-      setLastName("");
-      setOrganisation("");
-      setEmail("");
+      setFirstName('');
+      setLastName('');
+      setOrganisation('');
+      setEmail('');
       setOpen(false);
     } catch {
       toast({
-        title: "Something went wrong",
-        description: "Please try again later",
+        title: 'Something went wrong',
+        description: 'Please try again later',
       });
     } finally {
       setSubmitting(false);
@@ -80,7 +80,7 @@ export default function LandingPage() {
           <div className="flex h-8 items-center gap-3">
             <div
               className="flex aspect-square size-8 items-center justify-center rounded-lg text-white"
-              style={{ backgroundColor: "#0F59FF" }}
+              style={{ backgroundColor: '#0F59FF' }}
             >
               <WandSparkles className="size-4" />
             </div>
@@ -172,7 +172,7 @@ export default function LandingPage() {
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={submitting}>
-                    {submitting ? "Joining..." : "Join waitlist"}
+                    {submitting ? 'Joining...' : 'Join waitlist'}
                   </Button>
                 </DialogFooter>
               </form>

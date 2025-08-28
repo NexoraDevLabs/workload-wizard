@@ -1,5 +1,5 @@
 ---
-applyTo: "tests/**/*.{ts,tsx}"
+applyTo: 'tests/**/*.{ts,tsx}'
 ---
 
 - Vitest only; environment `jsdom`; never add tests under `node_modules`.

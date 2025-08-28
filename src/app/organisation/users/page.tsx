@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Button } from "@/components/ui/button";
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 import {
   Plus,
@@ -42,36 +42,36 @@ import {
   UserCog,
   ChevronUp,
   ChevronDown,
-} from "lucide-react";
-import { useQuery } from "convex/react";
-import type { Id } from "@/convex/_generated/dataModel";
-import { api } from "@/convex/_generated/api";
-import { deleteUser } from "@/lib/actions/userActions";
-import { useToast } from "@/hooks/use-toast";
-import { CreateUserForm } from "@/components/domain/CreateUserForm";
-import { EditUserForm } from "@/components/domain/EditUserForm";
-import { DeleteConfirmationModal } from "@/components/domain/DeleteConfirmationModal";
+} from 'lucide-react';
+import { useQuery } from 'convex/react';
+import type { Id } from '@/convex/_generated/dataModel';
+import { api } from '@/convex/_generated/api';
+import { deleteUser } from '@/lib/actions/userActions';
+import { useToast } from '@/hooks/use-toast';
+import { CreateUserForm } from '@/components/domain/CreateUserForm';
+import { EditUserForm } from '@/components/domain/EditUserForm';
+import { DeleteConfirmationModal } from '@/components/domain/DeleteConfirmationModal';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 
 interface User {
   _id: string;
@@ -109,26 +109,26 @@ export default function OrganisationUsersPage() {
 
   // Sorting
   type SortField =
-    | "name"
-    | "email"
-    | "username"
-    | "role"
-    | "status"
-    | "created"
-    | "lastSignIn";
-  type SortDirection = "asc" | "desc";
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+    | 'name'
+    | 'email'
+    | 'username'
+    | 'role'
+    | 'status'
+    | 'created'
+    | 'lastSignIn';
+  type SortDirection = 'asc' | 'desc';
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Filters/search
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [orgRoleFilter, setOrgRoleFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [orgRoleFilter, setOrgRoleFilter] = useState<string>('all');
 
   // Selection + assign modal
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [assigningUser, setAssigningUser] = useState<User | null>(null);
   const [selectedSystemRoles, setSelectedSystemRoles] = useState<string[]>([]);
@@ -138,7 +138,7 @@ export default function OrganisationUsersPage() {
   // Get current user's organisation
   const currentUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : "skip",
+    user?.id ? { subject: user.id } : 'skip'
   );
 
   // Get organisation users
@@ -147,18 +147,18 @@ export default function OrganisationUsersPage() {
     currentUser?.organisationId
       ? {
           organisationId:
-            currentUser.organisationId as unknown as Id<"organisations">,
+            currentUser.organisationId as unknown as Id<'organisations'>,
         }
-      : "skip",
+      : 'skip'
   );
   const orgRoles = useQuery(
     api.organisationalRoles.listByOrganisation,
     currentUser?.organisationId
       ? {
           organisationId:
-            currentUser.organisationId as unknown as Id<"organisations">,
+            currentUser.organisationId as unknown as Id<'organisations'>,
         }
-      : "skip",
+      : 'skip'
   );
 
   // Permission: can this actor assign elevated roles (sysadmin/developer/trial)?
@@ -166,17 +166,17 @@ export default function OrganisationUsersPage() {
     const meta = user?.publicMetadata as Record<string, unknown> | undefined;
     const roles: string[] = Array.isArray(meta?.roles) ? meta.roles : [];
     const role: string | undefined =
-      typeof meta?.role === "string" ? (meta.role as string) : undefined;
+      typeof meta?.role === 'string' ? meta.role : undefined;
     return (
-      roles.includes("sysadmin") ||
-      roles.includes("developer") ||
-      role === "sysadmin" ||
-      role === "developer"
+      roles.includes('sysadmin') ||
+      roles.includes('developer') ||
+      role === 'sysadmin' ||
+      role === 'developer'
     );
   })();
   const assignableSystemRoles = canAssignElevated
-    ? ["user", "orgadmin", "sysadmin", "developer", "trial"]
-    : ["user", "orgadmin"];
+    ? ['user', 'orgadmin', 'sysadmin', 'developer', 'trial']
+    : ['user', 'orgadmin'];
 
   // Helpers
   const getUniqueRoles = () => {
@@ -185,84 +185,84 @@ export default function OrganisationUsersPage() {
   };
 
   const getRolesDisplay = (roles: string[]) => {
-    if (!roles || roles.length === 0) return "No roles";
+    if (!roles || roles.length === 0) return 'No roles';
     if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
     const priorityOrder = [
-      "sysadmin",
-      "developer",
-      "orgadmin",
-      "user",
-      "trial",
+      'sysadmin',
+      'developer',
+      'orgadmin',
+      'user',
+      'trial',
     ];
     const sorted = [...roles].sort(
-      (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b),
+      (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
     );
-    return sorted.map(getRoleLabel).join(", ");
+    return sorted.map(getRoleLabel).join(', ');
   };
 
   const sortUsers = (
     list: User[],
     field: SortField,
-    direction: SortDirection,
+    direction: SortDirection
   ) => {
     return [...list].sort((a, b) => {
       let aVal: string | number;
       let bVal: string | number;
       switch (field) {
-        case "name":
-          aVal = `${a.givenName || ""} ${a.familyName || ""}`
+        case 'name':
+          aVal = `${a.givenName || ''} ${a.familyName || ''}`
             .toLowerCase()
             .trim();
-          bVal = `${b.givenName || ""} ${b.familyName || ""}`
+          bVal = `${b.givenName || ''} ${b.familyName || ''}`
             .toLowerCase()
             .trim();
           break;
-        case "email":
-          aVal = (a.email || "").toLowerCase();
-          bVal = (b.email || "").toLowerCase();
+        case 'email':
+          aVal = (a.email || '').toLowerCase();
+          bVal = (b.email || '').toLowerCase();
           break;
-        case "username":
-          aVal = (a.username || "").toLowerCase();
-          bVal = (b.username || "").toLowerCase();
+        case 'username':
+          aVal = (a.username || '').toLowerCase();
+          bVal = (b.username || '').toLowerCase();
           break;
-        case "role":
+        case 'role':
           aVal = getRolesDisplay(a.systemRoles || []).toLowerCase();
           bVal = getRolesDisplay(b.systemRoles || []).toLowerCase();
           break;
-        case "status":
+        case 'status':
           aVal = a.isActive ? 1 : 0;
           bVal = b.isActive ? 1 : 0;
           break;
-        case "created":
+        case 'created':
           aVal = a.createdAt;
           bVal = b.createdAt;
           break;
-        case "lastSignIn":
+        case 'lastSignIn':
           aVal = a.lastSignInAt || 0;
           bVal = b.lastSignInAt || 0;
           break;
         default:
           return 0;
       }
-      if (aVal < bVal) return direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return direction === "asc" ? 1 : -1;
+      if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return direction === 'asc' ? 1 : -1;
       return 0;
     });
   };
 
   const handleSort = (field: SortField) => {
     if (sortField === field)
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     else {
       setSortField(field);
-      setSortDirection("asc");
+      setSortDirection('asc');
     }
   };
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field)
       return <ChevronUp className="h-4 w-4 opacity-30" />;
-    return sortDirection === "asc" ? (
+    return sortDirection === 'asc' ? (
       <ChevronUp className="h-4 w-4" />
     ) : (
       <ChevronDown className="h-4 w-4" />
@@ -280,19 +280,19 @@ export default function OrganisationUsersPage() {
           (u.familyName && u.familyName.toLowerCase().includes(t)) ||
           (u.fullName && u.fullName.toLowerCase().includes(t)) ||
           (u.email && u.email.toLowerCase().includes(t)) ||
-          (u.username && u.username.toLowerCase().includes(t)),
+          (u.username && u.username.toLowerCase().includes(t))
       );
     }
-    if (roleFilter !== "all")
+    if (roleFilter !== 'all')
       list = list.filter((u) => (u.systemRoles || []).includes(roleFilter));
-    if (orgRoleFilter !== "all")
+    if (orgRoleFilter !== 'all')
       list = list.filter(
         (u) =>
           (u as unknown as { organisationalRole?: { id: string } })
-            .organisationalRole?.id === orgRoleFilter,
+            .organisationalRole?.id === orgRoleFilter
       );
-    if (statusFilter !== "all")
-      list = list.filter((u) => u.isActive === (statusFilter === "active"));
+    if (statusFilter !== 'all')
+      list = list.filter((u) => u.isActive === (statusFilter === 'active'));
     setFilteredUsers(list);
   };
 
@@ -328,7 +328,7 @@ export default function OrganisationUsersPage() {
     setAssigningUser(bulk ? ({} as unknown as User) : target);
     const initialSys = target?.systemRoles || [];
     const clampedSys = initialSys.filter((r) =>
-      assignableSystemRoles.includes(r),
+      assignableSystemRoles.includes(r)
     );
     setSelectedSystemRoles(clampedSys);
     // Preselect org roles from the target user's current assignments
@@ -347,9 +347,9 @@ export default function OrganisationUsersPage() {
       if (isBulkAssign) {
         const targets = sortedUsers.filter((u) => selectedUserIds.has(u._id));
         const updates = targets.map((u) =>
-          fetch("/api/update-user", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          fetch('/api/update-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: u.subject || u._id,
               systemRoles: selectedSystemRoles,
@@ -359,16 +359,16 @@ export default function OrganisationUsersPage() {
               organisationId: currentUser?.organisationId,
             }),
           }).then(async (r) => {
-            if (!r.ok) throw new Error((await r.json()).error || "Failed");
-          }),
+            if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+          })
         );
         await Promise.all(updates);
         setSelectedUserIds(new Set());
       } else {
         if (!assigningUser?.subject && !assigningUser?._id) return;
-        const res = await fetch("/api/update-user", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/api/update-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: assigningUser.subject || assigningUser._id,
             systemRoles: selectedSystemRoles,
@@ -378,7 +378,7 @@ export default function OrganisationUsersPage() {
             organisationId: currentUser?.organisationId,
           }),
         });
-        if (!res.ok) throw new Error((await res.json()).error || "Failed");
+        if (!res.ok) throw new Error((await res.json()).error || 'Failed');
       }
       setAssigningUser(null);
     } catch (e) {
@@ -387,32 +387,32 @@ export default function OrganisationUsersPage() {
   };
 
   const formatDate = (timestamp?: number) => {
-    if (!timestamp) return "Never";
+    if (!timestamp) return 'Never';
     return new Date(timestamp).toLocaleDateString();
   };
 
   const formatDateTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(timestamp).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case "orgadmin":
-        return "Organisation Admin";
-      case "sysadmin":
-        return "System Admin";
-      case "developer":
-        return "Developer";
-      case "user":
-        return "User";
-      case "trial":
-        return "Trial";
+      case 'orgadmin':
+        return 'Organisation Admin';
+      case 'sysadmin':
+        return 'System Admin';
+      case 'developer':
+        return 'Developer';
+      case 'user':
+        return 'User';
+      case 'trial':
+        return 'Trial';
       default:
         return role;
     }
@@ -420,18 +420,18 @@ export default function OrganisationUsersPage() {
 
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
-      case "orgadmin":
-        return "bg-red-100 text-red-800";
-      case "sysadmin":
-        return "bg-purple-100 text-purple-800";
-      case "developer":
-        return "bg-blue-100 text-blue-800";
-      case "user":
-        return "bg-green-100 text-green-800";
-      case "trial":
-        return "bg-yellow-100 text-yellow-800";
+      case 'orgadmin':
+        return 'bg-red-100 text-red-800';
+      case 'sysadmin':
+        return 'bg-purple-100 text-purple-800';
+      case 'developer':
+        return 'bg-blue-100 text-blue-800';
+      case 'user':
+        return 'bg-green-100 text-green-800';
+      case 'trial':
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -444,10 +444,10 @@ export default function OrganisationUsersPage() {
     setTogglingUserId(targetUser._id);
 
     try {
-      const response = await fetch("/api/update-user", {
-        method: "POST",
+      const response = await fetch('/api/update-user', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId: targetUser.subject,
@@ -457,17 +457,17 @@ export default function OrganisationUsersPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update user status");
+        throw new Error(errorData.error || 'Failed to update user status');
       }
 
       // The query will automatically refetch due to Convex reactivity
     } catch (error) {
       // Error toggling user status
       toast({
-        title: "Failed to update user status",
+        title: 'Failed to update user status',
         description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
       });
     } finally {
       setTogglingUserId(null);
@@ -486,9 +486,9 @@ export default function OrganisationUsersPage() {
       // The organisationUsers query will automatically refetch due to Convex reactivity
     } catch (err) {
       toast({
-        title: "Failed to delete user",
-        description: err instanceof Error ? err.message : "An error occurred",
-        variant: "destructive",
+        title: 'Failed to delete user',
+        description: err instanceof Error ? err.message : 'An error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
@@ -510,9 +510,9 @@ export default function OrganisationUsersPage() {
   }
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Organisation", href: "/organisation" },
-    { label: "Users" },
+    { label: 'Home', href: '/' },
+    { label: 'Organisation', href: '/organisation' },
+    { label: 'Users' },
   ];
 
   const headerActions = (
@@ -606,7 +606,7 @@ export default function OrganisationUsersPage() {
                                 <SelectItem key={r._id} value={r._id}>
                                   {r.name}
                                 </SelectItem>
-                              ),
+                              )
                             )}
                           </SelectContent>
                         </Select>
@@ -635,10 +635,10 @@ export default function OrganisationUsersPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSearchTerm("");
-                          setRoleFilter("all");
-                          setOrgRoleFilter("all");
-                          setStatusFilter("all");
+                          setSearchTerm('');
+                          setRoleFilter('all');
+                          setOrgRoleFilter('all');
+                          setStatusFilter('all');
                         }}
                       >
                         Clear All
@@ -676,34 +676,34 @@ export default function OrganisationUsersPage() {
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[18%]"
-                    onClick={() => handleSort("name")}
+                    onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Name {getSortIcon("name")}
+                      Name {getSortIcon('name')}
                     </div>
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[18%]"
-                    onClick={() => handleSort("email")}
+                    onClick={() => handleSort('email')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Email {getSortIcon("email")}
+                      Email {getSortIcon('email')}
                     </div>
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
-                    onClick={() => handleSort("username")}
+                    onClick={() => handleSort('username')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Username {getSortIcon("username")}
+                      Username {getSortIcon('username')}
                     </div>
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[16%]"
-                    onClick={() => handleSort("role")}
+                    onClick={() => handleSort('role')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      System Roles {getSortIcon("role")}
+                      System Roles {getSortIcon('role')}
                     </div>
                   </TableHead>
                   <TableHead className="text-center font-semibold text-sm py-4 w-[16%]">
@@ -711,26 +711,26 @@ export default function OrganisationUsersPage() {
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[10%]"
-                    onClick={() => handleSort("status")}
+                    onClick={() => handleSort('status')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Status {getSortIcon("status")}
+                      Status {getSortIcon('status')}
                     </div>
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
-                    onClick={() => handleSort("created")}
+                    onClick={() => handleSort('created')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Created {getSortIcon("created")}
+                      Created {getSortIcon('created')}
                     </div>
                   </TableHead>
                   <TableHead
                     className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
-                    onClick={() => handleSort("lastSignIn")}
+                    onClick={() => handleSort('lastSignIn')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      Last Sign In {getSortIcon("lastSignIn")}
+                      Last Sign In {getSortIcon('lastSignIn')}
                     </div>
                   </TableHead>
                   <TableHead className="w-[8%] text-center font-semibold text-sm py-4">
@@ -777,7 +777,7 @@ export default function OrganisationUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      {user.username || "N/A"}
+                      {user.username || 'N/A'}
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex flex-wrap gap-1 justify-center">
@@ -864,7 +864,7 @@ export default function OrganisationUsersPage() {
                     <TableCell className="text-center">
                       {user.lastSignInAt
                         ? formatDateTime(user.lastSignInAt)
-                        : "Never"}
+                        : 'Never'}
                     </TableCell>
                     <TableCell className="text-center">
                       {formatDate(user.createdAt)}
@@ -902,8 +902,8 @@ export default function OrganisationUsersPage() {
                             )}
                             <span>
                               {user.isActive
-                                ? "Deactivate User"
-                                : "Activate User"}
+                                ? 'Deactivate User'
+                                : 'Activate User'}
                             </span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -971,10 +971,10 @@ export default function OrganisationUsersPage() {
                           setSelectedSystemRoles(
                             checked
                               ? selectedSystemRoles.filter((r) => r !== role)
-                              : [...selectedSystemRoles, role],
+                              : [...selectedSystemRoles, role]
                           )
                         }
-                        className={`px-2 py-1 rounded border text-xs ${checked ? "bg-slate-900 text-white" : "bg-white"}`}
+                        className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
                       >
                         {getRoleLabel(role)}
                       </button>
@@ -997,10 +997,10 @@ export default function OrganisationUsersPage() {
                           setSelectedOrgRoleIds(
                             checked
                               ? selectedOrgRoleIds.filter((id) => id !== r._id)
-                              : [...selectedOrgRoleIds, r._id],
+                              : [...selectedOrgRoleIds, r._id]
                           )
                         }
-                        className={`px-2 py-1 rounded border text-xs ${checked ? "bg-slate-900 text-white" : "bg-white"}`}
+                        className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
                       >
                         {r.name}
                       </button>

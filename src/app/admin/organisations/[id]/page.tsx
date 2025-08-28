@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 export default function AdminOrganisationOverviewPage() {
   const params = useParams();
@@ -32,10 +32,10 @@ export default function AdminOrganisationOverviewPage() {
   useEffect(() => {
     if (!isLoaded) return;
     const roles = (user?.publicMetadata?.roles as string[]) || [];
-    const singleRole = (user?.publicMetadata?.role as string) || "";
+    const singleRole = (user?.publicMetadata?.role as string) || '';
     const has = new Set([singleRole, ...roles]);
-    if (!(has.has("sysadmin") || has.has("developer"))) {
-      router.replace("/unauthorised");
+    if (!(has.has('sysadmin') || has.has('developer'))) {
+      router.replace('/unauthorised');
     }
   }, [isLoaded, user, router]);
 
@@ -53,16 +53,16 @@ export default function AdminOrganisationOverviewPage() {
   } as any);
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Admin", href: "/admin" },
-    { label: "Organisations", href: "/admin/organisations" },
-    { label: organisation?.name || "Overview" },
+    { label: 'Home', href: '/' },
+    { label: 'Admin', href: '/admin' },
+    { label: 'Organisations', href: '/admin/organisations' },
+    { label: organisation?.name || 'Overview' },
   ];
 
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
-      title={organisation?.name || "Organisation"}
+      title={organisation?.name || 'Organisation'}
       subtitle="Organisation profile overview"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -148,7 +148,7 @@ export default function AdminOrganisationOverviewPage() {
                     <TableRow key={String(m._id)}>
                       <TableCell className="font-medium">{m.code}</TableCell>
                       <TableCell>{m.name}</TableCell>
-                      <TableCell>{m.credits ?? "-"}</TableCell>
+                      <TableCell>{m.credits ?? '-'}</TableCell>
                     </TableRow>
                   ))}
                   {(modules?.length || 0) === 0 && (

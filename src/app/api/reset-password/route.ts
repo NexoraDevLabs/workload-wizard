@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { getOrganisationIdFromSession } from "@/lib/authz";
-import { createClerkClient } from "@clerk/clerk-sdk-node";
-import { z } from "zod";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { currentUser } from '@clerk/nextjs/server';
+import { getOrganisationIdFromSession } from '@/lib/authz';
+import { createClerkClient } from '@clerk/backend';
+import { z } from 'zod';
 
 const BodySchema = z.object({ userId: z.string().min(1) });
 
@@ -13,8 +14,8 @@ export async function POST(request: NextRequest) {
 
     if (!currentUserData) {
       return NextResponse.json(
-        { error: "Unauthorized: User not authenticated" },
-        { status: 401 },
+        { error: 'Unauthorized: User not authenticated' },
+        { status: 401 }
       );
     }
 
@@ -22,16 +23,16 @@ export async function POST(request: NextRequest) {
     const userRole = currentUserData.publicMetadata?.role as string;
     const userRoles = currentUserData.publicMetadata?.roles as string[];
     const isAdmin =
-      userRole === "sysadmin" ||
-      userRole === "developer" ||
+      userRole === 'sysadmin' ||
+      userRole === 'developer' ||
       (userRoles &&
-        (userRoles.includes("sysadmin") || userRoles.includes("developer")));
-    const isOrgAdmin = userRole === "orgadmin";
+        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
+    const isOrgAdmin = userRole === 'orgadmin';
 
     if (!isAdmin && !isOrgAdmin) {
       return NextResponse.json(
-        { error: "Unauthorized: Admin access required" },
-        { status: 403 },
+        { error: 'Unauthorized: Admin access required' },
+        { status: 403 }
       );
     }
 
@@ -39,15 +40,16 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === "object" && "errors" in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const errorObj = err as { errors: unknown };
         return NextResponse.json(
-          { error: "Invalid request body", details: (err as any).errors },
-          { status: 400 },
+          { error: 'Invalid request body', details: errorObj.errors },
+          { status: 400 }
         );
       }
       return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 },
+        { error: 'Invalid request body' },
+        { status: 400 }
       );
     }
 
@@ -58,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Initialize Clerk client
     const clerk = createClerkClient({
       ...(process.env.CLERK_SECRET_KEY
-        ? { secretKey: process.env.CLERK_SECRET_KEY as string }
+        ? { secretKey: process.env.CLERK_SECRET_KEY }
         : {}),
     });
 
@@ -73,9 +75,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Unauthorized: Can only reset passwords for users in your own organisation",
+              'Unauthorized: Can only reset passwords for users in your own organisation',
           },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
@@ -83,11 +85,11 @@ export async function POST(request: NextRequest) {
     // Get the user to find their email address
     const user = await clerk.users.getUser(userId);
     const primaryEmail = user.emailAddresses.find(
-      (email) => email.id === user.primaryEmailAddressId,
+      (email) => email.id === user.primaryEmailAddressId
     );
 
     if (!primaryEmail?.emailAddress) {
-      throw new Error("User email address not found");
+      throw new Error('User email address not found');
     }
 
     // Unfortunately, Clerk doesn't provide a backend API to send password reset emails
@@ -111,13 +113,13 @@ export async function POST(request: NextRequest) {
         {
           message: `Password has been disabled for ${primaryEmail.emailAddress}. User must use "Forgot Password?" on the sign-in page to set a new password.`,
           userEmail: primaryEmail.emailAddress,
-          action: "password_disabled",
+          action: 'password_disabled',
           nextSteps:
             'Inform the user to visit the sign-in page and click "Forgot Password?" to reset their password.',
         },
-        { status: 200 },
+        { status: 200 }
       );
-    } catch (error) {
+    } catch {
       // Failed to disable password
 
       // If we can't disable the password, just flag it
@@ -134,17 +136,17 @@ export async function POST(request: NextRequest) {
         {
           message: `Password reset has been flagged for ${primaryEmail.emailAddress}. Please inform them to use "Forgot Password?" on the sign-in page.`,
           userEmail: primaryEmail.emailAddress,
-          action: "password_flagged",
+          action: 'password_flagged',
         },
-        { status: 200 },
+        { status: 200 }
       );
     }
-  } catch (error) {
+  } catch {
     // Error sending password reset email
 
     return NextResponse.json(
-      { error: "Failed to send password reset email" },
-      { status: 500 },
+      { error: 'Failed to send password reset email' },
+      { status: 500 }
     );
   }
 }

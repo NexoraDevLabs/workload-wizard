@@ -1,6 +1,6 @@
-"use client";
-import Link from "next/link";
-import { useEffect } from "react";
+'use client';
+import Link from 'next/link';
+import { useEffect } from 'react';
 
 export default function GlobalError({
   error,
@@ -13,7 +13,7 @@ export default function GlobalError({
 
   return (
     <html>
-      <body style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
+      <body style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
         <h2>Something went wrong</h2>
         <p>We&apos;ve logged this error. Please try refreshing the page.</p>
         {error?.digest ? (

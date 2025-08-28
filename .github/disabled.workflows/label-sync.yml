@@ -2,11 +2,11 @@ name: Sync Labels
 
 on:
   push:
-    paths: [".github/labels.yml"]
+    paths: ['.github/labels.yml']
     branches: [main, dev]
   workflow_dispatch: {}
   schedule:
-    - cron: "19 4 * * 1" # weekly (Mon 04:19 UTC)
+    - cron: '19 4 * * 1' # weekly (Mon 04:19 UTC)
 
 permissions:
   contents: read
@@ -59,6 +59,6 @@ jobs:
       - name: Remove old artifacts (keep latest 10 and all tag builds)
         uses: c-hive/gha-remove-artifacts@v1.4.0
         with:
-          age: "14 days"
+          age: '14 days'
           skip-recent: 10
           skip-tags: true

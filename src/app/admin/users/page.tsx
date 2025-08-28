@@ -1,23 +1,23 @@
-"use client";
+'use client';
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { UsersList } from "@/components/domain/UsersList";
-import { UserSyncButton } from "@/components/domain/UserSyncButton";
-import { Button } from "@/components/ui/button";
-import { Users, Plus, Settings } from "lucide-react";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { UsersList } from '@/components/domain/UsersList';
+import { UserSyncButton } from '@/components/domain/UserSyncButton';
+import { Button } from '@/components/ui/button';
+import { Users, Plus, Settings } from 'lucide-react';
 import {
   PermissionGate,
   UsersCreateGate,
   UsersViewGate,
-} from "@/components/common/PermissionGate";
-import { usePermissions } from "@/hooks/usePermissions";
-import { handleClientPermissionError } from "@/lib/permission-errors";
+} from '@/components/common/PermissionGate';
+import { usePermissions } from '@/hooks/usePermissions';
+import { handleClientPermissionError } from '@/lib/permission-errors';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default function AdminUsersPage() {
   const { user, isLoaded } = useUser();
@@ -27,7 +27,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (isLoaded && !permissions.canViewUsers()) {
-      router.replace("/unauthorised");
+      router.replace('/unauthorised');
     }
   }, [isLoaded, permissions, router]);
 
@@ -43,22 +43,22 @@ export default function AdminUsersPage() {
         usersListRef.current.handleCreateUser();
       }
     } catch (error) {
-      handleClientPermissionError(error as Error, "create users");
+      handleClientPermissionError(error as Error, 'create users');
     }
   };
 
   const handleSettingsClick = () => {
     try {
-      router.push("/admin/settings");
+      router.push('/admin/settings');
     } catch (error) {
-      handleClientPermissionError(error as Error, "access settings");
+      handleClientPermissionError(error as Error, 'access settings');
     }
   };
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Admin", href: "/admin" },
-    { label: "Users" },
+    { label: 'Home', href: '/' },
+    { label: 'Admin', href: '/admin' },
+    { label: 'Users' },
   ];
 
   const headerActions = (

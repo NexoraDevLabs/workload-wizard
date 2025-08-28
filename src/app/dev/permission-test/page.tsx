@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { StandardizedSidebarLayout } from "@/components/layout/StandardizedSidebarLayout";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from 'react';
+import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Settings, Play } from "lucide-react";
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Settings, Play } from 'lucide-react';
 // header actions use plain buttons (no dropdown)
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PermissionTestsPage() {
   const { toast } = useToast();
@@ -23,10 +23,10 @@ export default function PermissionTestsPage() {
   const debugData = useQuery(api.permissions.debugOrganisationsAndRoles);
 
   const breadcrumbs = [
-    { label: "Home", href: "/" },
-    { label: "Admin", href: "/admin" },
-    { label: "Permissions", href: "/admin/permissions" },
-    { label: "Tests" },
+    { label: 'Home', href: '/' },
+    { label: 'Admin', href: '/admin' },
+    { label: 'Permissions', href: '/admin/permissions' },
+    { label: 'Tests' },
   ];
 
   const headerActions = (
@@ -79,7 +79,7 @@ export default function PermissionTestsPage() {
                         org: { name: string; code: string };
                         roles: { name: string; permissions: string[] }[];
                       },
-                      index: number,
+                      index: number
                     ) => (
                       <div
                         key={index}
@@ -96,19 +96,19 @@ export default function PermissionTestsPage() {
                               {orgData.roles.map(
                                 (
                                   role: { name: string; permissions: string[] },
-                                  roleIndex: number,
+                                  roleIndex: number
                                 ) => (
                                   <li key={roleIndex}>
-                                    <strong>{role.name}</strong> -{" "}
+                                    <strong>{role.name}</strong> -{' '}
                                     {role.permissions.length} permissions
                                   </li>
-                                ),
+                                )
                               )}
                             </ul>
                           )}
                         </div>
                       </div>
-                    ),
+                    )
                   )}
                 </div>
               )}

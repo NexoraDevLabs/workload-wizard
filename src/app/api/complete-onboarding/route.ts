@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
-import { clerkClient } from "@clerk/nextjs/server";
-import { ConvexHttpClient } from "convex/browser";
-import { api } from "@/convex/_generated/api";
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { currentUser } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -11,7 +12,7 @@ function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_CONVEX_URL not configured");
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     }
     convexClient = new ConvexHttpClient(url);
   }
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       // No current user found in onboarding completion
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -81,8 +82,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Error completing onboarding
     return NextResponse.json(
-      { error: "Failed to complete onboarding" },
-      { status: 500 },
+      { error: 'Failed to complete onboarding' },
+      { status: 500 }
     );
   }
 }

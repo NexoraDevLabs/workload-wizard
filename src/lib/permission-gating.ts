@@ -2,7 +2,7 @@ import {
   type PermissionId,
   PERMISSION_SCOPES,
   USER_ROLES,
-} from "./permissions";
+} from './permissions';
 
 /**
  * Centralized gating utility for org vs system roles
@@ -11,7 +11,7 @@ import {
 export class PermissionGatingUtil {
   constructor(
     private userRole: string | undefined,
-    private organisationId?: string,
+    private organisationId?: string
   ) {}
 
   /**
@@ -34,7 +34,7 @@ export class PermissionGatingUtil {
       if (this.isOrgAdmin()) return true;
 
       // Regular users have limited access
-      return this.userRole === "lecturer";
+      return this.userRole === 'lecturer';
     }
 
     return false;
@@ -49,7 +49,7 @@ export class PermissionGatingUtil {
       hideForbidden?: boolean;
       fallbackValue?: any;
       isSystemAction?: boolean;
-    } = {},
+    } = {}
   ): { visible: boolean; value: any; disabled: boolean } {
     const {
       hideForbidden = false,
@@ -73,7 +73,7 @@ export class PermissionGatingUtil {
     options: {
       isSystemAction?: boolean;
       disabledText?: string;
-    } = {},
+    } = {}
   ): { disabled: boolean; disabledText?: string } {
     const { isSystemAction = false, disabledText } = options;
     const hasAccess = this.hasPermission(permissionId, isSystemAction);
@@ -82,7 +82,7 @@ export class PermissionGatingUtil {
       disabled: !hasAccess,
       ...(hasAccess
         ? {}
-        : { disabledText: disabledText || "Insufficient permissions" }),
+        : { disabledText: disabledText || 'Insufficient permissions' }),
     } as { disabled: boolean; disabledText?: string };
   }
 
@@ -94,7 +94,7 @@ export class PermissionGatingUtil {
     options: {
       isSystemAction?: boolean;
       readonly?: boolean;
-    } = {},
+    } = {}
   ): { readonly: boolean; disabled: boolean } {
     const { isSystemAction = false, readonly = false } = options;
     const hasAccess = this.hasPermission(permissionId, isSystemAction);
@@ -148,7 +148,7 @@ export class PermissionGatingUtil {
  */
 export function createPermissionGating(
   userRole: string | undefined,
-  organisationId?: string,
+  organisationId?: string
 ): PermissionGatingUtil {
   return new PermissionGatingUtil(userRole, organisationId);
 }

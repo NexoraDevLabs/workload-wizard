@@ -1,51 +1,51 @@
-import { Star, Quote } from "lucide-react";
-import { ClientLogoCarousel } from "./client-logo-carousel";
+import { Star, Quote } from 'lucide-react';
+import { ClientLogoCarousel } from './client-logo-carousel';
 
 const Testimonials = () => {
   const testimonials = [
     {
-      name: "Dr. Sarah Mitchell",
-      role: "Dean of Faculty",
-      university: "University of Cambridge",
+      name: 'Dr. Sarah Mitchell',
+      role: 'Dean of Faculty',
+      university: 'University of Cambridge',
       content:
-        "WorkloadWizard transformed how we manage faculty allocation. What used to take weeks now takes hours, and the transparency has improved staff satisfaction dramatically.",
+        'WorkloadWizard transformed how we manage faculty allocation. What used to take weeks now takes hours, and the transparency has improved staff satisfaction dramatically.',
       rating: 5,
-      image: "/api/placeholder/64/64",
+      image: '/api/placeholder/64/64',
     },
     {
-      name: "Prof. James Chen",
-      role: "Head of Computer Science",
-      university: "Stanford University",
+      name: 'Prof. James Chen',
+      role: 'Head of Computer Science',
+      university: 'Stanford University',
       content:
-        "The AI-powered optimization is incredible. It finds allocation solutions we never would have considered manually, while ensuring complete fairness.",
+        'The AI-powered optimization is incredible. It finds allocation solutions we never would have considered manually, while ensuring complete fairness.',
       rating: 5,
-      image: "/api/placeholder/64/64",
+      image: '/api/placeholder/64/64',
     },
     {
-      name: "Dr. Emma Rodriguez",
-      role: "Academic Administrator",
-      university: "University of Toronto",
+      name: 'Dr. Emma Rodriguez',
+      role: 'Academic Administrator',
+      university: 'University of Toronto',
       content:
-        "Finally, a system that understands the complexities of academic workload. The compliance features alone have saved us countless audit headaches.",
+        'Finally, a system that understands the complexities of academic workload. The compliance features alone have saved us countless audit headaches.',
       rating: 5,
-      image: "/api/placeholder/64/64",
+      image: '/api/placeholder/64/64',
     },
     {
-      name: "Prof. Michael Thompson",
-      role: "Vice Provost",
-      university: "Harvard University",
+      name: 'Prof. Michael Thompson',
+      role: 'Vice Provost',
+      university: 'Harvard University',
       content:
-        "The real-time dashboards give us unprecedented visibility into our faculty workload. Decision-making has never been more data-driven.",
+        'The real-time dashboards give us unprecedented visibility into our faculty workload. Decision-making has never been more data-driven.',
       rating: 5,
-      image: "/api/placeholder/64/64",
+      image: '/api/placeholder/64/64',
     },
   ];
 
   const stats = [
-    { number: "98%", label: "User Satisfaction" },
-    { number: "500+", label: "Universities" },
-    { number: "50K+", label: "Faculty Members" },
-    { number: "24/7", label: "Support" },
+    { number: '98%', label: 'User Satisfaction' },
+    { number: '500+', label: 'Universities' },
+    { number: '50K+', label: 'Faculty Members' },
+    { number: '24/7', label: 'Support' },
   ];
 
   return (
@@ -103,9 +103,9 @@ const Testimonials = () => {
                   <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
                     <span className="text-white font-semibold text-sm">
                       {testimonial.name
-                        .split(" ")
+                        .split(' ')
                         .map((n) => n[0])
-                        .join("")}
+                        .join('')}
                     </span>
                   </div>
                   <div>
