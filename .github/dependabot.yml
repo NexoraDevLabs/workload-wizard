@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: { interval: "weekly", day: "monday", time: "08:00" }
+    open-pull-requests-limit: 5
+    labels: ["type/chore", "area/ci"]
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule: { interval: "weekly", day: "monday", time: "08:00" }
+    versioning-strategy: increase
+    open-pull-requests-limit: 5
+    labels: ["type/chore", "area/deps"]
+    ignore:
+      - dependency-name: "next"
+      - dependency-name: "react"

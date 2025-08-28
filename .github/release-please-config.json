@@ -1,0 +1,34 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "",
+  "last-release-sha": "",
+  "plugins": ["node-workspace"],
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "workload-wizard-app",
+      "include-component-in-tag": false,
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "draft": false,
+      "prerelease": false,
+      "pull-request-title-pattern": "release: ${component} v${version}",
+      "labels": ["release:pending"],
+      "extra-files": ["package.json", "app/package.json"],
+      "changelog-sections": [
+        { "type": "feat", "section": "🚀 Features", "hidden": false },
+        { "type": "fix", "section": "🐛 Fixes", "hidden": false },
+        { "type": "perf", "section": "⚡ Performance", "hidden": false },
+        { "type": "docs", "section": "🗂 Docs", "hidden": false },
+        { "type": "refactor", "section": "🔧 Refactors", "hidden": false },
+        { "type": "test", "section": "🧪 Tests", "hidden": false },
+        { "type": "build", "section": "🏗️ Build System", "hidden": false },
+        { "type": "ci", "section": "🧱 CI/CD", "hidden": false },
+        { "type": "chore", "section": "🧰 Maintenance", "hidden": false },
+        { "type": "revert", "section": "⏪ Reverts", "hidden": false },
+        { "type": "security", "section": "🔐 Security", "hidden": false }
+      ]
+    }
+  }
+}

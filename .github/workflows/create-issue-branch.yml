@@ -1,0 +1,51 @@
+name: Create Issue Branch
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: create-issue-branch-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  create-feat-branch:
+    if: >
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'feat'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create branch for feature
+        uses: robvanderleek/create-issue-branch@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branchName: feat/issue-${{ github.event.issue.number }}
+          defaultBranch: dev
+          openDraftPR: true
+          prTitle: "feat: ${{ github.event.issue.title }}"
+          prBody: "Auto-created from #${{ github.event.issue.number }}"
+          copyIssueLabelsToPR: true
+
+  create-fix-branch:
+    if: >
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'fix'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create branch for fix
+        uses: robvanderleek/create-issue-branch@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branchName: fix/issue-${{ github.event.issue.number }}
+          defaultBranch: dev
+          openDraftPR: true
+          prTitle: "fix: ${{ github.event.issue.title }}"
+          prBody: "Auto-created from #${{ github.event.issue.number }}"
+          copyIssueLabelsToPR: true

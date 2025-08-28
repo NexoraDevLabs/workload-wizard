@@ -1,0 +1,50 @@
+# .github/labeler.yml  (v5 schema)
+
+"app:web":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/web/**"
+          - "src/**"
+          - "pages/**"
+          - "components/**"
+
+"app:api":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "apps/api/**"
+          - "convex/**"
+
+"docs":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "**/*.mdx"
+
+"ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/*.yml"
+          - ".github/*.yaml"
+
+"pkg:config":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.json"
+          - "**/*.yaml"
+          - "**/*.yml"
+
+"style":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.css"
+          - "**/*.scss"
+          - "**/*.sass"
+
+"test":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.test.*"
+          - "**/*.spec.*"
+          - "tests/**"
+          - "__tests__/**"

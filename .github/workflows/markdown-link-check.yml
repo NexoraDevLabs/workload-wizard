@@ -1,0 +1,23 @@
+name: Markdown Link Check
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "**/*.md"
+      - "docs/**"
+  schedule:
+    - cron: "30 7 * * 1" # weekly
+
+permissions:
+  contents: read
+
+jobs:
+  mlc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-verbose-mode: "yes"
+          config-file: ".mlc.config.json"

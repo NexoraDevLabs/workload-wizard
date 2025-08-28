@@ -1,0 +1,86 @@
+# Area (where the change lives)
+- name: app:web
+  color: 0F59FF
+  description: Next.js frontend & UI
+- name: app:api
+  color: 1F6FEB
+  description: Convex/server functions & API routes
+- name: pkg:ui
+  color: 7C3AED
+  description: Shared UI components package
+- name: pkg:config
+  color: A855F7
+  description: Lint/TS configs, Husky, GitHub configs
+- name: infra
+  color: 6E56CF
+  description: Infra & deploy (Docker, Vercel, Next config)
+
+# Type (what kind of change)
+- name: ci
+  color: 2EA043
+  description: GitHub Actions/workflow changes
+- name: test
+  color: 1ABC9C
+  description: Unit/integration/e2e tests & fixtures
+- name: docs
+  color: 57606A
+  description: Documentation and content updates
+- name: style
+  color: D4A72C
+  description: CSS/SCSS/Tailwind, design tokens, icons
+- name: deps
+  color: DB6D28
+  description: Dependency updates (package.json/lockfiles)
+
+# AI review workflow
+- name: ai:review
+  color: D63384
+  description: Request standard AI review on this PR/issue
+- name: ai:review-deep
+  color: B83280
+  description: Request deeper AI pass
+- name: ai:review-ultra
+  color: 9D174D
+  description: Request fullest AI pass
+- name: ai:reviewed
+  color: 2EA043
+  description: AI review completed
+
+# Priority
+- name: priority:critical
+  color: B60205
+  description: Blocking deploy or core workflows
+- name: priority:high
+  color: D93F0B
+  description: Important to resolve soon; user-facing impact
+- name: priority:medium
+  color: FBCA04
+  description: Normal priority; schedule in sprint
+- name: priority:low
+  color: 0E8A16
+  description: Low-impact or nice-to-have
+
+# Status
+- name: status:backlog
+  color: 6A737D
+  description: Acknowledged but not scheduled
+- name: status:in-progress
+  color: 1D76DB
+  description: Actively being worked on
+- name: status:blocked
+  color: B60205
+  description: Blocked by a dependency
+- name: status:review
+  color: D4A72C
+  description: Awaiting code review or testing
+- name: status:done
+  color: 0E8A16
+  description: Completed and merged
+
+# Housekeeping
+- name: stale
+  color: 795548
+  description: Inactive; will be closed if not updated
+- name: locked
+  color: BFBFBF
+  description: Conversation locked due to inactivity/resolution

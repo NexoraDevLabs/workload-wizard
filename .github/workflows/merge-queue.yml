@@ -1,0 +1,159 @@
+name: Emulated Merge Queue
+
+on:
+  pull_request_target:
+    types: [labeled, synchronize, reopened]
+    branches: [dev, main]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to (re)queue
+        required: true
+        type: number
+
+permissions:
+  contents: write # push rebase, merge
+  pull-requests: write # comment, merge
+  checks: read
+
+concurrency:
+  group: emq-${{ github.event.pull_request.base.ref || inputs.pr }} # serialise per base branch
+  cancel-in-progress: false
+
+env:
+  # List the required checks EXACTLY as they appear in your repo (edit if needed)
+  REQUIRED_CHECKS: |
+    Quality / lint
+    Quality / typecheck
+    Quality / test
+    Quality / build
+    E2E / Playwright/Cypress
+    CodeQL / Analyze (javascript-typescript)
+    Semgrep / Semgrep
+
+jobs:
+  queue:
+    name: Queue & Merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Resolve PR context
+        id: ctx
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core');
+            const prNumber = context.payload?.pull_request?.number ?? Number(core.getInput('pr'));
+            if (!prNumber) core.setFailed('No PR number');
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo, pull_number: prNumber
+            });
+            // Only same-repo PRs (no forks) for safety on pull_request_target
+            if (pr.head.repo.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+              core.setFailed('Fork PRs are not supported by the emulated queue.');
+            }
+            // Require the 'queue' label
+            const hasQueueLabel = pr.labels.some(l => l.name.toLowerCase() === 'queue');
+            if (!hasQueueLabel) core.setFailed("Label 'queue' is required to enter the queue.");
+            core.setOutput('pr', prNumber.toString());
+            core.setOutput('headRef', pr.head.ref);
+            core.setOutput('baseRef', pr.base.ref);
+            core.setOutput('headSha', pr.head.sha);
+            core.setOutput('title', pr.title);
+
+      - name: Announce queued
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: Number("${{ steps.ctx.outputs.pr }}"),
+              body: `⏳ Queued for merge into \`${{ steps.ctx.outputs.baseRef }}\`. Will rebase, run checks, and squash-merge when green.`
+            });
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ctx.outputs.headRef }}
+          fetch-depth: 0
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin ${{ steps.ctx.outputs.baseRef }} --depth=1
+
+      - name: Rebase onto latest base
+        id: rebase
+        run: |
+          set -e
+          git rebase origin/${{ steps.ctx.outputs.baseRef }} || {
+            echo "::error::Rebase conflict. Please resolve locally."
+            exit 2
+          }
+          git push --force-with-lease
+
+      - name: Wait for required checks on HEAD
+        id: wait
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = Number("${{ steps.ctx.outputs.pr }}");
+            const baseRef = "${{ steps.ctx.outputs.baseRef }}";
+            // Refetch PR to get new head SHA after rebase
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner, repo: context.repo.repo, pull_number: prNumber
+            });
+            const sha = pr.head.sha;
+            const required = `\n${process.env.REQUIRED_CHECKS}\n`.split('\n').map(s=>s.trim()).filter(Boolean);
+            const deadline = Date.now() + 45*60*1000; // 45 min
+            async function allOk() {
+              const checks = await github.rest.checks.listForRef({
+                owner: context.repo.owner, repo: context.repo.repo, ref: sha, per_page: 100
+              });
+              const statusByName = new Map(checks.data.check_runs.map(cr => [cr.name, cr]));
+              return required.map(name => ({
+                name,
+                run: statusByName.get(name)
+              }));
+            }
+            while (Date.now() < deadline) {
+              const rows = await allOk();
+              const missing = rows.filter(r => !r.run);
+              const pending = rows.filter(r => r.run && r.run.status !== 'completed');
+              const failed = rows.filter(r => r.run && r.run.status === 'completed' && r.run.conclusion !== 'success');
+              if (!rows.length || missing.length || pending.length) {
+                await new Promise(r => setTimeout(r, 15000));
+                continue;
+              }
+              if (failed.length) {
+                core.setFailed('Some checks failed: ' + failed.map(f=>f.name).join(', '));
+              } else {
+                core.info('All required checks passed');
+              }
+              return;
+            }
+            core.setFailed('Timed out waiting for required checks.');
+
+      - name: Squash-merge
+        if: success()
+        uses: peter-evans/merge-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request: ${{ steps.ctx.outputs.pr }}
+          commit-title: ${{ steps.ctx.outputs.title }}
+          method: squash
+          merge-method: squash
+
+      - name: Comment result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = "${{ job.status }}" === "success";
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: Number("${{ steps.ctx.outputs.pr }}"),
+              body: ok ? "✅ Merged via emulated queue." : "❌ Emulated queue failed. See logs."
+            });

@@ -1,0 +1,178 @@
+name: Format
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+# Needed for auto-commit on push; PR job overrides to read-only
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: format-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  write-on-push:
+    if: github.event_name == 'push'
+    needs: gh_status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Queue (per branch)
+        uses: ahmadnassri/action-workflow-queue@v1
+        with:
+          timeout: 15m
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Paths filter
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: .github/filters.yml
+
+      - name: Skip (no format-relevant changes)
+        if: |
+          ${{ steps.changes.outputs.lint != 'true' &&
+              steps.changes.outputs.docs != 'true' &&
+              steps.changes.outputs.ci != 'true' }}
+        run: echo "Nothing to format; skipping." && exit 0
+
+      - name: Setup Node
+        id: node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-pnpm-
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prettier (write)
+        run: pnpm prettier --write .
+
+      - name: Auto-commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: format with prettier"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          branch: ${{ github.ref_name }}
+
+  check-on-pr:
+    if: github.event_name == 'pull_request'
+    needs: gh_status
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+
+    steps:
+      # Only queue when PR is from same-repo (forked PRs have restricted token)
+      - name: Queue (per branch)
+        if: github.event.pull_request.head.repo.fork == false
+        uses: ahmadnassri/action-workflow-queue@v1
+        with:
+          timeout: 15m
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Use paths-filter only on non-fork PRs; fork PRs will run a full check
+      - name: Paths filter
+        if: github.event.pull_request.head.repo.fork == false
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: .github/filters.yml
+
+      - name: Skip (no format-relevant changes)
+        if: |
+          github.event.pull_request.head.repo.fork == false &&
+          ${{ steps.changes.outputs.lint != 'true' &&
+              steps.changes.outputs.docs != 'true' &&
+              steps.changes.outputs.ci != 'true' }}
+        run: echo "Nothing to format; skipping." && exit 0
+
+      - name: Setup Node
+        id: node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ steps.node.outputs.node-version }}-pnpm-
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prettier (check)
+        run: pnpm prettier --check .
+
+  cleanup_artifacts:
+    name: Artifact janitor
+    needs: [write-on-push, check-on-pr]
+    if: |
+      always() &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Remove old artifacts (keep latest 10 and all tag builds)
+        uses: c-hive/gha-remove-artifacts@v1.4.0
+        with:
+          age: "14 days"
+          skip-recent: 10
+          skip-tags: true

@@ -1,0 +1,19 @@
+name: "🛠️ Task / Chore"
+description: Track a small task, refactor, or maintenance work
+title: "[TASK]: "
+labels: ["chore"]
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: "Task description"
+      description: "What needs to be done?"
+      placeholder: "Refactor user permissions logic..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Additional notes"
+      description: "Add any context, references, or dependencies."

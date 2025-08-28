@@ -1,0 +1,98 @@
+# Gate categories for dorny/paths-filter, used by Quality/E2E flows.
+
+app:
+  - "app/**"
+  - "src/**"
+  - "components/**"
+  - "pages/**" # kept for legacy/compat
+  - "lib/**"
+  - "hooks/**"
+  - "styles/**"
+  - "public/**"
+  - "convex/**" # Convex functions & schema
+  - "next.config.*"
+  - "middleware.*"
+  - "vercel.json"
+  - ".vercelignore"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - ".nvmrc"
+
+tests:
+  - "tests/**"
+  - "e2e/**"
+  - "playwright.config.*"
+  - "cypress/**"
+  - ".playwright/**"
+
+types:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.cts"
+  - "**/*.mts"
+  - "tsconfig*.json"
+
+lint:
+  - "**/*.{ts,tsx,js,jsx,cts,mts,cjs,mjs}"
+  - ".eslintrc*"
+  - ".prettierrc*"
+  - "**/*.md"
+  - ".markdownlint*"
+  - ".editorconfig"
+
+# Security / dependency risk touch-points (useful for security scans)
+sec:
+  - "**/*.{ts,tsx,js,jsx,cts,mts,cjs,mjs}"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - "yarn.lock"
+  - "npm-shrinkwrap.json"
+  - ".nvmrc"
+
+ci:
+  - ".github/**"
+
+docs:
+  - "README.md"
+  - "docs/**"
+  - "**/*.md"
+
+infra:
+  - "**/*.yml"
+  - "**/*.yaml"
+  - "Dockerfile"
+  - "docker-compose*.yml"
+
+deps:
+  - "**/package.json"
+  - "**/pnpm-lock.yaml"
+  - "**/package-lock.json"
+  - "**/yarn.lock"
+  - "**/npm-shrinkwrap.json"
+  - "**/pnpm-workspace.yaml"
+  - ".nvmrc"
+  - ".npmrc"
+
+build:
+  # Anything that changes the app bundle or build tooling but isn't caught above
+  - "next.config.*"
+  - "tsconfig*.json"
+  - "postcss.config.*"
+  - "tailwind.config.*"
+  - "babel.config.*"
+  - "vite.config.*"
+  - "webpack.config.*"
+  - "vercel.json"
+  - ".vercelignore"
+  - "public/**"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - ".nvmrc"
+  - "convex/**"
+  - "app/**"
+  - "src/**"
+  - "components/**"
+  - "lib/**"
+  - "hooks/**"
+  - "styles/**"
+  - "middleware.*"

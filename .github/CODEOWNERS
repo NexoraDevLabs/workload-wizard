@@ -1,0 +1,12 @@
+# ── Global fallback ─────────────────────────────
+*               @smcnab1
+
+# ── App & Source ────────────────────────────────
+convex/         @smcnab1
+public/         @smcnab1
+src/            @smcnab1
+tests/          @smcnab1
+
+# ── Tooling & Infrastructure ────────────────────
+.github/        @smcnab1
+scripts/        @smcnab1

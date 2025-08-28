@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 📖 Documentation
+    url: https://workloadwizard.featurebase.app/help
+    about: Check the project wiki before opening an issue.
+  - name: 💬 Discussions
+    url: https://workloadwizard.featurebase.app/
+    about: Use Discussions for questions, ideas, or general chat.
