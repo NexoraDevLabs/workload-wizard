@@ -1,23 +1,27 @@
-name: Feature request
-description: Propose an enhancement
-labels: ["type/feat"]
+name: '✨ Feature Request'
+description: Suggest an idea or improvement
+labels: [enhancement]
+title: '[FEATURE] '
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Problem to solve
-      description: Who benefits and why?
-    validations: { required: true }
+      label: Problem
+      description: What problem does this solve?
+      placeholder: 'As a user, I want ... so that ...'
+    validations:
+      required: true
+
   - type: textarea
     id: solution
     attributes:
-      label: Proposed solution
-      description: Brief of the UX/API and acceptance criteria
+      label: Proposed Solution
+      description: How would you like this to work?
+      placeholder: 'Add a new dashboard view with ...'
+
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
-  - type: textarea
-    id: risks
-    attributes:
-      label: Risks/unknowns
+      label: Alternatives Considered
+      description: Did you try another way?
+      placeholder: 'We could also ...'

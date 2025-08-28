@@ -1,12 +1,41 @@
+# ------------------------------------------------------------------------------
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs.
+# https://editorconfig.org
+# ------------------------------------------------------------------------------
+
 root = true
 
+# Default settings for all files
 [*]
 charset = utf-8
 end_of_line = lf
 insert_final_newline = true
+trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
-trim_trailing_whitespace = true
 
+# Markdown files — don’t strip trailing whitespace (keeps intentional spaces)
 [*.md]
 trim_trailing_whitespace = false
+max_line_length = off
+
+# JSON / YAML — enforce 2 spaces
+[*.{json,yml,yaml}]
+indent_size = 2
+
+# TypeScript / JavaScript — enforce 2 spaces
+[*.{js,jsx,ts,tsx,cjs,mjs}]
+indent_size = 2
+
+# HTML / CSS / SCSS — enforce 2 spaces
+[*.{html,css,scss}]
+indent_size = 2
+
+# Markdown tables sometimes benefit from 4 spaces (optional rule)
+[*.table.md]
+indent_size = 4
+
+# Makefiles — always use tabs
+[Makefile]
+indent_style = tab

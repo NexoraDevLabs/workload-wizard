@@ -1,0 +1,6 @@
+sequenceDiagram
+    participant User
+    participant App
+    participant IdP as Azure AD
+    User->>App: Sign in
+    App->>IdP: OIDC Authorise

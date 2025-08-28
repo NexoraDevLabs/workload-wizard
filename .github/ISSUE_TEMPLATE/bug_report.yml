@@ -1,30 +1,29 @@
-name: Bug report
-description: Report a bug
-labels: ["type/bug"]
+name: '🐛 Bug Report'
+description: Report something that isn't working as expected
+labels: [bug]
+title: '[BUG] '
 body:
   - type: textarea
     id: description
     attributes:
       label: What happened?
-      description: Clear description of the bug
-    validations: { required: true }
+      description: Describe the bug and what you expected instead.
+      placeholder: 'When I click X, Y happens instead of Z.'
+    validations:
+      required: true
+
   - type: textarea
-    id: repro
+    id: steps
     attributes:
-      label: Steps to reproduce
-      description: Minimal steps to reproduce
-      value: |
-        1.
-        2.
-        3.
-    validations: { required: true }
+      label: Steps to Reproduce
+      description: How can we reproduce the bug?
+      placeholder: "1. Go to ...\n2. Click ...\n3. Observe ..."
+    validations:
+      required: true
+
   - type: input
-    id: env
+    id: environment
     attributes:
       label: Environment
-      placeholder: "browser/os, branch, commit"
-  - type: textarea
-    id: logs
-    attributes:
-      label: Logs/errors
-      render: shell
+      description: Node/pnpm/browser/version info
+      placeholder: 'Node 20.19.4, pnpm 10.15.0, Chrome 128'

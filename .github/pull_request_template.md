@@ -1,30 +1,21 @@
-## What
+## 📋 Summary
 
-_A short summary of the change. If UI, include screenshots/gifs._
+<!-- What does this PR do? Why is it needed? -->
 
-## Why
+## 🔍 Changes
 
-_Problem / user story / acceptance criteria._
+-
 
-## How
+## ✅ Checklist
 
-_Key notes: validation (Zod), auth guards (Clerk), data (Convex), feature flags._
+- [ ] PR title follows [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.)
+- [ ] Code has been linted (`pnpm lint`)
+- [ ] Tests added or updated (`pnpm test`) if relevant
+- [ ] Documentation updated (if applicable)
+- [ ] Ready for review (remove Draft status if finished)
 
-## Test Notes
+## 🔗 Related
 
-_What did you test and how? Include steps or links to traces/reports._
+<!-- Link to related issues, discussions, or other PRs -->
 
-- [ ] Lint
-- [ ] Typecheck
-- [ ] Unit tests
-- [ ] E2E (Playwright/Cypress) — link to report/trace if applicable
-
-## Risks & Rollback
-
-_Risks, blast radius, and how to revert if something breaks._
-
-## Checklist
-
-- [ ] PR title follows Conventional Commits
-- [ ] Updates docs/README if needed
-- [ ] Screenshots (for UI changes)
+Fixes #

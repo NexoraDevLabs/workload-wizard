@@ -1,0 +1,48 @@
+name: Use Nexoroid App
+description: Authenticate as the Nexoroid GitHub App and configure git identity
+author: Nexoroid
+inputs:
+  app_id:
+    description: GitHub App ID (use secrets.NEXOROID_APP_ID)
+    required: true
+  private_key:
+    description: GitHub App private key (use secrets.NEXOROID_APP_PRIVATE_KEY)
+    required: true
+  owner:
+    description: Repository owner or org (usually ${{ github.repository_owner }})
+    required: false
+  git_user_name:
+    description: Git author name
+    default: Nexoroid
+    required: false
+  git_user_email:
+    description: Git author email
+    default: nexoroid[bot]@users.noreply.github.com
+    required: false
+
+outputs:
+  token:
+    description: Installation access token for the Nexoroid App
+    value: ${{ steps.app_token.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create installation token
+      id: app_token
+      uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+      with:
+        app-id: ${{ inputs.app_id }}
+        private-key: ${{ inputs.private_key }}
+        owner: ${{ inputs.owner }}
+
+    - name: Configure git identity
+      shell: bash
+      run: |
+        git config --global user.name  "${{ inputs.git_user_name }}"
+        git config --global user.email "${{ inputs.git_user_email }}"
+
+    - name: Expose token to env for later steps (optional)
+      shell: bash
+      run: |
+        echo "NEXOROID_TOKEN=${{ steps.app_token.outputs.token }}" >> "$GITHUB_ENV"
