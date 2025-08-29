@@ -15,13 +15,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { X, Key } from 'lucide-react';
 import { useQuery } from 'convex/react';
@@ -59,6 +52,13 @@ interface EditUserFormProps {
   onClose: () => void;
   onUserUpdated: () => void;
   isSysadmin?: boolean; // Flag to indicate if this is for sysadmin use
+}
+
+interface ApiResponse {
+  error?: string;
+  action?: string;
+  userEmail?: string;
+  message?: string;
 }
 
 export function EditUserForm({
@@ -169,7 +169,7 @@ export function EditUserForm({
       // Check if any updates failed
       for (const response of responses) {
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = await response.json() as ApiResponse;
           throw new Error(errorData.error || 'Failed to update user');
         }
       }
@@ -242,13 +242,13 @@ export function EditUserForm({
         isSysadmin,
       });
 
-      const result = await response.json();
+      const result = await response.json() as ApiResponse;
       setMessage({
         type: 'success',
         text:
           result.action === 'password_disabled'
             ? `✅ Password disabled for ${result.userEmail}. User must use "Forgot Password?" on the sign-in page to set a new password.`
-            : result.message,
+            : result.message || 'Password reset email sent successfully',
       });
     } catch (error) {
       toastError(toast, error, 'Failed to send password reset email');
