@@ -5,9 +5,6 @@ import { writeAudit } from './audit';
 import { computeHoursFromCredits, computeTotals } from './allocationsMath';
 import { requireOrgPermission } from './permissions';
 import { requirePermission } from './permissions';
-// (duplicate Id import removed)
-
-// moved to allocationsMath.ts for unit testing
 
 // Assign a lecturer to a group
 export const assignLecturer = mutation({
@@ -29,7 +26,7 @@ export const assignLecturer = mutation({
     const iteration = await ctx.db.get(group.moduleIterationId);
     if (!iteration) throw new Error('Module iteration not found');
     const moduleDoc = await ctx.db.get(iteration.moduleId);
-    const baseHours = computeHoursFromCredits((moduleDoc as any)?.credits);
+    const baseHours = computeHoursFromCredits(moduleDoc?.credits);
 
     // Validate hours override if provided
     if (typeof args.hoursOverride === 'number') {
@@ -42,33 +39,29 @@ export const assignLecturer = mutation({
     }
 
     // Derive organisationId via module
-    const derivedOrgId = (moduleDoc as any)
-      ?.organisationId as Id<'organisations'>;
+    const derivedOrgId = moduleDoc?.organisationId as Id<'organisations'>;
     // Permission: allocations.assign within module's org
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'allocations.assign',
       derivedOrgId
     );
 
     const now = Date.now();
-    const id = await ctx.db.insert(
-      'group_allocations' as any,
-      {
-        groupId: args.groupId,
-        lecturerId: args.lecturerId,
-        academicYearId: args.academicYearId,
-        organisationId: derivedOrgId,
-        type: args.type,
-        hoursComputed: baseHours,
-        ...(typeof args.hoursOverride === 'number'
-          ? { hoursOverride: args.hoursOverride }
-          : {}),
-        createdAt: now,
-        updatedAt: now,
-      } as any
-    );
+    const id = await ctx.db.insert('group_allocations', {
+      groupId: args.groupId,
+      lecturerId: args.lecturerId,
+      academicYearId: args.academicYearId,
+      organisationId: derivedOrgId,
+      type: args.type,
+      hoursComputed: baseHours,
+      ...(typeof args.hoursOverride === 'number'
+        ? { hoursOverride: args.hoursOverride }
+        : {}),
+      createdAt: now,
+      updatedAt: now,
+    });
 
     try {
       await writeAudit(ctx, {
@@ -80,9 +73,11 @@ export const assignLecturer = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
 
-    return id as Id<'group_allocations'>;
+    return id;
   },
 });
 
@@ -102,10 +97,10 @@ export const update = mutation({
 
     // Authorise within org
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'allocations.assign',
-      (existing as any).organisationId
+      existing.organisationId
     );
 
     // Validate hours if provided
@@ -116,7 +111,7 @@ export const update = mutation({
         throw new Error('Hours override cannot exceed 1000 hours');
     }
 
-    const updates: any = { updatedAt: Date.now() };
+    const updates: Partial<Doc<'group_allocations'>> = { updatedAt: Date.now() };
     if (args.type !== undefined) updates.type = args.type;
     if (args.hoursOverride === null) {
       updates.hoursOverride = undefined; // clear override
@@ -136,7 +131,9 @@ export const update = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
 
     return args.allocationId;
   },
@@ -150,12 +147,12 @@ export const listForLecturer = query({
   },
   handler: async (ctx, args) => {
     const rows = await ctx.db
-      .query('group_allocations' as any)
-      .withIndex('by_lecturer' as any, (q) =>
-        (q as any).eq('lecturerId', args.lecturerId as any)
+      .query('group_allocations')
+      .withIndex('by_lecturer', (q) =>
+        q.eq('lecturerId', args.lecturerId)
       )
       .filter((q) =>
-        (q as any).eq((q as any).field('academicYearId'), args.academicYearId)
+        q.eq(q.field('academicYearId'), args.academicYearId)
       )
       .collect();
     return rows;
@@ -174,24 +171,24 @@ export const computeLecturerTotals = query({
     const identity = await ctx.auth.getUserIdentity();
     if (lecturer && identity?.subject) {
       await requireOrgPermission(
-        ctx as any,
+        ctx,
         identity.subject,
         'allocations.view',
-        (lecturer as any).organisationId
+        lecturer.organisationId
       );
     }
 
     const allocations = await ctx.db
-      .query('group_allocations' as any)
-      .withIndex('by_lecturer' as any, (q) =>
-        (q as any).eq('lecturerId', args.lecturerId as any)
+      .query('group_allocations')
+      .withIndex('by_lecturer', (q) =>
+        q.eq('lecturerId', args.lecturerId)
       )
       .filter((q) =>
-        (q as any).eq((q as any).field('academicYearId'), args.academicYearId)
+        q.eq(q.field('academicYearId'), args.academicYearId)
       )
       .collect();
 
-    return computeTotals(allocations as any);
+    return computeTotals(allocations);
   },
 });
 
@@ -200,9 +197,9 @@ export const listForGroup = query({
   args: { groupId: v.id('module_groups') },
   handler: async (ctx, args) => {
     const rows = await ctx.db
-      .query('group_allocations' as any)
-      .withIndex('by_group' as any, (q) =>
-        (q as any).eq('groupId', args.groupId as any)
+      .query('group_allocations')
+      .withIndex('by_group', (q) =>
+        q.eq('groupId', args.groupId)
       )
       .collect();
 
@@ -221,20 +218,20 @@ export const listForLecturerDetailed = query({
   },
   handler: async (ctx, args) => {
     const rows = await ctx.db
-      .query('group_allocations' as any)
-      .withIndex('by_lecturer' as any, (q) =>
-        (q as any).eq('lecturerId', args.lecturerId as any)
+      .query('group_allocations')
+      .withIndex('by_lecturer', (q) =>
+        q.eq('lecturerId', args.lecturerId)
       )
       .filter((q) =>
-        (q as any).eq((q as any).field('academicYearId'), args.academicYearId)
+        q.eq(q.field('academicYearId'), args.academicYearId)
       )
       .collect();
     const groups = await Promise.all(rows.map((r) => ctx.db.get(r.groupId)));
     const iterations = await Promise.all(
-      groups.map((g) => (g ? ctx.db.get((g as any).moduleIterationId) : null))
+      groups.map((g) => (g ? ctx.db.get(g.moduleIterationId) : null))
     );
     const modules = await Promise.all(
-      iterations.map((it) => (it ? ctx.db.get((it as any).moduleId) : null))
+      iterations.map((it) => (it ? ctx.db.get(it.moduleId) : null))
     );
     return rows.map((allocation, i) => ({
       allocation,
@@ -255,12 +252,12 @@ export const removeAllocationsForGroups = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) throw new Error('Unauthenticated');
     // Fetch allocations matching groups (and optional lecturer)
-    const all: any[] = [];
+    const all: Doc<'group_allocations'>[] = [];
     for (const gid of args.groupIds) {
       const rows = await ctx.db
-        .query('group_allocations' as any)
-        .withIndex('by_group' as any, (q) =>
-          (q as any).eq('groupId', gid as any)
+        .query('group_allocations')
+        .withIndex('by_group', (q) =>
+          q.eq('groupId', gid)
         )
         .collect();
       all.push(...rows);
@@ -271,7 +268,7 @@ export const removeAllocationsForGroups = mutation({
     for (const a of filtered) {
       // Authorize per allocation org
       await requireOrgPermission(
-        ctx as any,
+        ctx,
         identity.subject,
         'allocations.assign',
         a.organisationId
@@ -287,7 +284,9 @@ export const removeAllocationsForGroups = mutation({
           severity: 'warning',
           type: 'org',
         });
-      } catch {}
+      } catch (error) {
+        console.error('Audit logging failed:', error);
+      }
     }
     return filtered.map((a) => a._id);
   },
@@ -298,20 +297,20 @@ export const iterationSummary = query({
   args: { moduleIterationId: v.id('module_iterations') },
   handler: async (ctx, args) => {
     const groups = await ctx.db
-      .query('module_groups' as any)
-      .withIndex('by_iteration' as any, (q) =>
-        (q as any).eq('moduleIterationId', args.moduleIterationId as any)
+      .query('module_groups')
+      .withIndex('by_iteration', (q) =>
+        q.eq('moduleIterationId', args.moduleIterationId)
       )
       .collect();
-    const allocations: any[] = [];
+    const allocations: Doc<'group_allocations'>[] = [];
     for (const g of groups) {
       const rows = await ctx.db
-        .query('group_allocations' as any)
-        .withIndex('by_group' as any, (q) => (q as any).eq('groupId', g._id))
+        .query('group_allocations')
+        .withIndex('by_group', (q) => q.eq('groupId', g._id))
         .collect();
       allocations.push(...rows);
     }
-    const totals = computeTotals(allocations as any);
+    const totals = computeTotals(allocations);
     return {
       groupCount: groups.length,
       allocationCount: allocations.length,
@@ -319,6 +318,7 @@ export const iterationSummary = query({
     };
   },
 });
+
 // Remove an allocation
 export const remove = mutation({
   args: { allocationId: v.id('group_allocations') },
@@ -334,10 +334,10 @@ export const remove = mutation({
 
     // Authorise within org
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'allocations.assign',
-      (existing as any).organisationId
+      existing.organisationId
     );
 
     await ctx.db.delete(args.allocationId);
@@ -352,7 +352,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'org',
       });
-    } catch {}
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
 
     return args.allocationId;
   },
@@ -373,23 +375,23 @@ export const getLecturerTotals = query({
     if (!lecturer) return null;
 
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'allocations.view',
-      (lecturer as any).organisationId
+      lecturer.organisationId
     );
 
     const allocations = await ctx.db
-      .query('group_allocations' as any)
-      .withIndex('by_lecturer' as any, (q) =>
-        (q as any).eq('lecturerId', args.lecturerId as any)
+      .query('group_allocations')
+      .withIndex('by_lecturer', (q) =>
+        q.eq('lecturerId', args.lecturerId)
       )
       .filter((q) =>
-        (q as any).eq((q as any).field('academicYearId'), args.academicYearId)
+        q.eq(q.field('academicYearId'), args.academicYearId)
       )
       .collect();
 
-    const totals = computeTotals(allocations as any);
+    const totals = computeTotals(allocations);
 
     return {
       lecturerId: args.lecturerId,
@@ -415,14 +417,14 @@ export const getModuleTeachingHours = query({
     const moduleDoc = await ctx.db.get(iteration.moduleId);
     if (!moduleDoc) return null;
 
-    const baseHours = computeHoursFromCredits((moduleDoc as any)?.credits);
+    const baseHours = computeHoursFromCredits(moduleDoc?.credits);
 
     return {
-      moduleName: (moduleDoc as any)?.name || 'Unknown Module',
-      moduleCode: (moduleDoc as any)?.code || 'Unknown',
-      credits: (moduleDoc as any)?.credits || 0,
+      moduleName: moduleDoc?.name || 'Unknown Module',
+      moduleCode: moduleDoc?.code || 'Unknown',
+      credits: moduleDoc?.credits || 0,
       computedHours: baseHours,
-      totalHours: (iteration as any)?.totalHours || 0,
+      totalHours: iteration?.totalHours || 0,
     };
   },
 });
@@ -439,28 +441,28 @@ export const listAdminAllocations = query({
     const lecturer = await ctx.db.get(args.lecturerId);
     if (!lecturer) return [];
     const rows = await ctx.db
-      .query('admin_allocations' as any)
-      .withIndex('by_year' as any, (q) =>
-        (q as any).eq('academicYearId', args.academicYearId as any)
+      .query('admin_allocations')
+      .withIndex('by_year', (q) =>
+        q.eq('academicYearId', args.academicYearId)
       )
       .filter((q) =>
-        (q as any).eq((q as any).field('staffId'), String(args.lecturerId))
+        q.eq(q.field('staffId'), String(args.lecturerId))
       )
       .collect();
     // join category names (skip invalid/custom ids)
     const categories = await Promise.all(
-      rows.map(async (r: any) => {
+      rows.map(async (r) => {
         try {
-          if (!r.categoryId || r.isCustom) return null as any;
+          if (!r.categoryId || r.isCustom) return null;
           if (typeof r.categoryId !== 'string' || r.categoryId.length < 16)
-            return null as any;
+            return null;
           return await ctx.db.get(r.categoryId);
         } catch {
-          return null as any;
+          return null;
         }
       })
     );
-    return rows.map((r: any, i: number) => ({
+    return rows.map((r, i) => ({
       allocation: r,
       category: categories[i],
     }));
@@ -471,7 +473,7 @@ export const listAdminCategories = query({
   args: {},
   handler: async (ctx) => {
     const cats = await ctx.db
-      .query('admin_allocation_categories' as any)
+      .query('admin_allocation_categories')
       .order('asc')
       .collect();
     return cats;
@@ -489,7 +491,7 @@ export const upsertAdminCategory = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) throw new Error('Unauthenticated');
-    await requirePermission(ctx as any, identity.subject, 'permissions.manage');
+    await requirePermission(ctx, identity.subject, 'permissions.manage');
     if (
       args.minHours !== undefined &&
       args.maxHours !== undefined &&
@@ -507,7 +509,7 @@ export const upsertAdminCategory = mutation({
         ...(args.minHours !== undefined ? { minHours: args.minHours } : {}),
         ...(args.maxHours !== undefined ? { maxHours: args.maxHours } : {}),
         updatedAt: now,
-      } as any);
+      });
       try {
         await writeAudit(ctx, {
           action: 'update',
@@ -518,21 +520,20 @@ export const upsertAdminCategory = mutation({
           severity: 'info',
           type: 'sys',
         });
-      } catch {}
+      } catch (error) {
+        console.error('Audit logging failed:', error);
+      }
       return args.id;
     }
-    const id = await ctx.db.insert(
-      'admin_allocation_categories' as any,
-      {
-        name: args.name,
-        ...(args.description ? { description: args.description } : {}),
-        isDefault: false,
-        ...(args.minHours !== undefined ? { minHours: args.minHours } : {}),
-        ...(args.maxHours !== undefined ? { maxHours: args.maxHours } : {}),
-        createdAt: now,
-        updatedAt: now,
-      } as any
-    );
+    const id = await ctx.db.insert('admin_allocation_categories', {
+      name: args.name,
+      ...(args.description ? { description: args.description } : {}),
+      isDefault: false,
+      ...(args.minHours !== undefined ? { minHours: args.minHours } : {}),
+      ...(args.maxHours !== undefined ? { maxHours: args.maxHours } : {}),
+      createdAt: now,
+      updatedAt: now,
+    });
     try {
       await writeAudit(ctx, {
         action: 'create',
@@ -543,8 +544,10 @@ export const upsertAdminCategory = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
-    return id as Id<'admin_allocation_categories'>;
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
+    return id;
   },
 });
 
@@ -553,7 +556,7 @@ export const removeAdminCategory = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) throw new Error('Unauthenticated');
-    await requirePermission(ctx as any, identity.subject, 'permissions.manage');
+    await requirePermission(ctx, identity.subject, 'permissions.manage');
     await ctx.db.delete(args.id);
     try {
       await writeAudit(ctx, {
@@ -565,7 +568,9 @@ export const removeAdminCategory = mutation({
         severity: 'warning',
         type: 'sys',
       });
-    } catch {}
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
     return args.id;
   },
 });
@@ -588,10 +593,10 @@ export const upsertAdminAllocation = mutation({
     const lecturer = await ctx.db.get(args.lecturerId);
     if (!lecturer) throw new Error('Lecturer not found');
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'allocations.assign',
-      (lecturer as any).organisationId
+      lecturer.organisationId
     );
 
     // Validate against category min/max unless custom
@@ -601,25 +606,27 @@ export const upsertAdminAllocation = mutation({
       try {
         // Try org-scoped category first
         const orgCategory = await ctx.db.get(
-          args.categoryId as unknown as Id<'organisation_admin_allocation_categories'>
+          args.categoryId as Id<'organisation_admin_allocation_categories'>
         );
         if (
           orgCategory &&
-          String((orgCategory as any).organisationId) ===
-            String((lecturer as any).organisationId)
+          String(orgCategory.organisationId) ===
+            String(lecturer.organisationId)
         ) {
-          minH = (orgCategory as any).minHours;
-          maxH = (orgCategory as any).maxHours;
+          minH = orgCategory.minHours;
+          maxH = orgCategory.maxHours;
         } else {
           const sysCategory = await ctx.db.get(
-            args.categoryId as unknown as Id<'admin_allocation_categories'>
+            args.categoryId as Id<'admin_allocation_categories'>
           );
           if (sysCategory) {
-            minH = (sysCategory as any).minHours;
-            maxH = (sysCategory as any).maxHours;
+            minH = sysCategory.minHours;
+            maxH = sysCategory.maxHours;
           }
         }
-      } catch {}
+      } catch {
+        // Category not found, continue without validation
+      }
     }
     if (minH !== undefined && args.hours < minH)
       throw new Error(`Hours must be at least ${minH}`);
@@ -630,19 +637,18 @@ export const upsertAdminAllocation = mutation({
 
     const now = Date.now();
     if (args.allocationId) {
-      const updatePayload: any = {
+      const updatePayload: Partial<Doc<'admin_allocations'>> = {
         hours: args.hours,
         updatedAt: now,
       };
       if (args.isCustom) {
         updatePayload.isCustom = true;
-        updatePayload.categoryId =
-          (args.categoryId as any) || ('custom' as any);
+        updatePayload.categoryId = args.categoryId || 'custom';
         if (args.customLabel !== undefined)
           updatePayload.customLabel = args.customLabel;
         if (args.comment !== undefined) updatePayload.comment = args.comment;
       } else {
-        if (args.categoryId) updatePayload.categoryId = args.categoryId as any;
+        if (args.categoryId) updatePayload.categoryId = args.categoryId;
         updatePayload.isCustom = false;
         updatePayload.customLabel = undefined;
         // keep comment undefined for standard
@@ -658,23 +664,22 @@ export const upsertAdminAllocation = mutation({
           severity: 'info',
           type: 'org',
         });
-      } catch {}
+      } catch (error) {
+        console.error('Audit logging failed:', error);
+      }
       return args.allocationId;
     }
-    const id = await ctx.db.insert(
-      'admin_allocations' as any,
-      {
-        staffId: String(args.lecturerId),
-        categoryId: (args.categoryId as any) || ('custom' as any),
-        hours: args.hours,
-        academicYearId: args.academicYearId,
-        isCustom: Boolean(args.isCustom),
-        ...(args.customLabel ? { customLabel: args.customLabel } : {}),
-        ...(args.comment ? { comment: args.comment } : {}),
-        createdAt: now,
-        updatedAt: now,
-      } as any
-    );
+    const id = await ctx.db.insert('admin_allocations', {
+      staffId: String(args.lecturerId),
+      categoryId: args.categoryId || 'custom',
+      hours: args.hours,
+      academicYearId: args.academicYearId,
+      isCustom: Boolean(args.isCustom),
+      ...(args.customLabel ? { customLabel: args.customLabel } : {}),
+      ...(args.comment ? { comment: args.comment } : {}),
+      createdAt: now,
+      updatedAt: now,
+    });
     try {
       await writeAudit(ctx, {
         action: 'create',
@@ -685,8 +690,10 @@ export const upsertAdminAllocation = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
-    return id as Id<'admin_allocations'>;
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
+    return id;
   },
 });
 
@@ -698,13 +705,13 @@ export const removeAdminAllocation = mutation({
     const existing = await ctx.db.get(args.allocationId);
     if (!existing) return args.allocationId;
     // Authorise via org from lecturer profile id stored as staffId (string)
-    const lecturer = await ctx.db.get(existing.staffId as any);
+    const lecturer = await ctx.db.get(existing.staffId);
     if (lecturer) {
       await requireOrgPermission(
-        ctx as any,
+        ctx,
         identity.subject,
         'allocations.assign',
-        (lecturer as any).organisationId
+        lecturer.organisationId
       );
     }
     await ctx.db.delete(args.allocationId);
@@ -716,9 +723,11 @@ export const removeAdminAllocation = mutation({
         performedBy: identity.subject,
         details: `Removed admin allocation ${String(args.allocationId)}`,
         severity: 'warning',
-        type: 'org',
+        type: 'sys',
       });
-    } catch {}
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
     return args.allocationId;
   },
 });
@@ -736,9 +745,9 @@ export const listOrganisationAdminCategories = query({
       .first();
     if (!actor) throw new Error('User not found');
     const cats = await ctx.db
-      .query('organisation_admin_allocation_categories' as any)
-      .withIndex('by_organisation' as any, (q) =>
-        (q as any).eq('organisationId', (actor as any).organisationId)
+      .query('organisation_admin_allocation_categories')
+      .withIndex('by_organisation', (q) =>
+        q.eq('organisationId', actor.organisationId)
       )
       .order('asc')
       .collect();
@@ -763,10 +772,10 @@ export const upsertOrganisationAdminCategory = mutation({
       .first();
     if (!actor) throw new Error('User not found');
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'organisations.manage',
-      (actor as any).organisationId
+      actor.organisationId
     );
     if (
       args.minHours !== undefined &&
@@ -780,8 +789,8 @@ export const upsertOrganisationAdminCategory = mutation({
       const existing = await ctx.db.get(args.id);
       if (!existing) throw new Error('Category not found');
       if (
-        String((existing as any).organisationId) !==
-        String((actor as any).organisationId)
+        String(existing.organisationId) !==
+        String(actor.organisationId)
       )
         throw new Error('Cannot modify other organisation categories');
       await ctx.db.patch(args.id, {
@@ -792,7 +801,7 @@ export const upsertOrganisationAdminCategory = mutation({
         ...(args.minHours !== undefined ? { minHours: args.minHours } : {}),
         ...(args.maxHours !== undefined ? { maxHours: args.maxHours } : {}),
         updatedAt: now,
-      } as any);
+      });
       try {
         await writeAudit(ctx, {
           action: 'update',
@@ -802,23 +811,22 @@ export const upsertOrganisationAdminCategory = mutation({
           details: `Updated org admin allocation category ${args.name}`,
           severity: 'info',
           type: 'org',
-          organisationId: (actor as any).organisationId,
-        } as any);
-      } catch {}
+          organisationId: actor.organisationId,
+        });
+      } catch (error) {
+        console.error('Audit logging failed:', error);
+      }
       return args.id;
     }
-    const id = await ctx.db.insert(
-      'organisation_admin_allocation_categories' as any,
-      {
-        organisationId: (actor as any).organisationId,
-        name: args.name,
-        ...(args.description ? { description: args.description } : {}),
-        ...(args.minHours !== undefined ? { minHours: args.minHours } : {}),
-        ...(args.maxHours !== undefined ? { maxHours: args.maxHours } : {}),
-        createdAt: now,
-        updatedAt: now,
-      } as any
-    );
+    const id = await ctx.db.insert('organisation_admin_allocation_categories', {
+      organisationId: actor.organisationId,
+      name: args.name,
+      ...(args.description ? { description: args.description } : {}),
+      ...(args.minHours !== undefined ? { minHours: args.minHours } : {}),
+      ...(args.maxHours !== undefined ? { maxHours: args.maxHours } : {}),
+      createdAt: now,
+      updatedAt: now,
+    });
     try {
       await writeAudit(ctx, {
         action: 'create',
@@ -828,10 +836,12 @@ export const upsertOrganisationAdminCategory = mutation({
         details: `Created org admin allocation category ${args.name}`,
         severity: 'info',
         type: 'org',
-        organisationId: (actor as any).organisationId,
-      } as any);
-    } catch {}
-    return id as Id<'organisation_admin_allocation_categories'>;
+        organisationId: actor.organisationId,
+      });
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
+    return id;
   },
 });
 
@@ -846,16 +856,16 @@ export const removeOrganisationAdminCategory = mutation({
       .first();
     if (!actor) throw new Error('User not found');
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'organisations.manage',
-      (actor as any).organisationId
+      actor.organisationId
     );
     const existing = await ctx.db.get(args.id);
     if (!existing) return args.id;
     if (
-      String((existing as any).organisationId) !==
-      String((actor as any).organisationId)
+      String(existing.organisationId) !==
+      String(actor.organisationId)
     )
       throw new Error('Cannot delete other organisation categories');
     await ctx.db.delete(args.id);
@@ -868,9 +878,11 @@ export const removeOrganisationAdminCategory = mutation({
         details: `Removed org admin allocation category ${String(args.id)}`,
         severity: 'warning',
         type: 'org',
-        organisationId: (actor as any).organisationId,
-      } as any);
-    } catch {}
+        organisationId: actor.organisationId,
+      });
+    } catch (error) {
+      console.error('Audit logging failed:', error);
+    }
     return args.id;
   },
 });
@@ -881,10 +893,10 @@ export const seedOrgAdminCategories = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     const defaults = await ctx.db
-      .query('admin_allocation_categories' as any)
+      .query('admin_allocation_categories')
       .collect();
     for (const d of defaults) {
-      await ctx.db.insert('organisation_admin_allocation_categories' as any, {
+      await ctx.db.insert('organisation_admin_allocation_categories', {
         organisationId: args.organisationId,
         name: d.name,
         description: d.description,
@@ -904,11 +916,11 @@ export const pushAdminCategoriesToOrganisations = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) throw new Error('Unauthenticated');
-    await requirePermission(ctx as any, identity.subject, 'permissions.manage');
+    await requirePermission(ctx, identity.subject, 'permissions.manage');
 
     const now = Date.now();
     const sysCats = await ctx.db
-      .query('admin_allocation_categories' as any)
+      .query('admin_allocation_categories')
       .collect();
     const orgs = await ctx.db
       .query('organisations')
@@ -920,28 +932,25 @@ export const pushAdminCategoriesToOrganisations = mutation({
 
     for (const org of orgs) {
       const orgCats = await ctx.db
-        .query('organisation_admin_allocation_categories' as any)
-        .withIndex('by_organisation' as any, (q) =>
-          (q as any).eq('organisationId', (org as any)._id)
+        .query('organisation_admin_allocation_categories')
+        .withIndex('by_organisation', (q) =>
+          q.eq('organisationId', org._id)
         )
         .collect();
       for (const sc of sysCats) {
         const existing = orgCats.find(
-          (oc: any) => String(oc.name).trim() === String(sc.name).trim()
+          (oc) => String(oc.name).trim() === String(sc.name).trim()
         );
         if (!existing) {
-          await ctx.db.insert(
-            'organisation_admin_allocation_categories' as any,
-            {
-              organisationId: (org as any)._id,
-              name: sc.name,
-              description: sc.description,
-              minHours: sc.minHours,
-              maxHours: sc.maxHours,
-              createdAt: now,
-              updatedAt: now,
-            } as any
-          );
+          await ctx.db.insert('organisation_admin_allocation_categories', {
+            organisationId: org._id,
+            name: sc.name,
+            description: sc.description,
+            minHours: sc.minHours,
+            maxHours: sc.maxHours,
+            createdAt: now,
+            updatedAt: now,
+          });
           created++;
         } else if (args.forceApply) {
           await ctx.db.patch(existing._id, {
@@ -949,7 +958,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
             minHours: sc.minHours,
             maxHours: sc.maxHours,
             updatedAt: now,
-          } as any);
+          });
           updated++;
         }
       }
@@ -959,14 +968,16 @@ export const pushAdminCategoriesToOrganisations = mutation({
             ? 'admin_categories.synced'
             : 'admin_categories.pushed',
           entityType: 'organisation',
-          entityId: String((org as any)._id),
+          entityId: String(org._id),
           performedBy: identity.subject,
-          details: `${args.forceApply ? 'Synced' : 'Pushed'} admin categories to org ${String((org as any).name)}`,
+          details: `${args.forceApply ? 'Synced' : 'Pushed'} admin categories to org ${String(org.name)}`,
           severity: args.forceApply ? 'warning' : 'info',
           type: 'org',
-          organisationId: (org as any)._id,
-        } as any);
-      } catch {}
+          organisationId: org._id,
+        });
+      } catch (error) {
+        console.error('Audit logging failed:', error);
+      }
     }
 
     return { organisationsProcessed: orgs.length, created, updated };
