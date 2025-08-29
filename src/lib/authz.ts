@@ -8,6 +8,11 @@ export type SessionUser = {
   role: string;
 };
 
+// Define proper error type with status code
+export interface AuthError extends Error {
+  statusCode: number;
+}
+
 function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
   if (
     value &&
@@ -50,8 +55,8 @@ export async function getOrganisationIdFromSession(): Promise<string> {
 export async function requireSystemPermission(permissionId: PermissionId) {
   const { role } = await getSessionUser();
   if (!hasPermission(role, permissionId, undefined, true)) {
-    const error = new Error('Forbidden');
-    (error as any).statusCode = 403;
+    const error = new Error('Forbidden') as AuthError;
+    error.statusCode = 403;
     throw error;
   }
   return true as const;
@@ -65,8 +70,8 @@ export async function requireOrgPermission(
   const targetOrgId = organisationId || userOrgId;
 
   if (!hasPermission(role, permissionId, targetOrgId, false)) {
-    const error = new Error('Forbidden');
-    (error as any).statusCode = 403;
+    const error = new Error('Forbidden') as AuthError;
+    error.statusCode = 403;
     throw error;
   }
   return true as const;
@@ -110,7 +115,7 @@ export async function requirePermissionWithRedirect(
     }
   } catch (error) {
     // If it's a 403 error, redirect to unauthorized page
-    if ((error as any).statusCode === 403) {
+    if ((error as AuthError).statusCode === 403) {
       redirect(redirectTo);
     }
     // Re-throw other errors

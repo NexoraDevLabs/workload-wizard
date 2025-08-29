@@ -2,6 +2,11 @@ import { createClient } from 'next-sanity';
 
 import { apiVersion, dataset, projectId, sanityEnabled } from '../env';
 
+// Define proper types for the mock client
+interface MockSanityClient {
+  fetch: () => Promise<never[]>;
+}
+
 export const client = sanityEnabled
   ? createClient({
       projectId,
@@ -10,7 +15,7 @@ export const client = sanityEnabled
       useCdn: true,
     })
   : ({
-      fetch: async () => {
-        return [] as any;
+      fetch: async (): Promise<never[]> => {
+        return [];
       },
-    } as unknown as ReturnType<typeof createClient>);
+    } as MockSanityClient);

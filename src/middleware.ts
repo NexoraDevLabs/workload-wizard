@@ -140,7 +140,7 @@ export default clerkMiddleware(async (auth, req) => {
             subject: userId,
           });
           hasCompletedOnboarding = Boolean(user?.onboardingCompleted);
-        } catch (convexErr) {
+        } catch {
           // Non-fatal; proceed with claims-only decision
         }
       }
@@ -157,7 +157,7 @@ export default clerkMiddleware(async (auth, req) => {
               }
             )?.publicMetadata?.onboardingCompleted
           );
-        } catch (clerkErr) {
+        } catch {
           // Clerk live metadata check failed
         }
       }
@@ -172,7 +172,7 @@ export default clerkMiddleware(async (auth, req) => {
         const dashboardUrl = new URL('/dashboard', req.url);
         return NextResponse.redirect(dashboardUrl);
       }
-    } catch (error) {
+    } catch {
       // Allow access if check fails unexpectedly
     }
   }
