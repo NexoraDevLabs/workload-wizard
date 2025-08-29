@@ -64,13 +64,13 @@ export default function SupportPage() {
           // Try API methods first
           try {
             fb('open');
-          } catch (error) {
+          } catch (_error) {
             // Silent fallback
           }
 
           try {
             fb('openFeedbackWidget');
-          } catch (error) {
+          } catch (_error) {
             // Silent fallback
           }
 
@@ -115,7 +115,7 @@ export default function SupportPage() {
                 });
 
                 // Force a repaint to ensure CSS changes take effect
-                wrapper.offsetHeight;
+                void wrapper.offsetHeight;
 
                 wrapper.className = wrapper.className.replace(
                   'featurebase-messenger-frame-wrapper-closed',
@@ -167,18 +167,18 @@ export default function SupportPage() {
                           htmlEl.style.transform = 'none';
                       });
                     }
-                  } catch (error) {
+                  } catch (_error) {
                     // Silent fallback
                   }
                 }, 2000); // Clean up after 2 seconds
               }
-            } catch (error) {
+            } catch (_error) {
               // Silent fallback - open in new tab
               window.open('https://workloadwizard.featurebase.app/', '_blank');
             }
           }, 1000); // Wait 1 second for CSS effects to clear
         }, 500); // Initial delay for initialization
-      } catch (error) {
+      } catch (_error) {
         // If all else fails, open in new tab
         window.open('https://workloadwizard.featurebase.app/', '_blank');
       }
@@ -215,10 +215,10 @@ export default function SupportPage() {
 
         // Force iframe content to repaint
         iframe.contentDocument.body.style.display = 'none';
-        iframe.contentDocument.body.offsetHeight;
+        void iframe.contentDocument.body.offsetHeight;
         iframe.contentDocument.body.style.display = '';
       }
-    } catch (error) {
+    } catch (_error) {
       // Silent fallback - iframe might be cross-origin
     }
   };
@@ -260,7 +260,7 @@ export default function SupportPage() {
                   if (sendMessageButton) {
                     break;
                   }
-                } catch (e) {
+                } catch (_e) {
                   // Skip invalid selectors
                 }
               }
@@ -310,7 +310,7 @@ export default function SupportPage() {
                   if (messagesTab) {
                     break;
                   }
-                } catch (e) {
+                } catch (_e) {
                   // Skip invalid selectors
                 }
               }
@@ -344,7 +344,7 @@ export default function SupportPage() {
                           if (newChatButton) {
                             break;
                           }
-                        } catch (e) {
+                        } catch (_e) {
                           // Skip invalid selectors
                         }
                       }
@@ -353,23 +353,23 @@ export default function SupportPage() {
                         (newChatButton as HTMLElement).click();
                       }
                     }
-                  } catch (error) {
+                  } catch (_error) {
                     // Error finding new chat button
                   }
                 }, 1000); // Wait 1 second for Messages tab to fully load
               } else {
                 // Try to find any clickable elements that might be the Messages tab
-                const allButtons = doc.querySelectorAll(
+                const _allButtons = doc.querySelectorAll(
                   'button, a, [role="button"]'
                 );
               }
             }
-          } catch (error) {
+          } catch (_error) {
             // Error navigating to Messages tab
           }
         }, 1000);
       }
-    } catch (error) {
+    } catch (_error) {
       // Error in navigateToMessagesTab
     }
   };

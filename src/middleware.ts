@@ -120,7 +120,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (userId) {
     try {
       // Prefer Clerk session claims (publicMetadata) for the flag
-      const claimsAny = sessionClaims as unknown as {
+      const claimsAny = sessionClaims as {
         publicMetadata?: Record<string, unknown>;
         metadata?: { publicMetadata?: Record<string, unknown> };
       };

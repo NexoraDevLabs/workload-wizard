@@ -29,7 +29,7 @@ export function useAuditLog(options: UseAuditLogOptions) {
           ...(metadata ? { metadata } : {}),
           ...(severity ? { severity } : {}),
         });
-      } catch (error) {
+      } catch (_error) {
         // Failed to log audit event
       }
     },

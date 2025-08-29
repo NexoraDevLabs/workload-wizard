@@ -9,9 +9,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  PermissionGate,
-  PermissionButton,
-  PermissionPageWrapper,
   UsersViewGate,
   UsersCreateGate,
   UsersEditGate,
@@ -30,7 +27,7 @@ export function PermissionExamples() {
   const permissions = usePermissions();
   const userActions = useUserActions();
   const adminActions = useAdminActions();
-  const permissionActions = usePermissionActions();
+  const _permissionActions = usePermissionActions();
 
   const handleAction = async (
     actionName: string,

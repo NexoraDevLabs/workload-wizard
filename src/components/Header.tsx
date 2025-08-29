@@ -12,8 +12,8 @@ const Header = () => {
   const { isSignedIn, isLoaded } = useUser();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
-  const isBlogPage = pathname === '/blog';
-  const isSupportPage = pathname === '/support';
+  const _isBlogPage = pathname === '/blog';
+  const _isSupportPage = pathname === '/support';
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {

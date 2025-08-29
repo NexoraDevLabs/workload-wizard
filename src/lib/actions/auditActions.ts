@@ -5,7 +5,6 @@ import { headers } from 'next/headers';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
-import { hasAdminAccess } from '@/lib/auth/permissions';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -144,7 +143,7 @@ export async function logAuditEvent(data: AuditLogData) {
       ...base,
       ...optional,
     });
-  } catch (error) {
+  } catch (_error) {
     // Don't throw error to avoid breaking the main operation
   }
 }

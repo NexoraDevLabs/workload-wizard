@@ -18,8 +18,8 @@ const logos = [
 
 export function ClientLogoCarousel() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+  const [_currentIndex, _setCurrentIndex] = useState(0);
+  const [_isHovered, _setIsHovered] = useState(false);
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;

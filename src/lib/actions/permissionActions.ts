@@ -1,4 +1,3 @@
-import { handlePermissionError } from '@/lib/permission-errors';
 import { type PermissionId } from '@/lib/permissions';
 import { requireOrgPermission, requireSystemPermission } from '@/lib/authz';
 

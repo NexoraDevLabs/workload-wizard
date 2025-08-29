@@ -226,7 +226,9 @@ export const create = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Audit logging failed, but don't fail the operation
+    }
     return id;
   },
 });
@@ -299,7 +301,9 @@ export const update = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Audit logging failed, but don't fail the operation
+    }
     return args.id;
   },
 });
@@ -346,7 +350,9 @@ export const setStatus = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Audit logging failed, but don't fail the operation
+    }
     return args.id;
   },
 });
@@ -413,7 +419,9 @@ export const clone = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Audit logging failed, but don't fail the operation
+    }
 
     return newYearId;
   },
@@ -470,7 +478,9 @@ export const bulkSetStatus = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Audit logging failed, but don't fail the operation
+    }
     return args.ids.length;
   },
 });
