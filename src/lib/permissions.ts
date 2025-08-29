@@ -227,7 +227,7 @@ export function hasPermission(
 export interface UIGateOptions {
   organisationId?: string | undefined;
   isSystemAction?: boolean | undefined;
-  fallbackValue?: any | undefined;
+  fallbackValue?: unknown | undefined;
   hideForbidden?: boolean | undefined;
   disabledText?: string | undefined;
   actionName?: string | undefined;
@@ -238,7 +238,7 @@ export interface UIGateOptions {
 export interface UIGateResult {
   hasAccess: boolean;
   shouldHide: boolean;
-  fallbackValue: any;
+  fallbackValue: unknown;
   disabled: boolean;
   disabledText?: string;
   errorMessage?: string;
@@ -523,7 +523,7 @@ export async function seedDefaultOrgRoles(organisationId: string) {
   const res = await client.mutation(
     api.permissions.ensureDefaultRolesForOrganisation,
     {
-      organisationId: organisationId as unknown as any,
+      organisationId: organisationId as unknown as Id<'organisations'>,
     }
   );
   return { organisationId, created: res.created };

@@ -5,9 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -30,21 +27,18 @@ import {
   Edit,
   Filter,
   Building2,
-  Plus,
   GitCompareArrows,
   Eye,
   ChevronUp,
   ChevronDown,
   Search,
   MoreHorizontal,
-  LogIn,
   UserCog,
 } from 'lucide-react';
 import { EditUserForm } from './EditUserForm';
 import { CreateUserForm } from './CreateUserForm';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { UserSyncButton } from './UserSyncButton';
-// DevLoginButton removed (no longer used)
 import {
   Select,
   SelectContent,
@@ -67,7 +61,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-// import { useAuth } from '@clerk/nextjs';
 import {
   Dialog,
   DialogContent,
@@ -80,7 +73,6 @@ import {
   UsersDeleteGate,
   PermissionsManageGate,
 } from '@/components/common/PermissionGate';
-import { handleClientPermissionError } from '@/lib/permission-errors';
 
 interface User {
   id: string;
@@ -99,6 +91,17 @@ interface User {
   createdAt: number;
   lastSignInAt: number | null;
   isActive: boolean;
+}
+
+interface ApiResponse {
+  success?: boolean;
+  error?: string;
+  sessionToken?: string;
+  targetUser?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 type SortField =
@@ -142,7 +145,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-  const updateLastSignIn = useMutation(api.users.updateLastSignIn);
   const organisations = useQuery(api.organisations.list);
   const orgRolesForAssign = useQuery(
     api.organisationalRoles.listByOrganisation,
@@ -240,7 +242,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
             }),
           }).then(async (r) => {
             if (!r.ok) {
-              const d = await r.json();
+              const d = await r.json() as ApiResponse;
               throw new Error(d.error || 'Failed to assign roles');
             }
           });
@@ -267,7 +269,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
           }),
         });
         if (!res.ok) {
-          const data = await res.json();
+          const data = await res.json() as ApiResponse;
           throw new Error(data.error || 'Failed to assign roles');
         }
         toast({ title: 'Success', description: 'Roles updated' });
@@ -320,63 +322,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     fetchUsers(); // Refresh the user list
   };
 
-  const handleDevLogin = async (user: User) => {
-    try {
-      const response = await fetch('/api/dev-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ targetUserId: user.subject || user.id }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Store the session token and user info
-        localStorage.setItem('dev_login_session_token', data.sessionToken);
-        // Store the current user's Clerk ID (subject) as the original admin
-        localStorage.setItem(
-          'dev_login_original_admin_id',
-          user.subject || user.id
-        );
-        // Store the target user's ID for cleanup
-        localStorage.setItem('dev_login_current_user_id', data.targetUser.id);
-        localStorage.setItem(
-          'dev_login_target_user',
-          JSON.stringify({
-            firstName: data.targetUser.firstName,
-            lastName: data.targetUser.lastName,
-            email: data.targetUser.email,
-          })
-        );
-
-        toast({
-          title: 'Success',
-          description: `Logged in as ${data.targetUser.firstName} ${data.targetUser.lastName}`,
-        });
-
-        // For now, just show success and stay on the same page
-        toast({
-          title: 'Dev Login Success',
-          description: `Logged in as ${data.targetUser.firstName} ${data.targetUser.lastName}. You can now access admin pages as this user.`,
-        });
-
-        // Refresh the page to update the UI
-        window.location.reload();
-      } else {
-        throw new Error(data.error || 'Failed to login as user');
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error ? error.message : 'Failed to login as user',
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleToggleUserStatus = async (user: User) => {
     if (!user.subject) {
       return;
@@ -397,7 +342,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as ApiResponse;
         throw new Error(errorData.error || 'Failed to update user status');
       }
 
@@ -423,7 +368,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     const orgs = users
       .map((user) => user.organisation)
       .filter((org) => org !== null && org !== undefined)
-      .map((org) => ({ id: org.id, name: org.name, code: org.code }));
+      .map((org) => ({ id: org!.id, name: org!.name, code: org!.code }));
 
     // Remove duplicates based on id
     return Array.from(new Map(orgs.map((org) => [org.id, org])).values());
@@ -580,7 +525,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
 
   // Initial load and fetch users
   useEffect(() => {
-    fetchUsers();
+    void fetchUsers();
   }, []);
 
   // Ensure initial sort is applied when users are first loaded
@@ -662,26 +607,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     });
 
     return sortedRoles.map((role) => getRoleLabel(role)).join(', ');
-  };
-
-  const getPrimaryRoleBadgeClass = (roles: string[]) => {
-    if (!roles || roles.length === 0) return 'bg-gray-100 text-gray-800';
-
-    // Get the highest priority role for badge styling
-    const priorityOrder = [
-      'sysadmin',
-      'developer',
-      'orgadmin',
-      'user',
-      'trial',
-    ];
-    const sortedRoles = [...roles].sort((a, b) => {
-      const aIndex = priorityOrder.indexOf(a);
-      const bIndex = priorityOrder.indexOf(b);
-      return aIndex - bIndex;
-    });
-
-    return getRoleBadgeClass(sortedRoles[0] || 'user');
   };
 
   if (isLoading) {
@@ -1184,14 +1109,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                             <span>View Details</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {/* Dev login disabled for now */}
-                          {/* <DropdownMenuItem 
-                                onClick={() => handleDevLogin(user)}
-                                className="text-blue-600 focus:text-blue-600"
-                              >
-                                <LogIn className="mr-2 h-4 w-4" />
-                                <span>Login As</span>
-                          </DropdownMenuItem> */}
                           <DropdownMenuSeparator />
                           <PermissionGate permission="users.edit">
                             <DropdownMenuItem

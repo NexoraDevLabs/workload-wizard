@@ -8,7 +8,7 @@ import { getEnv } from '@/lib/env';
 
 declare global {
   interface Window {
-    Featurebase?: ((...args: any[]) => void) & { q?: any[] };
+    Featurebase?: ((...args: unknown[]) => void) & { q?: unknown[] };
   }
 }
 
@@ -29,22 +29,37 @@ type BootPayload = {
   orgRoles?: string | undefined; // CSV
 };
 
+interface ConvexUser {
+  systemRoles?: string[];
+  organisationId?: string;
+}
+
+interface OrganisationDoc {
+  name?: string;
+}
+
+interface RoleAssignment {
+  role?: {
+    name?: string;
+  };
+}
+
 function FeaturebaseMessengerInternal() {
   const { user, isLoaded } = useUser();
   const convexUser = useQuery(
-    (api as any).users.getBySubject,
-    user?.id ? ({ subject: user.id } as any) : ('skip' as any)
-  ) as { systemRoles?: string[]; organisationId?: string } | undefined;
+    api.users.getBySubject,
+    user?.id ? { subject: user.id } : 'skip'
+  ) as ConvexUser | undefined;
   const orgDoc = useQuery(
-    (api as any).organisations.get,
+    api.organisations.get,
     convexUser?.organisationId
-      ? ({ organisationId: convexUser.organisationId } as any)
-      : ('skip' as any)
-  ) as { name?: string } | undefined;
+      ? { organisationId: convexUser.organisationId }
+      : 'skip'
+  ) as OrganisationDoc | undefined;
   const roleAssignments = useQuery(
-    (api as any).organisationalRoles.getUserRoles,
-    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
-  ) as Array<{ role?: { name?: string } }> | undefined;
+    api.organisationalRoles.getUserRoles,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as RoleAssignment[] | undefined;
 
   const context = useMemo(() => {
     const email = user?.primaryEmailAddress?.emailAddress || undefined;
@@ -98,7 +113,9 @@ function FeaturebaseMessengerInternal() {
           const data = (await res.json()) as { userHash?: string };
           if (!cancelled) setUserHash(data.userHash);
         }
-      } catch {}
+      } catch {
+        // Handle fetch error silently
+      }
     })();
     return () => {
       cancelled = true;
@@ -108,7 +125,7 @@ function FeaturebaseMessengerInternal() {
   useEffect(() => {
     const win = window;
     if (typeof win.Featurebase !== 'function') {
-      const fb: any = function (...args: any[]) {
+      const fb: Window['Featurebase'] = function (...args: unknown[]) {
         (fb.q = fb.q || []).push(args);
       };
       win.Featurebase = fb;
@@ -136,11 +153,13 @@ function FeaturebaseMessengerInternal() {
             const data = (await res.json()) as { userHash?: string };
             latestHash = data.userHash;
           }
-        } catch {}
+        } catch {
+          // Handle fetch error silently
+        }
       }
 
       const createdAtIso = user?.createdAt
-        ? new Date(user.createdAt as any).toISOString()
+        ? new Date(user.createdAt as string).toISOString()
         : undefined;
       const payload: BootPayload = {
         appId,
@@ -159,24 +178,24 @@ function FeaturebaseMessengerInternal() {
         role: context.role,
         name: context.fullName, // Pass display name explicitly for Featurebase UI
         fullName: context.fullName,
-        systemRoles: (context as any).systemRoles,
-        orgRoles: (context as any).orgRoles,
+        systemRoles: context.systemRoles,
+        orgRoles: context.orgRoles,
       };
 
       // Remove undefined keys to avoid sending junk
       Object.keys(payload).forEach((k) => {
-        const v = (payload as any)[k];
-        if (v === undefined) delete (payload as any)[k];
+        const v = payload[k as keyof BootPayload];
+        if (v === undefined) delete payload[k as keyof BootPayload];
       });
       const bootKey = `${identifier || 'anon'}:${latestHash || 'nohash'}:${
         context.organisationName || 'noname'
-      }:${(context as any).systemRoles || ''}:${(context as any).orgRoles || ''}`;
+      }:${context.systemRoles || ''}:${context.orgRoles || ''}`;
       if (hasBootedRef.current === bootKey) return;
       hasBootedRef.current = bootKey;
       win.Featurebase!('boot', payload);
     }
 
-    boot();
+    void boot();
   }, [isLoaded, user, context, userHash, identityField]);
 
   const enableInDev = process.env.NEXT_PUBLIC_FEATUREBASE_ENABLE_DEV === 'true';
