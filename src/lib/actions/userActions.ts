@@ -773,7 +773,7 @@ export async function deactivateUser(userId: string) {
     await logUserDeactivated(
       userId,
       userEmail,
-      `User deactivated by ${currentUserData.publicMetadata?.role}: ${currentUserData.emailAddresses[0]?.emailAddress}`
+      `User deactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
     );
 
     revalidatePath('/organisation/users');
@@ -851,7 +851,7 @@ export async function reactivateUser(userId: string) {
     await logUserReactivated(
       userId,
       userEmail,
-      `User reactivated by ${currentUserData.publicMetadata?.role}: ${currentUserData.emailAddresses[0]?.emailAddress}`
+      `User reactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
     );
 
     revalidatePath('/organisation/users');

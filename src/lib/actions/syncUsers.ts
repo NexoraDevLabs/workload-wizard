@@ -4,7 +4,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import { hasAdminAccess } from '@/lib/auth/permissions';
+import type { hasAdminAccess } from '@/lib/auth/permissions';
 
 // Define proper types for Statsig adapter
 interface StatsigAdapter {
