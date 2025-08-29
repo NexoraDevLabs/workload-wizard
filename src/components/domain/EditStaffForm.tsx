@@ -38,11 +38,41 @@ interface LecturerProfile {
   prefSpecialism?: string;
   prefNotes?: string;
   isActive: boolean;
+  contractFamily?: string;
+  prefWorkingTime?: string;
+}
+
+interface OrganisationSettings {
+  organisationId: string;
+  staffRoleOptions: string[];
+  teamOptions: string[];
+  campusOptions?: string[];
+  contractFamilyOptions?: string[];
+  maxClassSizePerGroup?: number;
+  baseMaxTeachingAtFTE1: number;
+  baseTotalContractAtFTE1: number;
+  moduleHoursByCredits?: Array<{
+    credits: number;
+    teaching: number;
+    marking: number;
+  }>;
+  roleMaxTeachingRules?: Array<{
+    role: string;
+    mode: 'percent' | 'fixed';
+    value: number;
+  }>;
+  familyMaxTeachingRules?: Array<{
+    family: string;
+    mode: 'percent' | 'fixed';
+    value: number;
+  }>;
+  createdAt: number;
+  updatedAt: number;
 }
 
 interface EditStaffFormProps {
   profile: LecturerProfile;
-  onSave: (formData: Partial<LecturerProfile>) => void;
+  onSave: (formData: Partial<LecturerProfile>) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -53,25 +83,31 @@ export function EditStaffForm({
 }: EditStaffFormProps) {
   const { user } = useUser();
   const orgSettings = useQuery(
-    (api as any).organisationSettings.getOrganisationSettings,
-    user?.id ? { userId: user.id } : ('skip' as any)
-  );
-  const ROLE_OPTIONS = orgSettings?.staffRoleOptions ?? [
-    'Lecturer',
-    'Senior Lecturer',
-    'Teaching Fellow',
-    'Associate Lecturer',
-    'Professor',
-  ];
-  const TEAM_OPTIONS = orgSettings?.teamOptions ?? [
-    'Computing',
-    'Engineering',
-    'Business',
-    'Design',
-  ];
-  const FAMILY_OPTIONS = orgSettings?.contractFamilyOptions ?? [
-    'Academic Practitioner',
-  ];
+    api.organisationSettings.getOrganisationSettings,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as OrganisationSettings | undefined;
+  
+  const ROLE_OPTIONS = useMemo(() => 
+    orgSettings?.staffRoleOptions ?? [
+      'Lecturer',
+      'Senior Lecturer',
+      'Teaching Fellow',
+      'Associate Lecturer',
+      'Professor',
+    ], [orgSettings?.staffRoleOptions]);
+    
+  const TEAM_OPTIONS = useMemo(() => 
+    orgSettings?.teamOptions ?? [
+      'Computing',
+      'Engineering',
+      'Business',
+      'Design',
+    ], [orgSettings?.teamOptions]);
+    
+  const FAMILY_OPTIONS = useMemo(() => 
+    orgSettings?.contractFamilyOptions ?? [
+      'Academic Practitioner',
+    ], [orgSettings?.contractFamilyOptions]);
   const roleItems = useMemo(() => {
     const r = (profile.role || '').trim();
     if (r && !ROLE_OPTIONS.includes(r)) return [r, ...ROLE_OPTIONS];
@@ -83,11 +119,13 @@ export function EditStaffForm({
     return TEAM_OPTIONS;
   }, [TEAM_OPTIONS, profile.teamName]);
   const familyItems = useMemo(() => {
-    const cf = (profile as any).contractFamily || '';
+    const cf = profile.contractFamily || '';
     if (cf && !FAMILY_OPTIONS.includes(cf)) return [cf, ...FAMILY_OPTIONS];
     return FAMILY_OPTIONS;
-  }, [FAMILY_OPTIONS, profile]);
-  const CAMPUS_OPTIONS = orgSettings?.campusOptions ?? [];
+  }, [FAMILY_OPTIONS, profile.contractFamily]);
+  
+  const CAMPUS_OPTIONS = useMemo(() => 
+    orgSettings?.campusOptions ?? [], [orgSettings?.campusOptions]);
   const campusItems = useMemo(() => {
     const c = (profile.prefWorkingLocation || '').trim();
     if (c && !CAMPUS_OPTIONS.includes(c)) return [c, ...CAMPUS_OPTIONS];
@@ -98,13 +136,13 @@ export function EditStaffForm({
     email: profile.email,
     role: profile.role || '',
     teamName: profile.teamName || '',
-    contractFamily: (profile as any).contractFamily || '',
+    contractFamily: profile.contractFamily || '',
     contract: profile.contract,
     fte: profile.fte.toString(),
     maxTeachingHours: profile.maxTeachingHours.toString(),
     totalContract: profile.totalContract.toString(),
     prefWorkingLocation: profile.prefWorkingLocation || '',
-    prefWorkingTime: (profile as any).prefWorkingTime || '',
+    prefWorkingTime: profile.prefWorkingTime || '',
     prefSpecialism: profile.prefSpecialism || '',
     prefNotes: profile.prefNotes || '',
   });
@@ -117,13 +155,13 @@ export function EditStaffForm({
       email: profile.email,
       role: profile.role || '',
       teamName: profile.teamName || '',
-      contractFamily: (profile as any).contractFamily || '',
+      contractFamily: profile.contractFamily || '',
       contract: profile.contract,
       fte: profile.fte.toString(),
       maxTeachingHours: profile.maxTeachingHours.toString(),
       totalContract: profile.totalContract.toString(),
       prefWorkingLocation: profile.prefWorkingLocation || '',
-      prefWorkingTime: (profile as any).prefWorkingTime || '',
+      prefWorkingTime: profile.prefWorkingTime || '',
       prefSpecialism: profile.prefSpecialism || '',
       prefNotes: profile.prefNotes || '',
     });
@@ -134,13 +172,13 @@ export function EditStaffForm({
     setIsSubmitting(true);
 
     try {
-      const formData: Partial<LecturerProfile> & Record<string, any> = {
+      const formData: Partial<LecturerProfile> = {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         ...(form.role.trim() ? { role: form.role.trim() } : {}),
         ...(form.teamName.trim() ? { teamName: form.teamName.trim() } : {}),
-        ...((form as any).contractFamily
-          ? { contractFamily: (form as any).contractFamily }
+        ...(form.contractFamily
+          ? { contractFamily: form.contractFamily }
           : {}),
         contract: form.contract,
         fte: Number(form.fte),
@@ -149,8 +187,8 @@ export function EditStaffForm({
         ...(form.prefWorkingLocation.trim()
           ? { prefWorkingLocation: form.prefWorkingLocation.trim() }
           : {}),
-        ...((form as any).prefWorkingTime
-          ? { prefWorkingTime: (form as any).prefWorkingTime }
+        ...(form.prefWorkingTime
+          ? { prefWorkingTime: form.prefWorkingTime }
           : {}),
         ...(form.prefSpecialism.trim()
           ? { prefSpecialism: form.prefSpecialism.trim() }
@@ -272,16 +310,16 @@ export function EditStaffForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contractFamily">Contract Family</Label>
-                <Select
-                  value={
-                    (form as any).contractFamily ||
-                    (profile as any).contractFamily ||
-                    ''
-                  }
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...(f as any), contractFamily: v }))
-                  }
-                >
+                                  <Select
+                    value={
+                      form.contractFamily ||
+                      profile.contractFamily ||
+                      ''
+                    }
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, contractFamily: v }))
+                    }
+                  >
                   <SelectTrigger id="contractFamily" className="w-full">
                     <SelectValue placeholder="Select family" />
                   </SelectTrigger>
@@ -399,12 +437,12 @@ export function EditStaffForm({
 
               <div className="space-y-2">
                 <Label htmlFor="prefWorkingTime">Preferred Working Time</Label>
-                <Select
-                  value={(form as any).prefWorkingTime || ''}
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...(f as any), prefWorkingTime: v }))
-                  }
-                >
+                                  <Select
+                    value={form.prefWorkingTime || ''}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, prefWorkingTime: v }))
+                    }
+                  >
                   <SelectTrigger id="prefWorkingTime" className="w-full">
                     <SelectValue placeholder="Select preference" />
                   </SelectTrigger>

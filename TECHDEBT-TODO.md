@@ -34,11 +34,11 @@ Establish a correct ESLint baseline so linting runs reliably.
 
 ### Tasks
 
-- [ ] Fix missing React hooks rules (`react-hooks/exhaustive-deps`).
-- [ ] Ensure all ESLint plugins are properly configured.
-- [ ] Verify configuration in `eslint.config.mjs` and `package.json` (deps).
-- [ ] Remove/merge any stray `.eslintrc*` files if present.
-- [ ] Confirm lint runs without configuration errors.
+- [x] Fix missing React hooks rules (`react-hooks/exhaustive-deps`).
+- [x] Ensure all ESLint plugins are properly configured.
+- [x] Verify configuration in `eslint.config.mjs` and `package.json` (deps).
+- [x] Remove/merge any stray `.eslintrc*` files if present.
+- [x] Confirm lint runs without configuration errors.
 
 ### Files
 
