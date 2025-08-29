@@ -25,7 +25,7 @@ export function useDevLogin() {
             newUrl.searchParams.delete('userId');
             window.history.replaceState({}, '', newUrl.toString());
           }
-        } catch (error) {
+        } catch (_error) {
           // Clear invalid session data
           localStorage.removeItem('dev_login_session_token');
           localStorage.removeItem('dev_login_original_admin_id');
@@ -36,7 +36,8 @@ export function useDevLogin() {
       }
     };
 
-    handleDevLogin();
+    // Handle the async function properly
+    void handleDevLogin();
   }, []);
 
   const clearDevLogin = async () => {
@@ -56,7 +57,7 @@ export function useDevLogin() {
         });
         localStorage.removeItem('dev_login_current_user_id');
       }
-    } catch (error) {
+    } catch (_error) {
       // Failed to clear dev login metadata
     }
   };
