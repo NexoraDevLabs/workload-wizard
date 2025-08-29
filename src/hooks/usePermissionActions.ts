@@ -136,19 +136,19 @@ export function useUserActions(options: UsePermissionActionsOptions = {}) {
     usePermissionActions(options);
 
   return {
-    createUser: (action: () => Promise<any> | any, actionOptions = {}) =>
+    createUser: <T>(action: () => Promise<T> | T, actionOptions = {}) =>
       executeWithPermission('users.create', action, {
         actionName: 'create users',
         ...actionOptions,
       }),
 
-    editUser: (action: () => Promise<any> | any, actionOptions = {}) =>
+    editUser: <T>(action: () => Promise<T> | T, actionOptions = {}) =>
       executeWithPermission('users.edit', action, {
         actionName: 'edit users',
         ...actionOptions,
       }),
 
-    deleteUser: (action: () => Promise<any> | any, actionOptions = {}) =>
+    deleteUser: <T>(action: () => Promise<T> | T, actionOptions = {}) =>
       executeWithPermission('users.delete', action, {
         actionName: 'delete users',
         ...actionOptions,
@@ -178,7 +178,7 @@ export function useAdminActions(options: UsePermissionActionsOptions = {}) {
     usePermissionActions(options);
 
   return {
-    managePermissions: (action: () => Promise<any> | any, actionOptions = {}) =>
+    managePermissions: <T>(action: () => Promise<T> | T, actionOptions = {}) =>
       executeWithPermission('permissions.manage', action, {
         actionName: 'manage permissions',
         ...actionOptions,
