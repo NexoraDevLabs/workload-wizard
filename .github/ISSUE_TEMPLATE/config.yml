@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: 📖 Documentation
-    url: https://workloadwizard.featurebase.app/help
-    about: Please check the docs before opening a new issue.
-  - name: 🔒 Security Reports
-    url: ../SECURITY.md
-    about: Please follow our security policy for vulnerabilities.
