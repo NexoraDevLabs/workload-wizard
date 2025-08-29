@@ -31,11 +31,15 @@ function FeatureFlagProviderInternal({ children }: FeatureFlagProviderProps) {
       }
 
       // Identify user in PostHog for feature flags
-      identifyUserForFeatureFlags(user);
+      identifyUserForFeatureFlags(user).catch((error) => {
+        console.error('Failed to identify user for feature flags:', error);
+      });
 
       // Bootstrap feature flags for the user
       if (user) {
-        bootstrapFeatureFlags(user);
+        bootstrapFeatureFlags(user).catch((error) => {
+          console.error('Failed to bootstrap feature flags:', error);
+        });
       }
 
       lastUserId.current = currentUserId;

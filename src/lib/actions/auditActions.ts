@@ -662,10 +662,15 @@ export async function getAuditLogs(filters?: {
         : {
             type: 'org',
             organisationId:
-              (filters?.organisationId as any) ??
-              (currentUserData.publicMetadata?.organisationId as any),
+              (filters?.organisationId as Id<'organisations'>) ??
+              (currentUserData.publicMetadata?.organisationId as Id<'organisations'>),
           }),
     };
+
+    // Ensure organisationId is properly typed
+    if (hardenedFilters.organisationId && typeof hardenedFilters.organisationId === 'string') {
+      hardenedFilters.organisationId = hardenedFilters.organisationId as Id<'organisations'>;
+    }
 
     const result = await getConvexClient().query(
       api.audit.list,

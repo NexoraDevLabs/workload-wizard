@@ -44,19 +44,19 @@ export class PermissionGatingUtil {
    * Gate UI element based on permission
    */
   gateElement(
-    permissionId: PermissionId,
+    _permissionId: PermissionId,
     options: {
       hideForbidden?: boolean;
-      fallbackValue?: any;
+      fallbackValue?: unknown;
       isSystemAction?: boolean;
     } = {}
-  ): { visible: boolean; value: any; disabled: boolean } {
+  ): { visible: boolean; value: unknown; disabled: boolean } {
     const {
       hideForbidden = false,
       fallbackValue = null,
       isSystemAction = false,
     } = options;
-    const hasAccess = this.hasPermission(permissionId, isSystemAction);
+    const hasAccess = this.hasPermission(_permissionId, isSystemAction);
 
     return {
       visible: hasAccess || !hideForbidden,

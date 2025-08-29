@@ -131,8 +131,9 @@ export function usePermissionErrorHandler() {
   const router = useRouter();
 
   const handlePermissionError = (error: Error) => {
+    const errorWithStatus = error as Error & { statusCode?: number };
     const isPermissionError =
-      (error as any).statusCode === 403 ||
+      errorWithStatus.statusCode === 403 ||
       error.message === 'Forbidden' ||
       error.message.includes('permission') ||
       error.message.includes('access denied') ||

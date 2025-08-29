@@ -542,14 +542,28 @@ export const setPreferences = mutation({
       await ctx.db.patch(existing._id, updates);
       return existing._id;
     } else {
-      const id = await ctx.db.insert('user_preferences', {
+      const insertData: {
+        userId: string;
+        organisationId: Id<'organisations'>;
+        selectedAcademicYearId?: Id<'academic_years'>;
+        includeDrafts?: boolean;
+        createdAt: number;
+        updatedAt: number;
+      } = {
         userId: args.userId,
         organisationId: user.organisationId,
-        selectedAcademicYearId: updates.selectedAcademicYearId,
-        includeDrafts: updates.includeDrafts,
         createdAt: now,
         updatedAt: now,
-      });
+      };
+
+      if (updates.selectedAcademicYearId !== undefined) {
+        insertData.selectedAcademicYearId = updates.selectedAcademicYearId;
+      }
+      if (updates.includeDrafts !== undefined) {
+        insertData.includeDrafts = updates.includeDrafts;
+      }
+
+      const id = await ctx.db.insert('user_preferences', insertData);
       return id;
     }
   },

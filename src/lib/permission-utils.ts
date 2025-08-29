@@ -1,6 +1,6 @@
 import React from 'react';
-import {
-  type PermissionId,
+import type {
+  PermissionId,
   USER_ROLES,
 } from './permissions';
 

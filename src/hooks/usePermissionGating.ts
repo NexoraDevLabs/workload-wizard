@@ -22,7 +22,7 @@ export function usePermissionGating(organisationId?: string) {
       permissionId: PermissionId,
       options: {
         hideForbidden?: boolean;
-        fallbackValue?: any;
+        fallbackValue?: unknown;
         isSystemAction?: boolean;
       } = {}
     ) => gatingUtil.gateElement(permissionId, options);

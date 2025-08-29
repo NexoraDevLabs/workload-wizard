@@ -1,6 +1,6 @@
 import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
+import type { Id, Doc } from './_generated/dataModel';
 import { writeAudit } from './audit';
 import { computeHoursFromCredits, computeTotals } from './allocationsMath';
 import { requireOrgPermission } from './permissions';

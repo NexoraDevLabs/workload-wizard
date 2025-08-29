@@ -255,7 +255,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
         setSelectedUserIds(new Set());
         setAssigningUser(null);
         setIsBulkAssign(false);
-        fetchUsers();
+        await fetchUsers();
       } else {
         if (!assigningUser?.subject && !assigningUser?.id) return;
         const res = await fetch('/api/update-user', {
@@ -274,7 +274,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
         }
         toast({ title: 'Success', description: 'Roles updated' });
         setAssigningUser(null);
-        fetchUsers();
+        await fetchUsers();
       }
     } catch (e) {
       toast({
@@ -306,8 +306,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     setEditingUser(null);
   };
 
-  const handleUserUpdated = () => {
-    fetchUsers(); // Refresh the user list
+  const handleUserUpdated = async () => {
+    await fetchUsers(); // Refresh the user list
   };
 
   const handleCreateUser = () => {
@@ -318,8 +318,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     setCreatingUser(false);
   };
 
-  const handleUserCreated = () => {
-    fetchUsers(); // Refresh the user list
+  const handleUserCreated = async () => {
+    await fetchUsers(); // Refresh the user list
   };
 
   const handleToggleUserStatus = async (user: User) => {
@@ -347,7 +347,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       }
 
       // Refresh the user list
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'Failed to update user status'

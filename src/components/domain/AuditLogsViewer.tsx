@@ -444,9 +444,9 @@ export function AuditLogsViewer({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 setError(null);
-                loadLogs();
+                await loadLogs();
               }}
               className="mt-2"
             >
@@ -483,7 +483,7 @@ export function AuditLogsViewer({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => loadLogs(1)}
+                onClick={async () => await loadLogs(1)}
                 disabled={isLoading}
               >
                 <RefreshCw

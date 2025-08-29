@@ -192,6 +192,7 @@ function FeaturebaseMessengerInternal() {
       }:${context.systemRoles || ''}:${context.orgRoles || ''}`;
       if (hasBootedRef.current === bootKey) return;
       hasBootedRef.current = bootKey;
+      // Handle the promise properly
       win.Featurebase!('boot', payload);
     }
 

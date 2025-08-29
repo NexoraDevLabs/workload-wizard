@@ -36,22 +36,52 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+// Define proper types for the data
+interface StaffMember {
+  _id: string;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  teamName?: string;
+  contract?: string;
+  fte?: number;
+  maxTeachingHours?: number;
+  totalContract?: number;
+  prefWorkingLocation?: string;
+  prefWorkingTime?: string;
+  prefSpecialism?: string;
+  prefNotes?: string;
+  allocations?: Array<{
+    _id: string;
+    hoursOverride?: number;
+    hoursComputed?: number;
+    type?: string;
+    code?: string;
+    name?: string;
+  }>;
+}
+
+interface UserData {
+  systemRoles?: string[];
+}
+
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
   const { user } = useUser();
-  const anyApi = api as any;
+  
   const convexUser = useQuery(
-    anyApi.users.getBySubject,
+    api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
-  ) as { systemRoles?: string[] } | undefined;
+  ) as UserData | undefined;
+  
   const isAdminLike = (convexUser?.systemRoles || []).some(
     (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
   );
 
   const profiles = useQuery(
-    (api as any).staff.list,
-    user?.id && isAdminLike ? ({ userId: user.id } as any) : ('skip' as any)
-  ) as Array<any> | undefined;
+    api.staff.list,
+    user?.id && isAdminLike ? { userId: user.id } : 'skip'
+  ) as StaffMember[] | undefined;
 
   // Filters
   const [search, setSearch] = useState('');
@@ -200,8 +230,8 @@ function StaffRow({
   yearId,
   filters,
 }: {
-  profile: any;
-  yearId?: any;
+  profile: StaffMember;
+  yearId?: string;
   filters: {
     search: string;
     contract: string;
@@ -211,10 +241,10 @@ function StaffRow({
   };
 }) {
   const totals = useQuery(
-    (api as any).allocations.computeLecturerTotals,
+    api.allocations.computeLecturerTotals,
     profile && yearId
-      ? ({ lecturerId: profile._id, academicYearId: yearId } as any)
-      : ('skip' as any)
+      ? { lecturerId: profile._id, academicYearId: yearId }
+      : 'skip'
   ) as
     | {
         allocatedTeaching: number;
@@ -225,10 +255,10 @@ function StaffRow({
 
   // Also include standalone admin allocations (not tied to modules/groups)
   const adminAllocations = useQuery(
-    (api as any).allocations.listAdminAllocations,
+    api.allocations.listAdminAllocations,
     profile && yearId
-      ? ({ lecturerId: profile._id, academicYearId: yearId } as any)
-      : ('skip' as any)
+      ? { lecturerId: profile._id, academicYearId: yearId }
+      : 'skip'
   ) as Array<{ allocation?: { hours?: number } }> | undefined;
 
   // Apply filters when data available
