@@ -1,8 +1,13 @@
 import * as Sentry from '@sentry/nextjs';
 
+// Define proper types for E2E detection
+interface E2EWindow extends Window {
+  __E2E__?: boolean;
+}
+
 // E2E guard
 const E2E =
-  (typeof window !== 'undefined' && (window as any).__E2E__ === true) ||
+  (typeof window !== 'undefined' && (window as E2EWindow).__E2E__ === true) ||
   process.env.NEXT_PUBLIC_E2E === 'true';
 
 // PostHog configuration with basic features
@@ -11,11 +16,14 @@ if (
   typeof window !== 'undefined' &&
   process.env.NEXT_PUBLIC_POSTHOG_KEY
 ) {
+  // Handle the promise properly
   import('posthog-js').then((posthog) => {
     posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host:
         process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
     });
+  }).catch(() => {
+    // Silent fail for PostHog initialization
   });
 }
 

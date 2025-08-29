@@ -4,7 +4,7 @@ import type { FeatureFlags } from './types';
 
 export interface FeatureFlagResult {
   enabled: boolean;
-  value?: any;
+  value?: string | number | boolean;
 }
 
 // Get current user details for Statsig identification
@@ -30,7 +30,7 @@ export async function getFeatureFlag(
       enabled,
       value: undefined,
     };
-  } catch (error) {
+  } catch {
     // Default to disabled if there's an error
     return {
       enabled: false,

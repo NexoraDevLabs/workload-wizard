@@ -1,5 +1,31 @@
 import posthog from 'posthog-js';
 
+// Define proper types for analytics properties
+export interface AnalyticsProperties {
+  [key: string]: string | number | boolean | undefined;
+}
+
+export interface UserProperties {
+  fullName?: string;
+  email?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
+export interface PerformanceMetrics {
+  page_load_time?: number;
+  dom_content_loaded?: number;
+  first_paint?: number;
+  first_contentful_paint?: number;
+  timestamp: string;
+  environment: string;
+}
+
+export interface SessionMetrics {
+  distinct_id?: string;
+  timestamp: string;
+  environment: string;
+}
+
 /**
  * Enhanced Analytics Service with PostHog integration
  * Provides comprehensive tracking capabilities for user behavior, performance, and business metrics
@@ -25,12 +51,12 @@ export class AnalyticsService {
   /**
    * Identify a user with PostHog
    */
-  identify(userId: string, properties?: Record<string, any>): void {
+  identify(userId: string, properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
       posthog.identify(userId, properties);
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -38,14 +64,14 @@ export class AnalyticsService {
   /**
    * Set user properties
    */
-  setUserProperties(properties: Record<string, any>): void {
+  setUserProperties(properties: UserProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
       if (posthog.people) {
         posthog.people.set(properties);
       }
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -53,7 +79,7 @@ export class AnalyticsService {
   /**
    * Track a custom event
    */
-  track(eventName: string, properties?: Record<string, any>): void {
+  track(eventName: string, properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -62,7 +88,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -70,7 +96,7 @@ export class AnalyticsService {
   /**
    * Track page view
    */
-  trackPageView(path: string, properties?: Record<string, any>): void {
+  trackPageView(path: string, properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -80,7 +106,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -93,7 +119,7 @@ export class AnalyticsService {
   trackPerformance(
     metricName: string,
     value: number,
-    properties?: Record<string, any>
+    properties?: AnalyticsProperties
   ): void {
     if (!this.checkInitialization()) return;
 
@@ -105,7 +131,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -113,7 +139,7 @@ export class AnalyticsService {
   /**
    * Track errors
    */
-  trackError(error: Error, context?: Record<string, any>): void {
+  trackError(error: Error, context?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -125,7 +151,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (trackingError) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -133,7 +159,7 @@ export class AnalyticsService {
   /**
    * Track user actions
    */
-  trackUserAction(action: string, properties?: Record<string, any>): void {
+  trackUserAction(action: string, properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -143,7 +169,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -151,7 +177,7 @@ export class AnalyticsService {
   /**
    * Track session start
    */
-  trackSessionStart(properties?: Record<string, any>): void {
+  trackSessionStart(properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -160,7 +186,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -168,7 +194,7 @@ export class AnalyticsService {
   /**
    * Track session end
    */
-  trackSessionEnd(properties?: Record<string, any>): void {
+  trackSessionEnd(properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -177,7 +203,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -185,7 +211,7 @@ export class AnalyticsService {
   /**
    * Track form interactions
    */
-  trackFormStart(formName: string, properties?: Record<string, any>): void {
+  trackFormStart(formName: string, properties?: AnalyticsProperties): void {
     if (!this.checkInitialization()) return;
 
     try {
@@ -195,7 +221,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -206,7 +232,7 @@ export class AnalyticsService {
   trackFormSubmit(
     formName: string,
     success: boolean,
-    properties?: Record<string, any>
+    properties?: AnalyticsProperties
   ): void {
     if (!this.checkInitialization()) return;
 
@@ -218,7 +244,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -229,7 +255,7 @@ export class AnalyticsService {
   trackNavigation(
     from: string,
     to: string,
-    properties?: Record<string, any>
+    properties?: AnalyticsProperties
   ): void {
     if (!this.checkInitialization()) return;
 
@@ -241,7 +267,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -252,7 +278,7 @@ export class AnalyticsService {
   trackSearch(
     query: string,
     resultsCount?: number,
-    properties?: Record<string, any>
+    properties?: AnalyticsProperties
   ): void {
     if (!this.checkInitialization()) return;
 
@@ -264,7 +290,7 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       });
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -272,8 +298,11 @@ export class AnalyticsService {
   /**
    * Get session metrics
    */
-  getSessionMetrics(): Record<string, any> {
-    if (!this.checkInitialization()) return {};
+  getSessionMetrics(): SessionMetrics {
+    if (!this.checkInitialization()) return {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+    };
 
     try {
       return {
@@ -281,17 +310,23 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       };
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
-      return {};
+      return {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      };
     }
   }
 
   /**
    * Get performance metrics
    */
-  getPerformanceMetrics(): Record<string, any> {
-    if (!this.checkInitialization()) return {};
+  getPerformanceMetrics(): PerformanceMetrics {
+    if (!this.checkInitialization()) return {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+    };
 
     try {
       const navigation = performance.getEntriesByType(
@@ -310,9 +345,12 @@ export class AnalyticsService {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       };
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
-      return {};
+      return {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      };
     }
   }
 
@@ -324,7 +362,7 @@ export class AnalyticsService {
 
     try {
       posthog.reset();
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -337,7 +375,7 @@ export class AnalyticsService {
 
     try {
       posthog.opt_out_capturing();
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
@@ -350,7 +388,7 @@ export class AnalyticsService {
 
     try {
       posthog.opt_in_capturing();
-    } catch (error) {
+    } catch {
       // Silent fail for analytics
     }
   }
