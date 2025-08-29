@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSignIn, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import posthog from 'posthog-js';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ import {
   Eye,
   EyeOff,
   CheckCircle,
-  ArrowLeft,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
@@ -240,48 +238,7 @@ export function LoginForm({
     }
   };
 
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    if (!isLoaded) return;
-
-    setIsResetLoading(true);
-    setResetError('');
-
-    try {
-      // This function is no longer needed since we removed the separate code verification step
-      // The code and password are now entered together in the password form
-      setShowPasswordForm(true);
-      setResetSuccess(
-        'Please enter your new password and the verification code.'
-      );
-    } catch (err: unknown) {
-      const clerkError = err as {
-        errors?: Array<{
-          code?: string;
-          message?: string;
-          longMessage?: string;
-        }>;
-        code?: string;
-        message?: string;
-      };
-
-      let errorMessage = 'Something went wrong. Please try again.';
-      if (clerkError.errors && clerkError.errors.length > 0) {
-        const error = clerkError.errors[0];
-        errorMessage =
-          error?.message ||
-          error?.longMessage ||
-          'Something went wrong. Please try again.';
-      } else if (clerkError.message) {
-        errorMessage = clerkError.message;
-      }
-
-      setResetError(errorMessage);
-    } finally {
-      setIsResetLoading(false);
-    }
-  };
 
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -342,7 +299,7 @@ export function LoginForm({
         // Sign out the user so they can sign in with their new password
         try {
           await signOut();
-        } catch (signOutError) {
+        } catch (_signOutError) {
           // Sign out after password reset
         }
 
@@ -459,24 +416,7 @@ export function LoginForm({
     }
   };
 
-  const goBackToResetForm = () => {
-    setShowPasswordForm(false);
-    setResetCode('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setResetError('');
-    setResetSuccess('');
-    setPasswordValidation({
-      length: false,
-      uppercase: false,
-      lowercase: false,
-      number: false,
-      special: false,
-      match: false,
-    });
-    // Clear localStorage
-    localStorage.removeItem('passwordResetEmail');
-  };
+
 
   const goBackToLogin = () => {
     setShowResetForm(false);
@@ -577,14 +517,15 @@ export function LoginForm({
               'Please enter the verification code and your new password.'
             );
           }
-        } catch (error) {
+        } catch (_error) {
           // If there's an error checking the state, just stay on login form
         }
       };
 
-      checkPasswordResetState();
+      // Handle the async function properly
+      void checkPasswordResetState();
     }
-  }, [isLoaded, signIn]);
+  }, [isLoaded, signIn, hasReturnedToLogin]);
 
   return (
     <div
