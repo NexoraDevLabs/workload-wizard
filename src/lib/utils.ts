@@ -64,7 +64,7 @@ export async function withToast<T>(
     title?: string;
     description?: string;
     variant?: 'default' | 'destructive' | 'success';
-  }) => any
+  }) => void
 ): Promise<T> {
   try {
     const result = await action();
@@ -88,8 +88,8 @@ export function isZodError(error: unknown): error is ZodError {
   return (
     typeof error === 'object' &&
     error !== null &&
-    'issues' in (error as any) &&
-    Array.isArray((error as any).issues)
+    'issues' in (error as { issues?: unknown }) &&
+    Array.isArray((error as { issues?: unknown }).issues)
   );
 }
 
@@ -146,7 +146,7 @@ export function toastError(
     title?: string;
     description?: string;
     variant?: 'default' | 'destructive' | 'success';
-  }) => any,
+  }) => void,
   error: unknown,
   title: string = 'Error'
 ): void {

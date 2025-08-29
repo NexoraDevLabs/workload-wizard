@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { listUsers, deleteUser } from '@/lib/actions/userActions';
-import { useMutation, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import type { Id } from '@/convex/_generated/dataModel';
 import { api } from '@/convex/_generated/api';
 import {

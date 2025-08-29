@@ -249,7 +249,7 @@ export async function createUser(data: CreateUserData) {
         emailSent = emailResult.success;
 
         // Email failed but don't fail user creation
-      } catch (emailError) {
+      } catch (_emailError) {
         // Don't fail the user creation if email fails
       }
     }
@@ -268,7 +268,7 @@ export async function createUser(data: CreateUserData) {
             assignedBy: currentUserData.id,
           }
         );
-      } catch (roleError) {
+      } catch (_roleError) {
         // Role assignment failed but don't fail user creation
       }
     } else if (data.organisationalRoleId) {
@@ -278,7 +278,7 @@ export async function createUser(data: CreateUserData) {
           roleId: data.organisationalRoleId as unknown as Id<'user_roles'>,
           assignedBy: currentUserData.id,
         });
-      } catch (roleError) {
+      } catch (_roleError) {
         // Don't fail the user creation if role assignment fails
       }
     }
@@ -410,7 +410,7 @@ export async function deleteUser(userId: string) {
     // Prefer soft delete to avoid breaking references; fall back to hard delete if not found
     try {
       await getConvexClient().mutation(api.users.remove, { userId });
-    } catch (e) {
+    } catch (_e) {
       await getConvexClient().mutation(api.users.hardDelete, { userId });
     }
 

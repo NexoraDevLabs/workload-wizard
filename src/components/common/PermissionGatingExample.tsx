@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { usePermissionGating } from '@/hooks/usePermissionGating';
-import { PERMISSIONS } from '@/lib/permissions';
 
 /**
  * Example component demonstrating centralized permission gating

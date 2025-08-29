@@ -49,7 +49,7 @@ export function NavMain({
         initialisedFromStorageRef.current = true;
         return new Set(parsed);
       }
-    } catch (err) {
+    } catch (_err) {
       // Failed to read sidebar state
     }
     return new Set();

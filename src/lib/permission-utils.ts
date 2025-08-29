@@ -1,6 +1,6 @@
+import React from 'react';
 import {
   type PermissionId,
-  PERMISSION_SCOPES,
   USER_ROLES,
 } from './permissions';
 
@@ -90,12 +90,12 @@ export class PermissionGatingUtil {
     options: {
       isSystemAction?: boolean;
       hideForbidden?: boolean;
-      fallbackValue?: any;
+      fallbackValue?: React.ReactNode;
     } = {}
   ): {
     hasAccess: boolean;
     shouldHide: boolean;
-    fallbackValue: any;
+    fallbackValue: React.ReactNode;
     scope: 'system' | 'org';
   } {
     const {

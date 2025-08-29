@@ -49,7 +49,9 @@ export function ClerkStatsigSync() {
     // Emit a heartbeat event so you can verify traffic in Statsig
     try {
       client.logEvent('user_sync', 'clerk');
-    } catch {}
+    } catch {
+      // Event logging failed, but don't fail the operation
+    }
   }, [client, statsigUser]);
 
   return null;

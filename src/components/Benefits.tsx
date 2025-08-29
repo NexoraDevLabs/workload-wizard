@@ -1,4 +1,4 @@
-import { CheckCircle, TrendingUp, Users2, Clock } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 export default function Benefits() {
   const keyPoints = [

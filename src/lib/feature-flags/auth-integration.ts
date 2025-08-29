@@ -14,7 +14,7 @@ export async function identifyUserForFeatureFlags(user: FeatureFlagUser): Promis
   try {
     if (!user) return;
 
-    const statsigUser: StatsigUser = {
+    const _statsigUser: StatsigUser = {
       userID: user.id,
       customIDs: {},
       custom: {

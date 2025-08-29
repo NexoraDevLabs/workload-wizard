@@ -34,7 +34,7 @@ function getConvexClient(): ConvexHttpClient {
 }
 
 export async function recordAudit(evt: AuditEvent): Promise<void> {
-  const now = Date.now();
+  const _now = Date.now();
   try {
     const convex = getConvexClient();
     await convex.mutation(api.audit.create, {

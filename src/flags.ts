@@ -72,9 +72,11 @@ export const identify = async ({ headers }: { headers?: Headers } = {}) => {
       const safe = `enrolled_${r.featureKey.replace(/[^A-Za-z0-9_]/g, '_')}`;
       flattened[safe] = !!r.enabled;
     }
-    (identified.custom as any).enrolled = enrolled;
-    Object.assign(identified.custom as any, flattened);
-  } catch {}
+    (identified.custom as Record<string, unknown>).enrolled = enrolled;
+    Object.assign(identified.custom as Record<string, unknown>, flattened);
+  } catch {
+    // Feature flag enrichment failed, but don't fail the operation
+  }
   if (user.email) identified.email = user.email;
   if (userAgent) identified.userAgent = userAgent;
   if (ip) identified.ip = ip;

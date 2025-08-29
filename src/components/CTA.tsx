@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Calendar, CheckCircle } from 'lucide-react';
-import Link from 'next/link';
 
 const CTA = () => {
   const benefits = [
