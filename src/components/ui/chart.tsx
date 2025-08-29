@@ -362,8 +362,6 @@ function getPayloadConfigFromPayload(
     return undefined;
   }
 
-  const payloadPayload = payload?.payload;
-
   let configLabelKey: string = key;
 
   if (payload.name && typeof payload.name === 'string') {

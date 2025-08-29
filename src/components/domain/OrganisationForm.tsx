@@ -98,7 +98,10 @@ export function OrganisationForm() {
 
     try {
       await withToast(
-        () => createOrganisation(data),
+        async () => {
+          const result = await createOrganisation(data);
+          return result;
+        },
         {
           success: {
             title: 'Organisation created',

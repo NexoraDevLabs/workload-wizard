@@ -172,8 +172,7 @@ function Sidebar({
     const saved = localStorage.getItem('sidebar-ui-state');
     if (saved === 'expanded') setOpen(true);
     if (saved === 'collapsed') setOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile]);
+  }, [isMobile, setOpen]);
 
   // Persist state whenever it changes (desktop only)
   React.useEffect(() => {

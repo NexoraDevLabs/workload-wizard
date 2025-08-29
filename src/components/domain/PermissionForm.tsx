@@ -110,8 +110,8 @@ export function PermissionForm({
           }
         : formData;
       await onSubmit(submitData);
-    } catch (error) {
-      // Form submission error
+    } catch {
+      // Form submission error - handled by parent component
     } finally {
       setIsLoading(false);
     }
