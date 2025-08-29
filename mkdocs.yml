@@ -1,0 +1,26 @@
+# mkdocs.yml
+site_name: WorkloadWizard
+site_description: Documentation for the WorkloadWizard project
+site_url: https://docs.workload-wiz.xyz # update if you publish
+repo_name: NexoraDevLabs/workload-wizard
+repo_url: https://github.com/NexoraDevLabs/workload-wizard
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.tracking
+    - content.code.copy
+    - toc.follow
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+nav:
+  - Overview: index.md
+  - Guides:
+      - Getting started: guides/getting-started.md
+      - Contributing: guides/contributing.md
+  - Reference:
+      - API: reference/api.md
+  - Design:
+      - Architecture: design/architecture.md

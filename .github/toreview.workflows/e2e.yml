@@ -1,0 +1,150 @@
+name: E2E
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  NODE_OPTIONS: '--max_old_space_size=4096'
+  NEXT_DISABLE_SOURCEMAPS: '1'
+
+  NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
+  CONVEX_DEPLOYMENT: 'https://example.invalid'
+  FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
+  STATSIG_SERVER_SECRET_KEY: 'test_server_key'
+  STATSIG_SERVER_API_KEY: 'test_server_key'
+  CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+  WEBHOOK_SECRET: 'test_webhook_secret'
+
+jobs:
+  run:
+    name: Playwright/Cypress
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Detect package manager
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "mgr=pnpm" >> "$GITHUB_OUTPUT"
+          else
+            echo "mgr=npm" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node (pnpm cache)
+        if: steps.pm.outputs.mgr == 'pnpm'
+        id: node_pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+
+      - name: Setup Node (npm cache)
+        if: steps.pm.outputs.mgr == 'npm'
+        id: node_npm
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Enable corepack / setup pnpm
+        if: steps.pm.outputs.mgr == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      - name: Build app
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm run build
+          else
+            npm run build
+          fi
+
+      - name: Start app (bg) + health check
+        run: |
+          set -euo pipefail
+          PORT=3000 NODE_ENV=production \
+          ( [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ] && pnpm start || npm start ) \
+          > /tmp/app.log 2>&1 &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+          npx --yes wait-on@latest http://127.0.0.1:3000 --timeout 180000 --interval 500
+          curl -fsS http://127.0.0.1:3000 >/dev/null
+
+      - name: Run Playwright (if present)
+        run: |
+          if [ -f playwright.config.ts ] || [ -f playwright.config.mjs ] || [ -f playwright.config.js ]; then
+            npx --yes playwright install --with-deps
+            ( [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ] && pnpm exec playwright test || npx playwright test )
+          else
+            echo "No Playwright config found; skipping."
+          fi
+
+      - name: Run Cypress (if present)
+        run: |
+          if [ -d cypress ]; then
+            ( [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ] && pnpm exec cypress run || npx cypress run )
+          else
+            echo "No Cypress project found; skipping."
+          fi
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## E2E summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: **${{ job.status }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Ref: \`${{ github.ref_name }}\` @ \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Report:" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d playwright-report ]; then
+            echo "  - Playwright report uploaded as artifact \`e2e-artifacts\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if [ -d cypress ]; then
+            echo "  - Cypress videos/screenshots uploaded as artifact \`e2e-artifacts\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [[ -n "${APP_PID:-}" ]]; then
+            kill $APP_PID || true
+            sleep 1
+            ps -p $APP_PID || true
+          fi
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            playwright-report/**
+            test-results/**
+            .playwright/**/trace.zip
+            cypress/videos/**
+            cypress/screenshots/**
+            /tmp/app.log
+          if-no-files-found: ignore
+          retention-days: 7

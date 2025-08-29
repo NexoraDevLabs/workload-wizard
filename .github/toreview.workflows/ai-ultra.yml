@@ -1,0 +1,107 @@
+name: AI Ultra PR Review
+
+on:
+  pull_request:
+    types: [ready_for_review, labeled, synchronize, reopened]
+    branches: [dev, main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ai-ultra-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  ultra-review:
+    name: PR-Agent (Claude Sonnet Ultra)
+    needs: gh_status
+    # Only run for trusted PRs (same repo) when 'ai-ultra' label is present or just added
+    if: |
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.head.repo.fork &&
+      (
+        contains(github.event.pull_request.labels.*.name, 'ai-ultra') ||
+        (github.event.action == 'labeled' && github.event.label.name == 'ai-ultra')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run PR-Agent (Claude Sonnet)
+        id: pr_agent
+        uses: qodo-ai/pr-agent@v0.9.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Claude via Anthropic (documented key and model syntax)
+          ANTHROPIC.KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          config.model: 'anthropic/claude-3-5-sonnet-20240620'
+          # Optional fallbacks to keep runs alive if Sonnet is rate limited
+          config.fallback_models: '["anthropic/claude-3-haiku-20240307"]'
+
+          # Auto-run on our PR events
+          github_action_config.auto_review: 'true'
+          github_action_config.pr_actions: '["ready_for_review","labeled","synchronize","reopened"]'
+
+          # Reviewer behaviour (keep cost/replies sane)
+          PR_REVIEWER.DIFF_ONLY: 'true'
+          PR_REVIEWER.MAX_FILES: '40'
+          PR_REVIEWER.MAX_FILE_SIZE_KB: '400'
+          PR_REVIEWER.SKIP_LARGE_PRS: 'true'
+          PR_REVIEWER.INLINE_COMMENTS: 'false'
+          PR_REVIEWER.MAX_COMMENTS: '15'
+
+          # Locale & CODEOWNERS
+          general.language: 'en-GB'
+          general.respect_codeowners: 'true'
+
+      - name: Add "ai:reviewed" label
+        if: ${{ success() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labelName = 'ai:reviewed';
+            // Ensure label exists (create if missing)
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: labelName,
+              });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: labelName,
+                  color: '2EA043',
+                  description: 'AI review completed',
+                });
+              } else {
+                throw e;
+              }
+            }
+            // Add the label if not already present
+            const prLabels = (context.payload.pull_request.labels || []).map(l => l.name);
+            if (!prLabels.includes(labelName)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelName],
+              });
+            }

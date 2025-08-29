@@ -1,0 +1,145 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  schedule:
+    - cron: '35 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    needs: gh_status
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+
+    steps:
+      - name: Queue (per branch)
+        uses: ahmadnassri/action-workflow-queue@v1
+        with:
+          timeout: 30m
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Gate by file changes that affect analysis
+      - name: Paths filter
+        id: changes
+        uses: dorny/paths-filter@v3.0.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filters: .github/filters.yml
+
+      - name: Skip CodeQL (no relevant changes)
+        if: ${{ steps.changes.outputs.sec != 'true' && steps.changes.outputs.app != 'true' && steps.changes.outputs.types != 'true' && steps.changes.outputs.ci != 'true' }}
+        run: echo "No code/security-relevant changes; skipping." && exit 0
+
+      # Detect if Code Scanning is enabled
+      - name: Detect Code Scanning status
+        id: codescan_enabled
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const res = await github.request('GET /repos/{owner}/{repo}', {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              headers: { 'X-GitHub-Api-Version': '2022-11-28' }
+            });
+            const s = res.data.security_and_analysis?.code_scanning?.status;
+            core.setOutput('enabled', String(s === 'enabled'));
+
+      - uses: pnpm/action-setup@v4
+        if: ${{ steps.codescan_enabled.outputs.enabled == 'true' }}
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        if: ${{ steps.codescan_enabled.outputs.enabled == 'true' }}
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+        if: ${{ steps.codescan_enabled.outputs.enabled == 'true' }}
+
+      - name: Initialize CodeQL
+        if: ${{ steps.codescan_enabled.outputs.enabled == 'true' }}
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        if: ${{ steps.codescan_enabled.outputs.enabled == 'true' }}
+        uses: github/codeql-action/autobuild@v3
+
+      # Fork-safety: only run analyze (which uploads SARIF) on pushes or same-repo PRs
+      - name: Perform CodeQL Analysis
+        if: ${{ steps.codescan_enabled.outputs.enabled == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+
+      - name: Skip CodeQL upload (fork PR or code scanning disabled)
+        if: ${{ steps.codescan_enabled.outputs.enabled != 'true' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) }}
+        run: echo "Skipping CodeQL upload (fork PR or code scanning disabled)."
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## CodeQL summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: **${{ job.status }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Languages: javascript-typescript" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Results available in **Security → Code scanning alerts**" >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup_artifacts:
+    name: Artifact janitor
+    needs: analyze
+    if: ${{ always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Remove old artifacts (keep latest 10 and all tag builds)
+        uses: c-hive/gha-remove-artifacts@v1.4.0
+        with:
+          age: '14 days'
+          skip-recent: 10
+          skip-tags: true

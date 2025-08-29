@@ -1,0 +1,62 @@
+name: Slack - E2E notifications
+
+on:
+  workflow_run:
+    workflows: ['E2E']
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  notify:
+    name: Notify Slack (E2E)
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.head_branch == 'dev' ||
+      github.event.workflow_run.head_branch == 'main'
+    steps:
+      - name: Build message
+        id: msg
+        env:
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -e
+          if [ "$CONCLUSION" = "success" ]; then
+            ICON="✅"; COLOR="#2eb886"
+          else
+            ICON="❌"; COLOR="#e01e5a"
+          fi
+          TEXT="$ICON *E2E* on \`$BRANCH\` — \`$(echo $SHA | cut -c1-7)\` → *$CONCLUSION*"
+          printf 'payload=%s\n' "$(jq -n --arg ch "${{ secrets.SLACK_CHANNEL_ID }}" \
+            --arg text "$TEXT" --arg run "$RUN_URL" --arg color "$COLOR" '
+            {
+              channel: $ch,
+              text: $text,
+              attachments: [
+                {
+                  color: $color,
+                  blocks: [
+                    { "type": "section", "text": { "type": "mrkdwn", "text": $text } },
+                    { "type": "context", "elements": [
+                        { "type": "mrkdwn", "text": "<" + $run + "|View run>" }
+                    ]}
+                  ]
+                }
+              ]
+            }')" >> $GITHUB_OUTPUT
+
+      - name: Send Slack (E2E)
+        # Failures for PRs; always for pushes
+        if: |
+          github.event.workflow_run.event == 'push' ||
+          github.event.workflow_run.conclusion != 'success'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: abinoda/slack-action@master
+        with:
+          args: ${{ steps.msg.outputs.payload }}

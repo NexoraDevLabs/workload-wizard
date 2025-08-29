@@ -1,0 +1,38 @@
+name: Debug with tmate
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_minutes:
+        description: 'Session timeout (minutes)'
+        required: false
+        default: '25'
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tmate-${{ github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  debug:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'ci:debug')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+          # No secrets are shared; you log in with the printed SSH string.
+      - name: Auto timeout
+        run: |
+          MIN=${{ inputs.timeout_minutes || 25 }}
+          echo "Session will terminate after $MIN minutes…"
+          sleep "${MIN}m"

@@ -1,0 +1,43 @@
+name: Remove old artifacts
+
+on:
+  schedule:
+    # Daily at 01:15 UTC
+    - cron: '15 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Required on private repos to delete artifacts
+  actions: write
+
+concurrency:
+  group: cleanup-artifacts
+  cancel-in-progress: true
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  janitor:
+    name: Cleanup artifacts
+    needs: gh_status
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Remove old artifacts
+        uses: c-hive/gha-remove-artifacts@v1.4.0
+        with:
+          # Keep recent 10 artifacts regardless of age
+          skip-recent: 10
+          # Keep artifacts attached to tags (releases)
+          skip-tags: true
+          # Delete everything older than 14 days
+          age: '14 days'

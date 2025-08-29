@@ -1,0 +1,90 @@
+name: Next.js Bundle Analysis
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Detect pnpm
+        id: pm
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "mgr=pnpm" >> "$GITHUB_OUTPUT"
+          else
+            echo "mgr=npm" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.pm.outputs.mgr == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with: { version: 9 }
+
+      - name: Install
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then pnpm i --frozen-lockfile; else npm ci; fi
+
+      - name: Build with stats
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          # Create a stats.json from Next build
+          npx --yes next-build-watcher@1 --stats-json -- \
+            $( [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ] && echo "pnpm build" || echo "npm run build" )
+
+      - name: Analyze bundle
+        env:
+          ANALYZE: 'true'
+        run: |
+          # Generate bundle analysis report
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm build
+          else
+            npm run build
+          fi
+
+      - name: Comment PR with bundle info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Look for bundle analyzer output
+            const statsPath = path.join(process.cwd(), 'stats.json');
+            if (fs.existsSync(statsPath)) {
+              const stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+              const totalSize = (stats.totalSize / 1024 / 1024).toFixed(2);
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `📊 **Bundle Analysis Complete**
+                
+                Total bundle size: **${totalSize} MB**
+                
+                Bundle analysis completed successfully. Check the build logs for detailed breakdown.`
+              });
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `📊 **Bundle Analysis Complete**
+                
+                Bundle analysis completed. No detailed stats available.`
+              });
+            }

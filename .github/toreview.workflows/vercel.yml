@@ -1,0 +1,215 @@
+name: Deploy to Vercel (Preview & Production)
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  # Reduce noise and flaky telemetry in CI
+  NEXT_TELEMETRY_DISABLED: 1
+  TURBO_TELEMETRY_DISABLED: 1
+  # Give Next build more memory to avoid V8 OOM/core dumps
+  NODE_OPTIONS: --max_old_space_size=6144
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Use pnpm action instead of Corepack (avoids npm 403)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          # use 10.x (compatible with lockfile v9) – pin to a specific if you prefer
+          version: 10.2.0
+          run_install: false
+
+      # Now Node + cache can safely use "cache: pnpm"
+      - name: Setup Node (with pnpm cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            **/pnpm-lock.yaml
+
+      - name: Print tool versions
+        run: |
+          node -v
+          npm -v
+          pnpm -v
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ---------- PREVIEW / PR ----------
+      - name: Vercel pull (preview)
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'pull_request'
+        run: pnpm dlx vercel@latest pull --yes --environment=preview --token "$VERCEL_TOKEN"
+
+      - name: Build (Preview/PR)
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'pull_request'
+        # IMPORTANT: do NOT expose Sentry token on previews (prevents “sent as deployed”)
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_ISSUER_URL: ${{ secrets.CLERK_ISSUER_URL }}
+          CLERK_JWT_ISSUER_DOMAIN: ${{ secrets.CLERK_JWT_ISSUER_DOMAIN }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
+          # Unset Sentry token for preview builds
+          SENTRY_AUTH_TOKEN: ''
+        run: pnpm dlx vercel@latest build --token "$VERCEL_TOKEN"
+
+      - name: Deploy Preview (dev/PR)
+        id: deploy_preview
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'pull_request'
+        run: |
+          url=$(pnpm -s dlx vercel@latest deploy --prebuilt --token "$VERCEL_TOKEN" | tail -n1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # ---------- PRODUCTION (main) ----------
+      - name: Vercel pull (production)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: pnpm dlx vercel@latest pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Build (Production with Convex deploy)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        # Only expose Sentry token for production builds
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          NEXT_PUBLIC_DISABLE_FEATURE_FLAGS: 1
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_ISSUER_URL: ${{ secrets.CLERK_ISSUER_URL }}
+          CLERK_JWT_ISSUER_DOMAIN: ${{ secrets.CLERK_JWT_ISSUER_DOMAIN }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+          NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_ENVIRONMENT: production
+        run: npx convex deploy --cmd "pnpm dlx vercel@latest build --prod --token \"$VERCEL_TOKEN\""
+
+      - name: Deploy Production (main)
+        id: deploy_prod
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          url=$(pnpm -s dlx vercel@latest deploy --prebuilt --prod --token "$VERCEL_TOKEN" | tail -n1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # ---------- JOB SUMMARY (success) ----------
+      - name: Job Summary — success
+        if: ${{ success() }}
+        shell: bash
+        run: |
+          ENV_NAME="preview"
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" != "pull_request" ]]; then
+            ENV_NAME="production"
+          fi
+          DEPLOY_URL="${{ steps.deploy_prod.outputs.url || steps.deploy_preview.outputs.url }}"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          {
+            echo "## ✅ Vercel deployment summary"
+            echo
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Environment | ${ENV_NAME} |"
+            echo "| Branch | ${{ github.ref_name }} |"
+            echo "| Commit | [${SHORT_SHA}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |"
+            echo "| Deploy URL | ${DEPLOY_URL} |"
+            echo "| Workflow Run | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ---------- JOB SUMMARY (failure) ----------
+      - name: Job Summary — failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          ENV_NAME="preview"
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" != "pull_request" ]]; then
+            ENV_NAME="production"
+          fi
+          SHORT_SHA="${GITHUB_SHA::7}"
+          {
+            echo "## ❌ Deployment failed"
+            echo
+            echo "**Repo:** ${{ github.repository }}  "
+            echo "**Branch:** ${{ github.ref_name }}  "
+            echo "**Commit:** [${SHORT_SHA}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})  "
+            echo "**Environment:** ${ENV_NAME}  "
+            echo
+            echo "- [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ---------- Slack ----------
+      - name: Slack — success
+        if: ${{ success() }}
+        uses: slackapi/slack-github-action@v1.27.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          DEPLOY_URL: ${{ steps.deploy_prod.outputs.url || steps.deploy_preview.outputs.url }}
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          payload: |
+            {
+              "text": "Deployment Succeeded",
+              "attachments": [{
+                "color": "#2eb886",
+                "blocks": [
+                  { "type": "section", "text": { "type": "mrkdwn", "text": "*Deployment Succeeded* ✅" } },
+                  { "type": "section", "fields": [
+                    { "type": "mrkdwn", "text": "*Repo:*\n${{ github.repository }}" },
+                    { "type": "mrkdwn", "text": "*Branch:*\n${{ github.ref_name }}" },
+                    { "type": "mrkdwn", "text": "*Actor:*\n${{ github.actor }}" },
+                    { "type": "mrkdwn", "text": "*Event:*\n${{ github.event_name }}" }
+                  ]},
+                  { "type": "section", "text": { "type": "mrkdwn", "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>" } },
+                  { "type": "actions", "elements": [
+                    { "type": "button", "text": { "type": "plain_text", "text": "Open Deploy" }, "url": "${{ env.DEPLOY_URL }}", "style": "primary" },
+                    { "type": "button", "text": { "type": "plain_text", "text": "View Workflow Run" }, "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }
+                  ]}
+                ]
+              }]
+            }
+
+      - name: Slack — failure
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.27.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          payload: |
+            {
+              "text": "Deployment Failed",
+              "attachments": [{
+                "color": "#e01e5a",
+                "blocks": [
+                  { "type": "section", "text": { "type": "mrkdwn", "text": "*Deployment Failed* ❌" } },
+                  { "type": "section", "fields": [
+                    { "type": "mrkdwn", "text": "*Repo:*\n${{ github.repository }}" },
+                    { "type": "mrkdwn", "text": "*Branch:*\n${{ github.ref_name }}" },
+                    { "type": "mrkdwn", "text": "*Actor:*\n${{ github.actor }}" },
+                    { "type": "mrkdwn", "text": "*Event:*\n${{ github.event_name }}" }
+                  ]},
+                  { "type": "section", "text": { "type": "mrkdwn", "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>" } },
+                  { "type": "section", "text": { "type": "mrkdwn", "text": "Check logs for details." } }
+                ]
+              }]
+            }

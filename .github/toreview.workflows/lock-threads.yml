@@ -1,0 +1,73 @@
+name: Lock inactive threads
+
+on:
+  schedule:
+    - cron: '17 4 * * 1' # Every Monday at 04:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  discussions: write
+
+concurrency:
+  group: lock-threads
+  cancel-in-progress: false
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  lock:
+    name: Lock closed & inactive issues/PRs/discussions
+    needs: gh_status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lock inactive threads
+        uses: dessant/lock-threads@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # ---- Issues ----
+          issue-inactive-days: 30
+          issue-lock-reason: 'resolved'
+          issue-comment: >
+            This issue has been automatically locked because it has been closed for 30 days
+            with no further activity. If you believe this was closed in error or needs new work,
+            please open a new issue and reference this thread. Thanks!
+
+          exclude-any-issue-labels: >
+            status:backlog,status:in-progress,priority:high,priority:critical
+
+          # ---- Pull Requests ----
+          pr-inactive-days: 30
+          pr-lock-reason: 'resolved'
+          pr-comment: >
+            This pull request conversation has been locked because it has been closed for 30 days
+            without activity. If further discussion is needed, please open a new PR or issue.
+
+          exclude-any-pr-labels: >
+            status:in-progress,priority:high,priority:critical
+
+          # ---- Discussions ----
+          discussion-inactive-days: 45
+          discussion-lock-reason: 'resolved'
+          discussion-comment: >
+            This discussion has been locked because it has been inactive for 45 days after being closed.
+            Feel free to start a new discussion if you want to revisit the topic.
+
+          exclude-any-discussion-labels: >
+            status:backlog,priority:high,priority:critical
+
+          # Optional housekeeping (labels to add/remove when locking)
+          add-issue-labels: 'locked'
+          add-pr-labels: 'locked'
+          add-discussion-labels: 'locked'

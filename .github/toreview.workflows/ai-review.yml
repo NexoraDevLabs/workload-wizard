@@ -1,0 +1,110 @@
+name: AI PR Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, labeled, synchronize]
+    branches: [dev, main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ai-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  review:
+    name: Run PR-Agent (OpenAI 4o-mini, pinned)
+    needs: gh_status
+    # Only run for PR events, non-drafts, same-repo PRs, and when the 'ai-review' label is present or just added
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      !github.event.pull_request.head.repo.fork &&
+      (
+        contains(github.event.pull_request.labels.*.name, 'ai:review') ||
+        (github.event.action == 'labeled' && github.event.label.name == 'ai:review')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run PR-Agent (OpenAI 4o-mini, pinned)
+        id: pr_agent
+        uses: docker://codiumai/pr-agent:0.30-github_action
+        env:
+          # REQUIRED: make sure this secret exists (exact name)
+          OPENAI_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # Tell PR-Agent which PR actions should trigger a run
+          GITHUB_ACTION_CONFIG.PR_ACTIONS: 'opened,reopened,ready_for_review,labeled,synchronize'
+          github_action_config.auto_review: 'true'
+
+          # Model & behaviour (cheap)
+          config.model: 'openai/gpt-4o-mini'
+
+          # Reviewer settings (reduce tokens)
+          PR_REVIEWER.DIFF_ONLY: 'true'
+          PR_REVIEWER.MAX_FILES: '25'
+          PR_REVIEWER.MAX_FILE_SIZE_KB: '250'
+          PR_REVIEWER.SKIP_LARGE_PRS: 'true'
+          PR_REVIEWER.INLINE_COMMENTS: 'true'
+          PR_REVIEWER.MAX_COMMENTS: '12'
+
+          # Locale & CODEOWNERS
+          general.language: 'en-GB'
+          general.respect_codeowners: 'true'
+
+      - name: Add "ai:reviewed" label
+        if: ${{ success() }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labelName = 'ai:reviewed';
+
+            // Ensure label exists (create if missing)
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: labelName,
+              });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: labelName,
+                  color: '0F59FF',
+                  description: 'Reviewed by AI agent',
+                });
+              } else {
+                throw e;
+              }
+            }
+
+            // Add the label to this PR if not already present
+            const prLabels = (context.payload.pull_request.labels || []).map(l => l.name);
+            if (!prLabels.includes(labelName)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [labelName],
+              });
+            }

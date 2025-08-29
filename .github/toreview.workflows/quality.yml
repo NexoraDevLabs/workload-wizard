@@ -1,0 +1,139 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [ready_for_review, synchronize, reopened]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'README*'
+      - 'public/**'
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  NODE_OPTIONS: '--max_old_space_size=4096'
+  NEXT_DISABLE_SOURCEMAPS: '1'
+  SENTRY_SKIP_AUTO_RELEASE: '1'
+  SENTRY_SOURCEMAPS: 'false'
+
+  # --- dummy envs so server code doesn't crash in CI ---
+  NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
+  CONVEX_DEPLOYMENT: 'https://example.invalid'
+  FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
+  STATSIG_SERVER_SECRET_KEY: 'test_server_key'
+  STATSIG_SERVER_API_KEY: 'test_server_key'
+  CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+  WEBHOOK_SECRET: 'test_webhook_secret'
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  quality:
+    name: Lint → Typecheck → Test → Build
+    needs: gh_status
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect package manager
+        id: pm
+        shell: bash
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "mgr=pnpm" >> "$GITHUB_OUTPUT"
+          else
+            echo "mgr=npm" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: ${{ steps.pm.outputs.mgr }}
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            package-lock.json
+
+      - name: Enable Corepack (pnpm)
+        if: steps.pm.outputs.mgr == 'pnpm'
+        run: corepack enable
+
+      - name: Install deps
+        shell: bash
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      - name: Lint
+        shell: bash
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm -s lint
+          else
+            npm run -s lint
+          fi
+
+      - name: Typecheck
+        shell: bash
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm -s typecheck || npx tsc -p tsconfig.json --noEmit
+          else
+            npm run -s typecheck
+          fi
+
+      - name: Unit tests
+        shell: bash
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm -s test
+          else
+            npm test --silent
+          fi
+
+      - name: Build
+        shell: bash
+        run: |
+          if [ "${{ steps.pm.outputs.mgr }}" = "pnpm" ]; then
+            pnpm -s build
+          else
+            npm run -s build
+          fi
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## Quality pipeline"
+            echo ""
+            echo "- Status: **${{ job.status }}**"
+            echo "- Ref: \`${{ github.ref_name }}\` @ \`${{ github.sha }}\`"
+            echo "- Actor: @${{ github.actor }}"
+          } >> "$GITHUB_STEP_SUMMARY"

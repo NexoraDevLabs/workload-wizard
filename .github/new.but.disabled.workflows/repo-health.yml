@@ -1,0 +1,256 @@
+name: Repo health
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  health:
+    name: Check required files & basics
+    runs-on: ubuntu-latest
+
+    env:
+      # One item per line; use "|" between variant paths
+      REQUIRED: |
+        README.md
+        LICENSE|LICENSE.md
+        .github/CODEOWNERS
+      RECOMMENDED: |
+        SECURITY.md|.github/SECURITY.md
+        CODE_OF_CONDUCT.md
+        CONTRIBUTING.md
+        .github/ISSUE_TEMPLATE
+        .github/pull_request_template.md|.github/PULL_REQUEST_TEMPLATE.md
+        .editorconfig
+        .gitattributes
+        .nvmrc
+        .gitignore
+        FUNDING.yml|.github/FUNDING.yml
+        SUPPORT.md
+
+    outputs:
+      missing_any: ${{ steps.check.outputs.missing_any }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run checks
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          summary="$GITHUB_STEP_SUMMARY"
+          report_file="repo-health-report.md"
+
+          missing_required=0
+          missing_recommended=0
+          warnings=()
+
+          has_any() {
+            # Accepts "pathA|pathB|pathC" and prints first that exists
+            IFS='|' read -r -a candidates <<< "$1"
+            for c in "${candidates[@]}"; do
+              if [ -e "$c" ]; then
+                echo "$c"
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          echo "## 📋 Repo Health Report" >> "$summary"
+          echo "" >> "$summary"
+
+          # Required
+          echo "### ✅ Required files" >> "$summary"
+          echo "" >> "$summary"
+          echo "| Item (variants) | Resolved | Present |" >> "$summary"
+          echo "|---|---|:---:|" >> "$summary"
+
+          while IFS= read -r f || [ -n "${f:-}" ]; do
+            [ -z "$f" ] && continue
+            resolved="$(has_any "$f" || true)"
+            if [ -n "$resolved" ]; then
+              echo "| \`$f\` | \`$resolved\` | ✔️ |" >> "$summary"
+            else
+              echo "::error title=Missing required item::$f"
+              echo "| \`$f\` | — | ❌ |" >> "$summary"
+              ((missing_required+=1))
+            fi
+          done <<< "$REQUIRED"
+
+          echo "" >> "$summary"
+
+          # Recommended
+          echo "### ℹ️ Recommended files" >> "$summary"
+          echo "" >> "$summary"
+          echo "| Item (variants) | Resolved | Present |" >> "$summary"
+          echo "|---|---|:---:|" >> "$summary"
+
+          while IFS= read -r f || [ -n "${f:-}" ]; do
+            [ -z "$f" ] && continue
+            resolved="$(has_any "$f" || true)"
+            if [ -n "$resolved" ]; then
+              echo "| \`$f\` | \`$resolved\` | ✔️ |" >> "$summary"
+            else
+              echo "| \`$f\` | — | ⚠️ |" >> "$summary"
+              ((missing_recommended+=1))
+            fi
+          done <<< "$RECOMMENDED"
+
+          echo "" >> "$summary"
+          echo "### 🧪 Basic validations" >> "$summary"
+
+          # README: title present
+          if [ -f README.md ]; then
+            if ! grep -qE '^# ' README.md; then
+              warnings+=("README.md is missing a top-level '# ' heading.")
+              echo "::warning title=README needs H1::Add a '# Title' at the top"
+              echo "- ⚠️ README.md is missing an H1 heading." >> "$summary"
+            else
+              echo "- ✅ README.md contains a top-level heading." >> "$summary"
+            fi
+          fi
+
+          # LICENSE sanity
+          if [ -e LICENSE ] || [ -e LICENSE.md ]; then
+            lic_file="$([ -e LICENSE ] && echo LICENSE || echo LICENSE.md)"
+            if [ "$(wc -l < "$lic_file")" -lt 3 ]; then
+              warnings+=("LICENSE content looks suspiciously short.")
+              echo "::warning title=LICENSE looks too short::Verify its contents"
+              echo "- ⚠️ LICENSE seems very short. Check contents." >> "$summary"
+            else
+              echo "- ✅ LICENSE present with non-empty content." >> "$summary"
+            fi
+          fi
+
+          # .nvmrc numeric
+          if [ -f .nvmrc ]; then
+            if ! grep -qE '^[0-9]+(\.[0-9]+){0,2}$' .nvmrc; then
+              warnings+=(".nvmrc should contain a numeric Node version (e.g. 20 or 20.11).")
+              echo "::warning title=.nvmrc not a numeric Node version::Example '20' or '20.11'"
+              echo "- ⚠️ .nvmrc doesn't look like a numeric version." >> "$summary"
+            else
+              echo "- ✅ .nvmrc contains a numeric Node version." >> "$summary"
+            fi
+          fi
+
+          echo "" >> "$summary"
+          echo "### ➕ Counts" >> "$summary"
+          echo "" >> "$summary"
+          echo "- Missing required: **$missing_required**" >> "$summary"
+          echo "- Missing recommended: **$missing_recommended**" >> "$summary"
+          echo "- Warnings: **${#warnings[@]}**" >> "$summary"
+
+          echo "" >> "$summary"
+          if [ "$missing_required" -gt 0 ]; then
+            echo "**Result:** ❌ Missing required items." >> "$summary"
+          else
+            echo "**Result:** ✅ All required items present." >> "$summary"
+          fi
+
+          # Prepare issue body if anything is missing (required OR recommended)
+          if [ "$missing_required" -gt 0 ] || [ "$missing_recommended" -gt 0 ]; then
+            {
+              echo "# Repo Health: Missing Items"
+              echo
+              echo "Automated audit detected missing files:"
+              echo
+              echo "## Required"
+              if [ "$missing_required" -eq 0 ]; then
+                echo "- [x] All required items present"
+              else
+                while IFS= read -r f || [ -n "${f:-}" ]; do
+                  [ -z "$f" ] && continue
+                  if ! has_any "$f" >/dev/null 2>&1; then
+                    echo "- [ ] \`$f\`"
+                  fi
+                done <<< "$REQUIRED"
+              fi
+              echo
+              echo "## Recommended"
+              if [ "$missing_recommended" -eq 0 ]; then
+                echo "- [x] All recommended items present"
+              else
+                while IFS= read -r f || [ -n "${f:-}" ]; do
+                  [ -z "$f" ] && continue
+                  if ! has_any "$f" >/dev/null 2>&1; then
+                    echo "- [ ] \`$f\`"
+                  fi
+                done <<< "$RECOMMENDED"
+              fi
+              if [ "${#warnings[@]}" -gt 0 ]; then
+                echo
+                echo "## Warnings"
+                for w in "${warnings[@]}"; do
+                  echo "- $w"
+                done
+              fi
+              echo
+              echo "> _This issue was created automatically by the Repo Health workflow._"
+            } > "$report_file"
+            echo "missing_any=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "missing_any=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Make it obvious when we skip issue creation on PRs
+      - name: Note issue creation is skipped on pull_request
+        if: steps.check.outputs.missing_any == 'true' && github.event_name == 'pull_request'
+        shell: bash
+        run: echo "ℹ️ Issue creation is skipped on pull_request events." >> "$GITHUB_STEP_SUMMARY"
+
+      # Detect presence of Nexoroid app secrets (avoid 'secrets' in 'if:')
+      - name: Detect Nexoroid app secrets
+        id: detect
+        if: steps.check.outputs.missing_any == 'true' && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          APP_ID: ${{ secrets.NEXOROID_APP_ID }}
+          APP_KEY: ${{ secrets.NEXOROID_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "${APP_ID}" ] && [ -n "${APP_KEY}" ]; then
+            echo "have_app_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "have_app_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate Nexoroid GitHub App token
+        id: app-token
+        if: steps.check.outputs.missing_any == 'true' && github.event_name != 'pull_request' && steps.detect.outputs.have_app_secrets == 'true'
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.NEXOROID_APP_ID }}
+          private_key: ${{ secrets.NEXOROID_APP_PRIVATE_KEY }}
+
+      - name: Choose issue token
+        id: choose-token
+        if: steps.check.outputs.missing_any == 'true' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          if [ -n "${{ steps.app-token.outputs.token }}" ]; then
+            echo "token=${{ steps.app-token.outputs.token }}" >> "$GITHUB_OUTPUT"
+            echo "Using Nexoroid app token" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "token=${{ github.token }}" >> "$GITHUB_OUTPUT"
+            echo "Using default GITHUB_TOKEN (Nexoroid app secrets not set)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Create/Update tracking issue
+        if: steps.check.outputs.missing_any == 'true' && github.event_name != 'pull_request'
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: '[Repo Health] Missing repo hygiene items'
+          content-filepath: repo-health-report.md
+          labels: 'repo-health,automated'
+          assignees: ''
+          token: ${{ steps.choose-token.outputs.token }}
+          search-existing: open

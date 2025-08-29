@@ -1,0 +1,52 @@
+name: 'Maintenance: JSON Field Update'
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'JSON file to edit'
+        required: true
+        default: 'package.json'
+      field:
+        description: 'Field path (dot.notation)'
+        required: true
+        default: 'version'
+      value:
+        description: 'New value (string)'
+        required: true
+        default: '0.0.0-maint'
+      branch:
+        description: 'Target branch base'
+        required: true
+        default: 'dev'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: json-edit-${{ github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  edit-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update JSON field
+        uses: jossef/action-set-json-field@v2
+        with:
+          file: ${{ inputs.file }}
+          field: ${{ inputs.field }}
+          value: ${{ inputs.value }}
+
+      - name: Create PR with changes
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: set ${{ inputs.field }} in ${{ inputs.file }} to '${{ inputs.value }}'"
+          title: "chore: set ${{ inputs.field }} → '${{ inputs.value }}'"
+          body: 'Automated change via workflow dispatch.'
+          branch: chore/json-edit-${{ github.run_id }}
+          base: ${{ inputs.branch }}
+          delete-branch: true

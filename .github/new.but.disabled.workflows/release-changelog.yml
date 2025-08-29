@@ -1,0 +1,192 @@
+# .github/workflows/release-changelog.yml
+name: Changelog (finalise on tag)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# Needs write to push the updated CHANGELOG.md
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: changelog-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  finalise-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Nexoroid app credentials
+        id: resolve
+        env:
+          RESOLVED_APP_ID: ${{ secrets.APP_ID || secrets.NEXOROID_APP_ID }}
+          RESOLVED_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY || secrets.NEXOROID_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "${RESOLVED_APP_ID}" ] || [ -z "${RESOLVED_PRIVATE_KEY}" ]; then
+            echo "❌ Missing Nexoroid App credentials."
+            echo "   Set repo secrets APP_ID/APP_PRIVATE_KEY or org secrets NEXOROID_APP_ID/NEXOROID_APP_PRIVATE_KEY."
+            exit 1
+          fi
+          echo "::add-mask::${RESOLVED_PRIVATE_KEY}"
+          {
+            echo "app_id=${RESOLVED_APP_ID}"
+            echo "private_key<<EOF"
+            echo "${RESOLVED_PRIVATE_KEY}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Get Nexoroid app token
+        id: app-token
+        uses: actions/create-github-app-token@a8d616148505b5069dccd32f177bb87d7f39123b # v2
+        with:
+          app-id: ${{ steps.resolve.outputs.app_id }}
+          private-key: ${{ steps.resolve.outputs.private_key }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout (full history) with Nexoroid token
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Determine target branch for committing CHANGELOG
+        id: branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG_NAME="${GITHUB_REF_NAME}"
+          SHA="${GITHUB_SHA}"
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+
+          git fetch --all --prune
+
+          if git merge-base --is-ancestor "$SHA" "origin/$DEFAULT_BRANCH"; then
+            TARGET="$DEFAULT_BRANCH"
+          else
+            TARGET="$(git branch -r --contains "$SHA" | sed 's| *origin/||' | grep -v 'HEAD' | head -n1 || true)"
+            TARGET="${TARGET:-$DEFAULT_BRANCH}"
+          fi
+
+          echo "name=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "🌿 Target branch resolved: $TARGET"
+          echo "🧷 Tag: $TAG_NAME (sha $SHA)"
+
+      - name: Switch to target branch (tracking)
+        shell: bash
+        run: |
+          BR="${{ steps.branch.outputs.name }}"
+          git checkout -B "$BR" "origin/$BR"
+
+      - name: Configure Nexoroid identity
+        run: |
+          git config user.name  "Nexoroid Bot"
+          git config user.email "noreply@nexoroid.dev"
+
+      - name: Generate CHANGELOG for tag (PRs only, labelled, curated order)
+        uses: janheinrichmerker/action-github-changelog-generator@e60b5a2bd9fcd88dadf6345ff8327863fb8b490f # v2.4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          output: CHANGELOG.md
+          futureRelease: ${{ github.ref_name }}
+          compareLink: true
+          filterByMilestone: false
+          issues: false
+          pullRequests: true
+          prWoLabels: false
+          excludeLabels: 'wontfix,duplicate,invalid,question,Meta: Exclude From Changelog'
+          configureSections: |
+            {
+              "breaking":       {"prefix":"### ⚠️ Breaking changes","labels":["breaking-change","breaking"]},
+              "enhancements":   {"prefix":"### ✨ Enhancements","labels":["enhancement","feature"]},
+              "bugs":           {"prefix":"### 🐛 Fixes","labels":["bug","regression"]},
+              "documentation":  {"prefix":"### 📚 Documentation","labels":["docs","documentation"]},
+              "maintenance":    {"prefix":"### 🧰 Maintenance","labels":["chore","ci","build","refactor"]}
+            }
+          issueLineLabels: 'ALL'
+          author: true
+          httpCache: true
+          cacheFile: .changelog-http-cache
+          cacheLog: false
+          stripGeneratorNotice: true
+
+      - name: Reposition "Full Changelog" links
+        run: |
+          python - <<'PY'
+          import re, io
+          p="CHANGELOG.md"; t=io.open(p,"r",encoding="utf-8").read()
+          parts=re.split(r'(?m)^(## \[.*?\].*?\n)',t)
+          if len(parts)<3: raise SystemExit(0)
+          out=[parts[0]]
+          for i in range(1,len(parts),2):
+            h, b=parts[i], parts[i+1]
+            lines=b.splitlines(True); fc=[]; kept=[]
+            for ln in lines:
+              if re.match(r'^\s*\[?Full Changelog\]?\s*[:(]', ln): fc.append(ln)
+              else: kept.append(ln)
+            while kept and kept[-1].strip()=="":
+              kept.pop()
+            if fc:
+              kept.append("\n"); kept.extend(fc)
+              if kept[-1][-1]!="\n": kept.append("\n")
+            out += [h, "".join(kept)]
+          io.open(p,"w",encoding="utf-8").write("".join(out))
+          PY
+
+      - name: Commit updated CHANGELOG.md (as Nexoroid)
+        id: commit
+        env:
+          NX_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          CHANGED="no"
+          if ! git diff --quiet -- CHANGELOG.md; then
+            CHANGED="yes"
+            git add CHANGELOG.md
+            git commit -m "docs(changelog): finalise for $GITHUB_REF_NAME"
+            git remote set-url origin "https://x-access-token:${NX_TOKEN}@github.com/${{ github.repository }}.git"
+            git push origin HEAD:${{ steps.branch.outputs.name }}
+          fi
+          echo "changed=${CHANGED}" >> "$GITHUB_OUTPUT"
+
+      # ---------- Job Summary ----------
+      - name: Write job summary
+        if: ${{ always() }}
+        env:
+          TAG: ${{ github.ref_name }}
+          TARGET_BRANCH: ${{ steps.branch.outputs.name }}
+          JOB_STATUS: ${{ job.status }}
+          CHANGELOG_CHANGED: ${{ steps.commit.outputs.changed }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Best-effort URLs
+          COMPARE_URL="https://github.com/${REPO}/compare/${TARGET_BRANCH}...${TAG}"
+          RELEASE_URL="https://github.com/${REPO}/releases/tag/${TAG}"
+          COMMIT_URL="https://github.com/${REPO}/commit/${SHA}"
+
+          {
+            echo "## 📓 Changelog finalised"
+            echo ""
+            echo "- **Tag:** \`${TAG:-unknown}\`"
+            echo "- **Target branch:** \`${TARGET_BRANCH:-unknown}\`"
+            echo "- **Status:** \`${JOB_STATUS:-unknown}\`"
+            echo "- **CHANGELOG.md updated:** \`${CHANGELOG_CHANGED:-no}\`"
+            echo ""
+            echo "### 🔗 Handy links"
+            echo "- Release: ${RELEASE_URL}"
+            echo "- Compare (branch → tag): ${COMPARE_URL}"
+            echo "- Tag commit: ${COMMIT_URL}"
+            echo ""
+            echo "### 🧾 CHANGELOG (latest section preview)"
+            echo ""
+            if [ -f CHANGELOG.md ]; then
+              # Print the most recent section for quick visibility
+              awk 'BEGIN{p=0} /^## \[/ {if (p++) exit} {if(p) print}' CHANGELOG.md | head -n 60
+            else
+              echo "_No CHANGELOG.md found in workspace._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

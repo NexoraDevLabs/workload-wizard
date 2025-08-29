@@ -1,0 +1,53 @@
+name: PR Labeler
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-labeler-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  gh_status:
+    name: GitHub status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: crazy-max/ghaction-github-status@v4.2.0
+        with:
+          overall_threshold: minor
+          actions_threshold: degraded_performance
+          api_threshold: degraded_performance
+
+  label:
+    name: Apply file-based labels
+    needs: gh_status
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      # IMPORTANT: check out the base commit so .github/labeler.yml is present locally
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          # safety for PRs from forks (don’t inherit fork creds)
+          persist-credentials: false
+
+      - name: Label PR based on changed files
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+          sync-labels: true
+          dot: true
+
+  note-if-draft:
+    name: PR is draft — skipping labels
+    needs: gh_status
+    if: github.event.pull_request.draft == true
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Draft PR detected; labeler will run when marked ready."
