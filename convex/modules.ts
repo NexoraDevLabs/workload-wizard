@@ -139,20 +139,21 @@ export const create = mutation({
     }
 
     const now = Date.now();
-    const id = await (ctx.db as any).insert('modules', {
+    const insertData: Record<string, unknown> = {
       code: args.code,
       name: args.name,
-      ...(typeof args.credits === 'number' ? { credits: args.credits } : {}),
-      ...(args.leaderProfileId
-        ? { leaderProfileId: args.leaderProfileId }
-        : {}),
-      ...(typeof args.level === 'number' ? { level: args.level } : {}),
-      ...(typeof teachingHours === 'number' ? { teachingHours } : {}),
-      ...(typeof markingHours === 'number' ? { markingHours } : {}),
       organisationId: actor.organisationId,
       createdAt: now,
       updatedAt: now,
-    });
+    };
+
+    if (args.credits !== undefined) insertData.credits = args.credits;
+    if (args.leaderProfileId !== undefined) insertData.leaderProfileId = args.leaderProfileId;
+    if (args.level !== undefined) insertData.level = args.level;
+    if (teachingHours !== undefined) insertData.teachingHours = teachingHours;
+    if (markingHours !== undefined) insertData.markingHours = markingHours;
+
+    const id = await ctx.db.insert('modules', insertData);
 
     try {
       await writeAudit(ctx, {

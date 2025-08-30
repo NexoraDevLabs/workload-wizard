@@ -32,9 +32,13 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
+import { Id, type Doc } from '@/convex/_generated/dataModel';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
+
+// Use the proper type from the generated data model
+type LecturerProfile = Doc<'lecturer_profiles'>;
 
 export default function StaffProfilePage() {
   const params = useParams<{ id: string }>();

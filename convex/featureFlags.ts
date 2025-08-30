@@ -163,13 +163,15 @@ export const remove = mutation({
         action: 'feature.delete',
         entityType: 'feature_flag',
         entityId: String(args.id),
-        entityName: (existing as any)?.key || String(args.id),
+        entityName: existing?.key || String(args.id),
         performedBy: subject,
         details: `Feature flag removed`,
         severity: 'warning',
         type: 'sys',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for feature flag deletion:', e);
+    }
     return true;
   },
 });

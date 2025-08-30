@@ -312,7 +312,7 @@ export function EditModuleForm({
                   }}
                 >
                   <option value="">Add campus…</option>
-                  {(orgSettings as any)?.campusOptions?.map((c: string) => (
+                  {(orgSettings)?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>
                       {c}
                     </option>

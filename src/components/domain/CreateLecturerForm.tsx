@@ -139,7 +139,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
             fte: fteNum,
             maxTeachingHours: derivedMaxTeaching,
             totalContract: derivedTotalContract,
-          } as any),
+          }),
         {
           success: {
             title: 'Profile created',

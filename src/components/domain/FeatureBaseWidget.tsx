@@ -193,7 +193,7 @@ function FeaturebaseMessengerInternal() {
       if (hasBootedRef.current === bootKey) return;
       hasBootedRef.current = bootKey;
       // Handle the promise properly
-      win.Featurebase!('boot', payload);
+      await win.Featurebase!('boot', payload);
     }
 
     void boot();

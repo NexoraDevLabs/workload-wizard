@@ -209,7 +209,7 @@ export function EditCourseForm({
                 >
                   <option value="">Add campus…</option>
                   {(
-                    (useQuery as any)(api.organisationSettings.getForActor) ||
+                    useQuery(api.organisationSettings.getForActor) ||
                     {}
                   )?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>

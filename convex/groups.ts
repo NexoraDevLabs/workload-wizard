@@ -78,7 +78,9 @@ export const create = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for group creation:', e);
+    }
 
     return id;
   },
@@ -135,9 +137,11 @@ export const createAutoForIteration = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for auto group creation:', e);
+    }
 
-    return { created } as any;
+    return { created };
   },
 });
 
@@ -171,7 +175,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for group deletion:', e);
+    }
     return args.id;
   },
 });

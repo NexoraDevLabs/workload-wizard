@@ -48,6 +48,8 @@ export function OrganisationsList() {
     _id: string;
     name: string;
     code: string;
+    status: string;
+    isActive: boolean;
   }
   
   const [editingOrganisation, setEditingOrganisation] = useState<EditingOrganisation | null>(null);

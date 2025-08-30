@@ -297,15 +297,15 @@ export function AuditLogsViewer({
     setCurrentPage(1);
     setTotalLogs(0);
     // Don't reset totalFilteredLogs here - it will be set by loadStats
-    loadLogs(1, undefined, true);
-    loadStats();
+    void loadLogs(1, undefined, true);
+    void loadStats();
   }, [loadLogs, loadStats]);
 
   const loadMore = useCallback(() => {
     if (hasMore && nextCursor && !isLoading) {
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
-      loadLogs(nextPage, nextCursor);
+      void loadLogs(nextPage, nextCursor);
     }
   }, [hasMore, nextCursor, isLoading, currentPage, loadLogs]);
 
@@ -315,7 +315,7 @@ export function AuditLogsViewer({
         setCurrentPage(1);
         setTotalLogs(0);
         // Don't reset totalFilteredLogs - it will be set by loadStats
-        loadLogs(1, undefined, true);
+        void loadLogs(1, undefined, true);
       } else if (page < currentPage) {
         // For going back, we need to reset and reload from the beginning
         // This is a limitation of cursor-based pagination

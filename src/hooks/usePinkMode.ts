@@ -65,7 +65,7 @@ export function usePinkMode() {
   }, []);
 
   useEffect(() => {
-    checkPinkMode();
+    void checkPinkMode();
   }, [checkPinkMode]);
 
   // Listen for storage changes (when localStorage is updated from other tabs/windows)

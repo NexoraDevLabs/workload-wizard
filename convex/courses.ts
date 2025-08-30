@@ -1,7 +1,11 @@
+import {
+  mutation,
+  query,
+  type MutationCtx,
+} from './_generated/server';
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
-import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
+import { writeAudit } from './audit';
 import type { Doc, Id } from './_generated/dataModel';
 
 // List courses for an organisation
@@ -151,7 +155,9 @@ export const create = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for course creation:', e);
+    }
 
     return id;
   },
@@ -223,7 +229,9 @@ export const update = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for course update:', e);
+    }
 
     return args.id;
   },
@@ -259,7 +267,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for course deletion:', e);
+    }
 
     return args.id;
   },
@@ -373,7 +383,9 @@ export const addYear = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for course year creation:', e);
+    }
 
     return id;
   },
