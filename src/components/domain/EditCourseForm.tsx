@@ -45,10 +45,10 @@ export function EditCourseForm({
     studentCount: course.studentCount?.toString() || '',
     campuses: course.campuses?.join(', ') || '',
   });
-  const codeAvailability = useQuery((api as any).courses.isCodeAvailable, {
+  const codeAvailability = useQuery(api.courses.isCodeAvailable, {
     code: form.code,
-    excludeId: course._id as any,
-  } as any) as { available: boolean } | undefined;
+    excludeId: course._id,
+  }) as { available: boolean } | undefined;
 
   const canSubmit =
     form.code.trim().length > 0 &&
@@ -61,7 +61,7 @@ export function EditCourseForm({
 
     try {
       await updateCourse({
-        id: course._id as any,
+        id: course._id,
         code: form.code.trim(),
         name: form.name.trim(),
         ...(form.studentCount.trim()

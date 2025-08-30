@@ -257,8 +257,8 @@ export async function createUser(data: CreateUserData) {
     // Assign organisational roles if provided (multi or single)
     if (data.organisationalRoleIds && data.organisationalRoleIds.length > 0) {
       try {
-        const roleIds = (data.organisationalRoleIds as unknown as string[]).map(
-          (rid) => rid as unknown as Id<'user_roles'>
+        const roleIds = data.organisationalRoleIds.map(
+          (rid) => rid as Id<'user_roles'>
         );
         await getConvexClient().mutation(
           api.organisationalRoles.assignMultipleToUser,
@@ -275,7 +275,7 @@ export async function createUser(data: CreateUserData) {
       try {
         await getConvexClient().mutation(api.organisationalRoles.assignToUser, {
           userId: clerkUser.id,
-          roleId: data.organisationalRoleId as unknown as Id<'user_roles'>,
+          roleId: data.organisationalRoleId as Id<'user_roles'>,
           assignedBy: currentUserData.id,
         });
       } catch (_roleError) {

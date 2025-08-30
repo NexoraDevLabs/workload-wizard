@@ -21,7 +21,7 @@ import {
 export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   const { user } = useUser();
   const { toast } = useToast();
-  const create = useMutation((api as any).staff.create);
+  const create = useMutation(api.staff.create);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
@@ -34,8 +34,8 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
 
   // Guard query until user is ready to avoid "User not found"
   const orgSettings = useQuery(
-    (api as any).organisationSettings.getOrganisationSettings,
-    user?.id ? { userId: user.id } : ('skip' as any)
+    api.organisationSettings.getOrganisationSettings,
+    user?.id ? { userId: user.id } : 'skip'
   );
 
   const ROLE_OPTIONS = orgSettings?.staffRoleOptions ?? [

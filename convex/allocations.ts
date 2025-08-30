@@ -103,23 +103,19 @@ export const update = mutation({
       existing.organisationId
     );
 
-    // Validate hours if provided
-    if (args.hoursOverride !== undefined && args.hoursOverride !== null) {
-      if (args.hoursOverride < 0)
-        throw new Error('Hours override cannot be negative');
-      if (args.hoursOverride > 1000)
-        throw new Error('Hours override cannot exceed 1000 hours');
+    const updatePayload: Partial<Doc<'group_allocations'>> = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.type !== undefined) {
+      updatePayload.type = args.type;
     }
 
-    const updates: Partial<Doc<'group_allocations'>> = { updatedAt: Date.now() };
-    if (args.type !== undefined) updates.type = args.type;
-    if (args.hoursOverride === null) {
-      updates.hoursOverride = undefined; // clear override
-    } else if (args.hoursOverride !== undefined) {
-      updates.hoursOverride = args.hoursOverride;
+    if (args.hoursOverride !== undefined) {
+      updatePayload.hoursOverride = args.hoursOverride === null ? undefined : args.hoursOverride;
     }
 
-    await ctx.db.patch(args.allocationId, updates);
+    await ctx.db.patch(args.allocationId, updatePayload);
 
     try {
       await writeAudit(ctx, {
@@ -127,7 +123,7 @@ export const update = mutation({
         entityType: 'group_allocation',
         entityId: String(args.allocationId),
         performedBy: identity.subject,
-        details: `Updated allocation ${String(args.allocationId)}${args.type ? ` type=${args.type}` : ''}${args.hoursOverride !== undefined ? ` hoursOverride=${args.hoursOverride === null ? 'cleared' : args.hoursOverride}` : ''}`,
+        details: `Updated allocation ${String(args.allocationId)}`,
         severity: 'info',
         type: 'org',
       });
@@ -896,15 +892,32 @@ export const seedOrgAdminCategories = mutation({
       .query('admin_allocation_categories')
       .collect();
     for (const d of defaults) {
-      await ctx.db.insert('organisation_admin_allocation_categories', {
+      const insertData: {
+        organisationId: Id<'organisations'>;
+        name: string;
+        description?: string;
+        minHours?: number;
+        maxHours?: number;
+        createdAt: number;
+        updatedAt: number;
+      } = {
         organisationId: args.organisationId,
         name: d.name,
-        description: d.description,
-        minHours: d.minHours,
-        maxHours: d.maxHours,
         createdAt: now,
         updatedAt: now,
-      });
+      };
+      
+      if (d.description !== undefined) {
+        insertData.description = d.description;
+      }
+      if (d.minHours !== undefined) {
+        insertData.minHours = d.minHours;
+      }
+      if (d.maxHours !== undefined) {
+        insertData.maxHours = d.maxHours;
+      }
+      
+      await ctx.db.insert('organisation_admin_allocation_categories', insertData);
     }
     return { created: defaults.length };
   },
@@ -942,23 +955,54 @@ export const pushAdminCategoriesToOrganisations = mutation({
           (oc) => String(oc.name).trim() === String(sc.name).trim()
         );
         if (!existing) {
-          await ctx.db.insert('organisation_admin_allocation_categories', {
+          const insertData: {
+            organisationId: Id<'organisations'>;
+            name: string;
+            description?: string;
+            minHours?: number;
+            maxHours?: number;
+            createdAt: number;
+            updatedAt: number;
+          } = {
             organisationId: org._id,
             name: sc.name,
-            description: sc.description,
-            minHours: sc.minHours,
-            maxHours: sc.maxHours,
             createdAt: now,
             updatedAt: now,
-          });
+          };
+          
+          if (sc.description !== undefined) {
+            insertData.description = sc.description;
+          }
+          if (sc.minHours !== undefined) {
+            insertData.minHours = sc.minHours;
+          }
+          if (sc.maxHours !== undefined) {
+            insertData.maxHours = sc.maxHours;
+          }
+          
+          await ctx.db.insert('organisation_admin_allocation_categories', insertData);
           created++;
         } else if (args.forceApply) {
-          await ctx.db.patch(existing._id, {
-            description: sc.description,
-            minHours: sc.minHours,
-            maxHours: sc.maxHours,
+          const patchData: {
+            description?: string;
+            minHours?: number;
+            maxHours?: number;
+            updatedAt: number;
+          } = {
             updatedAt: now,
-          });
+          };
+          
+          if (sc.description !== undefined) {
+            patchData.description = sc.description;
+          }
+          if (sc.minHours !== undefined) {
+            patchData.minHours = sc.minHours;
+          }
+          if (sc.maxHours !== undefined) {
+            patchData.maxHours = sc.maxHours;
+          }
+          
+          await ctx.db.patch(existing._id, patchData);
           updated++;
         }
       }

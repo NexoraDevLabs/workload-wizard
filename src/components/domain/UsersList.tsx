@@ -367,8 +367,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const getUniqueOrganisations = () => {
     const orgs = users
       .map((user) => user.organisation)
-      .filter((org) => org !== null && org !== undefined)
-      .map((org) => ({ id: org!.id, name: org!.name, code: org!.code }));
+      .filter((org): org is NonNullable<typeof org> => org !== null && org !== undefined)
+      .map((org) => ({ id: org.id, name: org.name, code: org.code }));
 
     // Remove duplicates based on id
     return Array.from(new Map(orgs.map((org) => [org.id, org])).values());

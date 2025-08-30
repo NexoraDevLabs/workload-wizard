@@ -92,7 +92,19 @@ export function CreateUserForm({
       ? selectedOrganisationId
       : organisationId;
 
-    let data: any;
+    interface FormData {
+      email: string;
+      firstName: string;
+      lastName: string;
+      username: string;
+      roles: string[];
+      organisationId: string;
+      password?: string;
+      sendEmailInvitation?: boolean;
+      organisationalRoleId?: string;
+    }
+
+    let data: FormData;
     try {
       data = Schema.parse({
         email: formData.get('email') as string,

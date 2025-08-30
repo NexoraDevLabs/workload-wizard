@@ -13,6 +13,25 @@ const BodySchema = z.object({
   organisation: z.string().optional(),
 });
 
+interface ResendContact {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface ResendContactsListResponse {
+  data?: ResendContact[];
+}
+
+interface ResendContactPayload {
+  audienceId: string;
+  email: string;
+  unsubscribed: boolean;
+  firstName?: string;
+  lastName?: string;
+  tags?: string[];
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, name, source, organisation } = BodySchema.parse(
@@ -58,12 +77,12 @@ export async function POST(req: NextRequest) {
       try {
         const list = await resend.contacts.list({
           audienceId: RESEND_AUDIENCE_ID,
-        } as any);
-        const alreadyExists = Array.isArray((list as any)?.data)
-          ? ((list as any).data as any[]).some(
-              (c: any) =>
+        }) as ResendContactsListResponse;
+        const alreadyExists = Array.isArray(list?.data)
+          ? list.data?.some(
+              (c: ResendContact) =>
                 String(c?.email || '').toLowerCase() === email.toLowerCase()
-            )
+            ) || false
           : false;
         if (alreadyExists) {
           // Do not send welcome email again; report status to client
@@ -83,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     if (RESEND_AUDIENCE_ID && !existingWaitlistEntry) {
       // Build base payload for contact creation
-      const basePayload: any = {
+      const basePayload: ResendContactPayload = {
         audienceId: RESEND_AUDIENCE_ID,
         email,
         unsubscribed: false,
@@ -95,7 +114,7 @@ export async function POST(req: NextRequest) {
         if (last) basePayload.lastName = last;
       }
       // Try with tags if supported
-      const withTags = { ...basePayload };
+      const withTags: ResendContactPayload = { ...basePayload };
       const tags: string[] = ['waitlist'];
       if (source && source.trim()) tags.push(`source:${source}`);
       if (organisation && organisation.trim())
@@ -103,7 +122,7 @@ export async function POST(req: NextRequest) {
       withTags.tags = tags;
       try {
         await resend.contacts.create(withTags);
-      } catch (e: any) {
+      } catch (e: unknown) {
         // Retry without tags if API rejects unknown field
         try {
           await resend.contacts.create(basePayload);

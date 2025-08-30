@@ -52,10 +52,8 @@ function AcademicYearProviderInternal({
   const { toast } = useToast();
 
   // Management detection from convex user.systemRoles
-  const apiAny = api as any;
-
   const convexUser = useQuery(
-    apiAny.users.getBySubject,
+    api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   ) as
     | { systemRoles?: string[]; organisationId?: Id<'organisations'> }
@@ -78,13 +76,13 @@ function AcademicYearProviderInternal({
 
   // Fetch academic years for organisation, server decides visibility based on permissions
   const allYears = useQuery(
-    apiAny.academicYears.listForOrganisation,
+    api.academicYears.listForOrganisation,
     convexUser ? { userId: user!.id } : 'skip'
   ) as AcademicYear[] | undefined;
 
   // Load server preferences (selected year + includeDrafts)
   const preferences = useQuery(
-    apiAny.academicYears.getPreferences,
+    api.academicYears.getPreferences,
     convexUser ? { userId: user!.id } : 'skip'
   ) as
     | {
@@ -112,7 +110,7 @@ function AcademicYearProviderInternal({
     } catch {}
   }, [orgIdStr, preferences?.includeDrafts]);
 
-  const setPrefsMutation = useMutation(apiAny.academicYears.setPreferences);
+  const setPrefsMutation = useMutation(api.academicYears.setPreferences);
 
   const setIncludeDrafts = useCallback(
     (v: boolean) => {
@@ -221,7 +219,7 @@ function AcademicYearProviderInternal({
   );
 
   // Mutations
-  const updateYear = useMutation(apiAny.academicYears.update);
+  const updateYear = useMutation(api.academicYears.update);
 
   const setAsDefaultForOrg = useCallback(
     async (id: string) => {
