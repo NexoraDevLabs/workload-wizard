@@ -47,19 +47,6 @@ async function hasOrgPermission(
   }
 }
 
-async function getActorRole(ctx: QueryCtx | MutationCtx, user: Doc<'users'>) {
-  const assignment = await ctx.db
-    .query('user_role_assignments')
-    .withIndex('by_user_org', (q) =>
-      q.eq('userId', user.subject).eq('organisationId', user.organisationId)
-    )
-    .filter((q) => q.eq(q.field('isActive'), true))
-    .first();
-  if (!assignment) return null;
-  const role = await ctx.db.get(assignment.roleId);
-  return role ?? null;
-}
-
 export async function canViewYear(
   ctx: QueryCtx | MutationCtx,
   userId: string,

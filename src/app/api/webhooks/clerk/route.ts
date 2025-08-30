@@ -178,7 +178,7 @@ async function handleUserCreated(userData: ClerkUserData) {
         `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
       systemRoles: roles,
       // webhook path may include organisationId; API accepts optional and validates/derives server-side
-      organisationId: organisationId as unknown as any,
+      organisationId: organisationId as string,
       pictureUrl: userData.image_url as string,
       subject: userData.id,
       tokenIdentifier: primaryEmail.id,

@@ -1,6 +1,6 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
+import type { Id, QueryCtx, MutationCtx } from './_generated/dataModel';
 import { writeAudit } from './audit';
 
 function isSystemUser(systemRoles?: string[] | null) {
@@ -13,10 +13,10 @@ function isOrgAdmin(systemRoles?: string[] | null) {
   return roles.includes('orgadmin');
 }
 
-async function getActorAndOrg(ctx: any, subject: string) {
+async function getActorAndOrg(ctx: QueryCtx | MutationCtx, subject: string) {
   const actor = await ctx.db
     .query('users')
-    .withIndex('by_subject', (q: any) => q.eq('subject', subject))
+    .withIndex('by_subject', (q) => q.eq('subject', subject))
     .first();
   if (!actor) throw new Error('User not found');
   return {
@@ -33,7 +33,7 @@ export const getOrganisationSettings = query({
     // Read current settings
     const row = await ctx.db
       .query('organisation_settings')
-      .withIndex('by_organisation', (q: any) => q.eq('organisationId', orgId))
+      .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
       .first();
 
     // Provide sane defaults if missing
@@ -73,7 +73,7 @@ export const getForActor = query({
     const { orgId } = await getActorAndOrg(ctx, identity.subject);
     const row = await ctx.db
       .query('organisation_settings')
-      .withIndex('by_organisation', (q: any) => q.eq('organisationId', orgId))
+      .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
       .first();
     return (
       row || {
@@ -149,7 +149,7 @@ export const upsertOrganisationSettings = mutation({
 
     const existing = await ctx.db
       .query('organisation_settings')
-      .withIndex('by_organisation', (q: any) => q.eq('organisationId', orgId))
+      .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
       .first();
 
     if (existing) {

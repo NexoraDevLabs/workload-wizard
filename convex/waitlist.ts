@@ -27,20 +27,27 @@ export const upsert = mutation({
       .withIndex('by_email', (q) => q.eq('email', email))
       .first();
     if (existing) {
-      const updates: Partial<{
-        name: string;
-        organisation: string;
-        source: string;
+      const updates: {
+        name?: string;
+        organisation?: string;
+        source?: string;
         updatedAt: number;
-      }> = { updatedAt: now };
+      } = { updatedAt: now };
       if (args.name !== undefined) updates.name = args.name;
       if (args.organisation !== undefined)
         updates.organisation = args.organisation;
       if (args.source !== undefined) updates.source = args.source;
-      await ctx.db.patch(existing._id, updates as any);
+      await ctx.db.patch(existing._id, updates);
       return { already: true, id: existing._id };
     }
-    const toInsert: any = {
+    const toInsert: {
+      email: string;
+      createdAt: number;
+      updatedAt: number;
+      name?: string;
+      organisation?: string;
+      source?: string;
+    } = {
       email,
       createdAt: now,
       updatedAt: now,

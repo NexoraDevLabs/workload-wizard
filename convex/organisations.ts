@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { ensureDefaultsForOrg } from './permissions';
 import { writeAudit } from './audit';
-import type { Id } from './_generated/dataModel';
+import type { Id, MutationCtx } from './_generated/dataModel';
 
 // Get all organisations
 export const list = query({
@@ -28,12 +28,12 @@ export const reseedDefaultsForOrg = mutation({
 
     // Roles & permissions
     await ensureDefaultsForOrg(
-      ctx as any,
-      args.organisationId as Id<'organisations'>
+      ctx,
+      args.organisationId
     );
 
     // Admin allocation categories from system defaults
-    await (ctx as any).runMutation(
+    await ctx.runMutation(
       { path: 'allocations/seedOrgAdminCategories' },
       { organisationId: args.organisationId }
     );
@@ -90,7 +90,7 @@ export const reseedDefaultsAcrossOrganisations = mutation({
       .collect();
     let processed = 0;
     for (const org of orgs) {
-      await (ctx as any).runMutation(
+      await ctx.runMutation(
         { path: 'organisations/reseedDefaultsForOrg' },
         { organisationId: org._id }
       );
@@ -146,7 +146,7 @@ export const create = mutation({
 
     // Seed organisation admin allocation categories from system defaults
     try {
-      await (ctx as any).runMutation(
+      await ctx.runMutation(
         { path: 'allocations/seedOrgAdminCategories' },
         { organisationId }
       );

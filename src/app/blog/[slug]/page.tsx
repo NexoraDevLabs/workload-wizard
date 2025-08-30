@@ -307,7 +307,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             {Array.isArray(post.body) ? (
               <PortableText
                 value={post.body}
-                components={portableComponents as any}
+                components={portableComponents}
               />
             ) : null}
           </article>

@@ -41,14 +41,14 @@ export const upsert = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     if (args.id) {
-      const updates: Partial<{
+      const updates: {
         key: string;
         name: string;
-        description: string;
         stage: 'draft' | 'alpha' | 'beta' | 'concept';
         isActive: boolean;
         updatedAt: number;
-      }> = {
+        description?: string;
+      } = {
         key: args.key,
         name: args.name,
         stage: args.stage,
@@ -57,7 +57,7 @@ export const upsert = mutation({
       };
       if (typeof args.description === 'string')
         updates.description = args.description;
-      await ctx.db.patch(args.id, updates as any);
+      await ctx.db.patch(args.id, updates);
       if (args.performedBy) {
         await writeAudit(ctx, {
           action: 'feature.upsert',
@@ -81,13 +81,13 @@ export const upsert = mutation({
       .withIndex('by_key', (q) => q.eq('key', args.key))
       .first();
     if (existing) {
-      const updates: Partial<{
+      const updates: {
         name: string;
-        description: string;
         stage: 'draft' | 'alpha' | 'beta' | 'concept';
         isActive: boolean;
         updatedAt: number;
-      }> = {
+        description?: string;
+      } = {
         name: args.name,
         stage: args.stage,
         isActive: args.isActive,
@@ -95,7 +95,7 @@ export const upsert = mutation({
       };
       if (typeof args.description === 'string')
         updates.description = args.description;
-      await ctx.db.patch(existing._id, updates as any);
+      await ctx.db.patch(existing._id, updates);
       if (args.performedBy) {
         await writeAudit(ctx, {
           action: 'feature.upsert',
@@ -131,7 +131,7 @@ export const upsert = mutation({
     };
     if (typeof args.description === 'string')
       insertDoc.description = args.description;
-    const id = await ctx.db.insert('feature_flags', insertDoc as any);
+    const id = await ctx.db.insert('feature_flags', insertDoc);
     if (args.performedBy) {
       await writeAudit(ctx, {
         action: 'feature.create',

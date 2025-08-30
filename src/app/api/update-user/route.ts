@@ -267,9 +267,9 @@ export async function POST(request: NextRequest) {
               await getConvexClient().mutation(api.users.ensureMembership, {
                 userId,
                 organisationId:
-                  organisationId as unknown as Id<'organisations'>,
+                  organisationId as Id<'organisations'>,
                 isPrimary: true,
-              } as any);
+              });
             } catch (e) {
               // ensureMembership failed
             }

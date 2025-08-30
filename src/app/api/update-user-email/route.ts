@@ -41,9 +41,10 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === 'object' && 'errors' in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const zodError = err as { errors: unknown };
         return NextResponse.json(
-          { error: 'Invalid request body', details: (err as any).errors },
+          { error: 'Invalid request body', details: zodError.errors },
           { status: 400 }
         );
       }

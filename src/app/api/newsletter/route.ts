@@ -11,6 +11,14 @@ const BodySchema = z.object({
   source: z.string().optional(),
 });
 
+interface ResendContact {
+  email?: string;
+}
+
+interface ResendContactList {
+  data?: ResendContact[];
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, firstName, lastName, organisation, source } =
@@ -46,12 +54,13 @@ export async function POST(req: NextRequest) {
     try {
       const list = await resend.contacts.list({
         audienceId: RESEND_AUDIENCE_ID,
-      } as any);
-      const alreadyExists = Array.isArray((list as any)?.data)
-        ? ((list as any).data as any[]).some(
-            (c: any) =>
+      });
+      const contactList = list as ResendContactList;
+      const alreadyExists = Array.isArray(contactList?.data)
+        ? contactList.data?.some(
+            (c: ResendContact) =>
               String(c?.email || '').toLowerCase() === email.toLowerCase()
-          )
+          ) ?? false
         : false;
       if (alreadyExists) {
         return NextResponse.json({ ok: true, already: true });
@@ -61,7 +70,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Add to Resend Audience contacts
-    const basePayload: any = {
+    const basePayload: {
+      audienceId: string;
+      email: string;
+      firstName: string;
+      unsubscribed: boolean;
+      lastName?: string;
+    } = {
       audienceId: RESEND_AUDIENCE_ID,
       email,
       firstName,
