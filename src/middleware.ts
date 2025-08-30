@@ -8,8 +8,12 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../convex/_generated/api';
 
 // Simple token bucket per-IP for a few sensitive routes
-const RATE_LIMITS: Record<string, { tokens: number; lastRefill: number }> =
-  Object.create(null);
+interface RateLimitBucket {
+  tokens: number;
+  lastRefill: number;
+}
+
+const RATE_LIMITS: Record<string, RateLimitBucket> = {};
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_TOKENS = 20; // 20 requests/min per IP
 

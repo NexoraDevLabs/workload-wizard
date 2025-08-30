@@ -5,6 +5,16 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { recordAudit } from '@/lib/audit';
 
+interface ClerkMetadata {
+  role?: string;
+  roles?: string[];
+}
+
+interface ApiError {
+  statusCode?: number;
+  message?: string;
+}
+
 export async function POST(_req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -13,9 +23,9 @@ export async function POST(_req: NextRequest) {
     }
 
     const me = await currentUser();
-    const role = (me?.publicMetadata as any)?.role as string | undefined;
-    const roles =
-      ((me?.publicMetadata as any)?.roles as string[] | undefined) || [];
+    const metadata = me?.publicMetadata as ClerkMetadata | undefined;
+    const role = metadata?.role;
+    const roles = metadata?.roles || [];
     const isSuperAdmin =
       role === 'sysadmin' ||
       role === 'developer' ||
@@ -60,11 +70,12 @@ export async function POST(_req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, result }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
     const status =
-      typeof error?.statusCode === 'number' ? error.statusCode : 500;
+      typeof apiError?.statusCode === 'number' ? apiError.statusCode : 500;
     return NextResponse.json(
-      { error: error?.message ?? 'Failed to seed permissions' },
+      { error: apiError?.message ?? 'Failed to seed permissions' },
       { status }
     );
   }

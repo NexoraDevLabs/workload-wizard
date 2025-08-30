@@ -55,7 +55,7 @@ export function UserSyncButton() {
     try {
       const status = await getSyncStatus();
       setSyncStatus(status);
-    } catch (error) {
+    } catch (_error) {
       // Failed to get sync status
     }
   };

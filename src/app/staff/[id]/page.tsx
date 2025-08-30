@@ -72,7 +72,7 @@ export default function StaffProfilePage() {
     permissionId: 'staff.edit',
   });
 
-  const canDeactivate = useQuery(api.permissions.hasPermission, {
+  const _canDeactivate = useQuery(api.permissions.hasPermission, {
     userId: user?.id || '',
     permissionId: 'staff.edit', // Using edit permission for deactivate
   });

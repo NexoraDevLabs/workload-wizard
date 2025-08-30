@@ -149,8 +149,8 @@ export default function CreateLecturerProfilePage() {
       );
 
       window.location.href = '/staff';
-    } catch (error) {
-      // handled by withToast
+    } catch (_error) {
+      console.error('Failed to create lecturer profile:', _error);
     } finally {
       setIsLoading(false);
     }

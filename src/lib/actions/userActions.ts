@@ -434,7 +434,7 @@ export async function deleteUser(userId: string) {
 
     revalidatePath('/admin/users');
     return { success: true };
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Failed to delete user');
   }
 }

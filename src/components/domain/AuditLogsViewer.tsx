@@ -288,7 +288,7 @@ export function AuditLogsViewer({
       ) {
         setTotalFilteredLogs(auditStats.totalLogs);
       }
-    } catch (error) {
+    } catch (_error) {
       setStats(null);
     }
   }, [filters.timeRange]);

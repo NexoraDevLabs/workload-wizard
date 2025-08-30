@@ -40,7 +40,7 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
-  const { signIn, setActive } = useSignIn();
+  const { signIn, setActive: _setActive } = useSignIn();
   // Wrap useSearchParams usage to appease Next.js build when prerendering
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -125,7 +125,7 @@ function ResetPasswordForm() {
           'Failed to reset password. Please try again or contact support.'
         );
       }
-    } catch (err) {
+    } catch (_err) {
       setError(
         'Failed to reset password. The token may be invalid or expired.'
       );

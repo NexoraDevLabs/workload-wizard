@@ -128,7 +128,7 @@ export class PermissionGatingUtil {
   /**
    * Get permission scope context
    */
-  getScopeContext(permissionId: PermissionId): {
+  getScopeContext(_permissionId: PermissionId): {
     scope: string;
     isSystemAction: boolean;
     requiresOrgContext: boolean;

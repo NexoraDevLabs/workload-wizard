@@ -10,7 +10,6 @@ import {
   Map,
   FileText,
   Mail,
-  Phone,
   MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';

@@ -139,7 +139,7 @@ export const post = defineType({
       media: 'coverImage',
       date: 'publishedAt',
     },
-    prepare({ title, media, date }) {
+    prepare({ title, media, date }: { title: string; media: { asset?: { _ref: string } } | undefined; date: string }) {
       return {
         title,
         subtitle: date ? new Date(date).toLocaleDateString() : 'Draft',

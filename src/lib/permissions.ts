@@ -1,3 +1,6 @@
+import type { Id } from '../../convex/_generated/dataModel';
+
+// Define PermissionId as a type alias based on the PERMISSIONS object keys
 export type PermissionId = `${string}.${string}`;
 
 // Centralized permission constants for consistent usage

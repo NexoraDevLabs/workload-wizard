@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
@@ -34,7 +33,6 @@ import {
   UserCheck,
   UserX,
   RefreshCw,
-  GitCompareArrows,
   ShieldCheck,
   Filter,
   Search,
@@ -58,7 +56,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,

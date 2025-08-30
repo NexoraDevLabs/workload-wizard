@@ -25,6 +25,10 @@ interface State {
   isPermissionError: boolean;
 }
 
+interface PermissionError extends Error {
+  statusCode?: number;
+}
+
 /**
  * Error boundary that specifically handles permission errors
  * Automatically redirects to /unauthorised for 403 errors
@@ -37,8 +41,9 @@ export class PermissionErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     // Check if this is a permission error
+    const permissionError = error as PermissionError;
     const isPermissionError =
-      (error as any).statusCode === 403 ||
+      permissionError.statusCode === 403 ||
       error.message === 'Forbidden' ||
       error.message.includes('permission') ||
       error.message.includes('access denied') ||

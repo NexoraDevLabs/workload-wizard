@@ -33,11 +33,7 @@ export function usePinkMode() {
         document.documentElement.classList.remove('pink-mode');
       }
     } catch (_error) {
-      // Default to disabled if there's an error
-      setIsPinkModeEnabled(false);
-      document.documentElement.classList.remove('pink-mode');
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to set pink mode:', _error);
     }
   }, []);
 
