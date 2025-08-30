@@ -23,10 +23,22 @@ import {
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
+interface OrganisationSettings {
+  staffRoleOptions: string[];
+  teamOptions: string[];
+  baseMaxTeachingAtFTE1: number;
+  baseTotalContractAtFTE1: number;
+  roleMaxTeachingRules?: Array<{
+    role: string;
+    mode: 'percent' | 'fixed';
+    value: number;
+  }>;
+}
+
 export default function CreateLecturerProfilePage() {
   const { user } = useUser();
   const { toast } = useToast();
-  const create = useMutation((api as any).staff.create);
+  const create = useMutation(api.staff.create);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
@@ -37,26 +49,28 @@ export default function CreateLecturerProfilePage() {
   });
 
   const orgSettings = useQuery(
-    (api as any).organisationSettings.getOrganisationSettings,
+    api.organisationSettings.getOrganisationSettings,
     {
       userId: user?.id || '',
     }
-  );
+  ) as OrganisationSettings | undefined;
 
-  const ROLE_OPTIONS = orgSettings?.staffRoleOptions ?? [
-    'Lecturer',
-    'Senior Lecturer',
-    'Teaching Fellow',
-    'Associate Lecturer',
-    'Professor',
-  ];
+  const ROLE_OPTIONS = useMemo(() => 
+    orgSettings?.staffRoleOptions ?? [
+      'Lecturer',
+      'Senior Lecturer',
+      'Teaching Fellow',
+      'Associate Lecturer',
+      'Professor',
+    ], [orgSettings?.staffRoleOptions]);
 
-  const TEAM_OPTIONS = orgSettings?.teamOptions ?? [
-    'Computing',
-    'Engineering',
-    'Business',
-    'Design',
-  ];
+  const TEAM_OPTIONS = useMemo(() => 
+    orgSettings?.teamOptions ?? [
+      'Computing',
+      'Engineering',
+      'Business',
+      'Design',
+    ], [orgSettings?.teamOptions]);
 
   const BASE_MAX_TEACHING_AT_FTE_1 = orgSettings?.baseMaxTeachingAtFTE1 ?? 400; // hours at FTE=1
   const BASE_TOTAL_CONTRACT_AT_FTE_1 =
@@ -70,9 +84,7 @@ export default function CreateLecturerProfilePage() {
 
   const derivedMaxTeaching = useMemo(() => {
     // If a per-role rule exists, apply it; else use base = %100 of FTE1
-    const rules = orgSettings?.roleMaxTeachingRules as
-      | { role: string; mode: 'percent' | 'fixed'; value: number }[]
-      | undefined;
+    const rules = orgSettings?.roleMaxTeachingRules;
     const match = rules?.find((r) => r.role === form.role);
     const fte1 = BASE_TOTAL_CONTRACT_AT_FTE_1;
     let baseAtFte1: number;

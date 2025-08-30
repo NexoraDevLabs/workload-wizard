@@ -49,7 +49,7 @@ function getLocalFlagOverrides(): Record<string, boolean> {
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
     return stored ? JSON.parse(stored) : {};
-  } catch (_error) {
+  } catch {
     // Failed to get local flag overrides
     return {};
   }
@@ -62,7 +62,7 @@ function _setLocalFlagOverride(flagKey: string, enabled: boolean): void {
     const overrides = getLocalFlagOverrides();
     overrides[flagKey] = enabled;
     localStorage.setItem(LOCAL_FLAG_OVERRIDES_KEY, JSON.stringify(overrides));
-  } catch (_error) {
+  } catch {
     // Failed to set local flag override
   }
 }
@@ -98,7 +98,7 @@ export default function AccountFeaturesPage() {
       }));
       setFeatures(rows);
       setLastRefresh(new Date());
-    } catch (error) {
+    } catch {
       // Use toast directly instead of in dependency
       toast({
         title: 'Error',
@@ -140,7 +140,7 @@ export default function AccountFeaturesPage() {
         title: enabled ? 'Feature Enabled' : 'Feature Disabled',
         description: `${enabled ? 'Opted into' : 'Opted out of'} ${featureName}`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: `Failed to ${enabled ? 'enable' : 'disable'} feature. Please try again.`,

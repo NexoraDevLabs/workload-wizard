@@ -152,7 +152,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
 
       if (onSuccess) onSuccess();
       else window.location.href = '/staff';
-    } catch (error) {
+    } catch {
       // handled by withToast
     } finally {
       setIsLoading(false);

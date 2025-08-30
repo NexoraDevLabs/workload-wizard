@@ -247,7 +247,7 @@ export default function OrganisationUsersPage() {
       if (aVal > bVal) return direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, []);
+  }, [getRolesDisplay]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field)
@@ -358,7 +358,10 @@ export default function OrganisationUsersPage() {
               organisationId: currentUser?.organisationId,
             }),
           }).then(async (r) => {
-            if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+            if (!r.ok) {
+              const errorData = await r.json() as { error: string };
+              throw new Error(errorData.error || 'Failed');
+            }
           })
         );
         await Promise.all(updates);
@@ -377,7 +380,10 @@ export default function OrganisationUsersPage() {
             organisationId: currentUser?.organisationId,
           }),
         });
-        if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+        if (!res.ok) {
+          const errorData = await res.json() as { error: string };
+          throw new Error(errorData.error || 'Failed');
+        }
       }
       setAssigningUser(null);
     } catch {
@@ -455,7 +461,7 @@ export default function OrganisationUsersPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error: string };
         throw new Error(errorData.error || 'Failed to update user status');
       }
 

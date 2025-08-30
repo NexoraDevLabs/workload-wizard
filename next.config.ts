@@ -17,11 +17,13 @@ const nextConfig: NextConfig = {
     // Don't block production builds on ESLint errors
     ignoreDuringBuilds: true,
   },
-  webpack: (config: any) => {
+  webpack: (config: NextConfig['webpack'] extends (config: infer T) => any ? T : never) => {
     // Reduce noisy infrastructure logs in CI
-    config.infrastructureLogging = {
-      level: 'error',
-    };
+    if (config && typeof config === 'object') {
+      (config as any).infrastructureLogging = {
+        level: 'error',
+      };
+    }
     return config;
   },
   images: {

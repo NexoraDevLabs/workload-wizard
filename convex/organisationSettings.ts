@@ -98,6 +98,8 @@ export const getForActor = query({
           'Professor',
         ],
         teamOptions: ['Computing', 'Engineering', 'Business', 'Design'],
+        campusOptions: ['Main Campus', 'City Centre'],
+        maxClassSizePerGroup: 25,
         baseMaxTeachingAtFTE1: 400,
         baseTotalContractAtFTE1: 550,
         moduleHoursByCredits: [

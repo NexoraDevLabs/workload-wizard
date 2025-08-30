@@ -37,6 +37,28 @@ import { cn } from '@/lib/utils';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
+interface OnboardingFormData {
+  firstName: string;
+  lastName: string;
+  role: string;
+  customRole: string;
+  email: string;
+  phone: string;
+  department: string;
+  organization: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+  notifications: boolean;
+  newsletter: boolean;
+}
+
+interface OnboardingProgress {
+  timestamp: number;
+  formData: Record<string, string | boolean>;
+  currentStep: number;
+}
+
 const onboardingSteps = [
   {
     id: 'personal',
@@ -105,7 +127,7 @@ export default function OnboardingPage() {
       : 'skip'
   );
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<OnboardingFormData>({
     firstName: '',
     lastName: '',
     role: '',
@@ -189,30 +211,39 @@ export default function OnboardingPage() {
     if (!user?.id) return;
 
     const progressKey = `onboarding-progress-${user.id}`;
-    const progressData = {
-      currentStep,
-      formData,
+    
+    // Filter out undefined values to match the expected type
+    const cleanFormData: Record<string, string | boolean> = {};
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined && (typeof value === 'string' || typeof value === 'boolean')) {
+        cleanFormData[key] = value;
+      }
+    });
+    
+    const progressData: OnboardingProgress = {
       timestamp: Date.now(),
+      formData: cleanFormData,
+      currentStep,
     };
 
     try {
       localStorage.setItem(progressKey, JSON.stringify(progressData));
     } catch {
       // Failed to save onboarding progress
+      console.warn('Failed to save onboarding progress to localStorage');
     }
-  }, [user?.id, currentStep, formData]);
+  }, [user?.id, formData, currentStep]);
 
   // Load progress from localStorage
-  const loadProgress = useCallback(() => {
+  const loadProgress = useCallback((): OnboardingProgress | null => {
     if (!user?.id) return null;
 
     const progressKey = `onboarding-progress-${user.id}`;
-
     try {
       const savedProgress = localStorage.getItem(progressKey);
       if (!savedProgress) return null;
 
-      const progressData = JSON.parse(savedProgress);
+      const progressData: OnboardingProgress = JSON.parse(savedProgress) as OnboardingProgress;
 
       // Check if progress is recent (within 30 days)
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
@@ -248,7 +279,7 @@ export default function OnboardingPage() {
         ...savedProgress.formData,
         // Keep pre-populated organisation if it exists
         organization:
-          prevData.organization || savedProgress.formData.organization,
+          prevData.organization || (typeof savedProgress.formData.organization === 'string' ? savedProgress.formData.organization : ''),
       }));
       setCurrentStep(savedProgress.currentStep);
       setProgressRestored(true);
@@ -327,7 +358,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     const requiredFields = getRequiredFieldsForStep(currentStep);
     const missing = requiredFields.filter((field) => {
-      const value = formData[field as keyof typeof formData];
+      const value = formData[field as keyof OnboardingFormData];
       return typeof value !== 'string' || value.trim() === '';
     });
     setMissingFields(missing);
@@ -531,7 +562,7 @@ export default function OnboardingPage() {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       }
 
-      const value = formData[field as keyof typeof formData];
+      const value = formData[field as keyof OnboardingFormData];
       return typeof value === 'string' && value.trim() !== '';
     });
   };
@@ -562,7 +593,7 @@ export default function OnboardingPage() {
       const fieldValue =
         fieldName === field
           ? value
-          : newFormData[fieldName as keyof typeof newFormData];
+          : newFormData[fieldName as keyof OnboardingFormData];
       return typeof fieldValue !== 'string' || fieldValue.trim() === '';
     });
 

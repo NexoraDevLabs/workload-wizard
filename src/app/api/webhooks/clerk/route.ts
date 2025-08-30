@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   }
 
   // Get the body
-  const payload = await req.json();
+  const payload = await req.json() as Record<string, unknown>;
   const body = JSON.stringify(payload);
 
   // Webhook payload type logged
@@ -167,47 +167,42 @@ async function handleUserCreated(userData: ClerkUserData) {
 
   // Creating user in Convex
 
-  try {
-    // Create user in Convex
-    await getConvexClient().mutation(api.users.create, {
+  // Create user in Convex
+  await getConvexClient().mutation(api.users.create, {
+    email: primaryEmail.email_address,
+    username: (userData as unknown as { username?: string }).username || '',
+    givenName: (userData.first_name as string) || '',
+    familyName: (userData.last_name as string) || '',
+    fullName:
+      `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+    systemRoles: roles,
+    // webhook path may include organisationId; API accepts optional and validates/derives server-side
+    organisationId: organisationId,
+    pictureUrl: userData.image_url as string,
+    subject: userData.id,
+    tokenIdentifier: primaryEmail.id,
+  });
+
+  // User created in Convex
+
+  // Also create the user in Statsig Users by logging an event
+  const adapter = await getStatsigAdapter();
+  const Statsig = await adapter.initialize();
+  await Statsig.logEvent(
+    {
+      userID: userData.id,
       email: primaryEmail.email_address,
-      username: (userData as unknown as { username?: string }).username || '',
-      givenName: (userData.first_name as string) || '',
-      familyName: (userData.last_name as string) || '',
-      fullName:
-        `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-      systemRoles: roles,
-      // webhook path may include organisationId; API accepts optional and validates/derives server-side
-      organisationId: organisationId,
-      pictureUrl: userData.image_url as string,
-      subject: userData.id,
-      tokenIdentifier: primaryEmail.id,
-    });
-
-    // User created in Convex
-
-    // Also create the user in Statsig Users by logging an event
-    const adapter = await getStatsigAdapter();
-    const Statsig = await adapter.initialize();
-    await Statsig.logEvent(
-      {
-        userID: userData.id,
-        email: primaryEmail.email_address,
-        custom: {
-          fullName:
-            `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-          organisationId,
-          roles,
-          source: 'clerk.webhook',
-        },
+      custom: {
+        fullName:
+          `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+        organisationId,
+        roles,
+        source: 'clerk.webhook',
       },
-      'user_created'
-    );
-    await Statsig.flush();
-  } catch (error) {
-    // Error creating user in Convex
-    throw error;
-  }
+    },
+    'user_created'
+  );
+  await Statsig.flush();
 }
 
 async function handleUserUpdated(userData: ClerkUserData) {
@@ -290,24 +285,19 @@ async function handleSessionCreated(sessionData: unknown) {
   // Handling session.created event for user
   // Session data logged
 
-  try {
-    // Update last sign in time in Convex
-    await getConvexClient().mutation(api.users.updateLastSignIn, {
-      userId: s.user_id as string,
-    });
+  // Update last sign in time in Convex
+  await getConvexClient().mutation(api.users.updateLastSignIn, {
+    userId: s.user_id as string,
+  });
 
-    // Last sign in time updated in Convex for user
+  // Last sign in time updated in Convex for user
 
-    // Log a login event to Statsig to ensure the user appears in Users
-    const adapter = await getStatsigAdapter();
-    const Statsig = await adapter.initialize();
-    await Statsig.logEvent(
-      { userID: (s.user_id as string) || 'unknown' },
-      'login'
-    );
-    await Statsig.flush();
-  } catch (error) {
-    // Error updating last sign in time
-    throw error;
-  }
+  // Log a login event to Statsig to ensure the user appears in Users
+  const adapter = await getStatsigAdapter();
+  const Statsig = await adapter.initialize();
+  await Statsig.logEvent(
+    { userID: (s.user_id as string) || 'unknown' },
+    'login'
+  );
+  await Statsig.flush();
 }

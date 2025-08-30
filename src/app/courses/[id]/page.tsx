@@ -64,6 +64,36 @@ interface StudentDistribution {
   count: number;
 }
 
+interface OrganisationSettings {
+  _id?: Id<'organisation_settings'>;
+  _creationTime?: number;
+  organisationId?: Id<'organisations'>;
+  staffRoleOptions: string[];
+  teamOptions: string[];
+  campusOptions?: string[];
+  maxClassSizePerGroup?: number;
+  baseMaxTeachingAtFTE1: number;
+  baseTotalContractAtFTE1: number;
+  moduleHoursByCredits?: Array<{
+    credits: number;
+    teaching: number;
+    marking: number;
+  }>;
+  roleMaxTeachingRules?: Array<{
+    role: string;
+    mode: 'percent' | 'fixed';
+    value: number;
+  }>;
+  contractFamilyOptions?: string[];
+  familyMaxTeachingRules?: Array<{
+    family: string;
+    mode: 'percent' | 'fixed';
+    value: number;
+  }>;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
   const courseId = params?.id;
@@ -90,12 +120,12 @@ export default function CourseDetailPage() {
   const settings = useQuery(
     api.organisationSettings.getForActor,
     {}
-  );
+  ) as OrganisationSettings | null | undefined;
 
 
   const updateCourse = useMutation(api.courses.update);
   const initialiseSplit = useMutation(
-    (api as any).courses.initialiseRecommendedGroups
+    api.courses.initialiseRecommendedGroups
   );
   const canAdd = useMemo(() => {
     const val = Number(yearInput);
@@ -109,9 +139,7 @@ export default function CourseDetailPage() {
   // Compute recommendations early (guard when course isn't loaded yet),
   // so hooks order stays stable across renders.
   const recommendedByCampus = useMemo(() => {
-    const maxSize = settings && typeof settings === 'object' && 'maxClassSizePerGroup' in settings 
-      ? settings.maxClassSizePerGroup ?? 25 
-      : 25;
+    const maxSize = settings?.maxClassSizePerGroup ?? 25;
     if (!course)
       return [] as Array<{ campus: string; groups: number; count: number }>;
     const dist = (course.studentDistributionByCampus || []) as Array<{
@@ -294,7 +322,9 @@ export default function CourseDetailPage() {
                             },
                             toast
                           );
-                        } catch {}
+                        } catch {
+                          // Error handling is done by withToast
+                        }
                       }}
                       data-testid="create-groups-split-btn"
                     >
@@ -346,7 +376,9 @@ export default function CourseDetailPage() {
                   toast
                 );
                 setStudentsOpen(false);
-              } catch {}
+              } catch {
+                // Error handling is done by withToast
+              }
             }}
           />
 
@@ -390,7 +422,7 @@ export default function CourseDetailPage() {
                       await addYear({
                         courseId: course._id,
                         yearNumber,
-                      } as any);
+                      });
                       setYearInput(String(yearNumber + 1));
                       toast({
                         title: 'Year added',
@@ -477,7 +509,7 @@ function CourseYearModules({
   const [isCore, setIsCore] = useState<boolean>(true);
   const [isAttaching, setIsAttaching] = useState(false);
   const [isDetaching, setIsDetaching] = useState(false);
-  const [detaching, setDetaching] = useState<{
+  const [_detaching, _setDetaching] = useState<{
     moduleId: string;
     moduleCode: string;
     moduleName: string;
@@ -594,7 +626,7 @@ function CourseYearModules({
                     className="ml-1 text-destructive"
                     disabled={isDetaching}
                     onClick={() => {
-                      setDetaching({
+                      _setDetaching({
                         moduleId: String(a.module?._id),
                         moduleCode: String(a.module?.code || 'Unknown'),
                         moduleName: String(a.module?.name || ''),
@@ -614,11 +646,11 @@ function CourseYearModules({
         )}
       </div>
 
-      {detaching && (
+      {_detaching && (
         <GenericDeleteModal
           entityType="Module from Course Year"
-          entityName={detaching.moduleName}
-          entityCode={detaching.moduleCode}
+          entityName={_detaching.moduleName}
+          entityCode={_detaching.moduleCode}
           onConfirm={async () => {
             try {
               setIsDetaching(true);
@@ -626,23 +658,23 @@ function CourseYearModules({
                 () =>
                   detach({
                     courseYearId: yearId as any,
-                    moduleId: detaching.moduleId as any,
+                    moduleId: _detaching.moduleId as any,
                   }),
                 {
                   success: {
                     title: 'Module detached',
-                    description: `${detaching.moduleCode} has been detached successfully.`,
+                    description: `${_detaching.moduleCode} has been detached successfully.`,
                   },
                   error: { title: 'Failed to detach module' },
                 },
                 toast
               );
-              setDetaching(null);
+              _setDetaching(null);
             } finally {
               setIsDetaching(false);
             }
           }}
-          onCancel={() => setDetaching(null)}
+          onCancel={() => _setDetaching(null)}
           isDeleting={isDetaching}
         />
       )}
@@ -703,7 +735,7 @@ function ModuleIterationAndGroupsAndAllocations({
   const [hoursOverride, setHoursOverride] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [detaching, setDetaching] = useState<{
+  const [_detaching, _setDetaching] = useState<{
     moduleId: string;
     moduleCode: string;
     moduleName: string;

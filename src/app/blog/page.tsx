@@ -73,14 +73,15 @@ export default function BlogIndexPage() {
       try {
         const fetchedPosts = await getPosts();
         setPosts(fetchedPosts);
-      } catch (error) {
+      } catch {
         // Failed to fetch posts
+        console.error('Failed to fetch posts');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPosts();
+    void fetchPosts();
   }, []);
 
   if (!sanityEnabled) {

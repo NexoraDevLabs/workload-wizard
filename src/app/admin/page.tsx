@@ -68,7 +68,7 @@ export default function AdminDashboardPage() {
         totalOrganisations: organisations.length,
         activeUsers,
       });
-    } catch (error) {
+    } catch {
       // Error fetching stats
     } finally {
       setIsLoadingStats(false);

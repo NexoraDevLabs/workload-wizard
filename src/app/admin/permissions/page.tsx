@@ -904,40 +904,10 @@ export default function AdminPermissionsPage() {
       {/* Delete Confirmation Modal */}
       {deletingPermission && (
         <GenericDeleteModal
-          isOpen={true}
-          onClose={() => {
-            setDeletingPermission(null);
-            setForceDelete(false);
-          }}
-          onConfirm={handleDelete}
-          title="Delete Permission"
-          description="This action cannot be undone"
-          itemName="permission"
-          itemDetails={{
-            'Permission ID': deletingPermission.id,
-            Group: deletingPermission.group,
-            Description: deletingPermission.description,
-            'Default Roles':
-              deletingPermission.defaultRoles.length > 0
-                ? deletingPermission.defaultRoles.join(', ')
-                : 'None',
-          }}
-          warningMessage={
-            forceDelete
-              ? 'Force delete will automatically remove this permission from ALL roles and organisations before deletion. This cannot be undone!'
-              : "This will permanently remove the permission from the system. If deletion fails, you'll need to remove this permission from all roles first, or use Force Delete."
-          }
-          confirmButtonText="Delete Permission"
-          showForceDelete={hasAnyRole(user, ['sysadmin', 'developer'])}
-          forceDelete={forceDelete}
-          onForceDeleteChange={setForceDelete}
-          onError={(error: unknown) => {
-            // Delete error
-          }}
-          // Props required by current GenericDeleteModal implementation
           entityType="Permission"
           entityName={deletingPermission.description || deletingPermission.id}
           entityCode={deletingPermission.id}
+          onConfirm={handleDelete}
           onCancel={() => {
             setDeletingPermission(null);
             setForceDelete(false);
@@ -1048,7 +1018,10 @@ export default function AdminPermissionsPage() {
       </Dialog>
 
       {/* Create/Edit Template Dialog */}
-      <Dialog open={showTemplateForm} onOpenChange={setShowTemplateForm}>
+      <Dialog
+        open={showTemplateForm}
+        onOpenChange={setShowTemplateForm}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -1131,8 +1104,8 @@ export default function AdminPermissionsPage() {
       {/* Delete Template Confirmation */}
       {deletingTemplate && (
         <GenericDeleteModal
-          isOpen={true}
-          onClose={() => setDeletingTemplate(null)}
+          entityType="Default Role Template"
+          entityName={deletingTemplate.name}
           onConfirm={async () => {
             try {
               await deleteTemplate({
@@ -1158,17 +1131,6 @@ export default function AdminPermissionsPage() {
               });
             }
           }}
-          title="Delete Default Role Template"
-          description="This will deactivate the template. Existing organisations are not affected."
-          itemName="default role template"
-          itemDetails={{
-            Name: deletingTemplate.name,
-            Description: deletingTemplate.description || '',
-          }}
-          confirmButtonText="Delete Template"
-          // Props required by current GenericDeleteModal implementation
-          entityType="Default Role Template"
-          entityName={deletingTemplate.name}
           onCancel={() => setDeletingTemplate(null)}
         />
       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { withToast } from '@/lib/utils';
 import { EditStaffForm } from '@/components/domain/EditStaffForm';
 import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
+import type { Doc } from '@/convex/_generated/dataModel';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,13 @@ interface GroupAllocation {
   type: string;
 }
 
+interface LecturerAllocationDetail {
+  allocation: Doc<'group_allocations'>;
+  group: Doc<'module_groups'> | null;
+  iteration: Doc<'module_iterations'> | null;
+  module: Doc<'modules'> | null;
+}
+
 export default function LecturerProfilePage() {
   const { user } = useUser();
   const params = useParams();
@@ -56,7 +64,7 @@ export default function LecturerProfilePage() {
   );
 
   const { currentYear } = useAcademicYear();
-  const adminAllocations = useQuery(
+  const _adminAllocations = useQuery(
     api.allocations.listAdminAllocations,
     profileId && currentYear?._id
       ? {
@@ -65,7 +73,7 @@ export default function LecturerProfilePage() {
         }
       : 'skip'
   ) as AdminAllocation[] | undefined;
-  const groupAllocations = useQuery(
+  const _groupAllocations = useQuery(
     api.allocations.listForLecturer,
     'skip'
   ) as GroupAllocation[] | undefined;
@@ -91,7 +99,23 @@ export default function LecturerProfilePage() {
   const deactivateMutation = useMutation(api.staff.edit);
   const updateUserAvatarMutation = useMutation(api.users.updateUserAvatar);
 
-  const handleEdit = async (formData: any) => {
+  const handleEdit = async (formData: Partial<{
+    _id: string;
+    fullName: string;
+    email: string;
+    contract: string;
+    fte: number;
+    maxTeachingHours: number;
+    totalContract: number;
+    role?: string;
+    teamName?: string;
+    prefWorkingLocation?: string;
+    prefSpecialism?: string;
+    prefNotes?: string;
+    isActive: boolean;
+    contractFamily?: string;
+    prefWorkingTime?: 'am' | 'pm' | 'all_day';
+  }>) => {
     try {
       await editMutation({
         profileId: profileId as Id<'lecturer_profiles'>,
@@ -191,11 +215,10 @@ export default function LecturerProfilePage() {
         title: 'Profile Reactivated',
         description: 'Lecturer profile has been reactivated.',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Reactivation Failed',
         description: 'Failed to reactivate lecturer profile. Please try again.',
-        variant: 'destructive',
       });
     }
   };
@@ -420,20 +443,17 @@ export default function LecturerProfilePage() {
   );
 }
 
-function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
+function ModuleAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profiles'> }) {
   const { currentYear } = useAcademicYear();
-  const { toast } = useToast();
   const rows = useQuery(
-    (api as any).allocations.listForLecturerDetailed,
+    api.allocations.listForLecturerDetailed,
     currentYear?._id
-      ? ({
-          lecturerId: lecturerId as any,
-          academicYearId: (currentYear as any)._id,
-        } as any)
-      : ('skip' as any)
-  ) as
-    | Array<{ allocation: any; group: any; iteration: any; module: any }>
-    | undefined;
+              ? ({
+          lecturerId: lecturerId,
+          academicYearId: currentYear._id,
+        })
+      : 'skip'
+  ) as LecturerAllocationDetail[] | undefined;
   const [sortBy, setSortBy] = useState<'module' | 'hours' | 'type'>('module');
   const [typeFilter, setTypeFilter] = useState<'all' | 'teaching' | 'admin'>(
     'all'
@@ -498,7 +518,7 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
           <select
             className="border rounded px-2 py-1"
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as any)}
+            onChange={(e) => setTypeFilter(e.target.value as 'all' | 'teaching' | 'admin')}
           >
             <option value="all">All</option>
             <option value="teaching">Teaching</option>
@@ -510,7 +530,7 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
           <select
             className="border rounded px-2 py-1"
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'module' | 'hours' | 'type')}
           >
             <option value="module">Module</option>
             <option value="hours">Hours</option>
@@ -559,36 +579,36 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: string }) {
   );
 }
 
-function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
+function AdminAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profiles'> }) {
   const { currentYear } = useAcademicYear();
   const { user } = useUser();
   const { toast } = useToast();
   const orgCategories = useQuery(
-    (api as any).allocations.listOrganisationAdminCategories,
-    user?.id ? ({} as any) : ('skip' as any)
-  ) as any[] | undefined;
+    api.allocations.listOrganisationAdminCategories,
+    user?.id ? {} : 'skip'
+  ) as Doc<'organisation_admin_allocation_categories'>[] | undefined;
   const sysCategories = useQuery(
-    (api as any).allocations.listAdminCategories,
+    api.allocations.listAdminCategories,
     {}
-  ) as any[] | undefined;
+  ) as Doc<'admin_allocation_categories'>[] | undefined;
   const categories =
     orgCategories && orgCategories.length > 0 ? orgCategories : sysCategories;
   const rows = useQuery(
-    (api as any).allocations.listAdminAllocations,
+    api.allocations.listAdminAllocations,
     currentYear?._id
-      ? ({
-          lecturerId: lecturerId as any,
-          academicYearId: (currentYear as any)._id,
-        } as any)
-      : ('skip' as any)
-  ) as Array<{ allocation: any; category: any }> | undefined;
-  const upsert = useMutation((api as any).allocations.upsertAdminAllocation);
-  const remove = useMutation((api as any).allocations.removeAdminAllocation);
+      ? {
+          lecturerId: lecturerId,
+          academicYearId: currentYear._id,
+        }
+      : 'skip'
+  ) as Array<{ allocation: Doc<'admin_allocations'>; category: Doc<'admin_allocation_categories'> | Doc<'organisation_admin_allocation_categories'> | null }> | undefined;
+  const upsert = useMutation(api.allocations.upsertAdminAllocation);
+  const remove = useMutation(api.allocations.removeAdminAllocation);
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
   const [formOpen, setFormOpen] = useState<null | {
-    id?: string;
+    id?: Id<'admin_allocations'>;
     categoryId?: string;
     hours: string;
     isCustom?: boolean;
@@ -611,8 +631,8 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
       await withToast(
         () =>
           upsert({
-            lecturerId: lecturerId as any,
-            academicYearId: (currentYear as any)._id,
+            lecturerId: lecturerId,
+            academicYearId: currentYear!._id,
             ...(formOpen.isCustom
               ? {
                   isCustom: true,
@@ -621,8 +641,8 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
                 }
               : { categoryId: formOpen.categoryId || '' }),
             hours,
-            ...(formOpen.id ? { allocationId: formOpen.id as any } : {}),
-          } as any),
+            ...(formOpen.id ? { allocationId: formOpen.id } : {}),
+          }),
         {
           success: {
             title: formOpen.id ? 'Allocation updated' : 'Allocation created',
@@ -637,12 +657,12 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
     }
   };
 
-  const handleRemove = async (allocationId: string) => {
+  const handleRemove = async (allocationId: Id<'admin_allocations'>) => {
     if (!confirm('Remove allocation?')) return;
     setIsRemoving(allocationId);
     try {
       await withToast(
-        () => remove({ allocationId: allocationId as any } as any),
+        () => remove({ allocationId: allocationId }),
         {
           success: { title: 'Allocation removed' },
           error: { title: 'Remove failed' },
@@ -729,7 +749,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: string }) {
                   disabled={isSaving !== null}
                   onClick={() =>
                     setFormOpen({
-                      id: String(allocation._id),
+                      id: allocation._id,
                       categoryId: String(allocation.categoryId),
                       hours: String(allocation.hours),
                     })

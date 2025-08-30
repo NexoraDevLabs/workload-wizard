@@ -353,7 +353,7 @@ export default function ProfilePage() {
         setAvatarFile(null);
         setAvatarPreview('');
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to update profile. Please try again.',
@@ -389,7 +389,7 @@ export default function ProfilePage() {
         description: 'Profile picture has been refreshed.',
         variant: 'success',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Refresh Failed',
         description: 'Failed to refresh avatar. Please try again.',

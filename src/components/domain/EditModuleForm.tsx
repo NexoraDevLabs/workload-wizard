@@ -85,6 +85,12 @@ export function EditModuleForm({
           teaching: number;
           marking: number;
         }>;
+        campusOptions?: string[];
+        staffRoleOptions?: string[];
+        teamOptions?: string[];
+        maxClassSizePerGroup?: number;
+        baseMaxTeachingAtFTE1?: number;
+        baseTotalContractAtFTE1?: number;
       }
     | undefined;
 

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { event: _event, props: _props } = BodySchema.parse(await req.json());
     // For now, accept and no-op (or log). In future, forward to PH proxy endpoint/server SDK.
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Bad request' }, { status: 400 });
   }
 }

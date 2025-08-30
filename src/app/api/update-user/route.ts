@@ -292,8 +292,8 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    } catch (error) {
-      // Error updating user in Convex
+    } catch {
+      // Error updating user
       // If Convex update fails, we'll continue since Clerk is the primary source
     }
 
@@ -328,7 +328,7 @@ export async function POST(request: NextRequest) {
             );
           }
         }
-      } catch (err) {
+      } catch {
         // Organisational multi-role change failed
       }
     } else if (organisationalRoleId) {
@@ -408,7 +408,7 @@ export async function POST(request: NextRequest) {
             // Ignore role lookup errors silently
           }
         }
-      } catch (err) {
+      } catch {
         // Organisational role change failed
       }
     }
@@ -417,7 +417,7 @@ export async function POST(request: NextRequest) {
       { message: 'User updated successfully' },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     // Error updating user
 
     return NextResponse.json(

@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
           });
         }
       }
-    } catch (error) {
+    } catch {
       // Error updating email in Convex
       // If Convex update fails, we should rollback the Clerk update
       // For now, we'll just log the error and continue

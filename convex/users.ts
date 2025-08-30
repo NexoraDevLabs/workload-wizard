@@ -140,7 +140,7 @@ export const update = mutation({
       String(targetUser.organisationId)
     );
 
-    const { id, currentUserId, ...updates } = args;
+    const { id, ...updates } = args;
 
     // Guardrails: Only system admins (sysadmin/developer/admin) may modify systemRoles
     if (updates.systemRoles) {
@@ -589,7 +589,7 @@ export const updateByWebhook = mutation({
       throw new Error('User not found');
     }
 
-    const { userId, ...updates } = args;
+    const { ...updates } = args;
 
     // Build a safe update object with correct types
     const processedUpdates: Partial<Doc<'users'>> & Record<string, unknown> =
@@ -666,7 +666,15 @@ export const updateByWebhook = mutation({
 export const completeOnboarding = mutation({
   args: {
     subject: v.string(), // Clerk user ID
-    onboardingData: v.any(),
+    onboardingData: v.object({
+      firstName: v.optional(v.string()),
+      lastName: v.optional(v.string()),
+      email: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      department: v.optional(v.string()),
+      role: v.optional(v.string()),
+      customRole: v.optional(v.string()),
+    }),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db

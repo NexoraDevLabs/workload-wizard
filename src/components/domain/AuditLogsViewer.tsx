@@ -269,7 +269,7 @@ export function AuditLogsViewer({
         setIsLoading(false);
       }
     },
-    [filters]
+    [filters, forcedFilters?.type, forcedFilters?.organisationId]
   );
 
   const loadStats = useCallback(async () => {

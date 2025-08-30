@@ -609,7 +609,7 @@ export async function updateUser(
 
     revalidatePath('/admin/users');
     return { success: true };
-  } catch (error) {
+  } catch {
     throw new Error('Failed to update user');
   }
 }

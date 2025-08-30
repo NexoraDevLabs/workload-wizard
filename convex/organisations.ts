@@ -142,7 +142,7 @@ export const create = mutation({
     // Seed default roles and permissions for the organisation
     try {
       await ensureDefaultsForOrg(ctx, organisationId);
-    } catch (_err) {
+    } catch {
       // Do not block org creation if seeding fails; it can be re-run
     }
 
@@ -152,7 +152,7 @@ export const create = mutation({
         { path: 'allocations/seedOrgAdminCategories' },
         { organisationId }
       );
-    } catch (_err) {
+    } catch {
       // Failed to seed org admin allocation categories
     }
 
@@ -174,7 +174,7 @@ export const create = mutation({
         createdAt: now2,
         updatedAt: now2,
       });
-    } catch (_err) {
+    } catch {
       // Failed to seed organisation settings
     }
 
