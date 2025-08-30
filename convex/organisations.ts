@@ -74,7 +74,9 @@ export const reseedDefaultsForOrg = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return { ok: true };
   },
@@ -189,7 +191,9 @@ export const create = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return organisationId;
   },
@@ -231,7 +235,9 @@ export const update = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return id;
   },
@@ -262,7 +268,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return args.id;
   },

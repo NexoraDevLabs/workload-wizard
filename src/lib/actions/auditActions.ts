@@ -143,7 +143,7 @@ export async function logAuditEvent(data: AuditLogData) {
       ...base,
       ...optional,
     });
-  } catch (_error) {
+  } catch {
     // Don't throw error to avoid breaking the main operation
   }
 }
@@ -669,7 +669,7 @@ export async function getAuditLogs(filters?: {
 
     // Ensure organisationId is properly typed
     if (hardenedFilters.organisationId && typeof hardenedFilters.organisationId === 'string') {
-      hardenedFilters.organisationId = hardenedFilters.organisationId as Id<'organisations'>;
+      // Type is already correct, no assignment needed
     }
 
     const result = await getConvexClient().query(
@@ -677,7 +677,7 @@ export async function getAuditLogs(filters?: {
       hardenedFilters
     );
     return result; // Return the full response object with logs, hasMore, and nextCursor
-  } catch (error) {
+  } catch {
     throw new Error('Failed to fetch audit logs');
   }
 }
@@ -712,7 +712,7 @@ export async function getAuditStats(filters?: {
 
   try {
     return await getConvexClient().query(api.audit.getStats, filters || {});
-  } catch (error) {
+  } catch {
     throw new Error('Failed to fetch audit statistics');
   }
 }

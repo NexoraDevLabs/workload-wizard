@@ -72,8 +72,7 @@ interface SystemRoleTemplate {
   updatedAt: number;
 }
 
-// Loosely-typed alias to avoid prop mismatch errors until component/types converge
-const GenericDeleteModalAny: any = GenericDeleteModal as any;
+// Use the original component directly
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -904,7 +903,7 @@ export default function AdminPermissionsPage() {
 
       {/* Delete Confirmation Modal */}
       {deletingPermission && (
-        <GenericDeleteModalAny
+        <GenericDeleteModal
           isOpen={true}
           onClose={() => {
             setDeletingPermission(null);
@@ -1131,7 +1130,7 @@ export default function AdminPermissionsPage() {
 
       {/* Delete Template Confirmation */}
       {deletingTemplate && (
-        <GenericDeleteModalAny
+        <GenericDeleteModal
           isOpen={true}
           onClose={() => setDeletingTemplate(null)}
           onConfirm={async () => {

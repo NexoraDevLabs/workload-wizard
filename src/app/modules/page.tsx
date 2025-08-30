@@ -1,41 +1,57 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
-import { useMutation, useQuery } from 'convex/react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
-import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { EditModuleForm } from '@/components/domain/EditModuleForm';
-import { PermissionGate } from '@/components/common/PermissionGate';
-import { useQuery as useConvexQuery } from 'convex/react';
-import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { useToast } from '@/hooks/use-toast';
-import { Edit, Trash2 } from 'lucide-react';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { EditModuleForm } from '@/components/domain/EditModuleForm';
+import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
+import { PermissionGate } from '@/components/common/PermissionGate';
 import { withToast } from '@/lib/utils';
+import { Edit, Trash2 } from 'lucide-react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
+interface Module {
+  _id: Id<'modules'>;
+  code: string;
+  name: string;
+  credits?: number;
+  leaderProfileId?: Id<'staff'>;
+  level?: number;
+  teachingHours?: number;
+  markingHours?: number;
+}
+
+interface Lecturer {
+  _id: Id<'staff'>;
+  fullName: string;
+  email: string;
+}
+
+
+
 export default function ModulesPage() {
   const { toast } = useToast();
-  const modules = useQuery(api.modules.listByOrganisation);
+  const modules = useQuery(api.modules.listByOrganisation) as Module[] | undefined;
   const { currentYear } = useAcademicYear();
   const create = useMutation(api.modules.create);
   const deleteModule = useMutation(api.modules.remove);
-  const anyApi = api as any;
-  const me = useConvexQuery(
-    anyApi.users.getBySubject,
-    typeof window !== 'undefined'
-      ? { subject: (window as any).Clerk?.user?.id }
+  const me = useQuery(
+    api.users.getBySubject,
+    typeof window !== 'undefined' && (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id
+      ? { subject: (window as { Clerk?: { user?: { id: string } } }).Clerk.user.id }
       : 'skip'
   ) as { systemRoles?: string[] } | undefined;
-  const isAdminLike = (me?.systemRoles || []).some(
+  const _isAdminLike = (me?.systemRoles || []).some(
     (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
   );
 
@@ -48,26 +64,16 @@ export default function ModulesPage() {
     teachingHours: '',
     markingHours: '',
   });
-  const orgSettings = useQuery(
-    (api as any).organisationSettings.getForActor
-  ) as
-    | {
-        moduleHoursByCredits?: Array<{
-          credits: number;
-          teaching: number;
-          marking: number;
-        }>;
-      }
-    | undefined;
-  const lecturers = (useQuery((api as any).staff.listForActor) || []) as any[];
+
+  const lecturers = (useQuery(api.staff.listForActor) || []) as Lecturer[];
   const codeAvailability = useQuery(
-    (api as any).modules.isCodeAvailable,
-    form.code.trim() ? ({ code: form.code.trim() } as any) : ('skip' as any)
+    api.modules.isCodeAvailable,
+    form.code.trim() ? { code: form.code.trim() } : 'skip'
   ) as { available: boolean } | undefined;
-  const [editingModule, setEditingModule] = useState<any>(null);
-  const [deletingModule, setDeletingModule] = useState<any>(null);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
+  const [deletingModule, setDeletingModule] = useState<Module | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [optimisticallyRemovedIds, setOptimisticallyRemovedIds] = useState<
+  const [_optimisticallyRemovedIds, setOptimisticallyRemovedIds] = useState<
     Set<string>
   >(new Set());
 
@@ -87,7 +93,7 @@ export default function ModulesPage() {
         name: form.name.trim(),
         ...(form.credits.trim() ? { credits: Number(form.credits) } : {}),
         ...(form.leaderProfileId
-          ? { leaderProfileId: form.leaderProfileId as any }
+          ? { leaderProfileId: form.leaderProfileId as Id<'lecturer_profiles'> }
           : {}),
         ...(form.level.trim() ? { level: Number(form.level) } : {}),
         ...(form.teachingHours.trim()
@@ -111,21 +117,20 @@ export default function ModulesPage() {
         description: `${form.code.trim()} has been created successfully.`,
         variant: 'success',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Failed to create module',
-        description:
-          error instanceof Error ? error.message : 'An error occurred',
+        description: 'An error occurred',
         variant: 'destructive',
       });
     }
   };
 
-  const handleEditModule = (module: any) => {
+  const handleEditModule = (module: Module) => {
     setEditingModule(module);
   };
 
-  const handleDeleteModule = (module: any) => {
+  const handleDeleteModule = (module: Module) => {
     setDeletingModule(module);
   };
 
@@ -151,7 +156,7 @@ export default function ModulesPage() {
         toast
       );
       setDeletingModule(null);
-    } catch (error) {
+    } catch {
       // handled by withToast
       setOptimisticallyRemovedIds((prev) => {
         const next = new Set(prev);

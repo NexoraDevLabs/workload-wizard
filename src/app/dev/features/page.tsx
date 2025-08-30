@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { useUser } from '@clerk/nextjs';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,17 @@ import { useState } from 'react';
 
 type Stage = 'draft' | 'alpha' | 'beta' | 'concept';
 
+interface FeatureFlag {
+  _id: Id<'feature_flags'>;
+  key: string;
+  name: string;
+  description?: string;
+  stage: Stage;
+  isActive: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export default function AdminFeaturesPage() {
   const { user } = useUser();
   const list = useQuery(api.featureFlags.listAll, {});
@@ -33,7 +45,7 @@ export default function AdminFeaturesPage() {
   const remove = useMutation(api.featureFlags.remove);
 
   const [form, setForm] = useState({
-    id: undefined as undefined | string,
+    id: undefined as undefined | Id<'feature_flags'>,
     key: '',
     name: '',
     description: '',
@@ -76,7 +88,7 @@ export default function AdminFeaturesPage() {
 
   const save = async () => {
     await upsert({
-      ...(form.id ? { id: form.id as any } : {}),
+      ...(form.id ? { id: form.id } : {}),
       key: form.key.trim(),
       name: form.name.trim(),
       ...(form.description.trim()
@@ -90,7 +102,7 @@ export default function AdminFeaturesPage() {
     resetForm();
   };
 
-  const edit = (row: any) =>
+  const edit = (row: FeatureFlag) =>
     setForm({
       id: row._id,
       key: row.key,
@@ -100,14 +112,14 @@ export default function AdminFeaturesPage() {
       isActive: row.isActive,
     });
 
-  const changeStage = async (row: any, stage: Stage) => {
+  const changeStage = async (row: FeatureFlag, stage: Stage) => {
     try {
-      setUpdating(row._id as string);
+      setUpdating(row._id);
       await upsert({
         id: row._id,
         key: row.key,
         name: row.name,
-        ...(row.description ? { description: row.description as string } : {}),
+        ...(row.description ? { description: row.description } : {}),
         stage,
         isActive: row.isActive,
         ...(user?.id ? { performedBy: user.id } : {}),
@@ -199,17 +211,17 @@ export default function AdminFeaturesPage() {
             <CardDescription>Manage visibility and details.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(list || []).map((row) => (
+            {(list || []).map((row: FeatureFlag) => (
               <div key={row._id} className="border rounded p-3">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="font-medium flex items-center gap-2">
                       <span>{row.name}</span>
                       <Badge
-                        variant={getStageBadgeVariant(row.stage as string)}
+                        variant={getStageBadgeVariant(row.stage)}
                         className="text-xs"
                       >
-                        {capitalizeStage(row.stage as string)}
+                        {capitalizeStage(row.stage)}
                       </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground font-mono">
@@ -221,9 +233,9 @@ export default function AdminFeaturesPage() {
                     <div className="mt-2">
                       <label className="text-xs mr-2">Stage</label>
                       <Select
-                        value={row.stage as Stage}
+                        value={row.stage}
                         onValueChange={(v) => changeStage(row, v as Stage)}
-                        disabled={updating === (row._id as string)}
+                        disabled={updating === row._id}
                       >
                         <SelectTrigger className="h-8 w-40">
                           <SelectValue />

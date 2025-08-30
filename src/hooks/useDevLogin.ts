@@ -25,7 +25,7 @@ export function useDevLogin() {
             newUrl.searchParams.delete('userId');
             window.history.replaceState({}, '', newUrl.toString());
           }
-        } catch (_error) {
+        } catch {
           // Clear invalid session data
           localStorage.removeItem('dev_login_session_token');
           localStorage.removeItem('dev_login_original_admin_id');
@@ -57,7 +57,7 @@ export function useDevLogin() {
         });
         localStorage.removeItem('dev_login_current_user_id');
       }
-    } catch (_error) {
+    } catch {
       // Failed to clear dev login metadata
     }
   };

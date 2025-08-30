@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === 'object' && 'errors' in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in err) {
         return NextResponse.json(
-          { error: 'Invalid request body', details: (err as any).errors },
+          { error: 'Invalid request body', details: (err as { errors: unknown }).errors },
           { status: 400 }
         );
       }
@@ -248,8 +248,7 @@ export async function POST(request: NextRequest) {
           if (systemRoles) convexUpdates.systemRoles = systemRoles;
           // Apply organisation change to Convex when admin
           if (isAdmin && organisationId) {
-            (convexUpdates as any).organisationId =
-              organisationId as unknown as Id<'organisations'>;
+            convexUpdates.organisationId = organisationId;
           }
           if (typeof isActive === 'boolean') convexUpdates.isActive = isActive;
 
@@ -405,7 +404,9 @@ export async function POST(request: NextRequest) {
                 }
               );
             }
-          } catch {}
+          } catch {
+            // Ignore role lookup errors silently
+          }
         }
       } catch (err) {
         // Organisational role change failed

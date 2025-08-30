@@ -139,7 +139,7 @@ export default function StaffCapacityPage() {
               <Label>Capacity Mode</Label>
               <Select
                 value={capacityMode}
-                onValueChange={(v) => setCapacityMode(v as any)}
+                onValueChange={(v) => setCapacityMode(v as 'teaching' | 'total')}
               >
                 <SelectTrigger data-testid="capacity-mode-trigger">
                   <SelectValue />

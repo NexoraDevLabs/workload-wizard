@@ -299,7 +299,7 @@ export function LoginForm({
         // Sign out the user so they can sign in with their new password
         try {
           await signOut();
-        } catch (_signOutError) {
+        } catch {
           // Sign out after password reset
         }
 
@@ -517,7 +517,7 @@ export function LoginForm({
               'Please enter the verification code and your new password.'
             );
           }
-        } catch (_error) {
+        } catch {
           // If there's an error checking the state, just stay on login form
         }
       };

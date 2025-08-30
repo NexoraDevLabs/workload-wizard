@@ -184,7 +184,9 @@ export default function AccountFeaturesPage() {
       };
       await anyClient.updateUser?.(statsigUser);
       client.logEvent('features_refresh');
-    } catch {}
+    } catch {
+      // Ignore feature refresh errors silently
+    }
     toast({
       title: 'Refreshed',
       description: 'Features and flags re-synced.',
@@ -194,7 +196,7 @@ export default function AccountFeaturesPage() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      loadFeatures();
+      void loadFeatures();
     }
 
     // Cleanup function to prevent memory leaks

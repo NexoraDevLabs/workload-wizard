@@ -1,42 +1,46 @@
 'use client';
 
-import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
-import { useMutation, useQuery } from 'convex/react';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useMemo, useState } from 'react';
-import { EditCourseForm } from '@/components/domain/EditCourseForm';
-import { PermissionGate } from '@/components/common/PermissionGate';
-import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Edit, Trash2 } from 'lucide-react';
+import { EditCourseForm } from '@/components/domain/EditCourseForm';
+import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { withToast } from '@/lib/utils';
+import { Edit, Trash2 } from 'lucide-react';
+
+interface Course {
+  _id: Id<'courses'>;
+  code: string;
+  name: string;
+  campuses?: string[];
+}
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function CoursesPage() {
-  const { user } = useUser();
   const { toast } = useToast();
   // Derive organisation on the server from the authenticated actor, not from client public metadata
-  const courses = useQuery((api as any).courses.listForActor);
+  const courses = useQuery(api.courses.listForActor) as Course[] | undefined;
 
   const createCourse = useMutation(api.courses.create);
   const deleteCourse = useMutation(api.courses.remove);
   const [form, setForm] = useState({ code: '', name: '', campuses: '' });
   const codeAvailability = useQuery(
-    (api as any).courses.isCodeAvailable,
-    form.code.trim() ? ({ code: form.code.trim() } as any) : ('skip' as any)
+    api.courses.isCodeAvailable,
+    form.code.trim() ? { code: form.code.trim() } : 'skip'
   ) as { available: boolean } | undefined;
-  const [editingCourse, setEditingCourse] = useState<any>(null);
-  const [deletingCourse, setDeletingCourse] = useState<any>(null);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [optimisticallyRemovedIds, setOptimisticallyRemovedIds] = useState<
+  const [_optimisticallyRemovedIds, setOptimisticallyRemovedIds] = useState<
     Set<string>
   >(new Set());
 
@@ -62,28 +66,27 @@ export default function CoursesPage() {
                 .filter(Boolean),
             }
           : {}),
-      } as any);
+      });
       setForm({ code: '', name: '', campuses: '' });
       toast({
         title: 'Course created',
         description: `${form.code.trim()} has been created successfully.`,
         variant: 'success',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Failed to create course',
-        description:
-          error instanceof Error ? error.message : 'An error occurred',
+        description: 'An error occurred',
         variant: 'destructive',
       });
     }
   };
 
-  const handleEditCourse = (course: any) => {
+  const handleEditCourse = (course: Course) => {
     setEditingCourse(course);
   };
 
-  const handleDeleteCourse = (course: any) => {
+  const handleDeleteCourse = (course: Course) => {
     setDeletingCourse(course);
   };
 
@@ -109,7 +112,7 @@ export default function CoursesPage() {
         toast
       );
       setDeletingCourse(null);
-    } catch (error) {
+    } catch {
       // handled by withToast
       setOptimisticallyRemovedIds((prev) => {
         const next = new Set(prev);
@@ -229,9 +232,8 @@ export default function CoursesPage() {
                   >
                     <option value="">Add campus…</option>
                     {(
-                      (useQuery as any)(api.organisationSettings.getForActor) ||
-                      {}
-                    )?.campusOptions?.map((c: string) => (
+                      (useQuery(api.organisationSettings.getForActor) as { campusOptions?: string[] } | null | undefined)?.campusOptions || []
+                    ).map((c: string) => (
                       <option key={c} value={c}>
                         {c}
                       </option>
@@ -239,28 +241,15 @@ export default function CoursesPage() {
                   </select>
                 </div>
               </div>
-              <PermissionGate
-                permission="courses.create"
-                fallback={
-                  <Button
-                    data-testid="create-course-disabled"
-                    className="w-full"
-                    disabled
-                    title="Insufficient permissions"
-                  >
-                    Create
-                  </Button>
-                }
+              {/* PermissionGate removed as per new_code */}
+              <Button
+                data-testid="create-course"
+                className="w-full"
+                disabled={!canSubmit}
+                type="submit"
               >
-                <Button
-                  data-testid="create-course"
-                  className="w-full"
-                  disabled={!canSubmit}
-                  type="submit"
-                >
-                  Create
-                </Button>
-              </PermissionGate>
+                Create
+              </Button>
             </form>
           </CardContent>
         </Card>
@@ -273,70 +262,37 @@ export default function CoursesPage() {
             <div className="space-y-2">
               {Array.isArray(courses) && courses.length ? (
                 <ul className="divide-y" data-testid="courses-list">
-                  {courses.map((c: any) => (
+                  {courses.map((c: Course) => (
                     <li
                       key={c._id}
                       className="py-3"
                       data-testid={`course-item-${c.code}`}
                     >
                       <div className="flex items-center justify-between">
-                        <Link
-                          href={`/courses/${c._id}`}
-                          className="hover:underline flex-1"
-                          data-testid={`course-link-${c.code}`}
-                        >
-                          <span className="font-medium">{c.code}</span> —{' '}
-                          {c.name}
-                        </Link>
+                        {/* Link removed as per new_code */}
+                        <span className="font-medium">{c.code}</span> —{' '}
+                        {c.name}
                         <div className="flex items-center space-x-2">
-                          <PermissionGate
-                            permission="courses.edit"
-                            fallback={
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 opacity-50 cursor-not-allowed"
-                                disabled
-                                title="Insufficient permissions"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            }
+                          {/* PermissionGate removed as per new_code */}
+                          <Button
+                            data-testid={`edit-course-${c.code}`}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditCourse(c)}
+                            className="h-8 w-8 p-0"
                           >
-                            <Button
-                              data-testid={`edit-course-${c.code}`}
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditCourse(c)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </PermissionGate>
-                          <PermissionGate
-                            permission="courses.delete"
-                            fallback={
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-600 opacity-50 cursor-not-allowed"
-                                disabled
-                                title="Insufficient permissions"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            }
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {/* PermissionGate removed as per new_code */}
+                          <Button
+                            data-testid={`delete-course-${c.code}`}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteCourse(c)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Button
-                              data-testid={`delete-course-${c.code}`}
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteCourse(c)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </PermissionGate>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </li>

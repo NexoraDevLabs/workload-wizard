@@ -104,10 +104,12 @@ function AcademicYearProviderInternal({
       setIncludeDraftsState(!!preferences.includeDrafts);
       return;
     }
-    try {
-      const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
-      if (raw !== null) setIncludeDraftsState(raw === '1');
-    } catch {}
+          try {
+        const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
+        if (raw !== null) setIncludeDraftsState(raw === '1');
+      } catch {
+        // Ignore localStorage errors silently
+      }
   }, [orgIdStr, preferences?.includeDrafts]);
 
   const setPrefsMutation = useMutation(api.academicYears.setPreferences);
@@ -132,7 +134,9 @@ function AcademicYearProviderInternal({
       try {
         if (orgIdStr)
           localStorage.setItem(`ay_drafts:${orgIdStr}`, v ? '1' : '0');
-      } catch {}
+      } catch {
+        // Ignore localStorage errors silently
+      }
     },
     [orgIdStr, setPrefsMutation, user?.id, toast]
   );
@@ -176,7 +180,9 @@ function AcademicYearProviderInternal({
         if (currentYearId !== stored) setCurrentYearIdState(stored);
         return;
       }
-    } catch {}
+    } catch {
+      // Ignore localStorage errors silently
+    }
     // Otherwise ensure a sensible default
     if (!currentYearId && defaultYearId) {
       setCurrentYearIdState(defaultYearId);
@@ -213,7 +219,9 @@ function AcademicYearProviderInternal({
       }
       try {
         if (orgIdStr) localStorage.setItem(`ay_current:${orgIdStr}`, id);
-      } catch {}
+      } catch {
+        // Ignore localStorage errors silently
+      }
     },
     [orgIdStr, setPrefsMutation, user?.id, toast]
   );

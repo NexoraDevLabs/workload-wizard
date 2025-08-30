@@ -1,8 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -10,15 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Settings, Play } from 'lucide-react';
-// header actions use plain buttons (no dropdown)
-import { useMutation, useQuery } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { useToast } from '@/hooks/use-toast';
+
 
 export default function PermissionTestsPage() {
-  const { toast } = useToast();
 
   const debugData = useQuery(api.permissions.debugOrganisationsAndRoles);
 

@@ -27,9 +27,9 @@ type Post = {
   excerpt?: string;
   publishedAt: string;
   readingTime?: number;
-  coverImage?: any;
+  coverImage?: unknown;
   categories?: { title: string; slug?: { current: string } }[];
-  author?: { name?: string; avatar?: any };
+  author?: { name?: string; avatar?: unknown };
 };
 
 async function getPosts(): Promise<Post[]> {

@@ -1,7 +1,6 @@
 import {
   mutation,
   query,
-  type QueryCtx,
   type MutationCtx,
 } from './_generated/server';
 import { v } from 'convex/values';

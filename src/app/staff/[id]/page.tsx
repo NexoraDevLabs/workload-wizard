@@ -1,74 +1,92 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { PermissionGate } from '@/components/common/PermissionGate';
+import { CheckCircle, AlertTriangle, User, Link2, RefreshCw, Edit, Shield } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Edit,
-  User,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  Link2,
-  RefreshCw,
-} from 'lucide-react';
-import { useState } from 'react';
-import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
-import { useUser } from '@clerk/nextjs';
-import { EditStaffForm } from '@/components/domain/EditStaffForm';
-import { PermissionGate } from '@/components/common/PermissionGate';
-import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
-import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
-import { Id, type Doc } from '@/convex/_generated/dataModel';
+import { EditStaffForm } from '@/components/domain/EditStaffForm';
+import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
-// Use the proper type from the generated data model
-type LecturerProfile = Doc<'lecturer_profiles'>;
+interface LecturerProfile {
+  _id: Id<'lecturer_profiles'>;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  userSubject?: string;
+  role?: string;
+  teamName?: string;
+  contract?: string;
+  fte?: number;
+  maxTeachingHours?: number;
+  totalContract?: number;
+  prefWorkingLocation?: string;
+  prefWorkingTime?: string;
+  prefSpecialism?: string;
+  prefNotes?: string;
+}
 
-export default function StaffProfilePage() {
-  const params = useParams<{ id: string }>();
-  const profileId = params?.id;
+interface AdminAllocation {
+  _id: Id<'admin_allocations'>;
+  categoryId: string;
+  hours: number;
+  isCustom: boolean;
+  customLabel?: string;
+  comment?: string;
+}
+
+interface GroupAllocation {
+  _id: Id<'group_allocations'>;
+  moduleId: Id<'modules'>;
+  hours: number;
+  type: string;
+}
+
+export default function LecturerProfilePage() {
   const { user } = useUser();
+  const params = useParams();
   const { toast } = useToast();
+  const profileId = params.id as string;
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showLinkConfirm, setShowLinkConfirm] = useState(false);
 
   const profile = useQuery(
-    (api as any).staff.get,
-    profileId ? ({ profileId: profileId as any } as any) : ('skip' as any)
-  );
+    api.staff.get,
+    profileId ? { profileId: profileId as Id<'lecturer_profiles'> } : 'skip'
+  ) as LecturerProfile | undefined;
 
   const { currentYear } = useAcademicYear();
   const adminAllocations = useQuery(
-    (api as any).allocations.listAdminAllocations,
-    profileId && (currentYear as any)?._id
-      ? ({
-          lecturerId: profileId as any,
-          academicYearId: (currentYear as any)._id,
-        } as any)
-      : ('skip' as any)
-  );
+    api.allocations.listAdminAllocations,
+    profileId && currentYear?._id
+      ? {
+          lecturerId: profileId as Id<'lecturer_profiles'>,
+          academicYearId: currentYear._id,
+        }
+      : 'skip'
+  ) as AdminAllocation[] | undefined;
   const groupAllocations = useQuery(
-    (api as any).allocations.listForLecturer,
-    'skip' as any
-  );
+    api.allocations.listForLecturer,
+    'skip'
+  ) as GroupAllocation[] | undefined;
 
   // Permission checks
   const canEdit = useQuery(api.permissions.hasPermission, {

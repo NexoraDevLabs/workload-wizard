@@ -40,17 +40,17 @@ export default function AdminOrganisationOverviewPage() {
   }, [isLoaded, user, router]);
 
   const organisation = useQuery(api.organisations.getById, {
-    id: organisationId as any,
+    id: organisationId,
   });
   const users = useQuery(api.users.listByOrganisation, {
-    organisationId: organisationId as any,
+    organisationId,
   });
   const courses = useQuery(api.courses.listByOrganisation, {
-    organisationId: organisationId as any,
+    organisationId,
   });
   const modules = useQuery(api.modules.listForOrganisation, {
-    organisationId: organisationId as any,
-  } as any);
+    organisationId,
+  });
 
   const breadcrumbs = [
     { label: 'Home', href: '/' },
@@ -106,7 +106,7 @@ export default function AdminOrganisationOverviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(courses || []).map((c: any) => (
+                  {(courses || []).map((c: { _id: string; code: string; name: string }) => (
                     <TableRow key={String(c._id)}>
                       <TableCell className="font-medium">{c.code}</TableCell>
                       <TableCell>{c.name}</TableCell>
@@ -144,7 +144,7 @@ export default function AdminOrganisationOverviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(modules || []).map((m: any) => (
+                  {(modules || []).map((m: { _id: string; code: string; name: string; credits?: number }) => (
                     <TableRow key={String(m._id)}>
                       <TableCell className="font-medium">{m.code}</TableCell>
                       <TableCell>{m.name}</TableCell>
@@ -182,7 +182,7 @@ export default function AdminOrganisationOverviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(users || []).slice(0, 10).map((u: any) => (
+                  {(users || []).slice(0, 10).map((u: { _id: string; fullName?: string; givenName: string; familyName: string; email: string }) => (
                     <TableRow key={String(u._id)}>
                       <TableCell className="font-medium">
                         {u.fullName || `${u.givenName} ${u.familyName}`}

@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (isLoaded && hasAnyRole(user, ['sysadmin', 'developer'])) {
-      fetchStats();
+      void fetchStats();
     }
   }, [isLoaded, user]);
 

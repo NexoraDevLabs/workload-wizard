@@ -2,7 +2,7 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
-import type { Doc, Id } from './_generated/dataModel';
+
 
 // List groups under a module iteration
 export const listByIteration = query({

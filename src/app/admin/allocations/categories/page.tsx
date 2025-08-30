@@ -12,13 +12,21 @@ import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
 import { z } from 'zod';
 
+interface AdminCategory {
+  _id: string;
+  name: string;
+  description?: string;
+  minHours?: number;
+  maxHours?: number;
+}
+
 export default function AdminAllocationCategoriesPage() {
   const { toast } = useToast();
-  const categories = useQuery((api as any).allocations.listAdminCategories, {});
-  const upsert = useMutation((api as any).allocations.upsertAdminCategory);
-  const remove = useMutation((api as any).allocations.removeAdminCategory);
+  const categories = useQuery(api.allocations.listAdminCategories, {});
+  const upsert = useMutation(api.allocations.upsertAdminCategory);
+  const remove = useMutation(api.allocations.removeAdminCategory);
   const pushToOrgs = useMutation(
-    (api as any).allocations.pushAdminCategoriesToOrganisations
+    api.allocations.pushAdminCategoriesToOrganisations
   );
 
   const [isSaving, setIsSaving] = useState<string | null>(null);
@@ -31,7 +39,7 @@ export default function AdminAllocationCategoriesPage() {
     maxHours?: string;
   }>({ name: '', description: '' });
 
-  const handleEdit = (cat: any) => {
+  const handleEdit = (cat: AdminCategory) => {
     setForm({
       id: String(cat._id),
       name: cat.name,
@@ -90,18 +98,18 @@ export default function AdminAllocationCategoriesPage() {
       await withToast(
         () =>
           upsert({
-            ...(parsed.data.id ? { id: parsed.data.id as any } : {}),
+            ...(parsed.data.id ? { id: parsed.data.id } : {}),
             name: parsed.data.name,
             ...(parsed.data.description
               ? { description: parsed.data.description }
               : {}),
             ...(parsed.data.minHours !== undefined
-              ? { minHours: parsed.data.minHours as any }
+              ? { minHours: parsed.data.minHours }
               : {}),
             ...(parsed.data.maxHours !== undefined
-              ? { maxHours: parsed.data.maxHours as any }
+              ? { maxHours: parsed.data.maxHours }
               : {}),
-          } as any),
+          }),
         {
           success: { title: form.id ? 'Category updated' : 'Category created' },
           error: { title: 'Save failed' },
@@ -119,7 +127,7 @@ export default function AdminAllocationCategoriesPage() {
     setIsRemoving(id);
     try {
       await withToast(
-        () => remove({ id: id as any }),
+        () => remove({ id }),
         {
           success: { title: 'Category deleted' },
           error: { title: 'Delete failed' },
@@ -215,7 +223,7 @@ export default function AdminAllocationCategoriesPage() {
                   size="sm"
                   onClick={async () => {
                     await withToast(
-                      () => pushToOrgs({} as any),
+                      () => pushToOrgs({}),
                       {
                         success: {
                           title: 'Pushed to organisations (non-destructive)',
@@ -239,7 +247,7 @@ export default function AdminAllocationCategoriesPage() {
                     )
                       return;
                     await withToast(
-                      () => pushToOrgs({ forceApply: true } as any),
+                      () => pushToOrgs({ forceApply: true }),
                       {
                         success: { title: 'Synced to organisations (force)' },
                         error: { title: 'Sync failed' },
@@ -260,7 +268,7 @@ export default function AdminAllocationCategoriesPage() {
               <div className="text-sm text-muted-foreground">No categories</div>
             ) : (
               <ul className="divide-y border rounded">
-                {categories.map((c: any) => (
+                {categories.map((c: AdminCategory) => (
                   <li
                     key={String(c._id)}
                     className="p-3 flex items-center justify-between text-sm"

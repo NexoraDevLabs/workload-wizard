@@ -44,7 +44,6 @@ type GenericDeleteModalProps =
 
 export function GenericDeleteModal(props: GenericDeleteModalProps) {
   const isControlled = typeof props.open === 'boolean';
-  const isOpen = isControlled ? props.open : true;
 
   const { isDeleting = false } = props;
 

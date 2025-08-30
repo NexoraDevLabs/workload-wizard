@@ -153,7 +153,7 @@ export function OrganisationsList() {
                       onClick={async () => {
                         try {
                           setIsSeeding('all');
-                          await reseedAll({} as any);
+                          await reseedAll({});
                           toast({
                             title: 'Defaults seeded across organisations',
                           });
@@ -290,7 +290,7 @@ export function OrganisationsList() {
                                       await reseedOrg({
                                         organisationId:
                                           org._id as unknown as Id<'organisations'>,
-                                      } as any);
+                                      });
                                       toast({
                                         title: 'Defaults seeded',
                                         description: `${org.name} reseeded successfully`,

@@ -6,7 +6,7 @@ import {
 import { v } from 'convex/values';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
-import type { Doc, Id } from './_generated/dataModel';
+
 
 // List courses for an organisation
 export const listByOrganisation = query({

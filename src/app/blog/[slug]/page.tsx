@@ -195,7 +195,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       }
     }
 
-    fetchPost();
+    void fetchPost();
   }, [params.slug]);
 
   if (loading) {

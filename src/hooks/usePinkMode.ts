@@ -32,8 +32,8 @@ export function usePinkMode() {
       } else {
         document.documentElement.classList.remove('pink-mode');
       }
-    } catch (_error) {
-      console.error('Failed to set pink mode:', _error);
+    } catch {
+      console.error('Failed to set pink mode');
     }
   }, []);
 
@@ -59,7 +59,7 @@ export function usePinkMode() {
           }
         }
       }
-    } catch (_error) {
+    } catch {
       // Failed to check local storage for pink mode
     }
   }, []);
@@ -115,7 +115,7 @@ export function usePinkMode() {
       } else {
         document.documentElement.classList.remove('pink-mode');
       }
-    } catch (_error) {
+    } catch {
       // Failed to refresh pink mode status
     } finally {
       setIsLoading(false);

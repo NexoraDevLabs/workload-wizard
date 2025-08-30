@@ -2,7 +2,7 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import type { Id, Doc } from './_generated/dataModel';
 import { writeAudit } from './audit';
-import { computeHoursFromCredits, computeTotals, type AllocationEntry } from './allocationsMath';
+import { computeHoursFromCredits, computeTotals } from './allocationsMath';
 import { requireOrgPermission } from './permissions';
 import { requirePermission } from './permissions';
 

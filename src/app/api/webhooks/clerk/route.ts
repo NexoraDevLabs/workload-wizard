@@ -5,7 +5,7 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 
 // Lazy import to avoid build-time issues
-let statsigAdapter: any = null;
+let statsigAdapter: unknown = null;
 async function getStatsigAdapter() {
   if (!statsigAdapter) {
     const { statsigAdapter: adapter } = await import('@/flags');
@@ -178,7 +178,7 @@ async function handleUserCreated(userData: ClerkUserData) {
         `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
       systemRoles: roles,
       // webhook path may include organisationId; API accepts optional and validates/derives server-side
-      organisationId: organisationId as string,
+      organisationId: organisationId,
       pictureUrl: userData.image_url as string,
       subject: userData.id,
       tokenIdentifier: primaryEmail.id,

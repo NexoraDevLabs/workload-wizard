@@ -197,7 +197,7 @@ export default function OnboardingPage() {
 
     try {
       localStorage.setItem(progressKey, JSON.stringify(progressData));
-    } catch (error) {
+    } catch {
       // Failed to save onboarding progress
     }
   }, [user?.id, currentStep, formData]);
@@ -222,7 +222,7 @@ export default function OnboardingPage() {
       }
 
       return progressData;
-    } catch (error) {
+    } catch {
       // Failed to load onboarding progress
       return null;
     }
@@ -404,7 +404,7 @@ export default function OnboardingPage() {
               return;
             }
           }
-        } catch (profileError) {
+        } catch {
           setError('Failed to update profile information. Please try again.');
           return;
         }
@@ -464,9 +464,9 @@ export default function OnboardingPage() {
 
       // Filter out sensitive password data before sending to API
       const {
-        currentPassword,
-        newPassword,
-        confirmPassword,
+        currentPassword: _currentPassword,
+        newPassword: _newPassword,
+        confirmPassword: _confirmPassword,
         ...safeOnboardingData
       } = formData;
 
@@ -503,7 +503,7 @@ export default function OnboardingPage() {
       // Redirect to success page which will handle the final redirect
       // This gives time for the session to update
       window.location.replace('/onboarding-success');
-    } catch (error) {
+    } catch {
       setError('Failed to complete onboarding. Please try again.');
     } finally {
       setIsCompleting(false);

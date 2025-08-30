@@ -1,7 +1,6 @@
 'use client';
 
 import { useClerk, useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -28,7 +27,9 @@ export default function OnboardingSuccessPage() {
         const doRedirect = async () => {
           try {
             await session?.reload();
-          } catch {}
+          } catch {
+            // Ignore session reload errors silently
+          }
           setMessage('Success! Redirecting to dashboard...');
           window.location.replace('/dashboard');
         };

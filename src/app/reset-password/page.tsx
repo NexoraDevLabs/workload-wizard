@@ -125,7 +125,7 @@ function ResetPasswordForm() {
           'Failed to reset password. Please try again or contact support.'
         );
       }
-    } catch (_err) {
+    } catch {
       setError(
         'Failed to reset password. The token may be invalid or expired.'
       );

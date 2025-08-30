@@ -132,7 +132,7 @@ export default function CourseDetailPage() {
       );
     } else if (Array.isArray(course.campuses)) {
       setCampusRows(
-        (course.campuses as string[]).map((c) => ({
+        (course.campuses).map((c) => ({
           campus: c,
           count: '',
         }))
@@ -188,11 +188,11 @@ export default function CourseDetailPage() {
                   </div>
                 )}
                 {Array.isArray(course.campuses) &&
-                  course.campuses!.length > 0 && (
+                  course.campuses.length > 0 && (
                     <div>
                       <div className="text-muted-foreground">Campuses</div>
                       <div className="mt-1 flex flex-wrap gap-2">
-                        {course.campuses!.map((c: string) => (
+                        {course.campuses.map((c: string) => (
                           <Badge key={c} variant="secondary">
                             {c}
                           </Badge>
@@ -1308,7 +1308,7 @@ function ModuleIterationAndGroupsAndAllocations({
                           root.querySelectorAll(
                             'input[data-testid^="auto-groups-"]'
                           )
-                        ) as HTMLInputElement[];
+                        );
                         let campusGroups: Array<{
                           campus?: string | undefined;
                           groups: number;
@@ -1324,7 +1324,7 @@ function ModuleIterationAndGroupsAndAllocations({
                         } else {
                           const single = root.querySelector(
                             'input[data-testid="auto-groups-single"]'
-                          ) as HTMLInputElement | null;
+                          );
                           const n = Math.max(
                             0,
                             Math.floor(Number(single?.value || '0'))

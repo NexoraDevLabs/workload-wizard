@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,18 +15,26 @@ import { z } from 'zod';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { useUser } from '@clerk/nextjs';
 
+interface AdminCategory {
+  _id: Id<"organisation_admin_allocation_categories">;
+  name: string;
+  description?: string;
+  minHours?: number;
+  maxHours?: number;
+}
+
 export default function OrganisationAdminAllocationsSettingsPage() {
   const { toast } = useToast();
   const { isLoaded } = useUser();
   const categories = useQuery(
-    (api as any).allocations.listOrganisationAdminCategories,
-    isLoaded ? ({} as any) : ('skip' as any)
-  ) as any[] | undefined;
+    api.allocations.listOrganisationAdminCategories,
+    isLoaded ? {} : 'skip'
+  ) as AdminCategory[] | undefined;
   const upsert = useMutation(
-    (api as any).allocations.upsertOrganisationAdminCategory
+    api.allocations.upsertOrganisationAdminCategory
   );
   const remove = useMutation(
-    (api as any).allocations.removeOrganisationAdminCategory
+    api.allocations.removeOrganisationAdminCategory
   );
 
   const [isSaving, setIsSaving] = useState<string | null>(null);
@@ -38,7 +47,7 @@ export default function OrganisationAdminAllocationsSettingsPage() {
     maxHours?: string;
   }>({ name: '', description: '' });
 
-  const handleEdit = (cat: any) => {
+  const handleEdit = (cat: AdminCategory) => {
     setForm({
       id: String(cat._id),
       name: cat.name,
@@ -105,18 +114,18 @@ export default function OrganisationAdminAllocationsSettingsPage() {
       await withToast(
         () =>
           upsert({
-            ...(parsed.data.id ? { id: parsed.data.id as any } : {}),
+            ...(parsed.data.id ? { id: parsed.data.id as Id<"organisation_admin_allocation_categories"> } : {}),
             name: parsed.data.name,
             ...(parsed.data.description
               ? { description: parsed.data.description }
               : {}),
             ...(parsed.data.minHours !== undefined
-              ? { minHours: parsed.data.minHours as any }
+              ? { minHours: parsed.data.minHours }
               : {}),
             ...(parsed.data.maxHours !== undefined
-              ? { maxHours: parsed.data.maxHours as any }
+              ? { maxHours: parsed.data.maxHours }
               : {}),
-          } as any),
+          }),
         {
           success: { title: form.id ? 'Category updated' : 'Category created' },
           error: { title: 'Save failed' },
@@ -134,7 +143,7 @@ export default function OrganisationAdminAllocationsSettingsPage() {
     setIsRemoving(id);
     try {
       await withToast(
-        () => remove({ id: id as any }),
+        () => remove({ id: id as Id<"organisation_admin_allocation_categories"> }),
         {
           success: { title: 'Category deleted' },
           error: { title: 'Delete failed' },
@@ -235,7 +244,7 @@ export default function OrganisationAdminAllocationsSettingsPage() {
                 </div>
               ) : (
                 <ul className="divide-y border rounded">
-                  {categories.map((c: any) => (
+                  {categories.map((c: AdminCategory) => (
                     <li
                       key={String(c._id)}
                       className="p-3 flex items-center justify-between text-sm"

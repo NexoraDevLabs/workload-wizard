@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
     // Reduce noisy infrastructure logs in CI
     config.infrastructureLogging = {
       level: 'error',
-    } as any;
+    };
     return config;
   },
   images: {

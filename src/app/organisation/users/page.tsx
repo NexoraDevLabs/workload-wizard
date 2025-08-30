@@ -378,7 +378,7 @@ export default function OrganisationUsersPage() {
         if (!res.ok) throw new Error((await res.json()).error || 'Failed');
       }
       setAssigningUser(null);
-    } catch (e) {
+    } catch {
       // Error assigning user
     }
   };

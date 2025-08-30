@@ -1,12 +1,11 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import type { Doc } from '@/convex/_generated/dataModel';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { withToast, toastError } from '@/lib/utils';
 import { analytics } from '@/lib/analytics';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { useQuery as useConvexQuery } from 'convex/react';
@@ -58,47 +57,47 @@ export default function IterationDetailsPage() {
   // Fetch course and module data
   const course = useQuery(
     api.courses.getById,
-    courseId ? ({ id: courseId as any } as any) : ('skip' as any)
+    courseId ? { id: courseId as Id<'courses'> } : 'skip'
   );
 
   // Fetch iteration details
   const iteration = useQuery(
     api.modules.getIterationById,
-    iterationId ? ({ id: iterationId as any } as any) : ('skip' as any)
+    iterationId ? { id: iterationId as Id<'module_iterations'> } : 'skip'
   );
 
   // Fetch module details
   const moduleData = useQuery(
     api.modules.getById,
     iteration?.moduleId
-      ? ({ id: iteration.moduleId as any } as any)
-      : ('skip' as any)
+      ? { id: iteration.moduleId }
+      : 'skip'
   );
 
   // Fetch groups for this iteration
   const groups = useQuery(
-    (api as any).groups.listByIteration,
+    api.groups.listByIteration,
     iterationId
-      ? ({ moduleIterationId: iterationId as any } as any)
-      : ('skip' as any)
+      ? { moduleIterationId: iterationId as Id<'module_iterations'> }
+      : 'skip'
   );
 
   // Fetch lecturer profiles for assignment
   const lecturerProfiles = useQuery(
-    (api as any).staff.list,
-    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
+    api.staff.list,
+    user?.id ? { userId: user.id } : 'skip'
   );
   const orgSettings = useConvexQuery(
-    (api as any).organisationSettings.getForActor
+    api.organisationSettings.getForActor
   ) as { campusOptions?: string[]; maxClassSizePerGroup?: number } | undefined;
 
   // Mutations
-  const createGroup = useMutation((api as any).groups.create);
+  const createGroup = useMutation(api.groups.create);
   const updateIteration = useMutation(api.modules.updateIteration);
-  const deleteGroup = useMutation((api as any).groups.remove);
-  const assignLecturer = useMutation((api as any).allocations.assignLecturer);
-  const removeAllocation = useMutation((api as any).allocations.remove);
-  const updateAllocation = useMutation((api as any).allocations.update);
+  const deleteGroup = useMutation(api.groups.remove);
+  const assignLecturer = useMutation(api.allocations.assignLecturer);
+  const removeAllocation = useMutation(api.allocations.remove);
+  const updateAllocation = useMutation(api.allocations.update);
 
   // Local state
   const [createGroupOpen, setCreateGroupOpen] = useState(false);

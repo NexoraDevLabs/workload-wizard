@@ -104,7 +104,9 @@ export const create = mutation({
           severity: 'info',
           type: 'sys',
         });
-      } catch {}
+      } catch {
+      // Ignore audit write errors silently
+    }
     }
 
     return userId;
@@ -210,7 +212,9 @@ export const update = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
   },
 });
 
@@ -317,7 +321,9 @@ export const updateEmail = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
   },
 });
 
@@ -335,14 +341,14 @@ export const list = query({
           q.eq('organisationId', args.organisationId as Id<'organisations'>)
         )
         .collect()
-        .catch(() => [] as any[]);
+        .catch(() => [] as Array<{ userId: string }>);
 
       if (Array.isArray(memberships) && memberships.length > 0) {
         const userIds = memberships.map((m) => m.userId);
         users = await ctx.db
           .query('users')
           .filter((q) =>
-            (q as any).in((q as any).field('subject'), userIds as any)
+            q.in(q.field('subject'), userIds)
           )
           .collect();
       } else {
@@ -468,7 +474,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },
@@ -503,7 +511,9 @@ export const hardDelete = mutation({
         severity: 'critical',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },
@@ -641,13 +651,15 @@ export const updateByWebhook = mutation({
         entityName: user.fullName || user.email,
         performedBy: 'system',
         organisationId:
-          (processedUpdates.organisationId as any) || user.organisationId,
+          processedUpdates.organisationId || user.organisationId,
         details: 'User updated via webhook',
         metadata: JSON.stringify(processedUpdates),
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },
@@ -731,7 +743,9 @@ export const completeOnboarding = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },

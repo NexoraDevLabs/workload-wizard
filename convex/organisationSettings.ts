@@ -214,7 +214,9 @@ export const upsertOrganisationSettings = mutation({
         details: 'Organisation settings updated',
         severity: 'info',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return { updatedAt: now };
   },
