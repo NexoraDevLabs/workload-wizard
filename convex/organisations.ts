@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { ensureDefaultsForOrg } from './permissions';
 import { writeAudit } from './audit';
-import type { Id, MutationCtx } from './_generated/dataModel';
+
 
 // Get all organisations
 export const list = query({
@@ -142,7 +142,7 @@ export const create = mutation({
     // Seed default roles and permissions for the organisation
     try {
       await ensureDefaultsForOrg(ctx, organisationId);
-    } catch (err) {
+    } catch (_err) {
       // Do not block org creation if seeding fails; it can be re-run
     }
 
@@ -152,7 +152,7 @@ export const create = mutation({
         { path: 'allocations/seedOrgAdminCategories' },
         { organisationId }
       );
-    } catch (err) {
+    } catch (_err) {
       // Failed to seed org admin allocation categories
     }
 
@@ -174,7 +174,7 @@ export const create = mutation({
         createdAt: now2,
         updatedAt: now2,
       });
-    } catch (err) {
+    } catch (_err) {
       // Failed to seed organisation settings
     }
 

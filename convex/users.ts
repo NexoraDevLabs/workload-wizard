@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
-import { clerkClient } from '@clerk/nextjs/server';
+
 import { requirePermission } from './permissions';
 import { writeAudit } from './audit';
 import type { Id, Doc } from './_generated/dataModel';
@@ -38,11 +38,6 @@ export const create = mutation({
         .withIndex('by_subject', (q) => q.eq('subject', args.userId as string))
         .first();
       if (actor) {
-        const isSystem =
-          Array.isArray(actor.systemRoles) &&
-          actor.systemRoles.some((r: string) =>
-            ['admin', 'sysadmin', 'developer'].includes(r)
-          );
         // If explicit organisationId provided, allow assigning user to a different org
         if (args.organisationId) {
           derivedOrganisationId = args.organisationId as Id<'organisations'>;
@@ -345,12 +340,15 @@ export const list = query({
 
       if (Array.isArray(memberships) && memberships.length > 0) {
         const userIds = memberships.map((m) => m.userId);
-        users = await ctx.db
-          .query('users')
-          .filter((q) =>
-            q.in(q.field('subject'), userIds)
-          )
-          .collect();
+        // Use OR conditions instead of 'in' operator
+        const userQueries = userIds.map((userId) =>
+          ctx.db
+            .query('users')
+            .withIndex('by_subject', (q) => q.eq('subject', userId))
+            .first()
+        );
+        const userResults = await Promise.all(userQueries);
+        users = userResults.filter((u): u is NonNullable<typeof u> => u !== null);
       } else {
         users = await ctx.db
           .query('users')

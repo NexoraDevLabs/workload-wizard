@@ -130,7 +130,7 @@ export const getOrganisationPermissions = query({
       .collect();
 
     // Build permission map
-    const permissionMap = new Map();
+    const permissionMap = new Map<string, any>();
 
     // Start with system defaults
     for (const perm of systemPermissions) {
@@ -2010,7 +2010,7 @@ export async function ensureDefaultsForOrg(
             ? { performedByName: options.performedByName }
             : {}),
           organisationId,
-          details: `Default role \"${roleName}\" created with ${permissionsForRole.length} permission(s)`,
+          details: `Default role "${roleName}" created with ${permissionsForRole.length} permission(s)`,
           metadata: JSON.stringify({ permissions: permissionsForRole }),
           timestamp: now,
           severity: 'info',

@@ -1,13 +1,11 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { UsersList } from '@/components/domain/UsersList';
-import { UserSyncButton } from '@/components/domain/UserSyncButton';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, Settings } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import {
   PermissionGate,
   UsersCreateGate,
@@ -20,18 +18,15 @@ import { handleClientPermissionError } from '@/lib/permission-errors';
 export const dynamic = 'force-dynamic';
 
 export default function AdminUsersPage() {
-  const { user, isLoaded } = useUser();
   const router = useRouter();
   const usersListRef = useRef<{ handleCreateUser: () => void }>(null);
   const permissions = usePermissions();
 
   useEffect(() => {
-    if (isLoaded && !permissions.canViewUsers()) {
+    if (!permissions.canViewUsers()) {
       router.replace('/unauthorised');
     }
-  }, [isLoaded, permissions, router]);
-
-  if (!isLoaded) return <p>Loading...</p>;
+  }, [permissions, router]);
 
   if (!permissions.canViewUsers()) {
     return null; // Will redirect in useEffect

@@ -309,7 +309,7 @@ export default function SupportPage() {
                   if (messagesTab) {
                     break;
                   }
-                } catch (_e) {
+                } catch {
                   // Skip invalid selectors
                 }
               }
@@ -343,7 +343,7 @@ export default function SupportPage() {
                           if (newChatButton) {
                             break;
                           }
-                        } catch (_e) {
+                        } catch {
                           // Skip invalid selectors
                         }
                       }

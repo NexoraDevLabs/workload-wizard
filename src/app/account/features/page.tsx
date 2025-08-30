@@ -49,20 +49,20 @@ function getLocalFlagOverrides(): Record<string, boolean> {
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
     return stored ? JSON.parse(stored) : {};
-  } catch (error) {
+  } catch (_error) {
     // Failed to get local flag overrides
     return {};
   }
 }
 
-function setLocalFlagOverride(flagKey: string, enabled: boolean): void {
+function _setLocalFlagOverride(flagKey: string, enabled: boolean): void {
   if (typeof window === 'undefined') return;
 
   try {
     const overrides = getLocalFlagOverrides();
     overrides[flagKey] = enabled;
     localStorage.setItem(LOCAL_FLAG_OVERRIDES_KEY, JSON.stringify(overrides));
-  } catch (error) {
+  } catch (_error) {
     // Failed to set local flag override
   }
 }
@@ -80,7 +80,7 @@ export default function AccountFeaturesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [_lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const loadFeatures = useCallback(async () => {
     try {
@@ -108,7 +108,7 @@ export default function AccountFeaturesPage() {
     } finally {
       setLoading(false);
     }
-  }, [publicFeatures, enrollments]); // refresh when data changes
+  }, [publicFeatures, enrollments, toast]); // refresh when data changes
 
   const toggleFeature = async (flagKey: string, enabled: boolean) => {
     try {
@@ -247,13 +247,7 @@ export default function AccountFeaturesPage() {
     return stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
   };
 
-  const formatFeatureName = (name: string) => {
-    // Convert kebab-case to Title Case
-    return name
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
+
 
   return (
     <StandardizedSidebarLayout

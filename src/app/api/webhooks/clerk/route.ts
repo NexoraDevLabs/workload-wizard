@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       // Unhandled webhook event
     }
     // Webhook processed successfully
-  } catch (error) {
+  } catch {
     // Error handling webhook
     return new Response('Error processing webhook', { status: 500 });
   }

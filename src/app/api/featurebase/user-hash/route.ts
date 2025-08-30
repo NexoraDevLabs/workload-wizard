@@ -26,7 +26,7 @@ export async function GET() {
     const hash = createHmac('sha256', secret).update(identifier).digest('hex');
 
     return NextResponse.json({ userHash: hash });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to compute user hash' },
       { status: 500 }

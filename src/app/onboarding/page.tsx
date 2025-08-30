@@ -264,7 +264,7 @@ export default function OnboardingPage() {
   const getRequiredFieldsForStep = useCallback(
     (step: number) => {
       switch (step) {
-        case 0: // Personal Information
+        case 0: { // Personal Information
           const requiredFields = ['firstName', 'lastName', 'email', 'role'];
           // Add customRole if "other" is selected
           if (formData.role === 'other') {
@@ -278,14 +278,16 @@ export default function OnboardingPage() {
             requiredFields.push('invalidEmail');
           }
           return requiredFields;
-        case 1: // Work Information
+        }
+        case 1: { // Work Information
           const workFields = ['department'];
           // Only require organisation if it's not pre-populated
           if (!formData.organization) {
             workFields.push('organization');
           }
           return workFields;
-        case 2: // Security
+        }
+        case 2: { // Security
           const securityFields = [
             'currentPassword',
             'newPassword',
@@ -303,6 +305,7 @@ export default function OnboardingPage() {
             return [...securityFields, 'passwordTooWeak'];
           }
           return securityFields;
+        }
         case 3: // Preferences
           return [];
         case 4: // Complete
@@ -489,8 +492,7 @@ export default function OnboardingPage() {
         } catch {
           // Response is not JSON, get text instead
           const errorText = await response.text();
-          errorMessage =
-            `Server error: ${errorText.slice(0, 100)}...` || errorMessage;
+          errorMessage = `Server error: ${errorText.slice(0, 100)}...`;
         }
         throw new Error(errorMessage);
       }
@@ -523,7 +525,7 @@ export default function OnboardingPage() {
         return formData.newPassword === formData.confirmPassword;
       }
       if (field === 'passwordTooWeak') {
-        return formData.newPassword.length >= 8;
+        return formData.newPassword && formData.newPassword.length >= 8;
       }
       if (field === 'invalidEmail') {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);

@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 
-class SentryExampleAPIError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'SentryExampleAPIError';
-  }
-}
-
 export async function GET() {
   try {
     // Add custom context for this API call

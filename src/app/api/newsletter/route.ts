@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch {
     // Newsletter subscription error
     return NextResponse.json({ error: 'Bad request' }, { status: 400 });
   }

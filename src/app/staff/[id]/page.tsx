@@ -24,24 +24,6 @@ import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfi
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
-interface LecturerProfile {
-  _id: Id<'lecturer_profiles'>;
-  fullName: string;
-  email: string;
-  isActive: boolean;
-  userSubject?: string;
-  role?: string;
-  teamName?: string;
-  contract?: string;
-  fte?: number;
-  maxTeachingHours?: number;
-  totalContract?: number;
-  prefWorkingLocation?: string;
-  prefWorkingTime?: string;
-  prefSpecialism?: string;
-  prefNotes?: string;
-}
-
 interface AdminAllocation {
   _id: Id<'admin_allocations'>;
   categoryId: string;
@@ -71,7 +53,7 @@ export default function LecturerProfilePage() {
   const profile = useQuery(
     api.staff.get,
     profileId ? { profileId: profileId as Id<'lecturer_profiles'> } : 'skip'
-  ) as LecturerProfile | undefined;
+  );
 
   const { currentYear } = useAcademicYear();
   const adminAllocations = useQuery(
@@ -112,7 +94,7 @@ export default function LecturerProfilePage() {
   const handleEdit = async (formData: any) => {
     try {
       await editMutation({
-        profileId: profileId as any,
+        profileId: profileId as Id<'lecturer_profiles'>,
         ...formData,
         userId: user?.id || '',
       });
@@ -122,7 +104,7 @@ export default function LecturerProfilePage() {
         title: 'Profile Updated',
         description: 'Lecturer profile has been updated successfully.',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Update Failed',
         description: 'Failed to update lecturer profile. Please try again.',
@@ -135,10 +117,10 @@ export default function LecturerProfilePage() {
     if (!profile || !clerkUser) return;
     try {
       await editMutation({
-        profileId: profileId as any,
+        profileId: profileId as Id<'lecturer_profiles'>,
         userSubject: clerkUser.subject,
         userId: user?.id || '',
-      } as any);
+      });
       toast({
         title: 'Profile linked',
         description: 'Lecturer profile linked to user account.',
@@ -161,7 +143,7 @@ export default function LecturerProfilePage() {
       await updateUserAvatarMutation({
         subject: clerkUser.subject,
         pictureUrl: clerkUser.pictureUrl,
-      } as any);
+      });
       toast({
         title: 'Avatar synced',
         description: 'Profile picture synced from Clerk.',
@@ -178,7 +160,7 @@ export default function LecturerProfilePage() {
   const handleDeactivate = async () => {
     try {
       await deactivateMutation({
-        profileId: profileId as any,
+        profileId: profileId as Id<'lecturer_profiles'>,
         isActive: false,
         userId: user?.id || '',
       });
@@ -188,7 +170,7 @@ export default function LecturerProfilePage() {
         title: 'Profile Deactivated',
         description: 'Lecturer profile has been deactivated.',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Deactivation Failed',
         description: 'Failed to deactivate lecturer profile. Please try again.',
@@ -200,7 +182,7 @@ export default function LecturerProfilePage() {
   const handleReactivate = async () => {
     try {
       await deactivateMutation({
-        profileId: profileId as any,
+        profileId: profileId as Id<'lecturer_profiles'>,
         isActive: true,
         userId: user?.id || '',
       });

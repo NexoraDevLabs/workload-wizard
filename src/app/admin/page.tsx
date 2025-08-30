@@ -19,8 +19,6 @@ import {
   Shield,
   FileText,
   RefreshCw,
-  Plus,
-  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { listUsers } from '@/lib/actions/userActions';

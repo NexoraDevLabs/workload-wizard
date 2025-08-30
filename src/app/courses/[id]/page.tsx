@@ -6,7 +6,8 @@ import { useUser } from '@clerk/nextjs';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import type { Doc } from '@/convex/_generated/dataModel';
+import type { Id } from '@/convex/_generated/dataModel';
+
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,23 @@ import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
+// Type definitions for the component
+interface CampusRow {
+  campus: string;
+  count: string;
+}
+
+interface RecommendedCampus {
+  campus: string;
+  groups: number;
+  count: number;
+}
+
+interface StudentDistribution {
+  campus: string;
+  count: number;
+}
+
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
   const courseId = params?.id;
@@ -54,11 +72,11 @@ export default function CourseDetailPage() {
 
   const course = useQuery(
     api.courses.getById,
-    courseId ? ({ id: courseId as any } as any) : ('skip' as any)
+    courseId ? { id: courseId as Id<'courses'> } : 'skip'
   );
   const years = useQuery(
     api.courses.listYears,
-    courseId ? ({ courseId: courseId as any } as any) : ('skip' as any)
+    courseId ? { courseId: courseId as Id<'courses'> } : 'skip'
   );
   const addYear = useMutation(api.courses.addYear);
 
@@ -70,9 +88,11 @@ export default function CourseDetailPage() {
     Array<{ campus: string; count: string }>
   >([]);
   const settings = useQuery(
-    (api as any).organisationSettings.getForActor,
-    {} as any
+    api.organisationSettings.getForActor,
+    {}
   );
+
+
   const updateCourse = useMutation(api.courses.update);
   const initialiseSplit = useMutation(
     (api as any).courses.initialiseRecommendedGroups
@@ -89,7 +109,9 @@ export default function CourseDetailPage() {
   // Compute recommendations early (guard when course isn't loaded yet),
   // so hooks order stays stable across renders.
   const recommendedByCampus = useMemo(() => {
-    const maxSize = settings?.maxClassSizePerGroup || 25;
+    const maxSize = settings && typeof settings === 'object' && 'maxClassSizePerGroup' in settings 
+      ? settings.maxClassSizePerGroup ?? 25 
+      : 25;
     if (!course)
       return [] as Array<{ campus: string; groups: number; count: number }>;
     const dist = (course.studentDistributionByCampus || []) as Array<{
@@ -652,7 +674,7 @@ function ModuleIterationAndGroupsAndAllocations({
 
   const groups = useQuery(
     (api as any).groups.listByIteration,
-    hasIteration
+    hasIteration && iteration
       ? ({ moduleIterationId: iteration._id } as any)
       : ('skip' as any)
   );
@@ -750,7 +772,7 @@ function ModuleIterationAndGroupsAndAllocations({
             disabled={isCreatingGroup}
             onClick={async () => {
               const name = prompt('Group name?');
-              if (!name) return;
+              if (!name || !iteration) return;
               setIsCreatingGroup(true);
               try {
                 await withToast(
@@ -1318,13 +1340,13 @@ function ModuleIterationAndGroupsAndAllocations({
                             campus: recList[idx]?.campus,
                             groups: Math.max(
                               0,
-                              Math.floor(Number(inp.value || '0'))
+                              Math.floor(Number((inp as HTMLInputElement).value || '0'))
                             ),
                           }));
                         } else {
                           const single = root.querySelector(
                             'input[data-testid="auto-groups-single"]'
-                          );
+                          ) as HTMLInputElement;
                           const n = Math.max(
                             0,
                             Math.floor(Number(single?.value || '0'))
@@ -1339,7 +1361,7 @@ function ModuleIterationAndGroupsAndAllocations({
                         await withToast(
                           () =>
                             autoCreateGroups({
-                              moduleIterationId: iteration._id,
+                              moduleIterationId: iteration!._id,
                               campusGroups: campusGroups as any,
                             } as any),
                           {

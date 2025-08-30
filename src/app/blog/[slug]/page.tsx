@@ -188,7 +188,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             );
           }
         }
-      } catch (error) {
+      } catch {
         // Failed to fetch post
       } finally {
         setLoading(false);

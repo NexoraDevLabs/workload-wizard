@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    } catch (error) {
+    } catch {
       // Error checking existing username
       // Continue with the update even if we can't verify uniqueness
     }
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
           // For now, we'll just update Clerk since that's the primary source
         }
       }
-    } catch (error) {
+    } catch {
       // Error updating username in Convex
       // If Convex update fails, we'll continue since Clerk is the primary source for username
     }

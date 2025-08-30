@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
                   organisationId as Id<'organisations'>,
                 isPrimary: true,
               });
-            } catch (e) {
+            } catch {
               // ensureMembership failed
             }
           }

@@ -696,7 +696,7 @@ export async function getUsersByOrganisationId(organisationId: string) {
     );
 
     return usersWithRoles;
-  } catch (error) {
+  } catch (_error) {
     // Error fetching users by organisation
     throw new Error('Failed to fetch users');
   }

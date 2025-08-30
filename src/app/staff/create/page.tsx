@@ -102,14 +102,14 @@ export default function CreateLecturerProfilePage() {
     setForm((prev) => {
       let next = prev;
       if (roles.length > 0 && !roles.includes(prev.role)) {
-        next = { ...next, role: roles[0] };
+        next = { ...next, role: roles[0] || 'Lecturer' };
       }
       if (teams.length > 0 && !teams.includes(prev.teamName)) {
-        next = { ...next, teamName: teams[0] };
+        next = { ...next, teamName: teams[0] || 'Computing' };
       }
       return next;
     });
-  }, [orgSettings?.staffRoleOptions, orgSettings?.teamOptions]);
+  }, [ROLE_OPTIONS, TEAM_OPTIONS]);
 
   const canSubmit = useMemo(() => {
     return (
@@ -137,7 +137,7 @@ export default function CreateLecturerProfilePage() {
             fte: fteNum,
             maxTeachingHours: derivedMaxTeaching,
             totalContract: derivedTotalContract,
-          } as any),
+          }),
         {
           success: {
             title: 'Profile created',

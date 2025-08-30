@@ -1,8 +1,11 @@
-import { mutation, query } from './_generated/server';
+import {
+  mutation,
+  query,
+} from './_generated/server';
 import { v } from 'convex/values';
 import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
-import type { Id, Doc } from './_generated/dataModel';
+import type { Id } from './_generated/dataModel';
 
 // Get module by id
 export const getById = query({

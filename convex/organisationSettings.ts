@@ -1,6 +1,6 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
-import type { Id, QueryCtx, MutationCtx } from './_generated/dataModel';
+import type { QueryCtx, MutationCtx } from './_generated/dataModel';
 import { writeAudit } from './audit';
 
 function isSystemUser(systemRoles?: string[] | null) {
@@ -13,7 +13,7 @@ function isOrgAdmin(systemRoles?: string[] | null) {
   return roles.includes('orgadmin');
 }
 
-async function getActorAndOrg(ctx: QueryCtx | MutationCtx, subject: string) {
+async function getActorAndOrgFromQuery(ctx: QueryCtx, subject: string) {
   const actor = await ctx.db
     .query('users')
     .withIndex('by_subject', (q) => q.eq('subject', subject))
@@ -21,14 +21,26 @@ async function getActorAndOrg(ctx: QueryCtx | MutationCtx, subject: string) {
   if (!actor) throw new Error('User not found');
   return {
     actor,
-    orgId: actor.organisationId as Id<'organisations'>,
+    orgId: actor.organisationId,
+  };
+}
+
+async function getActorAndOrgFromMutation(ctx: MutationCtx, subject: string) {
+  const actor = await ctx.db
+    .query('users')
+    .withIndex('by_subject', (q) => q.eq('subject', subject))
+    .first();
+  if (!actor) throw new Error('User not found');
+  return {
+    actor,
+    orgId: actor.organisationId,
   };
 }
 
 export const getOrganisationSettings = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const { actor, orgId } = await getActorAndOrg(ctx, args.userId);
+    const { orgId } = await getActorAndOrgFromQuery(ctx, args.userId);
 
     // Read current settings
     const row = await ctx.db
@@ -70,7 +82,7 @@ export const getForActor = query({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return null;
-    const { orgId } = await getActorAndOrg(ctx, identity.subject);
+    const { orgId } = await getActorAndOrgFromQuery(ctx, identity.subject);
     const row = await ctx.db
       .query('organisation_settings')
       .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
@@ -139,7 +151,7 @@ export const upsertOrganisationSettings = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const { actor, orgId } = await getActorAndOrg(ctx, args.userId);
+    const { actor, orgId } = await getActorAndOrgFromMutation(ctx, args.userId);
     const now = Date.now();
 
     // Authorise: sysadmin/developer override, or orgadmin allowed

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       if (existingWaitlistEntry) {
         return NextResponse.json({ ok: true, already: true });
       }
-    } catch (e) {
+    } catch {
       // Convex waitlist check failed
     }
 
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       withTags.tags = tags;
       try {
         await resend.contacts.create(withTags);
-      } catch (e: unknown) {
+      } catch {
         // Retry without tags if API rejects unknown field
         try {
           await resend.contacts.create(basePayload);

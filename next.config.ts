@@ -6,7 +6,7 @@ let withBundleAnalyzer = (config: NextConfig) => config;
 
 if (process.env.ANALYZE === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  withBundleAnalyzer = require('@next/bundle-analyzer').default({
+  withBundleAnalyzer = (require('@next/bundle-analyzer').default as (config: NextConfig) => NextConfig)({
     enabled: true,
   });
 }
@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
     // Don't block production builds on ESLint errors
     ignoreDuringBuilds: true,
   },
-  webpack: (config) => {
+  webpack: (config: any) => {
     // Reduce noisy infrastructure logs in CI
     config.infrastructureLogging = {
       level: 'error',

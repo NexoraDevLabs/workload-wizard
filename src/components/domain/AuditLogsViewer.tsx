@@ -170,10 +170,10 @@ export function AuditLogsViewer({
   forcedFilters?: ForcedFilters;
 }) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [stats, setStats] = useState<AuditStats | null>(null);
+  const [_stats, setStats] = useState<AuditStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [_selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -279,7 +279,7 @@ export function AuditLogsViewer({
           ? { startDate: Date.now() - filters.timeRange * 60 * 60 * 1000 }
           : {}),
       });
-      setStats(auditStats as AuditStats);
+      setStats(auditStats);
       // Update the total filtered logs count from stats
       if (
         auditStats &&

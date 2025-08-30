@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -161,7 +161,9 @@ export default function OrganisationUsersPage() {
   // Permission: can this actor assign elevated roles (sysadmin/developer/trial)?
   const canAssignElevated = (() => {
     const meta = user?.publicMetadata as Record<string, unknown> | undefined;
-    const roles: string[] = Array.isArray(meta?.roles) ? meta.roles : [];
+    const roles: string[] = Array.isArray(meta?.roles) 
+      ? (meta.roles as unknown[]).filter((r): r is string => typeof r === 'string')
+      : [];
     const role: string | undefined =
       typeof meta?.role === 'string' ? meta.role : undefined;
     return (
@@ -197,7 +199,7 @@ export default function OrganisationUsersPage() {
     return sorted.map(getRoleLabel).join(', ');
   };
 
-  const sortUsers = (
+  const sortUsers = useCallback((
     list: User[],
     field: SortField,
     direction: SortDirection
@@ -245,7 +247,7 @@ export default function OrganisationUsersPage() {
       if (aVal > bVal) return direction === 'asc' ? 1 : -1;
       return 0;
     });
-  };
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field)
@@ -267,7 +269,7 @@ export default function OrganisationUsersPage() {
   };
 
   // Filter + sort derive
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let list = [...(organisationUsers || [])] as User[];
     if (searchTerm) {
       const t = searchTerm.toLowerCase();
@@ -291,19 +293,19 @@ export default function OrganisationUsersPage() {
     if (statusFilter !== 'all')
       list = list.filter((u) => u.isActive === (statusFilter === 'active'));
     setFilteredUsers(list);
-  };
+  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter]);
 
   // effects
 
   // Re-run filters when data or filters change
   useEffect(() => {
     applyFilters();
-  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter]);
+  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter, applyFilters]);
 
   // Sort changes
   useEffect(() => {
     setSortedUsers(sortUsers(filteredUsers, sortField, sortDirection));
-  }, [filteredUsers, sortField, sortDirection]);
+  }, [filteredUsers, sortField, sortDirection, sortUsers]);
 
   // Selection helpers
   const toggleSelectAll = () => {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { client } from '@/sanity/client';
 import { urlFor } from '@/sanity/lib/image';
 import { sanityEnabled } from '@/sanity/env';
-import { format } from 'date-fns';
+
 import { CalendarDays, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';

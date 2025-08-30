@@ -10,7 +10,7 @@ const BodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { event, props } = BodySchema.parse(await req.json());
+    const { event: _event, props: _props } = BodySchema.parse(await req.json());
     // For now, accept and no-op (or log). In future, forward to PH proxy endpoint/server SDK.
     return NextResponse.json({ ok: true });
   } catch (err) {

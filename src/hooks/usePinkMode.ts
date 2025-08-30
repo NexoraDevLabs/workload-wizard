@@ -45,7 +45,7 @@ export function usePinkMode() {
     try {
       const overridesStr = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
       if (overridesStr) {
-        const overrides: Record<string, boolean> = JSON.parse(overridesStr);
+        const overrides: Record<string, boolean> = JSON.parse(overridesStr) as Record<string, boolean>;
         const pinkModeOverride = overrides[FeatureFlags.PINK_MODE];
 
         if (pinkModeOverride !== undefined) {

@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    } catch (error) {
+    } catch {
       // Error checking existing email
       // Continue with the update even if we can't verify uniqueness
     }
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       if (existingEmail.id !== newEmailAddress.id) {
         try {
           await clerk.emailAddresses.deleteEmailAddress(existingEmail.id);
-        } catch (error) {
+        } catch {
           // 404 or other errors are fine - old email might already be removed
           // This is not critical to the main functionality
         }
