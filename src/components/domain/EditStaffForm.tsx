@@ -39,7 +39,7 @@ interface LecturerProfile {
   prefNotes?: string;
   isActive: boolean;
   contractFamily?: string;
-  prefWorkingTime?: string;
+  prefWorkingTime?: 'am' | 'pm' | 'all_day';
 }
 
 interface OrganisationSettings {
@@ -86,28 +86,34 @@ export function EditStaffForm({
     api.organisationSettings.getOrganisationSettings,
     user?.id ? { userId: user.id } : 'skip'
   ) as OrganisationSettings | undefined;
-  
-  const ROLE_OPTIONS = useMemo(() => 
-    orgSettings?.staffRoleOptions ?? [
-      'Lecturer',
-      'Senior Lecturer',
-      'Teaching Fellow',
-      'Associate Lecturer',
-      'Professor',
-    ], [orgSettings?.staffRoleOptions]);
-    
-  const TEAM_OPTIONS = useMemo(() => 
-    orgSettings?.teamOptions ?? [
-      'Computing',
-      'Engineering',
-      'Business',
-      'Design',
-    ], [orgSettings?.teamOptions]);
-    
-  const FAMILY_OPTIONS = useMemo(() => 
-    orgSettings?.contractFamilyOptions ?? [
-      'Academic Practitioner',
-    ], [orgSettings?.contractFamilyOptions]);
+
+  const ROLE_OPTIONS = useMemo(
+    () =>
+      orgSettings?.staffRoleOptions ?? [
+        'Lecturer',
+        'Senior Lecturer',
+        'Teaching Fellow',
+        'Associate Lecturer',
+        'Professor',
+      ],
+    [orgSettings?.staffRoleOptions]
+  );
+
+  const TEAM_OPTIONS = useMemo(
+    () =>
+      orgSettings?.teamOptions ?? [
+        'Computing',
+        'Engineering',
+        'Business',
+        'Design',
+      ],
+    [orgSettings?.teamOptions]
+  );
+
+  const FAMILY_OPTIONS = useMemo(
+    () => orgSettings?.contractFamilyOptions ?? ['Academic Practitioner'],
+    [orgSettings?.contractFamilyOptions]
+  );
   const roleItems = useMemo(() => {
     const r = (profile.role || '').trim();
     if (r && !ROLE_OPTIONS.includes(r)) return [r, ...ROLE_OPTIONS];
@@ -123,9 +129,11 @@ export function EditStaffForm({
     if (cf && !FAMILY_OPTIONS.includes(cf)) return [cf, ...FAMILY_OPTIONS];
     return FAMILY_OPTIONS;
   }, [FAMILY_OPTIONS, profile.contractFamily]);
-  
-  const CAMPUS_OPTIONS = useMemo(() => 
-    orgSettings?.campusOptions ?? [], [orgSettings?.campusOptions]);
+
+  const CAMPUS_OPTIONS = useMemo(
+    () => orgSettings?.campusOptions ?? [],
+    [orgSettings?.campusOptions]
+  );
   const campusItems = useMemo(() => {
     const c = (profile.prefWorkingLocation || '').trim();
     if (c && !CAMPUS_OPTIONS.includes(c)) return [c, ...CAMPUS_OPTIONS];
@@ -177,9 +185,7 @@ export function EditStaffForm({
         email: form.email.trim(),
         ...(form.role.trim() ? { role: form.role.trim() } : {}),
         ...(form.teamName.trim() ? { teamName: form.teamName.trim() } : {}),
-        ...(form.contractFamily
-          ? { contractFamily: form.contractFamily }
-          : {}),
+        ...(form.contractFamily ? { contractFamily: form.contractFamily } : {}),
         contract: form.contract,
         fte: Number(form.fte),
         maxTeachingHours: Number(form.maxTeachingHours),
@@ -188,7 +194,7 @@ export function EditStaffForm({
           ? { prefWorkingLocation: form.prefWorkingLocation.trim() }
           : {}),
         ...(form.prefWorkingTime
-          ? { prefWorkingTime: form.prefWorkingTime }
+          ? { prefWorkingTime: form.prefWorkingTime as 'am' | 'pm' | 'all_day' }
           : {}),
         ...(form.prefSpecialism.trim()
           ? { prefSpecialism: form.prefSpecialism.trim() }
@@ -310,16 +316,12 @@ export function EditStaffForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contractFamily">Contract Family</Label>
-                                  <Select
-                    value={
-                      form.contractFamily ||
-                      profile.contractFamily ||
-                      ''
-                    }
-                    onValueChange={(v) =>
-                      setForm((f) => ({ ...f, contractFamily: v }))
-                    }
-                  >
+                <Select
+                  value={form.contractFamily || profile.contractFamily || ''}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, contractFamily: v }))
+                  }
+                >
                   <SelectTrigger id="contractFamily" className="w-full">
                     <SelectValue placeholder="Select family" />
                   </SelectTrigger>
@@ -437,12 +439,12 @@ export function EditStaffForm({
 
               <div className="space-y-2">
                 <Label htmlFor="prefWorkingTime">Preferred Working Time</Label>
-                                  <Select
-                    value={form.prefWorkingTime || ''}
-                    onValueChange={(v) =>
-                      setForm((f) => ({ ...f, prefWorkingTime: v }))
-                    }
-                  >
+                <Select
+                  value={form.prefWorkingTime || ''}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, prefWorkingTime: v }))
+                  }
+                >
                   <SelectTrigger id="prefWorkingTime" className="w-full">
                     <SelectValue placeholder="Select preference" />
                   </SelectTrigger>

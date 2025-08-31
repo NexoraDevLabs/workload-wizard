@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { getEnv } from '@/lib/env';
 
 declare global {
@@ -31,7 +32,7 @@ type BootPayload = {
 
 interface ConvexUser {
   systemRoles?: string[];
-  organisationId?: string;
+  organisationId?: Id<'organisations'>;
 }
 
 interface OrganisationDoc {
@@ -125,9 +126,11 @@ function FeaturebaseMessengerInternal() {
   useEffect(() => {
     const win = window;
     if (typeof win.Featurebase !== 'function') {
+      const q: unknown[] = [];
       const fb: Window['Featurebase'] = function (...args: unknown[]) {
-        (fb.q = fb.q || []).push(args);
+        q.push(args);
       };
+      fb.q = q;
       win.Featurebase = fb;
     }
 
@@ -159,7 +162,7 @@ function FeaturebaseMessengerInternal() {
       }
 
       const createdAtIso = user?.createdAt
-        ? new Date(user.createdAt as string).toISOString()
+        ? new Date(user.createdAt as unknown as number).toISOString()
         : undefined;
       const payload: BootPayload = {
         appId,

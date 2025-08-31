@@ -58,9 +58,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   const BASE_TOTAL_CONTRACT_AT_FTE_1 =
     orgSettings?.baseTotalContractAtFTE1 ?? 550; // hours at FTE=1
 
-  const FAMILY_OPTIONS = [
-    'Academic Practitioner',
-  ];
+  const FAMILY_OPTIONS = ['Academic Practitioner'];
 
   const fteNum = useMemo(() => {
     const n = Number(form.fte);
@@ -72,10 +70,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
     // Use base max teaching since family rules don't exist in current API
     const baseAtFte1 = BASE_MAX_TEACHING_AT_FTE_1;
     return Math.round(baseAtFte1 * fteNum);
-  }, [
-    fteNum,
-    BASE_MAX_TEACHING_AT_FTE_1,
-  ]);
+  }, [fteNum, BASE_MAX_TEACHING_AT_FTE_1]);
 
   const derivedTotalContract = useMemo(
     () => Math.round(BASE_TOTAL_CONTRACT_AT_FTE_1 * fteNum),
@@ -122,7 +117,9 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
             role: form.role.trim(),
             teamName: form.teamName.trim(),
             contract: fteNum >= 0.995 ? 'FT' : 'PT',
-            ...(form.contractFamily ? { contractFamily: form.contractFamily } : {}),
+            ...(form.contractFamily
+              ? { contractFamily: form.contractFamily }
+              : {}),
             fte: fteNum,
             maxTeachingHours: derivedMaxTeaching,
             totalContract: derivedTotalContract,

@@ -99,9 +99,7 @@ export default function IterationDetailsPage() {
   // Fetch module details
   const moduleData = useQuery(
     api.modules.getById,
-    iteration?.moduleId
-      ? { id: iteration.moduleId }
-      : 'skip'
+    iteration?.moduleId ? { id: iteration.moduleId } : 'skip'
   );
 
   // Fetch groups for this iteration
@@ -125,7 +123,9 @@ export default function IterationDetailsPage() {
   const assignLecturer = useMutation(api.allocations.assignLecturer);
   const removeAllocation = useMutation(api.allocations.remove);
   const updateAllocation = useMutation(api.allocations.update);
-  const removeAllocationsForGroups = useMutation(api.allocations.removeAllocationsForGroups);
+  const removeAllocationsForGroups = useMutation(
+    api.allocations.removeAllocationsForGroups
+  );
 
   // Local state
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
@@ -180,10 +180,10 @@ export default function IterationDetailsPage() {
   const lecturerTotals = useQuery(
     api.allocations.getLecturerTotals,
     selectedLecturerId && _currentYear?._id
-      ? ({
+      ? {
           lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
           academicYearId: _currentYear._id,
-        })
+        }
       : 'skip'
   ) as LecturerTotals | undefined;
 
@@ -198,9 +198,7 @@ export default function IterationDetailsPage() {
   // Iteration summary
   const iterationSummary = useQuery(
     api.allocations.iterationSummary,
-    iteration?._id
-      ? { moduleIterationId: iteration._id }
-      : 'skip'
+    iteration?._id ? { moduleIterationId: iteration._id } : 'skip'
   ) as IterationSummary | undefined;
 
   const resetAssignDialogState = () => {
@@ -463,7 +461,8 @@ export default function IterationDetailsPage() {
                         await withToast(
                           () =>
                             createGroup({
-                              moduleIterationId: iterationId as Id<'module_iterations'>,
+                              moduleIterationId:
+                                iterationId as Id<'module_iterations'>,
                               name: newGroupName.trim(),
                               ...(newGroupSize.trim()
                                 ? { sizePlanned: Number(newGroupSize) }
@@ -561,9 +560,8 @@ export default function IterationDetailsPage() {
                     <div>
                       <span className="text-muted-foreground">Group:</span>
                       <div className="font-medium">
-                        {groups?.find(
-                          (g) => String(g._id) === selectedGroupId
-                        )?.name || selectedGroupId}
+                        {groups?.find((g) => String(g._id) === selectedGroupId)
+                          ?.name || selectedGroupId}
                       </div>
                     </div>
                   )}
@@ -752,7 +750,8 @@ export default function IterationDetailsPage() {
                       async () => {
                         const result = await assignLecturer({
                           groupId: selectedGroupId as Id<'module_groups'>,
-                          lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
+                          lecturerId:
+                            selectedLecturerId as Id<'lecturer_profiles'>,
                           academicYearId: _currentYear._id,
                           organisationId: moduleData.organisationId,
                           type: 'teaching',
@@ -1040,7 +1039,8 @@ export default function IterationDetailsPage() {
                   // to use proper Convex patterns or handle this in a different way
                   toast({
                     title: 'Bulk update not implemented',
-                    description: 'This feature needs to be restructured to work with Convex patterns.',
+                    description:
+                      'This feature needs to be restructured to work with Convex patterns.',
                   });
                   analytics.track('allocation.bulkHoursUpdated', {
                     groupCount: groupIds.length,
@@ -1136,7 +1136,8 @@ export default function IterationDetailsPage() {
                   await withToast(
                     () =>
                       createGroup({
-                        moduleIterationId: iterationId as Id<'module_iterations'>,
+                        moduleIterationId:
+                          iterationId as Id<'module_iterations'>,
                         name: g.name,
                         ...(g.sizePlanned
                           ? { sizePlanned: g.sizePlanned }

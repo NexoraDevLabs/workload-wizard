@@ -5,9 +5,17 @@ import type { NextConfig } from 'next';
 let withBundleAnalyzer = (config: NextConfig) => config;
 
 if (process.env.ANALYZE === 'true') {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
   const bundleAnalyzer = require('@next/bundle-analyzer');
-  withBundleAnalyzer = (bundleAnalyzer as { default: (options: { enabled: boolean }) => (config: NextConfig) => NextConfig }).default({
+  // Properly type the bundle analyzer function with explicit typing
+  const bundleAnalyzerFn = (
+    bundleAnalyzer as {
+      default: (options: {
+        enabled: boolean;
+      }) => (config: NextConfig) => NextConfig;
+    }
+  ).default;
+  withBundleAnalyzer = bundleAnalyzerFn({
     enabled: true,
   });
 }
@@ -18,14 +26,22 @@ const nextConfig: NextConfig = {
     // Don't block production builds on ESLint errors
     ignoreDuringBuilds: true,
   },
-  webpack: (config) => {
+  webpack: (config): NextConfig => {
     // Reduce noisy infrastructure logs in CI
-    if (config && typeof config === 'object' && 'infrastructureLogging' in config) {
-      (config as { infrastructureLogging: { level: string } }).infrastructureLogging = {
-        level: 'error',
+    if (
+      config &&
+      typeof config === 'object' &&
+      'infrastructureLogging' in config
+    ) {
+      // Properly type the webpack config with explicit typing
+      const webpackConfig = config as {
+        infrastructureLogging?: { level?: string };
       };
+      if (webpackConfig.infrastructureLogging) {
+        webpackConfig.infrastructureLogging.level = 'error';
+      }
     }
-    return config;
+    return config as NextConfig;
   },
   images: {
     remotePatterns: [

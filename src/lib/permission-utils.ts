@@ -1,8 +1,6 @@
 import type React from 'react';
-import type {
-  PermissionId,
-  USER_ROLES,
-} from './permissions';
+import type { PermissionId } from './permissions';
+import { USER_ROLES } from './permissions';
 
 /**
  * Centralized gating utility for org vs system roles

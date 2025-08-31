@@ -1,5 +1,4 @@
 import { LoginForm } from '@/components/login-form';
-import { _SignIn } from '@clerk/nextjs';
 
 export default function Page() {
   return (

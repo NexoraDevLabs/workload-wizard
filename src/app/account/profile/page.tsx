@@ -205,7 +205,7 @@ export default function ProfilePage() {
             });
 
             if (!response.ok) {
-              const errorData = await response.json() as { error?: string };
+              const errorData = (await response.json()) as { error?: string };
               throw new Error(errorData.error || 'Failed to update email');
             }
 

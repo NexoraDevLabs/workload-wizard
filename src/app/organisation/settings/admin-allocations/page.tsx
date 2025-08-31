@@ -16,7 +16,7 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 import { useUser } from '@clerk/nextjs';
 
 interface AdminCategory {
-  _id: Id<"organisation_admin_allocation_categories">;
+  _id: Id<'organisation_admin_allocation_categories'>;
   name: string;
   description?: string;
   minHours?: number;
@@ -30,12 +30,8 @@ export default function OrganisationAdminAllocationsSettingsPage() {
     api.allocations.listOrganisationAdminCategories,
     isLoaded ? {} : 'skip'
   ) as AdminCategory[] | undefined;
-  const upsert = useMutation(
-    api.allocations.upsertOrganisationAdminCategory
-  );
-  const remove = useMutation(
-    api.allocations.removeOrganisationAdminCategory
-  );
+  const upsert = useMutation(api.allocations.upsertOrganisationAdminCategory);
+  const remove = useMutation(api.allocations.removeOrganisationAdminCategory);
 
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
@@ -114,7 +110,12 @@ export default function OrganisationAdminAllocationsSettingsPage() {
       await withToast(
         () =>
           upsert({
-            ...(parsed.data.id ? { id: parsed.data.id as Id<"organisation_admin_allocation_categories"> } : {}),
+            ...(parsed.data.id
+              ? {
+                  id: parsed.data
+                    .id as Id<'organisation_admin_allocation_categories'>,
+                }
+              : {}),
             name: parsed.data.name,
             ...(parsed.data.description
               ? { description: parsed.data.description }
@@ -143,7 +144,8 @@ export default function OrganisationAdminAllocationsSettingsPage() {
     setIsRemoving(id);
     try {
       await withToast(
-        () => remove({ id: id as Id<"organisation_admin_allocation_categories"> }),
+        () =>
+          remove({ id: id as Id<'organisation_admin_allocation_categories'> }),
         {
           success: { title: 'Category deleted' },
           error: { title: 'Delete failed' },

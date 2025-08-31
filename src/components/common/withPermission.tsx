@@ -3,6 +3,9 @@ import React, { forwardRef } from 'react';
 import { usePermissionManager } from '@/hooks/usePermissionManager';
 import { type PermissionId } from '@/lib/permissions';
 
+// Type for component refs
+type ComponentRef<P> = P extends { ref?: React.Ref<infer R> } ? R : never;
+
 // Higher-order component for permission-aware components
 export function withPermission<P extends object>(
   WrappedComponent: ComponentType<P>,
@@ -27,54 +30,56 @@ export function withPermission<P extends object>(
     hideForbidden = false,
   } = options;
 
-  const PermissionWrappedComponent = forwardRef<ComponentRef<P>, P>((props, ref) => {
-    const { gateElement, canPerform } = usePermissionManager(organisationId);
+  const PermissionWrappedComponent = forwardRef<ComponentRef<P>, P>(
+    (props, ref) => {
+      const { gateElement, canPerform } = usePermissionManager(organisationId);
 
-    // Gate the component state
-    const uiState = gateElement(permission, {
-      organisationId,
-      isSystemAction,
-      actionName,
-      showToast,
-      redirectOnDeny,
-    });
+      // Gate the component state
+      const uiState = gateElement(permission, {
+        organisationId,
+        isSystemAction,
+        actionName,
+        showToast,
+        redirectOnDeny,
+      });
 
-    // Check if user can perform the action
-    const hasAccess = canPerform(permission, {
-      organisationId,
-      isSystemAction,
-    });
+      // Check if user can perform the action
+      const hasAccess = canPerform(permission, {
+        organisationId,
+        isSystemAction,
+      });
 
-    // If hiding forbidden actions and no access, return fallback or null
-    if (hideForbidden && !hasAccess) {
-      return fallback ? <>{fallback}</> : null;
+      // If hiding forbidden actions and no access, return fallback or null
+      if (hideForbidden && !hasAccess) {
+        return fallback ? <>{fallback}</> : null;
+      }
+
+      // If no access and no fallback, return null
+      if (!hasAccess && !fallback) {
+        return null;
+      }
+
+      // If no access but fallback exists, return fallback
+      if (!hasAccess && fallback) {
+        return <>{fallback}</>;
+      }
+
+      // User has access, render the wrapped component with enhanced props
+      const enhancedProps = {
+        ...props,
+        ref,
+        // Add permission state to props
+        permissionState: {
+          hasAccess: uiState.hasAccess,
+          disabled: uiState.disabled,
+          scope: uiState.scope,
+          requiresOrgContext: uiState.requiresOrgContext,
+        },
+      };
+
+      return <WrappedComponent {...(enhancedProps as P)} />;
     }
-
-    // If no access and no fallback, return null
-    if (!hasAccess && !fallback) {
-      return null;
-    }
-
-    // If no access but fallback exists, return fallback
-    if (!hasAccess && fallback) {
-      return <>{fallback}</>;
-    }
-
-    // User has access, render the wrapped component with enhanced props
-    const enhancedProps = {
-      ...props,
-      ref,
-      // Add permission state to props
-      permissionState: {
-        hasAccess: uiState.hasAccess,
-        disabled: uiState.disabled,
-        scope: uiState.scope,
-        requiresOrgContext: uiState.requiresOrgContext,
-      },
-    };
-
-    return <WrappedComponent {...(enhancedProps as P)} />;
-  });
+  );
 
   // Set display name for debugging
   const wrappedComponentName =

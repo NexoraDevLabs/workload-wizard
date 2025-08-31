@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 import { useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 import { Input } from '@/components/ui/input';
@@ -68,12 +69,12 @@ interface UserData {
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
   const { user } = useUser();
-  
+
   const convexUser = useQuery(
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   ) as UserData | undefined;
-  
+
   const isAdminLike = (convexUser?.systemRoles || []).some(
     (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
   );
@@ -139,7 +140,9 @@ export default function StaffCapacityPage() {
               <Label>Capacity Mode</Label>
               <Select
                 value={capacityMode}
-                onValueChange={(v) => setCapacityMode(v as 'teaching' | 'total')}
+                onValueChange={(v) =>
+                  setCapacityMode(v as 'teaching' | 'total')
+                }
               >
                 <SelectTrigger data-testid="capacity-mode-trigger">
                   <SelectValue />
@@ -202,24 +205,27 @@ export default function StaffCapacityPage() {
             No staff in list
           </div>
         )}
-        {isAdminLike && Array.isArray(profiles) && profiles.length > 0 && (
-          <ul className="divide-y border rounded-md" data-testid="staff-list">
-            {profiles.map((p) => (
-              <StaffRow
-                key={String(p._id)}
-                profile={p}
-                yearId={currentYear?._id}
-                filters={{
-                  search,
-                  contract,
-                  activeOnly,
-                  overCapacityOnly,
-                  capacityMode,
-                }}
-              />
-            ))}
-          </ul>
-        )}
+        {isAdminLike &&
+          Array.isArray(profiles) &&
+          profiles.length > 0 &&
+          currentYear?._id && (
+            <ul className="divide-y border rounded-md" data-testid="staff-list">
+              {profiles.map((p) => (
+                <StaffRow
+                  key={String(p._id)}
+                  profile={p}
+                  yearId={String(currentYear._id)}
+                  filters={{
+                    search,
+                    contract,
+                    activeOnly,
+                    overCapacityOnly,
+                    capacityMode,
+                  }}
+                />
+              ))}
+            </ul>
+          )}
       </div>
     </StandardizedSidebarLayout>
   );
@@ -243,7 +249,10 @@ function StaffRow({
   const totals = useQuery(
     api.allocations.computeLecturerTotals,
     profile && yearId
-      ? { lecturerId: profile._id, academicYearId: yearId }
+      ? {
+          lecturerId: profile._id as Id<'lecturer_profiles'>,
+          academicYearId: yearId as Id<'academic_years'>,
+        }
       : 'skip'
   ) as
     | {
@@ -257,7 +266,10 @@ function StaffRow({
   const adminAllocations = useQuery(
     api.allocations.listAdminAllocations,
     profile && yearId
-      ? { lecturerId: profile._id, academicYearId: yearId }
+      ? {
+          lecturerId: profile._id as Id<'lecturer_profiles'>,
+          academicYearId: yearId as Id<'academic_years'>,
+        }
       : 'skip'
   ) as Array<{ allocation?: { hours?: number } }> | undefined;
 

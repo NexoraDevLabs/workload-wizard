@@ -100,8 +100,8 @@ export const create = mutation({
           type: 'sys',
         });
       } catch {
-      // Ignore audit write errors silently
-    }
+        // Ignore audit write errors silently
+      }
     }
 
     return userId;
@@ -348,7 +348,9 @@ export const list = query({
             .first()
         );
         const userResults = await Promise.all(userQueries);
-        users = userResults.filter((u): u is NonNullable<typeof u> => u !== null);
+        users = userResults.filter(
+          (u): u is NonNullable<typeof u> => u !== null
+        );
       } else {
         users = await ctx.db
           .query('users')
@@ -648,8 +650,7 @@ export const updateByWebhook = mutation({
         entityId: String(user._id),
         entityName: user.fullName || user.email,
         performedBy: 'system',
-        organisationId:
-          processedUpdates.organisationId || user.organisationId,
+        organisationId: processedUpdates.organisationId || user.organisationId,
         details: 'User updated via webhook',
         metadata: JSON.stringify(processedUpdates),
         severity: 'info',

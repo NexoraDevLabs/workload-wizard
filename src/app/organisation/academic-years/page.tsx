@@ -138,7 +138,10 @@ export default function AcademicYearsAdminPage() {
                 <Select
                   value={form.status}
                   onValueChange={(v) =>
-                    setForm((f) => ({ ...f, status: v as 'draft' | 'published' }))
+                    setForm((f) => ({
+                      ...f,
+                      status: v as 'draft' | 'published',
+                    }))
                   }
                 >
                   <SelectTrigger>
@@ -216,7 +219,9 @@ export default function AcademicYearsAdminPage() {
                 <div className="flex items-center gap-2">
                   <Select
                     value={''}
-                    onValueChange={async (v: 'draft' | 'published' | 'archived') => {
+                    onValueChange={async (
+                      v: 'draft' | 'published' | 'archived'
+                    ) => {
                       if (!user?.id) return;
                       const ids = years.map((y) => y._id);
                       setIsSettingStatus('bulk');

@@ -15,12 +15,10 @@
     "dev": "pnpm exec next dev",
     "dev:clean": "rimraf .next && pnpm exec next dev",
     "build": "pnpm exec next build",
-
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "fix": "eslint . --fix && prettier -w .",
-
     "start": "pnpm exec next start",
     "format": "pnpm exec prettier --write .",
     "format:check": "pnpm exec prettier --check .",
@@ -33,17 +31,22 @@
     "precommit:all": "sh -c 'if [ -z \"$SKIP_CHECKS\" ]; then pnpm typecheck && pnpm lint && pnpm test; else echo \"SKIP_CHECKS=1 -> skipping typecheck/lint/test\"; fi'",
     "commit": "git add -A && pnpm precommit:all && pnpm exec czg && git push -u origin HEAD",
     "commit:msg": "git add -A && pnpm precommit:all && pnpm exec czg -m \"$@\" && git push -u origin HEAD",
+    "commit:simple": "git add -A && pnpm exec czg",
+    "commit:no-checks": "SKIP_CHECKS=1 git add -A && pnpm exec czg",
+    "husky:install": "husky install",
+    "husky:add": "husky add",
     "clean": "rimraf node_modules .next dist coverage && pnpm store prune",
     "update:all": "pnpm update --latest --recursive",
     "doctor": "pnpm dlx pnpm@10.15.0 doctor || true",
     "reset": "pnpm clean && pnpm install && pnpm check"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,md,css,scss,yml,yaml}": [
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
       "prettier --write"
     ],
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
+    "*.{json,md,css,scss,yml,yaml}": [
+      "prettier --write"
     ]
   },
   "config": {

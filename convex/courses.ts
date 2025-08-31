@@ -1,11 +1,7 @@
-import {
-  mutation,
-  query,
-} from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
-
 
 // List courses for an organisation
 export const listByOrganisation = query({
@@ -16,9 +12,7 @@ export const listByOrganisation = query({
     if (!identity?.subject) return [];
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return [];
     await requireOrgPermission(
@@ -46,9 +40,7 @@ export const listForActor = query({
     if (!identity?.subject) return [];
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return [];
     await requireOrgPermission(
@@ -97,9 +89,7 @@ export const create = mutation({
     // derive organisation from actor
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) throw new Error('User not found');
 
@@ -293,9 +283,7 @@ export const listYears = query({
     );
     const years = await ctx.db
       .query('course_years')
-      .withIndex('by_course', (q) =>
-        q.eq('courseId', args.courseId)
-      )
+      .withIndex('by_course', (q) => q.eq('courseId', args.courseId))
       .order('asc')
       .collect();
     return years;
@@ -312,9 +300,7 @@ export const isCodeAvailable = query({
     // Derive organisation from actor
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return { available: false };
 
@@ -353,12 +339,8 @@ export const addYear = mutation({
     // Ensure unique yearNumber per course
     const exists = await ctx.db
       .query('course_years')
-      .withIndex('by_course', (q) =>
-        q.eq('courseId', args.courseId)
-      )
-      .filter((q) =>
-        q.eq(q.field('yearNumber'), args.yearNumber)
-      )
+      .withIndex('by_course', (q) => q.eq('courseId', args.courseId))
+      .filter((q) => q.eq(q.field('yearNumber'), args.yearNumber))
       .first();
     if (exists) throw new Error('Year already exists for this course');
 

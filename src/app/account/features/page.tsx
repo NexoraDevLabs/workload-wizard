@@ -49,9 +49,21 @@ function getLocalFlagOverrides(): Record<string, boolean> {
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
     if (!stored) return {};
-    const parsed = JSON.parse(stored);
-    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-      return parsed as Record<string, boolean>;
+    // Properly type the parsed JSON result
+    const parsed: unknown = JSON.parse(stored);
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      // Validate that all values are booleans
+      const result: Record<string, boolean> = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (typeof value === 'boolean') {
+          result[key] = value;
+        }
+      }
+      return result;
     }
     return {};
   } catch {
@@ -251,8 +263,6 @@ export default function AccountFeaturesPage() {
   const capitalizeStage = (stage: string) => {
     return stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
   };
-
-
 
   return (
     <StandardizedSidebarLayout

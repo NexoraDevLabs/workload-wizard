@@ -232,7 +232,12 @@ export default function CoursesPage() {
                   >
                     <option value="">Add campus…</option>
                     {(
-                      (useQuery(api.organisationSettings.getForActor) as { campusOptions?: string[] } | null | undefined)?.campusOptions || []
+                      (
+                        useQuery(api.organisationSettings.getForActor) as
+                          | { campusOptions?: string[] }
+                          | null
+                          | undefined
+                      )?.campusOptions || []
                     ).map((c: string) => (
                       <option key={c} value={c}>
                         {c}
@@ -270,8 +275,7 @@ export default function CoursesPage() {
                     >
                       <div className="flex items-center justify-between">
                         {/* Link removed as per new_code */}
-                        <span className="font-medium">{c.code}</span> —{' '}
-                        {c.name}
+                        <span className="font-medium">{c.code}</span> — {c.name}
                         <div className="flex items-center space-x-2">
                           {/* PermissionGate removed as per new_code */}
                           <Button

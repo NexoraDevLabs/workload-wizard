@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,11 +25,11 @@ import {
 } from '@/components/ui/select';
 
 interface Module {
-  _id: string;
+  _id: Id<'modules'>;
   code: string;
   name: string;
   credits?: number;
-  leaderProfileId?: string;
+  leaderProfileId?: Id<'lecturer_profiles'>;
   level?: number;
   teachingHours?: number;
   markingHours?: number;
@@ -36,7 +37,7 @@ interface Module {
 }
 
 interface LecturerProfileOption {
-  _id: string;
+  _id: Id<'lecturer_profiles'>;
   fullName: string;
 }
 
@@ -62,23 +63,16 @@ export function EditModuleForm({
     teachingHours: module.teachingHours?.toString() || '',
     markingHours: module.markingHours?.toString() || '',
     leaderProfileId: module.leaderProfileId || '',
-    campuses: Array.isArray(module.campuses)
-      ? module.campuses.join(', ')
-      : '',
+    campuses: Array.isArray(module.campuses) ? module.campuses.join(', ') : '',
   });
   const [hoursTouched, setHoursTouched] = useState(false);
-  const codeAvailability = useQuery(
-    api.modules.isCodeAvailable,
-    {
-      code: form.code,
-      excludeId: module._id,
-    }
-  ) as { available: boolean } | undefined;
+  const codeAvailability = useQuery(api.modules.isCodeAvailable, {
+    code: form.code,
+    excludeId: module._id,
+  }) as { available: boolean } | undefined;
   const lecturers = (useQuery(api.staff.listForActor) ||
     []) as LecturerProfileOption[];
-  const orgSettings = useQuery(
-    api.organisationSettings.getForActor
-  ) as
+  const orgSettings = useQuery(api.organisationSettings.getForActor) as
     | {
         moduleHoursByCredits?: Array<{
           credits: number;
@@ -127,7 +121,7 @@ export function EditModuleForm({
         name: form.name.trim(),
         ...(form.credits.trim() ? { credits: Number(form.credits) } : {}),
         ...(form.leaderProfileId
-          ? { leaderProfileId: form.leaderProfileId }
+          ? { leaderProfileId: form.leaderProfileId as Id<'lecturer_profiles'> }
           : {}),
         ...(form.level.trim() ? { level: Number(form.level) } : {}),
         ...(form.teachingHours.trim()
@@ -318,7 +312,7 @@ export function EditModuleForm({
                   }}
                 >
                   <option value="">Add campus…</option>
-                  {(orgSettings)?.campusOptions?.map((c: string) => (
+                  {orgSettings?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>
                       {c}
                     </option>

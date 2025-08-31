@@ -20,12 +20,13 @@ import {
 } from '@/components/ui/select';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
 
 interface Organisation {
-  _id: string;
+  _id: Id<'organisations'>;
   name: string;
   code: string;
   contactEmail?: string;

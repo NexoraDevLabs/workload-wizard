@@ -1,8 +1,4 @@
-import {
-  mutation,
-  query,
-  type MutationCtx,
-} from './_generated/server';
+import { mutation, query, type MutationCtx } from './_generated/server';
 import { v } from 'convex/values';
 import type { Id } from './_generated/dataModel';
 
@@ -177,9 +173,7 @@ export const list = query({
     // Start from timestamp index, descending (newest first)
     let query = ctx.db
       .query('audit_logs')
-      .withIndex('by_timestamp', (q) =>
-        q.gte('timestamp', args.startDate ?? 0)
-      )
+      .withIndex('by_timestamp', (q) => q.gte('timestamp', args.startDate ?? 0))
       .order('desc');
 
     // Apply filters

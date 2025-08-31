@@ -1,5 +1,4 @@
 import Hero from '@/components/Hero';
-import { _JoinWaitlist } from '@/components/JoinWaitlist';
 import DynamicIslandHeader from '@/components/dynamic-header-island';
 import Footer from '@/components/Footer';
 import '@/styles/index.css';

@@ -104,12 +104,12 @@ function AcademicYearProviderInternal({
       setIncludeDraftsState(!!preferences.includeDrafts);
       return;
     }
-          try {
-        const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
-        if (raw !== null) setIncludeDraftsState(raw === '1');
-      } catch {
-        // Ignore localStorage errors silently
-      }
+    try {
+      const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
+      if (raw !== null) setIncludeDraftsState(raw === '1');
+    } catch {
+      // Ignore localStorage errors silently
+    }
   }, [orgIdStr, preferences?.includeDrafts]);
 
   const setPrefsMutation = useMutation(api.academicYears.setPreferences);

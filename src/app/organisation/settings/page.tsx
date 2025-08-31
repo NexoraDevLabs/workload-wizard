@@ -54,12 +54,9 @@ export default function OrganisationSettingsPage() {
   ];
 
   const { user } = useUser();
-  const settings = useQuery(
-    api.organisationSettings.getOrganisationSettings,
-    {
-      userId: user?.id || '',
-    }
-  );
+  const settings = useQuery(api.organisationSettings.getOrganisationSettings, {
+    userId: user?.id || '',
+  });
   const upsert = useMutation(
     api.organisationSettings.upsertOrganisationSettings
   );
@@ -77,41 +74,57 @@ export default function OrganisationSettingsPage() {
   );
   const [maxGroupSize, setMaxGroupSize] = useState<string | null>(null);
 
-  const [familyRules, setFamilyRules] = useState<
-    FamilyRule[] | null
-  >(null);
+  const [familyRules, setFamilyRules] = useState<FamilyRule[] | null>(null);
 
   // Helper functions to safely access settings properties
-  const getSettingsStringArray = useCallback((property: keyof OrganisationSettings, defaultValue: string[]): string[] => {
-    if (settings && typeof settings === 'object' && property in settings) {
-      const value = (settings as OrganisationSettings)[property];
-      return Array.isArray(value) ? (value as string[]) : defaultValue;
-    }
-    return defaultValue;
-  }, [settings]);
+  const getSettingsStringArray = useCallback(
+    (
+      property: keyof OrganisationSettings,
+      defaultValue: string[]
+    ): string[] => {
+      if (settings && typeof settings === 'object' && property in settings) {
+        const value = (settings as OrganisationSettings)[property];
+        return Array.isArray(value) ? (value as string[]) : defaultValue;
+      }
+      return defaultValue;
+    },
+    [settings]
+  );
 
-  const getSettingsNumber = useCallback((property: keyof OrganisationSettings, defaultValue: number): number => {
-    if (settings && typeof settings === 'object' && property in settings) {
-      const value = (settings as OrganisationSettings)[property];
-      return typeof value === 'number' ? value : defaultValue;
-    }
-    return defaultValue;
-  }, [settings]);
+  const getSettingsNumber = useCallback(
+    (property: keyof OrganisationSettings, defaultValue: number): number => {
+      if (settings && typeof settings === 'object' && property in settings) {
+        const value = (settings as OrganisationSettings)[property];
+        return typeof value === 'number' ? value : defaultValue;
+      }
+      return defaultValue;
+    },
+    [settings]
+  );
 
-  const getSettingsFamilyRules = useCallback((property: keyof OrganisationSettings, defaultValue: FamilyRule[]): FamilyRule[] => {
-    if (settings && typeof settings === 'object' && property in settings) {
-      const value = (settings as OrganisationSettings)[property];
-      return Array.isArray(value) ? (value as FamilyRule[]) : defaultValue;
-    }
-    return defaultValue;
-  }, [settings]);
+  const getSettingsFamilyRules = useCallback(
+    (
+      property: keyof OrganisationSettings,
+      defaultValue: FamilyRule[]
+    ): FamilyRule[] => {
+      if (settings && typeof settings === 'object' && property in settings) {
+        const value = (settings as OrganisationSettings)[property];
+        return Array.isArray(value) ? (value as FamilyRule[]) : defaultValue;
+      }
+      return defaultValue;
+    },
+    [settings]
+  );
 
   const effective = useMemo(() => {
     return {
-      staffRoleOptions: roleOptions ?? getSettingsStringArray('staffRoleOptions', []),
+      staffRoleOptions:
+        roleOptions ?? getSettingsStringArray('staffRoleOptions', []),
       teamOptions: teamOptions ?? getSettingsStringArray('teamOptions', []),
-      campusOptions: campusOptions ?? getSettingsStringArray('campusOptions', []),
-      contractFamilyOptions: familyOptions ?? getSettingsStringArray('contractFamilyOptions', []),
+      campusOptions:
+        campusOptions ?? getSettingsStringArray('campusOptions', []),
+      contractFamilyOptions:
+        familyOptions ?? getSettingsStringArray('contractFamilyOptions', []),
       // Single source of truth: 1 FTE contract hours; use it for both fields on the backend
       baseMaxTeachingAtFTE1:
         fte1ContractHours !== null
@@ -125,7 +138,8 @@ export default function OrganisationSettingsPage() {
         maxGroupSize !== null
           ? Number(maxGroupSize)
           : getSettingsNumber('maxClassSizePerGroup', 25),
-      familyMaxTeachingRules: familyRules ?? getSettingsFamilyRules('familyMaxTeachingRules', []),
+      familyMaxTeachingRules:
+        familyRules ?? getSettingsFamilyRules('familyMaxTeachingRules', []),
     };
   }, [
     roleOptions,
@@ -171,7 +185,8 @@ export default function OrganisationSettingsPage() {
                       const val = newRole.trim();
                       if (!val) return;
                       const current =
-                        roleOptions ?? getSettingsStringArray('staffRoleOptions', []);
+                        roleOptions ??
+                        getSettingsStringArray('staffRoleOptions', []);
                       if (!current.includes(val)) {
                         setRoleOptions([...current, val]);
                       }
@@ -182,31 +197,32 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(roleOptions ?? getSettingsStringArray('staffRoleOptions', [])).map(
-                    (r: string) => (
-                      <div
-                        key={r}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                  {(
+                    roleOptions ??
+                    getSettingsStringArray('staffRoleOptions', [])
+                  ).map((r: string) => (
+                    <div
+                      key={r}
+                      className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                    >
+                      <span>{r}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setRoleOptions(
+                            (
+                              roleOptions ??
+                              getSettingsStringArray('staffRoleOptions', [])
+                            ).filter((x: string) => x !== r)
+                          )
+                        }
                       >
-                        <span>{r}</span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setRoleOptions(
-                              (
-                                roleOptions ??
-                                getSettingsStringArray('staffRoleOptions', [])
-                              ).filter((x: string) => x !== r)
-                            )
-                          }
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    )
-                  )}
+                        ×
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="space-y-3">
@@ -223,7 +239,8 @@ export default function OrganisationSettingsPage() {
                       const val = newTeam.trim();
                       if (!val) return;
                       const current =
-                        teamOptions ?? getSettingsStringArray('teamOptions', []);
+                        teamOptions ??
+                        getSettingsStringArray('teamOptions', []);
                       if (!current.includes(val)) {
                         setTeamOptions([...current, val]);
                       }
@@ -234,31 +251,31 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(teamOptions ?? getSettingsStringArray('teamOptions', [])).map(
-                    (t: string) => (
-                      <div
-                        key={t}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                  {(
+                    teamOptions ?? getSettingsStringArray('teamOptions', [])
+                  ).map((t: string) => (
+                    <div
+                      key={t}
+                      className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                    >
+                      <span>{t}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setTeamOptions(
+                            (
+                              teamOptions ??
+                              getSettingsStringArray('teamOptions', [])
+                            ).filter((x: string) => x !== t)
+                          )
+                        }
                       >
-                        <span>{t}</span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setTeamOptions(
-                              (
-                                teamOptions ??
-                                getSettingsStringArray('teamOptions', [])
-                              ).filter((x: string) => x !== t)
-                            )
-                          }
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    )
-                  )}
+                        ×
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="space-y-3">
@@ -275,7 +292,8 @@ export default function OrganisationSettingsPage() {
                       const val = newCampus.trim();
                       if (!val) return;
                       const current =
-                        campusOptions ?? getSettingsStringArray('campusOptions', []);
+                        campusOptions ??
+                        getSettingsStringArray('campusOptions', []);
                       if (!current.includes(val)) {
                         setCampusOptions([...current, val]);
                       }
@@ -286,31 +304,31 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(campusOptions ?? getSettingsStringArray('campusOptions', [])).map(
-                    (c: string) => (
-                      <div
-                        key={c}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                  {(
+                    campusOptions ?? getSettingsStringArray('campusOptions', [])
+                  ).map((c: string) => (
+                    <div
+                      key={c}
+                      className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                    >
+                      <span>{c}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setCampusOptions(
+                            (
+                              campusOptions ??
+                              getSettingsStringArray('campusOptions', [])
+                            ).filter((x: string) => x !== c)
+                          )
+                        }
                       >
-                        <span>{c}</span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setCampusOptions(
-                              (
-                                campusOptions ??
-                                getSettingsStringArray('campusOptions', [])
-                              ).filter((x: string) => x !== c)
-                            )
-                          }
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    )
-                  )}
+                        ×
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="space-y-3">
@@ -327,7 +345,8 @@ export default function OrganisationSettingsPage() {
                       const val = newFamily.trim();
                       if (!val) return;
                       const current =
-                        familyOptions ?? getSettingsStringArray('contractFamilyOptions', []);
+                        familyOptions ??
+                        getSettingsStringArray('contractFamilyOptions', []);
                       if (!current.includes(val)) {
                         setFamilyOptions([...current, val]);
                       }
@@ -338,31 +357,35 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(familyOptions ?? getSettingsStringArray('contractFamilyOptions', [])).map(
-                    (f: string) => (
-                      <div
-                        key={f}
-                        className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                  {(
+                    familyOptions ??
+                    getSettingsStringArray('contractFamilyOptions', [])
+                  ).map((f: string) => (
+                    <div
+                      key={f}
+                      className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                    >
+                      <span>{f}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setFamilyOptions(
+                            (
+                              familyOptions ??
+                              getSettingsStringArray(
+                                'contractFamilyOptions',
+                                []
+                              )
+                            ).filter((x: string) => x !== f)
+                          )
+                        }
                       >
-                        <span>{f}</span>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            setFamilyOptions(
-                              (
-                                familyOptions ??
-                                getSettingsStringArray('contractFamilyOptions', [])
-                              ).filter((x: string) => x !== f)
-                            )
-                          }
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    )
-                  )}
+                        ×
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -377,7 +400,7 @@ export default function OrganisationSettingsPage() {
                   value={String(
                     fte1ContractHours !== null
                       ? fte1ContractHours
-                      : (getSettingsNumber('baseTotalContractAtFTE1', 1498))
+                      : getSettingsNumber('baseTotalContractAtFTE1', 1498)
                   )}
                   onChange={(e) => setFte1ContractHours(e.target.value)}
                   min={0}
@@ -390,7 +413,7 @@ export default function OrganisationSettingsPage() {
                   value={String(
                     maxGroupSize !== null
                       ? maxGroupSize
-                      : (getSettingsNumber('maxClassSizePerGroup', 25))
+                      : getSettingsNumber('maxClassSizePerGroup', 25)
                   )}
                   onChange={(e) => setMaxGroupSize(e.target.value)}
                   min={1}
@@ -409,76 +432,93 @@ export default function OrganisationSettingsPage() {
                 <Label>Per-family max teaching rule</Label>
               </div>
               <div className="space-y-2">
-                {(familyRules ?? getSettingsFamilyRules('familyMaxTeachingRules', [])).map(
-                  (
-                    r: FamilyRule,
-                    idx: number
-                  ) => (
-                    <div
-                      key={`${r.family}-${idx}`}
-                      className="grid grid-cols-12 gap-2 items-center"
-                    >
-                      <div className="col-span-3">
-                        <Label className="text-xs">Family</Label>
-                        <Input value={r.family} disabled />
-                      </div>
-                      <div className="col-span-3">
-                        <Label className="text-xs">Mode</Label>
-                        <select
-                          className="w-full h-9 rounded-md border px-2"
-                          value={r.mode}
-                          onChange={(e) => {
-                            const v = e.target.value as 'percent' | 'fixed';
-                            const list = [
-                              ...(familyRules ??
-                                getSettingsFamilyRules('familyMaxTeachingRules', [])),
-                            ];
-                            list[idx] = { ...list[idx], mode: v };
-                            setFamilyRules(list);
-                          }}
-                        >
-                          <option value="percent">% of 1 FTE contract</option>
-                          <option value="fixed">Fixed hours</option>
-                        </select>
-                      </div>
-                      <div className="col-span-4">
-                        <Label className="text-xs">Value</Label>
-                        <Input
-                          type="number"
-                          value={String(r.value ?? 0)}
-                          onChange={(e) => {
-                            const num = Number(e.target.value || 0);
-                            const list = [
-                              ...(familyRules ??
-                                getSettingsFamilyRules('familyMaxTeachingRules', [])),
-                            ];
-                            list[idx] = { ...list[idx], value: num };
-                            setFamilyRules(list);
-                          }}
-                          min={0}
-                        />
-                      </div>
-                      <div className="col-span-2 flex items-end">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            const base =
-                              familyRules ??
-                              getSettingsFamilyRules('familyMaxTeachingRules', []);
-                            const list = base.filter(
-                              (x: FamilyRule, i: number) => i !== idx
-                            );
-                            setFamilyRules(list);
-                          }}
-                          className="w-full"
-                        >
-                          Remove
-                        </Button>
-                      </div>
+                {(
+                  familyRules ??
+                  getSettingsFamilyRules('familyMaxTeachingRules', [])
+                ).map((r: FamilyRule, idx: number) => (
+                  <div
+                    key={`${r.family}-${idx}`}
+                    className="grid grid-cols-12 gap-2 items-center"
+                  >
+                    <div className="col-span-3">
+                      <Label className="text-xs">Family</Label>
+                      <Input value={r.family} disabled />
                     </div>
-                  )
-                )}
+                    <div className="col-span-3">
+                      <Label className="text-xs">Mode</Label>
+                      <select
+                        className="w-full h-9 rounded-md border px-2"
+                        value={r.mode}
+                        onChange={(e) => {
+                          const v = e.target.value as 'percent' | 'fixed';
+                          const list = [
+                            ...(familyRules ??
+                              getSettingsFamilyRules(
+                                'familyMaxTeachingRules',
+                                []
+                              )),
+                          ];
+                          list[idx] = {
+                            ...list[idx],
+                            mode: v,
+                            family: list[idx]?.family || '',
+                            value: list[idx]?.value || 0,
+                          };
+                          setFamilyRules(list);
+                        }}
+                      >
+                        <option value="percent">% of 1 FTE contract</option>
+                        <option value="fixed">Fixed hours</option>
+                      </select>
+                    </div>
+                    <div className="col-span-4">
+                      <Label className="text-xs">Value</Label>
+                      <Input
+                        type="number"
+                        value={String(r.value ?? 0)}
+                        onChange={(e) => {
+                          const num = Number(e.target.value || 0);
+                          const list = [
+                            ...(familyRules ??
+                              getSettingsFamilyRules(
+                                'familyMaxTeachingRules',
+                                []
+                              )),
+                          ];
+                          list[idx] = {
+                            ...list[idx],
+                            value: num,
+                            family: list[idx]?.family || '',
+                            mode: list[idx]?.mode || 'percent',
+                          };
+                          setFamilyRules(list);
+                        }}
+                        min={0}
+                      />
+                    </div>
+                    <div className="col-span-2 flex items-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          const base =
+                            familyRules ??
+                            getSettingsFamilyRules(
+                              'familyMaxTeachingRules',
+                              []
+                            );
+                          const list = base.filter(
+                            (x: FamilyRule, i: number) => i !== idx
+                          );
+                          setFamilyRules(list);
+                        }}
+                        className="w-full"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="grid grid-cols-12 gap-2 items-end">
                 <div className="col-span-3">
@@ -489,9 +529,10 @@ export default function OrganisationSettingsPage() {
                     onChange={(e) => {
                       const fam = e.target.value;
                       if (!fam) return;
-                      const current =
-                          familyRules ?? [];
-                      if (!current.some((rr: FamilyRule) => rr.family === fam)) {
+                      const current = familyRules ?? [];
+                      if (
+                        !current.some((rr: FamilyRule) => rr.family === fam)
+                      ) {
                         setFamilyRules([
                           ...current,
                           { family: fam, mode: 'percent', value: 0 },
@@ -501,10 +542,7 @@ export default function OrganisationSettingsPage() {
                     }}
                   >
                     <option value="">Select family</option>
-                    {(
-                      familyOptions ??
-                      []
-                    ).map((f: string) => (
+                    {(familyOptions ?? []).map((f: string) => (
                       <option key={f} value={f}>
                         {f}
                       </option>

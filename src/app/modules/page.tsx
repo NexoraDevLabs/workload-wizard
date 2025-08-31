@@ -25,30 +25,37 @@ interface Module {
   code: string;
   name: string;
   credits?: number;
-  leaderProfileId?: Id<'staff'>;
+  leaderProfileId?: Id<'lecturer_profiles'>;
   level?: number;
   teachingHours?: number;
   markingHours?: number;
 }
 
 interface Lecturer {
-  _id: Id<'staff'>;
+  _id: Id<'lecturer_profiles'>;
   fullName: string;
-  email: string;
+  email?: string;
+  role?: string;
+  teamName?: string;
 }
-
-
 
 export default function ModulesPage() {
   const { toast } = useToast();
-  const modules = useQuery(api.modules.listByOrganisation) as Module[] | undefined;
+  const modules = useQuery(api.modules.listByOrganisation) as
+    | Module[]
+    | undefined;
   const { currentYear } = useAcademicYear();
   const create = useMutation(api.modules.create);
   const deleteModule = useMutation(api.modules.remove);
   const me = useQuery(
     api.users.getBySubject,
-    typeof window !== 'undefined' && (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id
-      ? { subject: (window as { Clerk?: { user?: { id: string } } }).Clerk.user.id }
+    typeof window !== 'undefined' &&
+      (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id
+      ? {
+          subject:
+            (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id ||
+            '',
+        }
       : 'skip'
   ) as { systemRoles?: string[] } | undefined;
   const _isAdminLike = (me?.systemRoles || []).some(

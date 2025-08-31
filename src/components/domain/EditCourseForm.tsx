@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -17,10 +18,10 @@ import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Course {
-  _id: string;
+  _id: Id<'courses'>;
   code: string;
   name: string;
-  leaderProfileId?: string;
+  leaderProfileId?: Id<'lecturer_profiles'>;
   studentCount?: number;
   campuses?: string[];
 }
@@ -209,8 +210,7 @@ export function EditCourseForm({
                 >
                   <option value="">Add campus…</option>
                   {(
-                    useQuery(api.organisationSettings.getForActor) ||
-                    {}
+                    useQuery(api.organisationSettings.getForActor) || {}
                   )?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>
                       {c}

@@ -28,13 +28,11 @@ export async function getFeatureFlag(
 
     return {
       enabled,
-      value: undefined,
     };
   } catch {
     // Default to disabled if there's an error
     return {
       enabled: false,
-      value: undefined,
     };
   }
 }
