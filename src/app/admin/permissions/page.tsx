@@ -965,12 +965,16 @@ export default function AdminPermissionsPage() {
                   const items = raw.map((x: Record<string, unknown>) => ({
                     id:
                       (x['Permission ID'] as string | undefined) ??
-                      (x.id as string),
+                      (x.id as string | undefined) ??
+                      '',
                     group:
-                      (x['Group'] as string | undefined) ?? (x.group as string),
+                      (x['Group'] as string | undefined) ?? 
+                      (x.group as string | undefined) ??
+                      '',
                     description:
                       (x['Description'] as string | undefined) ??
-                      (x.description as string),
+                      (x.description as string | undefined) ??
+                      '',
                     defaultRoles:
                       (x['Default Roles'] as string[] | undefined) ??
                       (x.defaultRoles as string[] | undefined) ??

@@ -14,22 +14,7 @@ async function getStatsigAdapter() {
   return statsigAdapter;
 }
 
-// Helper function to safely use Statsig adapter
-async function safelyUseStatsig<T>(
-  operation: (adapter: unknown) => Promise<T>
-): Promise<T | null> {
-  try {
-    const adapter = await getStatsigAdapter();
-    if (!adapter || typeof adapter !== 'object' || adapter === null) {
-      console.warn('Statsig adapter not available or invalid');
-      return null;
-    }
-    return await operation(adapter);
-  } catch (error) {
-    console.error('Error using Statsig adapter:', error);
-    return null;
-  }
-}
+
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -258,26 +243,28 @@ async function handleUserUpdated(userData: ClerkUserData) {
 
   // Mirror update to Statsig
   const adapter = await getStatsigAdapter();
-  const Statsig = await adapter.initialize();
-  await Statsig.logEvent(
-    {
-      userID: userData.id,
-      email: primaryEmail?.email_address as string,
-      custom: {
-        fullName:
-          `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-        organisationId: (publicMetadata.organisationId as string) || undefined,
-        roles:
-          (publicMetadata.roles as string[]) ||
-          ((publicMetadata.role as string | undefined)
-            ? [publicMetadata.role as string]
-            : []),
-        source: 'clerk.webhook',
+  if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
+    const Statsig = await (adapter as { initialize(): Promise<{ logEvent: (event: unknown, name: string) => Promise<void>; flush: () => Promise<void> }> }).initialize();
+    await Statsig.logEvent(
+      {
+        userID: userData.id,
+        email: primaryEmail?.email_address as string,
+        custom: {
+          fullName:
+            `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+          organisationId: (publicMetadata.organisationId as string) || undefined,
+          roles:
+            (publicMetadata.roles as string[]) ||
+            ((publicMetadata.role as string | undefined)
+              ? [publicMetadata.role as string]
+              : []),
+          source: 'clerk.webhook',
+        },
       },
-    },
-    'user_updated'
-  );
-  await Statsig.flush();
+      'user_updated'
+    );
+    await Statsig.flush();
+  }
 }
 
 async function handleUserDeleted(userData: DeletedUserData) {
@@ -311,16 +298,14 @@ async function handleSessionCreated(sessionData: unknown) {
 
   // Log a login event to Statsig to ensure the user appears in Users
   const adapter = await getStatsigAdapter();
-  const Statsig = await adapter.initialize();
-  await Statsig.logEvent(
-    { userID: (s.user_id as string) || 'unknown' },
-    'login'
-  );
-  await Statsig.flush();
+  if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
+    const Statsig = await (adapter as { initialize(): Promise<{ logEvent: (event: unknown, name: string) => Promise<void>; flush: () => Promise<void> }> }).initialize();
+    await Statsig.logEvent(
+      { userID: (s.user_id as string) || 'unknown' },
+      'login'
+    );
+    await Statsig.flush();
+  }
 }
 
-// Type for the Statsig instance
-type StatsigInstance = {
-  logEvent: (user: { userID: string; email?: string; custom?: Record<string, unknown> }, eventName: string, value?: string | number | null, metadata?: Record<string, unknown> | null) => void;
-  flush: () => Promise<void>;
-};
+

@@ -179,7 +179,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         });
         if (fetchedPost) {
           setPost(fetchedPost);
-          if (fetchedPost.coverImage && fetchedPost.coverImage.asset) {
+          if (fetchedPost.coverImage?.asset?._ref) {
             setCoverUrl(
               urlFor(fetchedPost.coverImage)
                 .width(1600)

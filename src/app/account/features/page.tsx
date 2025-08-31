@@ -50,7 +50,7 @@ function getLocalFlagOverrides(): Record<string, boolean> {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
     if (!stored) return {};
     const parsed = JSON.parse(stored);
-    if (typeof parsed === 'object' && parsed !== null) {
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
       return parsed as Record<string, boolean>;
     }
     return {};
@@ -97,8 +97,8 @@ export default function AccountFeaturesPage() {
       const rows: EarlyAccessFeature[] = (publicFeatures || []).map((r) => ({
         flagKey: r.key,
         name: r.name,
-        description: (r.description as string) || '',
-        stage: r.stage as string,
+        description: r.description ?? '',
+        stage: r.stage ?? '',
         enrolled: enrollmentMap.get(r.key) || false,
       }));
       setFeatures(rows);

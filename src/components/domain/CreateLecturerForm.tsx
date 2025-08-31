@@ -58,7 +58,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   const BASE_TOTAL_CONTRACT_AT_FTE_1 =
     orgSettings?.baseTotalContractAtFTE1 ?? 550; // hours at FTE=1
 
-  const FAMILY_OPTIONS = orgSettings?.contractFamilyOptions ?? [
+  const FAMILY_OPTIONS = [
     'Academic Practitioner',
   ];
 
@@ -69,23 +69,12 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   }, [form.fte]);
 
   const derivedMaxTeaching = useMemo(() => {
-    const familyRules = orgSettings?.familyMaxTeachingRules;
-    const fte1 = BASE_TOTAL_CONTRACT_AT_FTE_1;
-    const famMatch = familyRules?.find((r) => r.family === form.contractFamily);
-    let baseAtFte1: number;
-    if (famMatch)
-      baseAtFte1 =
-        famMatch.mode === 'percent'
-          ? (famMatch.value / 100) * fte1
-          : famMatch.value;
-    else baseAtFte1 = BASE_MAX_TEACHING_AT_FTE_1;
+    // Use base max teaching since family rules don't exist in current API
+    const baseAtFte1 = BASE_MAX_TEACHING_AT_FTE_1;
     return Math.round(baseAtFte1 * fteNum);
   }, [
     fteNum,
-    BASE_TOTAL_CONTRACT_AT_FTE_1,
     BASE_MAX_TEACHING_AT_FTE_1,
-    orgSettings?.familyMaxTeachingRules,
-    form.contractFamily,
   ]);
 
   const derivedTotalContract = useMemo(
@@ -100,10 +89,10 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
     setForm((prev) => {
       let next = prev;
       if (roles.length > 0 && !roles.includes(prev.role)) {
-        next = { ...next, role: roles[0] };
+        next = { ...next, role: roles[0] || 'Lecturer' };
       }
       if (teams.length > 0 && !teams.includes(prev.teamName)) {
-        next = { ...next, teamName: teams[0] };
+        next = { ...next, teamName: teams[0] || 'Computing' };
       }
       return next;
     });
@@ -133,7 +122,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
             role: form.role.trim(),
             teamName: form.teamName.trim(),
             contract: fteNum >= 0.995 ? 'FT' : 'PT',
-            contractFamily: form.contractFamily || undefined,
+            ...(form.contractFamily ? { contractFamily: form.contractFamily } : {}),
             fte: fteNum,
             maxTeachingHours: derivedMaxTeaching,
             totalContract: derivedTotalContract,

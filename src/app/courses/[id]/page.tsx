@@ -99,6 +99,87 @@ interface OrganisationSettings {
   updatedAt?: number;
 }
 
+// Type for campus row data
+interface CampusRow {
+  campus: string;
+  count: string;
+}
+
+// Type for module iteration
+interface ModuleIteration {
+  _id: Id<'module_iterations'>;
+  moduleId: Id<'modules'>;
+  academicYearId: Id<'academic_years'>;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Type for group data
+interface Group {
+  _id: Id<'module_groups'>;
+  moduleIterationId: Id<'module_iterations'>;
+  name: string;
+  sizePlanned?: number;
+  campusId?: string;
+  dayOfWeek?: string;
+  weekPattern?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Type for allocation data
+interface Allocation {
+  _id: Id<'group_allocations'>;
+  groupId: Id<'module_groups'>;
+  lecturerId: Id<'lecturer_profiles'>;
+  hoursOverride?: number;
+  hoursComputed: number;
+  type: 'teaching' | 'admin';
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Type for lecturer data
+interface Lecturer {
+  _id: Id<'lecturer_profiles'>;
+  fullName: string;
+  lecturerId: string;
+  email: string;
+  type: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// Type for allocation with lecturer
+interface AllocationWithLecturer {
+  allocation: Allocation;
+  lecturer: Lecturer;
+}
+
+// Type for module teaching hours
+interface ModuleTeachingHours {
+  moduleCode: string;
+  moduleName: string;
+  credits: number;
+  computedHours: number;
+  totalHours: number;
+}
+
+// Type for lecturer totals
+interface LecturerTotals {
+  allocatedTeaching: number;
+  allocatedAdmin: number;
+  allocatedTotal: number;
+  allocationCount: number;
+}
+
+// Type for detaching state
+type DetachingState = {
+  moduleId: string;
+  moduleCode: string;
+  moduleName: string;
+} | null;
+
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
   const courseId = params?.id;
@@ -514,11 +595,7 @@ function CourseYearModules({
   const [isCore, setIsCore] = useState<boolean>(true);
   const [isAttaching, setIsAttaching] = useState(false);
   const [isDetaching, setIsDetaching] = useState(false);
-  const [_detaching, _setDetaching] = useState<{
-    moduleId: string;
-    moduleCode: string;
-    moduleName: string;
-  } | null>(null);
+  const [_detaching, _setDetaching] = useState<DetachingState>(null);
   const recList = (recommendedList ?? []) as Array<{
     campus: string;
     groups: number;
@@ -701,7 +778,7 @@ function ModuleIterationAndGroupsAndAllocations({
   const iteration = useQuery(
     api.modules.getIterationForYear,
     currentYear?._id
-      ? ({ moduleId: moduleId as any, academicYearId: currentYear._id } as any)
+      ? ({ moduleId: moduleId as Id<'modules'>, academicYearId: currentYear._id } as ModuleIteration)
       : ('skip' as any)
   );
   const createIteration = useMutation(api.modules.createIterationForYear);
@@ -714,30 +791,20 @@ function ModuleIterationAndGroupsAndAllocations({
     hasIteration && iteration
       ? { moduleIterationId: iteration._id }
       : 'skip'
-  ) as Array<{
-    _id: Id<'module_groups'>;
-    moduleIterationId: Id<'module_iterations'>;
-    name: string;
-    sizePlanned?: number;
-    campusId?: string;
-    dayOfWeek?: string;
-    weekPattern?: string;
-    createdAt: number;
-    updatedAt: number;
-  }> | undefined;
-  const createGroup = useMutation((api as any).groups.create);
+  ) as Array<Group> | undefined;
+  const createGroup = useMutation(api.groups.create);
   const autoCreateGroups = useMutation(
-    (api as any).groups.createAutoForIteration
+    api.groups.createAutoForIteration
   );
 
   // Allocations UI bits
   const profiles = useQuery(
-    (api as any).staff.list,
-    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
+    api.users.list,
+    {} // No parameters needed for listing users
   );
-  const assign = useMutation((api as any).allocations.assignLecturer);
-  const removeAllocation = useMutation((api as any).allocations.remove);
-  const updateAllocation = useMutation((api as any).allocations.update);
+  const assign = useMutation(api.allocations.assignLecturer);
+  const removeAllocation = useMutation(api.allocations.remove);
+  const updateAllocation = useMutation(api.allocations.update);
   const [assignOpen, setAssignOpen] = useState(false);
   const [autoOpen, setAutoOpen] = useState(false);
   const recList = (recommendedList ?? []) as Array<{
@@ -750,36 +817,32 @@ function ModuleIterationAndGroupsAndAllocations({
   const [hoursOverride, setHoursOverride] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [_detaching, _setDetaching] = useState<{
-    moduleId: string;
-    moduleCode: string;
-    moduleName: string;
-  } | null>(null);
+  const [_detaching, _setDetaching] = useState<DetachingState>(null);
   const listAllocations = useQuery(
-    (api as any).allocations.listForGroup,
+    api.allocations.listForGroup,
     selectedGroupId
-      ? ({ groupId: selectedGroupId as any } as any)
-      : ('skip' as any)
-  ) as Array<{ allocation: any; lecturer: any }> | undefined;
+      ? { groupId: selectedGroupId as Id<'module_groups'> }
+      : 'skip'
+  ) as Array<AllocationWithLecturer> | undefined;
 
   // Get module teaching hours for preview
   const moduleHours = useQuery(
-    (api as any).allocations.getModuleTeachingHours,
+    api.allocations.getModuleTeachingHours,
     selectedGroupId
-      ? ({ groupId: selectedGroupId as any } as any)
-      : ('skip' as any)
-  );
+      ? { groupId: selectedGroupId as Id<'module_groups'> }
+      : 'skip'
+  ) as ModuleTeachingHours | undefined;
 
   // Get lecturer totals for instant updates
   const lecturerTotals = useQuery(
-    (api as any).allocations.getLecturerTotals,
+    api.allocations.getLecturerTotals,
     selectedLecturerId
-      ? ({
-          lecturerId: selectedLecturerId as any,
-          academicYearId: (currentYear as any)?._id,
-        } as any)
-      : ('skip' as any)
-  );
+      ? {
+          lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
+          academicYearId: currentYear?._id as Id<'academic_years'>,
+        }
+      : 'skip'
+  ) as LecturerTotals | undefined;
 
   const resetDialogState = () => {
     setSelectedGroupId('');
