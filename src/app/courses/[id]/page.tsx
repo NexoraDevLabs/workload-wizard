@@ -48,11 +48,12 @@ import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 export const dynamic = 'force-dynamic';
 
 // Type definitions for course data
-type Course = Doc<'courses'>;
+type _Course = Doc<'courses'>;
 type CourseYear = Doc<'course_years'>;
 type Module = Doc<'modules'>;
-type CourseYearModule = Doc<'course_year_modules'> & {
-  module: Module | null;
+type CourseYearModule = {
+  link: Doc<'course_year_modules'>;
+  module: Module | null | undefined;
 };
 
 // Type for student distribution by campus
@@ -62,7 +63,7 @@ type StudentDistributionByCampus = Array<{
 }>;
 
 // Type for recommended modules by campus
-type RecommendedByCampus = Array<{
+type _RecommendedByCampus = Array<{
   campus: string;
   groups: number;
   count: number;
@@ -100,13 +101,13 @@ interface OrganisationSettings {
 }
 
 // Type for campus row data
-interface CampusRow {
+interface _CampusRow {
   campus: string;
   count: string;
 }
 
 // Type for module iteration
-interface ModuleIteration {
+interface _ModuleIteration {
   _id: Id<'module_iterations'>;
   moduleId: Id<'modules'>;
   academicYearId: Id<'academic_years'>;
@@ -174,11 +175,51 @@ interface LecturerTotals {
 }
 
 // Type for detaching state
-type DetachingState = {
+type _DetachingState = {
   moduleId: string;
   moduleCode: string;
   moduleName: string;
 } | null;
+
+// Type for the update course mutation arguments
+interface _UpdateCourseArgs {
+  id: Id<'courses'>;
+  code: string;
+  name: string;
+  studentCount?: number;
+  studentDistributionByCampus?: StudentDistributionByCampus;
+  campuses?: string[];
+}
+
+// Type for the initialise recommended groups mutation arguments
+interface _InitialiseRecommendedGroupsArgs {
+  courseId: Id<'courses'>;
+  academicYearId: Id<'academic_years'>;
+}
+
+// Type for the attach module mutation arguments
+interface _AttachModuleArgs {
+  courseYearId: Id<'course_years'>;
+  moduleId: Id<'modules'>;
+  isCore: boolean;
+}
+
+// Type for the detach module mutation arguments
+interface _DetachModuleArgs {
+  courseYearId: Id<'course_years'>;
+  moduleId: Id<'modules'>;
+}
+
+// Type for the add course year mutation arguments
+interface _AddCourseYearArgs {
+  courseId: Id<'courses'>;
+  yearNumber: number;
+}
+
+// Type for the delete course year mutation arguments
+interface _DeleteCourseYearArgs {
+  id: Id<'course_years'>;
+}
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -396,7 +437,7 @@ export default function CourseDetailPage() {
                             () =>
                               initialiseSplit({
                                 courseId: course._id,
-                                academicYearId: currentYear?._id as Id<'academic_years'>,
+                                academicYearId: currentYear?._id,
                               }),
                             {
                               success: {
@@ -447,11 +488,11 @@ export default function CourseDetailPage() {
                       code: course.code,
                       name: course.name,
                       ...(isNaN(total) ? {} : { studentCount: total }),
-                      studentDistributionByCampus: rows as any,
+                      studentDistributionByCampus: rows,
                       ...(Array.isArray(course.campuses)
                         ? { campuses: course.campuses }
                         : {}),
-                    } as any),
+                    }),
                   {
                     success: {
                       title: 'Saved',
@@ -537,7 +578,7 @@ export default function CourseDetailPage() {
           <div>
             {Array.isArray(years) && years.length ? (
               <ul className="grid gap-4" data-testid="course-years-list">
-                {years.map((y: any) => (
+                {years.map((y: CourseYear) => (
                   <li
                     key={y._id}
                     className="basis-full"
@@ -557,7 +598,7 @@ export default function CourseDetailPage() {
                       <CardContent>
                         <CourseYearModules
                           yearId={y._id}
-                          recommendedList={(recommendedByCampus as any) || []}
+                          recommendedList={recommendedByCampus || []}
                         />
                       </CardContent>
                     </Card>
@@ -585,8 +626,8 @@ function CourseYearModules({
 }) {
   const { toast } = useToast();
   const attached = useQuery(api.modules.listForCourseYear, {
-    courseYearId: yearId as string & { __tableName: 'course_years' },
-  } as any);
+    courseYearId: yearId as Id<'course_years'>,
+  });
   const allModules = useQuery(api.modules.listByOrganisation);
   const attach = useMutation(api.modules.attachToCourseYear);
   const detach = useMutation(api.modules.detachFromCourseYear);
@@ -595,7 +636,7 @@ function CourseYearModules({
   const [isCore, setIsCore] = useState<boolean>(true);
   const [isAttaching, setIsAttaching] = useState(false);
   const [isDetaching, setIsDetaching] = useState(false);
-  const [_detaching, _setDetaching] = useState<DetachingState>(null);
+  const [_detaching, _setDetaching] = useState<_DetachingState>(null);
   const recList = (recommendedList ?? []) as Array<{
     campus: string;
     groups: number;
@@ -604,9 +645,9 @@ function CourseYearModules({
 
   const available = useMemo(() => {
     const used = new Set(
-      (attached || []).map((a: any) => String(a.module?._id))
+      (attached || []).map((a: CourseYearModule) => String(a.module?._id))
     );
-    return (allModules || []).filter((m: any) => !used.has(String(m._id)));
+    return (allModules || []).filter((m: Module) => !used.has(String(m._id)));
   }, [attached, allModules]);
 
   return (
@@ -619,7 +660,7 @@ function CourseYearModules({
               <SelectValue placeholder="Select module" />
             </SelectTrigger>
             <SelectContent>
-              {available.map((m: any) => (
+              {available.map((m: Module) => (
                 <SelectItem key={m._id} value={String(m._id)}>
                   {m.code} — {m.name}
                 </SelectItem>
@@ -661,8 +702,8 @@ function CourseYearModules({
               await withToast(
                 () =>
                   attach({
-                    courseYearId: yearId as any,
-                    moduleId: selected as any,
+                    courseYearId: yearId as Id<'course_years'>,
+                    moduleId: selected as Id<'modules'>,
                     isCore,
                   }),
                 {
@@ -690,7 +731,7 @@ function CourseYearModules({
             className="flex gap-2 flex-wrap"
             data-testid="attached-modules-list"
           >
-            {attached.map((a: any) => (
+            {attached.map((a: CourseYearModule) => (
               <li
                 key={a.link._id}
                 data-testid={`attached-module-${a.module?.code}`}
@@ -739,8 +780,8 @@ function CourseYearModules({
               await withToast(
                 () =>
                   detach({
-                    courseYearId: yearId as any,
-                    moduleId: _detaching.moduleId as any,
+                    courseYearId: yearId as Id<'course_years'>,
+                    moduleId: _detaching.moduleId as Id<'modules'>,
                   }),
                 {
                   success: {
@@ -773,13 +814,13 @@ function ModuleIterationAndGroupsAndAllocations({
 }) {
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user: _user } = useUser();
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,
-    currentYear?._id
-      ? ({ moduleId: moduleId as Id<'modules'>, academicYearId: currentYear._id } as ModuleIteration)
-      : ('skip' as any)
+          currentYear?._id
+        ? { moduleId: moduleId as Id<'modules'>, academicYearId: currentYear._id }
+        : 'skip'
   );
   const createIteration = useMutation(api.modules.createIterationForYear);
 
@@ -799,8 +840,8 @@ function ModuleIterationAndGroupsAndAllocations({
 
   // Allocations UI bits
   const profiles = useQuery(
-    api.users.list,
-    {} // No parameters needed for listing users
+    api.staff.listForActor,
+    {} // No parameters needed for listing lecturer profiles
   );
   const assign = useMutation(api.allocations.assignLecturer);
   const removeAllocation = useMutation(api.allocations.remove);
@@ -817,7 +858,7 @@ function ModuleIterationAndGroupsAndAllocations({
   const [hoursOverride, setHoursOverride] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-  const [_detaching, _setDetaching] = useState<DetachingState>(null);
+  const [_detaching, _setDetaching] = useState<_DetachingState>(null);
   const listAllocations = useQuery(
     api.allocations.listForGroup,
     selectedGroupId
@@ -870,7 +911,7 @@ function ModuleIterationAndGroupsAndAllocations({
         <>
           <Badge variant="outline">AY: {currentYear.name}</Badge>
           <Link
-            href={`/courses/${String((params as any)?.id)}/iterations/${String(iteration?._id)}`}
+            href={`/courses/${String(params?.id)}/iterations/${String(iteration?._id)}`}
             className="text-xs underline"
           >
             View details
@@ -890,7 +931,7 @@ function ModuleIterationAndGroupsAndAllocations({
                     createGroup({
                       moduleIterationId: iteration._id,
                       name,
-                    } as any),
+                    }),
                   {
                     success: {
                       title: 'Group created',
@@ -951,7 +992,7 @@ function ModuleIterationAndGroupsAndAllocations({
                             Lecturer:
                           </span>
                           <div className="font-medium">
-                            {(profiles as Array<{ _id: Id<'lecturer_profiles'>; fullName: string; email: string }>)?.find(
+                            {profiles?.find(
                               (p) => String(p._id) === selectedLecturerId
                             )?.fullName || selectedLecturerId}
                           </div>
@@ -990,7 +1031,7 @@ function ModuleIterationAndGroupsAndAllocations({
                         <SelectValue placeholder="Select lecturer" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(profiles as Array<{ _id: Id<'lecturer_profiles'>; fullName: string; email: string }>)?.map((p) => (
+                        {profiles?.map((p) => (
                           <SelectItem key={String(p._id)} value={String(p._id)}>
                             {p.fullName} ({p.email})
                           </SelectItem>
@@ -1133,14 +1174,14 @@ function ModuleIterationAndGroupsAndAllocations({
                       setIsSubmitting(true);
                       try {
                         await assign({
-                          groupId: selectedGroupId as any,
-                          lecturerId: selectedLecturerId as any,
-                          academicYearId: (currentYear as any)._id,
+                          groupId: selectedGroupId as Id<'module_groups'>,
+                          lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
+                          academicYearId: currentYear._id,
                           type: 'teaching',
                           ...(hoursOverride.trim()
                             ? { hoursOverride: Number(hoursOverride) }
                             : {}),
-                        } as any);
+                        });
                         toast({
                           title: 'Lecturer assigned',
                           description: `Lecturer ${selectedLecturerId} assigned to group ${selectedGroupId} for ${currentYear.name}.`,
@@ -1247,7 +1288,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                           updateAllocation({
                                             allocationId: allocation._id,
                                             type: next,
-                                          } as any),
+                                          }),
                                         {
                                           success: {
                                             title: 'Allocation updated',
@@ -1280,7 +1321,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                             updateAllocation({
                                               allocationId: allocation._id,
                                               hoursOverride: null,
-                                            } as any),
+                                            }),
                                           {
                                             success: {
                                               title: 'Override cleared',
@@ -1311,7 +1352,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                             updateAllocation({
                                               allocationId: allocation._id,
                                               hoursOverride: value,
-                                            } as any),
+                                            }),
                                           {
                                             success: {
                                               title: 'Allocation updated',
@@ -1339,7 +1380,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                           () =>
                                             removeAllocation({
                                               allocationId: allocation._id,
-                                            } as any),
+                                            }),
                                           {
                                             success: {
                                               title: 'Allocation removed',
@@ -1469,8 +1510,8 @@ function ModuleIterationAndGroupsAndAllocations({
                           () =>
                             autoCreateGroups({
                               moduleIterationId: iteration!._id,
-                              campusGroups: campusGroups as any,
-                            } as any),
+                              campusGroups: campusGroups,
+                            }),
                           {
                             success: { title: 'Groups created' },
                             error: { title: 'Failed to create groups' },
@@ -1500,9 +1541,9 @@ function ModuleIterationAndGroupsAndAllocations({
               await withToast(
                 () =>
                   createIteration({
-                    moduleId: moduleId as any,
-                    academicYearId: (currentYear as any)._id,
-                  } as any),
+                    moduleId: moduleId as Id<'modules'>,
+                    academicYearId: currentYear._id,
+                  }),
                 {
                   success: {
                     title: 'Iteration created',

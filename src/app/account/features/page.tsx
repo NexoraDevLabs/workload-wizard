@@ -49,9 +49,17 @@ function getLocalFlagOverrides(): Record<string, boolean> {
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
     if (!stored) return {};
-    const parsed = JSON.parse(stored);
+    // Properly type the parsed JSON result
+    const parsed: unknown = JSON.parse(stored);
     if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
-      return parsed as Record<string, boolean>;
+      // Validate that all values are booleans
+      const result: Record<string, boolean> = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (typeof value === 'boolean') {
+          result[key] = value;
+        }
+      }
+      return result;
     }
     return {};
   } catch {

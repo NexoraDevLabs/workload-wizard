@@ -118,12 +118,24 @@ export const listForOrganisation = query({
           q.eq(q.field('status'), 'draft')
         );
         const archivedCond = q.eq(q.field('status'), 'archived');
-        const clauses: unknown[] = [];
-        if (canLive) clauses.push(liveCond);
-        if (canStaging) clauses.push(stagingCond);
-        if (canArchived) clauses.push(archivedCond);
-        // at least one is true by earlier guard
-        return clauses.length === 1 ? clauses[0] : q.or(...clauses);
+        
+        // Build conditions based on permissions
+        if (canLive && !canStaging && !canArchived) {
+          return liveCond;
+        } else if (!canLive && canStaging && !canArchived) {
+          return stagingCond;
+        } else if (!canLive && !canStaging && canArchived) {
+          return archivedCond;
+        } else if (canLive && canStaging && !canArchived) {
+          return q.or(liveCond, stagingCond);
+        } else if (canLive && !canStaging && canArchived) {
+          return q.or(liveCond, archivedCond);
+        } else if (!canLive && canStaging && canArchived) {
+          return q.or(stagingCond, archivedCond);
+        } else {
+          // All three are true
+          return q.or(liveCond, stagingCond, archivedCond);
+        }
       })
       .collect();
     return rows;

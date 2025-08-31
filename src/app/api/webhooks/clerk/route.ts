@@ -4,12 +4,37 @@ import type { WebhookEvent } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 
+// Define proper types for Statsig adapter
+interface StatsigAdapter {
+  initialize: () => Promise<{
+    logEvent: (event: Record<string, unknown>, eventName: string) => Promise<void>;
+    flush: () => Promise<void>;
+  }>;
+}
+
+// Type guard to ensure adapter has required methods
+function isValidStatsigAdapter(adapter: unknown): adapter is StatsigAdapter {
+  return (
+    adapter !== null &&
+    typeof adapter === 'object' &&
+    'initialize' in adapter &&
+    typeof (adapter as Record<string, unknown>).initialize === 'function'
+  );
+}
+
 // Lazy import to avoid build-time issues
-let statsigAdapter: unknown = null;
-async function getStatsigAdapter() {
+let statsigAdapter: StatsigAdapter | null = null;
+async function getStatsigAdapter(): Promise<StatsigAdapter | null> {
   if (!statsigAdapter) {
-    const { statsigAdapter: adapter } = await import('@/flags');
-    statsigAdapter = adapter;
+    try {
+      const { statsigAdapter: adapter } = await import('@/flags');
+      if (isValidStatsigAdapter(adapter)) {
+        statsigAdapter = adapter;
+      }
+    } catch {
+      // If import fails, return null
+      return null;
+    }
   }
   return statsigAdapter;
 }
@@ -188,23 +213,32 @@ async function handleUserCreated(userData: ClerkUserData) {
   // User created in Convex
 
   // Also create the user in Statsig Users by logging an event
-  const adapter = await getStatsigAdapter();
-  const Statsig = await adapter.initialize();
-  await Statsig.logEvent(
-    {
-      userID: userData.id,
-      email: primaryEmail.email_address,
-      custom: {
-        fullName:
-          `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-        organisationId,
-        roles,
-        source: 'clerk.webhook',
-      },
-    },
-    'user_created'
-  );
-  await Statsig.flush();
+  try {
+    const adapter = await getStatsigAdapter();
+    if (adapter && typeof adapter === 'object' && 'initialize' in adapter) {
+      const Statsig = await adapter.initialize();
+      if (Statsig && typeof Statsig === 'object' && 'logEvent' in Statsig && 'flush' in Statsig) {
+        await Statsig.logEvent(
+          {
+            userID: userData.id,
+            email: primaryEmail.email_address,
+            custom: {
+              fullName:
+                `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+              organisationId,
+              roles,
+              source: 'clerk.webhook',
+            },
+          },
+          'user_created'
+        );
+        await Statsig.flush();
+      }
+    }
+  } catch {
+    // Log error but don't fail the webhook
+    console.error('Failed to create user in Statsig: Unknown error');
+  }
 }
 
 async function handleUserUpdated(userData: ClerkUserData) {
@@ -222,7 +256,7 @@ async function handleUserUpdated(userData: ClerkUserData) {
     (userData.public_metadata as Record<string, unknown>) || {};
 
   // Update user in Convex using webhook-specific mutation
-  await getConvexClient().mutation(api.users.updateByWebhook, {
+  const updatePayload: any = {
     userId: userData.id,
     email: primaryEmail?.email_address as string,
     username: (userData as unknown as { username?: string }).username || '',
@@ -235,35 +269,47 @@ async function handleUserUpdated(userData: ClerkUserData) {
       ((publicMetadata.role as string | undefined)
         ? [publicMetadata.role as string]
         : []),
-    organisationId: publicMetadata.organisationId as string,
     pictureUrl: userData.image_url as string,
-  });
+  };
+
+  if (publicMetadata.organisationId) {
+    updatePayload.organisationId = publicMetadata.organisationId as string;
+  }
+
+  await getConvexClient().mutation(api.users.updateByWebhook, updatePayload);
 
   // User updated in Convex
 
   // Mirror update to Statsig
   const adapter = await getStatsigAdapter();
   if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
-    const Statsig = await (adapter as { initialize(): Promise<{ logEvent: (event: unknown, name: string) => Promise<void>; flush: () => Promise<void> }> }).initialize();
-    await Statsig.logEvent(
-      {
-        userID: userData.id,
-        email: primaryEmail?.email_address as string,
-        custom: {
-          fullName:
-            `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-          organisationId: (publicMetadata.organisationId as string) || undefined,
-          roles:
-            (publicMetadata.roles as string[]) ||
-            ((publicMetadata.role as string | undefined)
-              ? [publicMetadata.role as string]
-              : []),
-          source: 'clerk.webhook',
-        },
-      },
-      'user_updated'
-    );
-    await Statsig.flush();
+    try {
+      const Statsig = await adapter.initialize();
+      if (Statsig && typeof Statsig === 'object' && 'logEvent' in Statsig && 'flush' in Statsig) {
+        await Statsig.logEvent(
+          {
+            userID: userData.id,
+            email: primaryEmail?.email_address as string,
+            custom: {
+              fullName:
+                `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+              organisationId: (publicMetadata.organisationId as string) || undefined,
+              roles:
+                (publicMetadata.roles as string[]) ||
+                ((publicMetadata.role as string | undefined)
+                  ? [publicMetadata.role as string]
+                  : []),
+              source: 'clerk.webhook',
+            },
+          },
+          'user_updated'
+        );
+        await Statsig.flush();
+      }
+    } catch {
+      // Log error but don't fail the webhook
+      console.error('Failed to update Statsig: Unknown error');
+    }
   }
 }
 

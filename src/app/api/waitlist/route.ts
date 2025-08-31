@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       try {
         const list = await resend.contacts.list({
           audienceId: RESEND_AUDIENCE_ID,
-        }) as ResendContactsListResponse;
+        }) as unknown as ResendContactsListResponse;
         const alreadyExists = Array.isArray(list?.data)
           ? list.data?.some(
               (c: ResendContact) =>
@@ -109,7 +109,9 @@ export async function POST(req: NextRequest) {
       };
       if (name && name.trim()) {
         const parts = name.trim().split(/\s+/);
-        basePayload.firstName = parts[0];
+        if (parts[0]) {
+          basePayload.firstName = parts[0];
+        }
         const last = parts.slice(1).join(' ') || undefined;
         if (last) basePayload.lastName = last;
       }

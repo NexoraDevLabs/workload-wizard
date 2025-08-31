@@ -959,25 +959,26 @@ export default function AdminPermissionsPage() {
             <Button
               onClick={async () => {
                 try {
-                  const raw = JSON.parse(importText);
+                  // Properly type the parsed JSON data
+                  const raw: unknown = JSON.parse(importText);
                   if (!Array.isArray(raw))
                     throw new Error('JSON must be an array');
                   const items = raw.map((x: Record<string, unknown>) => ({
                     id:
-                      (x['Permission ID'] as string | undefined) ??
-                      (x.id as string | undefined) ??
+                      (typeof x['Permission ID'] === 'string' ? x['Permission ID'] : undefined) ??
+                      (typeof x.id === 'string' ? x.id : undefined) ??
                       '',
                     group:
-                      (x['Group'] as string | undefined) ?? 
-                      (x.group as string | undefined) ??
+                      (typeof x['Group'] === 'string' ? x['Group'] : undefined) ?? 
+                      (typeof x.group === 'string' ? x.group : undefined) ??
                       '',
                     description:
-                      (x['Description'] as string | undefined) ??
-                      (x.description as string | undefined) ??
+                      (typeof x['Description'] === 'string' ? x['Description'] : undefined) ??
+                      (typeof x.description === 'string' ? x.description : undefined) ??
                       '',
                     defaultRoles:
-                      (x['Default Roles'] as string[] | undefined) ??
-                      (x.defaultRoles as string[] | undefined) ??
+                      (Array.isArray(x['Default Roles']) && x['Default Roles'].every(v => typeof v === 'string') ? x['Default Roles'] : undefined) ??
+                      (Array.isArray(x.defaultRoles) && x.defaultRoles.every(v => typeof v === 'string') ? x.defaultRoles : undefined) ??
                       [],
                   }));
                   const res = await importPermissions({
@@ -990,7 +991,7 @@ export default function AdminPermissionsPage() {
                       ? {
                           performedByName:
                             `${user?.firstName || ''} ${user?.lastName || ''}`.trim() ||
-                            (user?.emailAddresses?.[0]?.emailAddress as string),
+                            user?.emailAddresses?.[0]?.emailAddress || '',
                         }
                       : {}),
                   });

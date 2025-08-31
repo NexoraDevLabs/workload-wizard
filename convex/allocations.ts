@@ -112,7 +112,12 @@ export const update = mutation({
     }
 
     if (args.hoursOverride !== undefined) {
-      updatePayload.hoursOverride = args.hoursOverride === null ? undefined : args.hoursOverride;
+      if (args.hoursOverride === null) {
+        // Don't set the field at all when clearing override
+        // This respects exactOptionalPropertyTypes
+      } else {
+        updatePayload.hoursOverride = args.hoursOverride;
+      }
     }
 
     await ctx.db.patch(args.allocationId, updatePayload);
@@ -452,7 +457,20 @@ export const listAdminAllocations = query({
           if (!r.categoryId || r.isCustom) return null;
           if (typeof r.categoryId !== 'string' || r.categoryId.length < 16)
             return null;
-          return await ctx.db.get(r.categoryId);
+          // Try to get the category from either table
+          try {
+            const orgCategory = await ctx.db.get(r.categoryId as Id<'organisation_admin_allocation_categories'>);
+            if (orgCategory) return orgCategory;
+          } catch {
+            // Not an org category, try system category
+          }
+          try {
+            const sysCategory = await ctx.db.get(r.categoryId as Id<'admin_allocation_categories'>);
+            if (sysCategory) return sysCategory;
+          } catch {
+            // Not a system category either
+          }
+          return null;
         } catch {
           return null;
         }
@@ -646,7 +664,7 @@ export const upsertAdminAllocation = mutation({
       } else {
         if (args.categoryId) updatePayload.categoryId = args.categoryId;
         updatePayload.isCustom = false;
-        updatePayload.customLabel = undefined;
+        // Don't set customLabel to undefined - leave it unset
         // keep comment undefined for standard
       }
       await ctx.db.patch(args.allocationId, updatePayload);
@@ -700,14 +718,17 @@ export const removeAdminAllocation = mutation({
     if (!identity?.subject) throw new Error('Unauthenticated');
     const existing = await ctx.db.get(args.allocationId);
     if (!existing) return args.allocationId;
-    // Authorise via org from lecturer profile id stored as staffId (string)
-    const lecturer = await ctx.db.get(existing.staffId);
-    if (lecturer) {
+    // Authorise via org from user's subject ID stored as staffId (string)
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', existing.staffId))
+      .first();
+    if (user) {
       await requireOrgPermission(
         ctx,
         identity.subject,
         'allocations.assign',
-        lecturer.organisationId
+        user.organisationId
       );
     }
     await ctx.db.delete(args.allocationId);

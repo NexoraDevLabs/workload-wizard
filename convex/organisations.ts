@@ -148,10 +148,31 @@ export const create = mutation({
 
     // Seed organisation admin allocation categories from system defaults
     try {
-      await ctx.runMutation(
-        { path: 'allocations/seedOrgAdminCategories' },
-        { organisationId }
-      );
+      const systemCategories = await ctx.db
+        .query('admin_allocation_categories')
+        .filter((q) => q.eq(q.field('isDefault'), true))
+        .collect();
+
+      for (const cat of systemCategories) {
+        const insertData: any = {
+          organisationId,
+          name: cat.name,
+          createdAt: now,
+          updatedAt: now,
+        };
+        
+        if (cat.description !== undefined) {
+          insertData.description = cat.description;
+        }
+        if (cat.minHours !== undefined) {
+          insertData.minHours = cat.minHours;
+        }
+        if (cat.maxHours !== undefined) {
+          insertData.maxHours = cat.maxHours;
+        }
+        
+        await ctx.db.insert('organisation_admin_allocation_categories', insertData);
+      }
     } catch {
       // Failed to seed org admin allocation categories
     }

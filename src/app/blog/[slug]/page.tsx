@@ -174,14 +174,23 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       }
 
       try {
-        const fetchedPost = await client.fetch<Post>(POST_QUERY, {
+        const fetchedPost = await client.fetch<Post | null>(POST_QUERY, {
           slug: params.slug,
         });
-        if (fetchedPost) {
+        if (fetchedPost && typeof fetchedPost === 'object' && fetchedPost !== null && '_id' in fetchedPost) {
           setPost(fetchedPost);
-          if (fetchedPost.coverImage?.asset?._ref) {
+          // Use proper type guards for the coverImage
+          const coverImage = fetchedPost.coverImage;
+          if (coverImage && 
+              typeof coverImage === 'object' && 
+              'asset' in coverImage && 
+              coverImage.asset && 
+              typeof coverImage.asset === 'object' && 
+              '_ref' in coverImage.asset && 
+              '_type' in coverImage.asset &&
+              coverImage.asset._type === 'reference') {
             setCoverUrl(
-              urlFor(fetchedPost.coverImage)
+              urlFor(coverImage)
                 .width(1600)
                 .height(840)
                 .fit('crop')
