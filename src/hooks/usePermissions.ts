@@ -80,7 +80,7 @@ export function usePermissions(organisationId?: string) {
         permissionId: PermissionId,
         options?: {
           isSystemAction?: boolean;
-          fallbackValue?: any;
+          fallbackValue?: unknown;
           hideForbidden?: boolean;
         }
       ) => gateUIState(userRole, permissionId, { organisationId, ...options }),

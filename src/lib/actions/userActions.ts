@@ -249,7 +249,7 @@ export async function createUser(data: CreateUserData) {
         emailSent = emailResult.success;
 
         // Email failed but don't fail user creation
-      } catch (_emailError) {
+      } catch {
         // Don't fail the user creation if email fails
       }
     }
@@ -257,8 +257,8 @@ export async function createUser(data: CreateUserData) {
     // Assign organisational roles if provided (multi or single)
     if (data.organisationalRoleIds && data.organisationalRoleIds.length > 0) {
       try {
-        const roleIds = (data.organisationalRoleIds as unknown as string[]).map(
-          (rid) => rid as unknown as Id<'user_roles'>
+        const roleIds = data.organisationalRoleIds.map(
+          (rid) => rid as Id<'user_roles'>
         );
         await getConvexClient().mutation(
           api.organisationalRoles.assignMultipleToUser,
@@ -268,17 +268,17 @@ export async function createUser(data: CreateUserData) {
             assignedBy: currentUserData.id,
           }
         );
-      } catch (_roleError) {
+      } catch {
         // Role assignment failed but don't fail user creation
       }
     } else if (data.organisationalRoleId) {
       try {
         await getConvexClient().mutation(api.organisationalRoles.assignToUser, {
           userId: clerkUser.id,
-          roleId: data.organisationalRoleId as unknown as Id<'user_roles'>,
+          roleId: data.organisationalRoleId as Id<'user_roles'>,
           assignedBy: currentUserData.id,
         });
-      } catch (_roleError) {
+      } catch {
         // Don't fail the user creation if role assignment fails
       }
     }
@@ -355,7 +355,7 @@ export async function listUsers() {
       isActive: user.isActive,
       organisation: user.organisation,
     }));
-  } catch (error) {
+  } catch {
     throw new Error('Failed to fetch users');
   }
 }
@@ -410,7 +410,7 @@ export async function deleteUser(userId: string) {
     // Prefer soft delete to avoid breaking references; fall back to hard delete if not found
     try {
       await getConvexClient().mutation(api.users.remove, { userId });
-    } catch (_e) {
+    } catch {
       await getConvexClient().mutation(api.users.hardDelete, { userId });
     }
 
@@ -434,7 +434,7 @@ export async function deleteUser(userId: string) {
 
     revalidatePath('/admin/users');
     return { success: true };
-  } catch (error) {
+  } catch {
     throw new Error('Failed to delete user');
   }
 }
@@ -509,7 +509,7 @@ export async function updateUser(
       );
       userEmail = primaryEmail?.emailAddress || 'unknown';
       userToUpdateData = user;
-    } catch (userError) {
+    } catch {
       // Could not get user details for audit log
     }
 
@@ -599,7 +599,7 @@ export async function updateUser(
             }
           );
         }
-      } catch (roleError) {
+      } catch {
         // Don't fail the user update if role assignment fails
       }
     }
@@ -609,7 +609,7 @@ export async function updateUser(
 
     revalidatePath('/admin/users');
     return { success: true };
-  } catch (error) {
+  } catch {
     throw new Error('Failed to update user');
   }
 }
@@ -676,7 +676,7 @@ export async function getUsersByOrganisationId(organisationId: string) {
               description: userRoleData.role.description,
             };
           }
-        } catch (error) {
+        } catch {
           // Failed to get organisational role for user
         }
 
@@ -696,7 +696,7 @@ export async function getUsersByOrganisationId(organisationId: string) {
     );
 
     return usersWithRoles;
-  } catch (error) {
+  } catch {
     // Error fetching users by organisation
     throw new Error('Failed to fetch users');
   }
@@ -831,7 +831,7 @@ export async function reactivateUser(userId: string) {
         (email) => email.id === user.primaryEmailAddressId
       );
       userEmail = primaryEmail?.emailAddress || 'unknown';
-    } catch (userError) {
+    } catch {
       // Could not get user details for audit log
     }
 
@@ -878,7 +878,7 @@ export async function updateLastSignInForCurrentUser() {
     });
 
     return { success: true };
-  } catch (error) {
+  } catch {
     // Error updating last sign in time
     throw new Error('Failed to update last sign in time');
   }
@@ -938,7 +938,7 @@ export async function getUsersByOrganisationIdWithOverride(
               description: userRoleData.role.description,
             };
           }
-        } catch (error) {
+        } catch {
           // Failed to get organisational role for user
         }
 
@@ -958,7 +958,7 @@ export async function getUsersByOrganisationIdWithOverride(
     );
 
     return usersWithRoles;
-  } catch (error) {
+  } catch {
     // Error fetching users by organisation
     throw new Error('Failed to fetch users');
   }
@@ -1028,7 +1028,7 @@ export async function getAllUsersByOrganisationIdWithOverride(
               description: userRoleData.role.description,
             };
           }
-        } catch (error) {
+        } catch {
           // Failed to get organisational role for user
         }
 
@@ -1048,7 +1048,7 @@ export async function getAllUsersByOrganisationIdWithOverride(
     );
 
     return usersWithRoles;
-  } catch (error) {
+  } catch {
     // Error fetching all users by organisation
     throw new Error('Failed to fetch users');
   }
@@ -1089,7 +1089,7 @@ export async function getAllOrganisations() {
       name: org.name,
       code: org.code,
     }));
-  } catch (error) {
+  } catch {
     // Error fetching organisations
     throw new Error('Failed to fetch organisations');
   }

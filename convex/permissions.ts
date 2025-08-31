@@ -130,7 +130,17 @@ export const getOrganisationPermissions = query({
       .collect();
 
     // Build permission map
-    const permissionMap = new Map();
+    interface PermissionMapEntry {
+      id: string;
+      description: string;
+      group: string;
+      isActive: boolean;
+      defaultRoles: string[];
+      isGranted: boolean;
+      isOverride: boolean;
+      source: string;
+    }
+    const permissionMap = new Map<string, PermissionMapEntry>();
 
     // Start with system defaults
     for (const perm of systemPermissions) {
@@ -732,7 +742,7 @@ export const seedPlanningMvpPermissions = mutation({
       },
     ];
 
-    const res = await (ctx as any).runMutation(
+    const res = await (ctx as QueryCtx & { runMutation: (path: { path: string }, args: unknown) => Promise<unknown> }).runMutation(
       {
         path: 'permissions/importSystemPermissions',
       },
@@ -2010,7 +2020,7 @@ export async function ensureDefaultsForOrg(
             ? { performedByName: options.performedByName }
             : {}),
           organisationId,
-          details: `Default role \"${roleName}\" created with ${permissionsForRole.length} permission(s)`,
+          details: `Default role "${roleName}" created with ${permissionsForRole.length} permission(s)`,
           metadata: JSON.stringify({ permissions: permissionsForRole }),
           timestamp: now,
           severity: 'info',

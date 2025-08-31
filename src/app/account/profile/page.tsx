@@ -2,8 +2,7 @@
 
 import posthog from 'posthog-js';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -206,7 +205,7 @@ export default function ProfilePage() {
             });
 
             if (!response.ok) {
-              const errorData = await response.json();
+              const errorData = await response.json() as { error?: string };
               throw new Error(errorData.error || 'Failed to update email');
             }
 
@@ -354,7 +353,7 @@ export default function ProfilePage() {
         setAvatarFile(null);
         setAvatarPreview('');
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to update profile. Please try again.',
@@ -390,7 +389,7 @@ export default function ProfilePage() {
         description: 'Profile picture has been refreshed.',
         variant: 'success',
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Refresh Failed',
         description: 'Failed to refresh avatar. Please try again.',

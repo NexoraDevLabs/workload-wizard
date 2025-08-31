@@ -18,7 +18,6 @@ import {
   Building2,
   FileText,
   Shield,
-  Settings,
   Calendar,
   BookOpen,
   ClipboardList,
@@ -37,7 +36,7 @@ export default function OrganisationAdminPage() {
 
   const convexUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : ('skip' as any)
+    user?.id ? { subject: user.id } : 'skip'
   );
 
   useEffect(() => {

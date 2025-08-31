@@ -47,19 +47,6 @@ async function hasOrgPermission(
   }
 }
 
-async function getActorRole(ctx: QueryCtx | MutationCtx, user: Doc<'users'>) {
-  const assignment = await ctx.db
-    .query('user_role_assignments')
-    .withIndex('by_user_org', (q) =>
-      q.eq('userId', user.subject).eq('organisationId', user.organisationId)
-    )
-    .filter((q) => q.eq(q.field('isActive'), true))
-    .first();
-  if (!assignment) return null;
-  const role = await ctx.db.get(assignment.roleId);
-  return role ?? null;
-}
-
 export async function canViewYear(
   ctx: QueryCtx | MutationCtx,
   userId: string,
@@ -131,7 +118,7 @@ export const listForOrganisation = query({
           q.eq(q.field('status'), 'draft')
         );
         const archivedCond = q.eq(q.field('status'), 'archived');
-        const clauses: any[] = [];
+        const clauses: unknown[] = [];
         if (canLive) clauses.push(liveCond);
         if (canStaging) clauses.push(stagingCond);
         if (canArchived) clauses.push(archivedCond);
@@ -226,8 +213,9 @@ export const create = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {
+    } catch (error) {
       // Audit logging failed, but don't fail the operation
+      console.error('Audit logging failed:', error);
     }
     return id;
   },
@@ -262,14 +250,14 @@ export const update = mutation({
     if (!can) throw new Error('Permission denied');
 
     const now = Date.now();
-    const updates: Partial<Doc<'academic_years'>> = { updatedAt: now } as any;
-    if (typeof args.name !== 'undefined') (updates as any).name = args.name;
+    const updates: Partial<Doc<'academic_years'>> = { updatedAt: now };
+    if (typeof args.name !== 'undefined') updates.name = args.name;
     if (typeof args.startDate !== 'undefined')
-      (updates as any).startDate = args.startDate;
+      updates.startDate = args.startDate;
     if (typeof args.endDate !== 'undefined')
-      (updates as any).endDate = args.endDate;
+      updates.endDate = args.endDate;
     if (typeof args.isDefaultForOrg !== 'undefined') {
-      (updates as any).isDefaultForOrg = args.isDefaultForOrg;
+      updates.isDefaultForOrg = args.isDefaultForOrg;
       if (args.isDefaultForOrg) {
         const others = await ctx.db
           .query('academic_years')
@@ -288,21 +276,22 @@ export const update = mutation({
         }
       }
     }
-    await ctx.db.patch(args.id, updates as any);
+    await ctx.db.patch(args.id, updates);
     try {
       await writeAudit(ctx, {
         action: 'update',
         entityType: 'academic_year',
         entityId: String(args.id),
-        entityName: (updates as any).name ?? year.name,
+        entityName: updates.name ?? year.name,
         performedBy: args.userId,
         organisationId: year.organisationId as Id<'organisations'>,
         details: 'Academic year updated',
         severity: 'info',
         type: 'org',
       });
-    } catch {
+    } catch (error) {
       // Audit logging failed, but don't fail the operation
+      console.error('Audit logging failed:', error);
     }
     return args.id;
   },
@@ -350,8 +339,9 @@ export const setStatus = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {
+    } catch (error) {
       // Audit logging failed, but don't fail the operation
+      console.error('Audit logging failed:', error);
     }
     return args.id;
   },
@@ -419,8 +409,9 @@ export const clone = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {
+    } catch (error) {
       // Audit logging failed, but don't fail the operation
+      console.error('Audit logging failed:', error);
     }
 
     return newYearId;
@@ -478,8 +469,9 @@ export const bulkSetStatus = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {
+    } catch (error) {
       // Audit logging failed, but don't fail the operation
+      console.error('Audit logging failed:', error);
     }
     return args.ids.length;
   },
@@ -520,7 +512,7 @@ export const setPreferences = mutation({
       )
       .first();
 
-    const updates: any = { updatedAt: now };
+    const updates: Partial<Doc<'user_preferences'>> = { updatedAt: now };
     if (typeof args.selectedAcademicYearId !== 'undefined') {
       // Validate belongs to same org if provided
       if (args.selectedAcademicYearId) {
@@ -542,14 +534,28 @@ export const setPreferences = mutation({
       await ctx.db.patch(existing._id, updates);
       return existing._id;
     } else {
-      const id = await ctx.db.insert('user_preferences', {
+      const insertData: {
+        userId: string;
+        organisationId: Id<'organisations'>;
+        selectedAcademicYearId?: Id<'academic_years'>;
+        includeDrafts?: boolean;
+        createdAt: number;
+        updatedAt: number;
+      } = {
         userId: args.userId,
         organisationId: user.organisationId,
-        selectedAcademicYearId: updates.selectedAcademicYearId,
-        includeDrafts: updates.includeDrafts,
         createdAt: now,
         updatedAt: now,
-      });
+      };
+
+      if (updates.selectedAcademicYearId !== undefined) {
+        insertData.selectedAcademicYearId = updates.selectedAcademicYearId;
+      }
+      if (updates.includeDrafts !== undefined) {
+        insertData.includeDrafts = updates.includeDrafts;
+      }
+
+      const id = await ctx.db.insert('user_preferences', insertData);
       return id;
     }
   },

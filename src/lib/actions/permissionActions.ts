@@ -21,7 +21,7 @@ export async function withSystemPermission<T>(
 }
 
 // Higher-order function that creates permission-checked actions
-export function createPermissionAction<T extends any[], R>(
+export function createPermissionAction<T extends unknown[], R>(
   action: (...args: T) => Promise<R>,
   permissionId: PermissionId,
   isSystemAction = false

@@ -32,6 +32,7 @@ interface Module {
   level?: number;
   teachingHours?: number;
   markingHours?: number;
+  campuses?: string[];
 }
 
 interface LecturerProfileOption {
@@ -57,32 +58,26 @@ export function EditModuleForm({
     code: module.code,
     name: module.name,
     credits: module.credits?.toString() || '',
+    level: module.level?.toString() || '',
+    teachingHours: module.teachingHours?.toString() || '',
+    markingHours: module.markingHours?.toString() || '',
     leaderProfileId: module.leaderProfileId || '',
-    level: typeof module.level === 'number' ? String(module.level) : '',
-    teachingHours:
-      typeof module.teachingHours === 'number'
-        ? String(module.teachingHours)
-        : '',
-    markingHours:
-      typeof module.markingHours === 'number'
-        ? String(module.markingHours)
-        : '',
-    campuses: Array.isArray((module as any).campuses)
-      ? ((module as any).campuses as string[]).join(', ')
+    campuses: Array.isArray(module.campuses)
+      ? module.campuses.join(', ')
       : '',
   });
   const [hoursTouched, setHoursTouched] = useState(false);
   const codeAvailability = useQuery(
-    api.modules.isCodeAvailable as any,
+    api.modules.isCodeAvailable,
     {
       code: form.code,
-      excludeId: module._id as any,
-    } as any
+      excludeId: module._id,
+    }
   ) as { available: boolean } | undefined;
-  const lecturers = (useQuery((api as any).staff.listForActor) ||
+  const lecturers = (useQuery(api.staff.listForActor) ||
     []) as LecturerProfileOption[];
   const orgSettings = useQuery(
-    (api as any).organisationSettings.getForActor
+    api.organisationSettings.getForActor
   ) as
     | {
         moduleHoursByCredits?: Array<{
@@ -90,6 +85,12 @@ export function EditModuleForm({
           teaching: number;
           marking: number;
         }>;
+        campusOptions?: string[];
+        staffRoleOptions?: string[];
+        teamOptions?: string[];
+        maxClassSizePerGroup?: number;
+        baseMaxTeachingAtFTE1?: number;
+        baseTotalContractAtFTE1?: number;
       }
     | undefined;
 
@@ -121,12 +122,12 @@ export function EditModuleForm({
 
     try {
       await updateModule({
-        id: module._id as any,
+        id: module._id,
         code: form.code.trim(),
         name: form.name.trim(),
         ...(form.credits.trim() ? { credits: Number(form.credits) } : {}),
         ...(form.leaderProfileId
-          ? { leaderProfileId: form.leaderProfileId as any }
+          ? { leaderProfileId: form.leaderProfileId }
           : {}),
         ...(form.level.trim() ? { level: Number(form.level) } : {}),
         ...(form.teachingHours.trim()
@@ -317,7 +318,7 @@ export function EditModuleForm({
                   }}
                 >
                   <option value="">Add campus…</option>
-                  {(orgSettings as any)?.campusOptions?.map((c: string) => (
+                  {(orgSettings)?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>
                       {c}
                     </option>

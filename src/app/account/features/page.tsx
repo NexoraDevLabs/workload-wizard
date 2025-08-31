@@ -48,21 +48,26 @@ function getLocalFlagOverrides(): Record<string, boolean> {
 
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch (error) {
+    if (!stored) return {};
+    const parsed = JSON.parse(stored);
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, boolean>;
+    }
+    return {};
+  } catch {
     // Failed to get local flag overrides
     return {};
   }
 }
 
-function setLocalFlagOverride(flagKey: string, enabled: boolean): void {
+function _setLocalFlagOverride(flagKey: string, enabled: boolean): void {
   if (typeof window === 'undefined') return;
 
   try {
     const overrides = getLocalFlagOverrides();
     overrides[flagKey] = enabled;
     localStorage.setItem(LOCAL_FLAG_OVERRIDES_KEY, JSON.stringify(overrides));
-  } catch (error) {
+  } catch {
     // Failed to set local flag override
   }
 }
@@ -80,7 +85,7 @@ export default function AccountFeaturesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [_lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const loadFeatures = useCallback(async () => {
     try {
@@ -92,13 +97,13 @@ export default function AccountFeaturesPage() {
       const rows: EarlyAccessFeature[] = (publicFeatures || []).map((r) => ({
         flagKey: r.key,
         name: r.name,
-        description: (r.description as string) || '',
-        stage: r.stage as string,
+        description: r.description ?? '',
+        stage: r.stage ?? '',
         enrolled: enrollmentMap.get(r.key) || false,
       }));
       setFeatures(rows);
       setLastRefresh(new Date());
-    } catch (error) {
+    } catch {
       // Use toast directly instead of in dependency
       toast({
         title: 'Error',
@@ -108,7 +113,7 @@ export default function AccountFeaturesPage() {
     } finally {
       setLoading(false);
     }
-  }, [publicFeatures, enrollments]); // refresh when data changes
+  }, [publicFeatures, enrollments, toast]); // refresh when data changes
 
   const toggleFeature = async (flagKey: string, enabled: boolean) => {
     try {
@@ -140,7 +145,7 @@ export default function AccountFeaturesPage() {
         title: enabled ? 'Feature Enabled' : 'Feature Disabled',
         description: `${enabled ? 'Opted into' : 'Opted out of'} ${featureName}`,
       });
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: `Failed to ${enabled ? 'enable' : 'disable'} feature. Please try again.`,
@@ -184,7 +189,9 @@ export default function AccountFeaturesPage() {
       };
       await anyClient.updateUser?.(statsigUser);
       client.logEvent('features_refresh');
-    } catch {}
+    } catch {
+      // Ignore feature refresh errors silently
+    }
     toast({
       title: 'Refreshed',
       description: 'Features and flags re-synced.',
@@ -194,7 +201,7 @@ export default function AccountFeaturesPage() {
 
   useEffect(() => {
     if (isLoaded && user) {
-      loadFeatures();
+      void loadFeatures();
     }
 
     // Cleanup function to prevent memory leaks
@@ -245,13 +252,7 @@ export default function AccountFeaturesPage() {
     return stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
   };
 
-  const formatFeatureName = (name: string) => {
-    // Convert kebab-case to Title Case
-    return name
-      .split('-')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
+
 
   return (
     <StandardizedSidebarLayout

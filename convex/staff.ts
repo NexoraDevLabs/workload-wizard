@@ -158,7 +158,7 @@ export const edit = mutation({
     if (args.prefWorkingLocation !== undefined)
       updates.prefWorkingLocation = args.prefWorkingLocation;
     if (args.prefWorkingTime !== undefined)
-      updates.prefWorkingTime = args.prefWorkingTime as any;
+      updates.prefWorkingTime = args.prefWorkingTime;
     if (args.prefSpecialism !== undefined)
       updates.prefSpecialism = args.prefSpecialism;
     if (args.prefNotes !== undefined) updates.prefNotes = args.prefNotes;

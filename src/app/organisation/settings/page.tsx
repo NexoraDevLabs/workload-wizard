@@ -1,8 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -16,6 +15,37 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
+interface FamilyRule {
+  family: string;
+  mode: 'percent' | 'fixed';
+  value: number;
+}
+
+interface OrganisationSettings {
+  _id: string;
+  organisationId: string;
+  staffRoleOptions: string[];
+  teamOptions: string[];
+  campusOptions?: string[];
+  contractFamilyOptions?: string[];
+  maxClassSizePerGroup?: number;
+  baseMaxTeachingAtFTE1: number;
+  baseTotalContractAtFTE1: number;
+  moduleHoursByCredits?: Array<{
+    credits: number;
+    teaching: number;
+    marking: number;
+  }>;
+  roleMaxTeachingRules?: Array<{
+    role: string;
+    mode: 'percent' | 'fixed';
+    value: number;
+  }>;
+  familyMaxTeachingRules?: FamilyRule[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 export default function OrganisationSettingsPage() {
   const breadcrumbs = [
     { label: 'Home', href: '/' },
@@ -24,15 +54,14 @@ export default function OrganisationSettingsPage() {
   ];
 
   const { user } = useUser();
-  const anyApi = api as any;
   const settings = useQuery(
-    anyApi.organisationSettings.getOrganisationSettings,
+    api.organisationSettings.getOrganisationSettings,
     {
       userId: user?.id || '',
     }
   );
   const upsert = useMutation(
-    anyApi.organisationSettings.upsertOrganisationSettings
+    api.organisationSettings.upsertOrganisationSettings
   );
 
   const [roleOptions, setRoleOptions] = useState<string[] | null>(null);
@@ -49,31 +78,54 @@ export default function OrganisationSettingsPage() {
   const [maxGroupSize, setMaxGroupSize] = useState<string | null>(null);
 
   const [familyRules, setFamilyRules] = useState<
-    { family: string; mode: 'percent' | 'fixed'; value: number }[] | null
+    FamilyRule[] | null
   >(null);
+
+  // Helper functions to safely access settings properties
+  const getSettingsStringArray = useCallback((property: keyof OrganisationSettings, defaultValue: string[]): string[] => {
+    if (settings && typeof settings === 'object' && property in settings) {
+      const value = (settings as OrganisationSettings)[property];
+      return Array.isArray(value) ? (value as string[]) : defaultValue;
+    }
+    return defaultValue;
+  }, [settings]);
+
+  const getSettingsNumber = useCallback((property: keyof OrganisationSettings, defaultValue: number): number => {
+    if (settings && typeof settings === 'object' && property in settings) {
+      const value = (settings as OrganisationSettings)[property];
+      return typeof value === 'number' ? value : defaultValue;
+    }
+    return defaultValue;
+  }, [settings]);
+
+  const getSettingsFamilyRules = useCallback((property: keyof OrganisationSettings, defaultValue: FamilyRule[]): FamilyRule[] => {
+    if (settings && typeof settings === 'object' && property in settings) {
+      const value = (settings as OrganisationSettings)[property];
+      return Array.isArray(value) ? (value as FamilyRule[]) : defaultValue;
+    }
+    return defaultValue;
+  }, [settings]);
 
   const effective = useMemo(() => {
     return {
-      staffRoleOptions: roleOptions ?? settings?.staffRoleOptions ?? [],
-      teamOptions: teamOptions ?? settings?.teamOptions ?? [],
-      campusOptions: campusOptions ?? settings?.campusOptions ?? [],
-      contractFamilyOptions:
-        familyOptions ?? settings?.contractFamilyOptions ?? [],
+      staffRoleOptions: roleOptions ?? getSettingsStringArray('staffRoleOptions', []),
+      teamOptions: teamOptions ?? getSettingsStringArray('teamOptions', []),
+      campusOptions: campusOptions ?? getSettingsStringArray('campusOptions', []),
+      contractFamilyOptions: familyOptions ?? getSettingsStringArray('contractFamilyOptions', []),
       // Single source of truth: 1 FTE contract hours; use it for both fields on the backend
       baseMaxTeachingAtFTE1:
         fte1ContractHours !== null
           ? Number(fte1ContractHours)
-          : (settings?.baseMaxTeachingAtFTE1 ?? 400),
+          : getSettingsNumber('baseMaxTeachingAtFTE1', 400),
       baseTotalContractAtFTE1:
         fte1ContractHours !== null
           ? Number(fte1ContractHours)
-          : (settings?.baseTotalContractAtFTE1 ?? 550),
+          : getSettingsNumber('baseTotalContractAtFTE1', 550),
       maxClassSizePerGroup:
         maxGroupSize !== null
           ? Number(maxGroupSize)
-          : (settings?.maxClassSizePerGroup ?? 25),
-      familyMaxTeachingRules:
-        familyRules ?? settings?.familyMaxTeachingRules ?? [],
+          : getSettingsNumber('maxClassSizePerGroup', 25),
+      familyMaxTeachingRules: familyRules ?? getSettingsFamilyRules('familyMaxTeachingRules', []),
     };
   }, [
     roleOptions,
@@ -81,9 +133,11 @@ export default function OrganisationSettingsPage() {
     campusOptions,
     fte1ContractHours,
     maxGroupSize,
-    settings,
     familyRules,
     familyOptions,
+    getSettingsStringArray,
+    getSettingsNumber,
+    getSettingsFamilyRules,
   ]);
 
   const save = async () => {
@@ -117,9 +171,9 @@ export default function OrganisationSettingsPage() {
                       const val = newRole.trim();
                       if (!val) return;
                       const current =
-                        roleOptions ?? settings?.staffRoleOptions ?? [];
+                        roleOptions ?? getSettingsStringArray('staffRoleOptions', []);
                       if (!current.includes(val)) {
-                        setRoleOptions([...(current as string[]), val]);
+                        setRoleOptions([...current, val]);
                       }
                       setNewRole('');
                     }}
@@ -128,7 +182,7 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(roleOptions ?? settings?.staffRoleOptions ?? []).map(
+                  {(roleOptions ?? getSettingsStringArray('staffRoleOptions', [])).map(
                     (r: string) => (
                       <div
                         key={r}
@@ -143,8 +197,7 @@ export default function OrganisationSettingsPage() {
                             setRoleOptions(
                               (
                                 roleOptions ??
-                                settings?.staffRoleOptions ??
-                                []
+                                getSettingsStringArray('staffRoleOptions', [])
                               ).filter((x: string) => x !== r)
                             )
                           }
@@ -170,9 +223,9 @@ export default function OrganisationSettingsPage() {
                       const val = newTeam.trim();
                       if (!val) return;
                       const current =
-                        teamOptions ?? settings?.teamOptions ?? [];
+                        teamOptions ?? getSettingsStringArray('teamOptions', []);
                       if (!current.includes(val)) {
-                        setTeamOptions([...(current as string[]), val]);
+                        setTeamOptions([...current, val]);
                       }
                       setNewTeam('');
                     }}
@@ -181,7 +234,7 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(teamOptions ?? settings?.teamOptions ?? []).map(
+                  {(teamOptions ?? getSettingsStringArray('teamOptions', [])).map(
                     (t: string) => (
                       <div
                         key={t}
@@ -196,8 +249,7 @@ export default function OrganisationSettingsPage() {
                             setTeamOptions(
                               (
                                 teamOptions ??
-                                settings?.teamOptions ??
-                                []
+                                getSettingsStringArray('teamOptions', [])
                               ).filter((x: string) => x !== t)
                             )
                           }
@@ -223,9 +275,9 @@ export default function OrganisationSettingsPage() {
                       const val = newCampus.trim();
                       if (!val) return;
                       const current =
-                        campusOptions ?? settings?.campusOptions ?? [];
+                        campusOptions ?? getSettingsStringArray('campusOptions', []);
                       if (!current.includes(val)) {
-                        setCampusOptions([...(current as string[]), val]);
+                        setCampusOptions([...current, val]);
                       }
                       setNewCampus('');
                     }}
@@ -234,7 +286,7 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(campusOptions ?? settings?.campusOptions ?? []).map(
+                  {(campusOptions ?? getSettingsStringArray('campusOptions', [])).map(
                     (c: string) => (
                       <div
                         key={c}
@@ -249,8 +301,7 @@ export default function OrganisationSettingsPage() {
                             setCampusOptions(
                               (
                                 campusOptions ??
-                                settings?.campusOptions ??
-                                []
+                                getSettingsStringArray('campusOptions', [])
                               ).filter((x: string) => x !== c)
                             )
                           }
@@ -276,9 +327,9 @@ export default function OrganisationSettingsPage() {
                       const val = newFamily.trim();
                       if (!val) return;
                       const current =
-                        familyOptions ?? settings?.contractFamilyOptions ?? [];
+                        familyOptions ?? getSettingsStringArray('contractFamilyOptions', []);
                       if (!current.includes(val)) {
-                        setFamilyOptions([...(current as string[]), val]);
+                        setFamilyOptions([...current, val]);
                       }
                       setNewFamily('');
                     }}
@@ -287,7 +338,7 @@ export default function OrganisationSettingsPage() {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(familyOptions ?? settings?.contractFamilyOptions ?? []).map(
+                  {(familyOptions ?? getSettingsStringArray('contractFamilyOptions', [])).map(
                     (f: string) => (
                       <div
                         key={f}
@@ -302,8 +353,7 @@ export default function OrganisationSettingsPage() {
                             setFamilyOptions(
                               (
                                 familyOptions ??
-                                settings?.contractFamilyOptions ??
-                                []
+                                getSettingsStringArray('contractFamilyOptions', [])
                               ).filter((x: string) => x !== f)
                             )
                           }
@@ -327,7 +377,7 @@ export default function OrganisationSettingsPage() {
                   value={String(
                     fte1ContractHours !== null
                       ? fte1ContractHours
-                      : (settings?.baseTotalContractAtFTE1 ?? 1498)
+                      : (getSettingsNumber('baseTotalContractAtFTE1', 1498))
                   )}
                   onChange={(e) => setFte1ContractHours(e.target.value)}
                   min={0}
@@ -340,7 +390,7 @@ export default function OrganisationSettingsPage() {
                   value={String(
                     maxGroupSize !== null
                       ? maxGroupSize
-                      : (settings?.maxClassSizePerGroup ?? 25)
+                      : (getSettingsNumber('maxClassSizePerGroup', 25))
                   )}
                   onChange={(e) => setMaxGroupSize(e.target.value)}
                   min={1}
@@ -359,13 +409,9 @@ export default function OrganisationSettingsPage() {
                 <Label>Per-family max teaching rule</Label>
               </div>
               <div className="space-y-2">
-                {(familyRules ?? settings?.familyMaxTeachingRules ?? []).map(
+                {(familyRules ?? getSettingsFamilyRules('familyMaxTeachingRules', [])).map(
                   (
-                    r: {
-                      family: string;
-                      mode: 'percent' | 'fixed';
-                      value: number;
-                    },
+                    r: FamilyRule,
                     idx: number
                   ) => (
                     <div
@@ -385,8 +431,7 @@ export default function OrganisationSettingsPage() {
                             const v = e.target.value as 'percent' | 'fixed';
                             const list = [
                               ...(familyRules ??
-                                settings?.familyMaxTeachingRules ??
-                                []),
+                                getSettingsFamilyRules('familyMaxTeachingRules', [])),
                             ];
                             list[idx] = { ...list[idx], mode: v };
                             setFamilyRules(list);
@@ -405,8 +450,7 @@ export default function OrganisationSettingsPage() {
                             const num = Number(e.target.value || 0);
                             const list = [
                               ...(familyRules ??
-                                settings?.familyMaxTeachingRules ??
-                                []),
+                                getSettingsFamilyRules('familyMaxTeachingRules', [])),
                             ];
                             list[idx] = { ...list[idx], value: num };
                             setFamilyRules(list);
@@ -421,10 +465,9 @@ export default function OrganisationSettingsPage() {
                           onClick={() => {
                             const base =
                               familyRules ??
-                              settings?.familyMaxTeachingRules ??
-                              [];
+                              getSettingsFamilyRules('familyMaxTeachingRules', []);
                             const list = base.filter(
-                              (x: any, i: number) => i !== idx
+                              (x: FamilyRule, i: number) => i !== idx
                             );
                             setFamilyRules(list);
                           }}
@@ -447,10 +490,10 @@ export default function OrganisationSettingsPage() {
                       const fam = e.target.value;
                       if (!fam) return;
                       const current =
-                        familyRules ?? settings?.familyMaxTeachingRules ?? [];
-                      if (!current.some((rr: any) => rr.family === fam)) {
+                          familyRules ?? [];
+                      if (!current.some((rr: FamilyRule) => rr.family === fam)) {
                         setFamilyRules([
-                          ...(current as any[]),
+                          ...current,
                           { family: fam, mode: 'percent', value: 0 },
                         ]);
                       }
@@ -460,7 +503,6 @@ export default function OrganisationSettingsPage() {
                     <option value="">Select family</option>
                     {(
                       familyOptions ??
-                      settings?.contractFamilyOptions ??
                       []
                     ).map((f: string) => (
                       <option key={f} value={f}>

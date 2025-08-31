@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { client } from '@/sanity/client';
 import { urlFor } from '@/sanity/lib/image';
 import { sanityEnabled } from '@/sanity/env';
-import { format } from 'date-fns';
+
 import { CalendarDays, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
@@ -27,9 +27,15 @@ type Post = {
   excerpt?: string;
   publishedAt: string;
   readingTime?: number;
-  coverImage?: any;
+  coverImage?: {
+    asset: {
+      _ref: string;
+      _type: string;
+    };
+    alt?: string;
+  };
   categories?: { title: string; slug?: { current: string } }[];
-  author?: { name?: string; avatar?: any };
+  author?: { name?: string; avatar?: unknown };
 };
 
 async function getPosts(): Promise<Post[]> {
@@ -73,14 +79,15 @@ export default function BlogIndexPage() {
       try {
         const fetchedPosts = await getPosts();
         setPosts(fetchedPosts);
-      } catch (error) {
+      } catch {
         // Failed to fetch posts
+        console.error('Failed to fetch posts');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPosts();
+    void fetchPosts();
   }, []);
 
   if (!sanityEnabled) {
@@ -160,7 +167,7 @@ export default function BlogIndexPage() {
                   className="block"
                 >
                   {/* Cover Image - positioned at very top of card */}
-                  {post.coverImage ? (
+                  {post.coverImage && post.coverImage.asset ? (
                     <div className="relative h-56 overflow-hidden bg-slate-100 dark:bg-slate-700 rounded-t-xl">
                       <Image
                         src={urlFor(post.coverImage)

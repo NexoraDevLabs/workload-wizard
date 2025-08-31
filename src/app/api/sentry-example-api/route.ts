@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 
-class SentryExampleAPIError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'SentryExampleAPIError';
-  }
-}
-
 export async function GET() {
   try {
     // Add custom context for this API call
@@ -57,7 +50,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     // Parse request body
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
 
     // Add custom context for this API call
     Sentry.setContext('api_request', {
@@ -109,7 +102,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     // Parse request body
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
 
     // Add custom context for this API call
     Sentry.setContext('api_request', {

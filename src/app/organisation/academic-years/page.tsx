@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,25 +19,34 @@ import {
 import { useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
-// Feature flags removed
+
+interface AcademicYear {
+  _id: Id<'academic_years'>;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: 'draft' | 'published' | 'archived';
+  staging: boolean;
+  isDefaultForOrg: boolean;
+}
 
 export default function AcademicYearsAdminPage() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [isSettingStatus, setIsSettingStatus] = useState<string | null>(null);
 
   const years = useQuery(
-    (api as any).academicYears.listForOrganisation,
-    user?.id ? ({ userId: user.id } as any) : ('skip' as any)
-  ) as any[] | undefined;
+    api.academicYears.listForOrganisation,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as AcademicYear[] | undefined;
 
-  const create = useMutation((api as any).academicYears.create);
-  const update = useMutation((api as any).academicYears.update);
-  const setStatus = useMutation((api as any).academicYears.setStatus);
-  const cloneYear = useMutation((api as any).academicYears.clone);
-  const bulkSetStatus = useMutation((api as any).academicYears.bulkSetStatus);
+  const create = useMutation(api.academicYears.create);
+  const update = useMutation(api.academicYears.update);
+  const setStatus = useMutation(api.academicYears.setStatus);
+  const cloneYear = useMutation(api.academicYears.clone);
+  const bulkSetStatus = useMutation(api.academicYears.bulkSetStatus);
 
   const bulkEnabled = false;
 
@@ -128,7 +138,7 @@ export default function AcademicYearsAdminPage() {
                 <Select
                   value={form.status}
                   onValueChange={(v) =>
-                    setForm((f) => ({ ...f, status: v as any }))
+                    setForm((f) => ({ ...f, status: v as 'draft' | 'published' }))
                   }
                 >
                   <SelectTrigger>
@@ -170,7 +180,7 @@ export default function AcademicYearsAdminPage() {
                           endDate: form.endDate,
                           status: form.status,
                           isDefaultForOrg: form.isDefaultForOrg,
-                        } as any),
+                        }),
                       {
                         success: {
                           title: 'Academic Year Created',
@@ -184,7 +194,7 @@ export default function AcademicYearsAdminPage() {
                       name: '',
                       startDate: '',
                       endDate: '',
-                      status: 'draft',
+                      status: 'draft' as 'draft' | 'published',
                       isDefaultForOrg: false,
                     });
                   } finally {
@@ -206,7 +216,7 @@ export default function AcademicYearsAdminPage() {
                 <div className="flex items-center gap-2">
                   <Select
                     value={''}
-                    onValueChange={async (v) => {
+                    onValueChange={async (v: 'draft' | 'published' | 'archived') => {
                       if (!user?.id) return;
                       const ids = years.map((y) => y._id);
                       setIsSettingStatus('bulk');
@@ -217,7 +227,7 @@ export default function AcademicYearsAdminPage() {
                               userId: user.id,
                               ids,
                               status: v,
-                            } as any),
+                            }),
                           {
                             success: {
                               title: 'Bulk Status Updated',
@@ -282,7 +292,7 @@ export default function AcademicYearsAdminPage() {
                                     userId: user!.id,
                                     id: y._id,
                                     isDefaultForOrg: true,
-                                  } as any),
+                                  }),
                                 {
                                   success: {
                                     title: 'Default Set',
@@ -316,7 +326,7 @@ export default function AcademicYearsAdminPage() {
                                     name: `${y.name} (copy)`,
                                     startDate: y.startDate,
                                     endDate: y.endDate,
-                                  } as any),
+                                  }),
                                 {
                                   success: {
                                     title: 'Year Cloned',
@@ -346,7 +356,7 @@ export default function AcademicYearsAdminPage() {
                                     userId: user!.id,
                                     id: y._id,
                                     status: 'published',
-                                  } as any),
+                                  }),
                                 {
                                   success: {
                                     title: 'Status Updated',
@@ -378,7 +388,7 @@ export default function AcademicYearsAdminPage() {
                                     userId: user!.id,
                                     id: y._id,
                                     status: 'draft',
-                                  } as any),
+                                  }),
                                 {
                                   success: {
                                     title: 'Status Updated',
@@ -410,7 +420,7 @@ export default function AcademicYearsAdminPage() {
                                     userId: user!.id,
                                     id: y._id,
                                     status: 'archived',
-                                  } as any),
+                                  }),
                                 {
                                   success: {
                                     title: 'Status Updated',

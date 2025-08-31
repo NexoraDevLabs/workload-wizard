@@ -18,7 +18,6 @@ import { ClerkStatsigSync } from '@/lib/statsig/ClerkStatsigSync';
 import { LoadingOverlayServer } from '@/components/loading-overlay-server';
 import { Suspense } from 'react';
 import { RouteLoadingOverlay } from '@/components/RouteLoadingOverlay';
-import { ClerkProvider } from '@clerk/nextjs';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -70,7 +69,7 @@ export default async function RootLayout({
   const { statsigAdapter, identify } = await import('@/flags');
   const user = await identify({ headers: headersStore });
   const Statsig = await statsigAdapter.initialize();
-  const datafile = await Statsig.getClientInitializeResponse(user, {
+  const datafile = Statsig.getClientInitializeResponse(user, {
     hash: 'djb2',
   });
 

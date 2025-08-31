@@ -31,7 +31,7 @@ export async function POST() {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     // Error updating last sign in time
     return NextResponse.json(
       { error: 'Failed to update last sign in time' },

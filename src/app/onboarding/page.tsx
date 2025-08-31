@@ -37,6 +37,28 @@ import { cn } from '@/lib/utils';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
+interface OnboardingFormData {
+  firstName: string;
+  lastName: string;
+  role: string;
+  customRole: string;
+  email: string;
+  phone: string;
+  department: string;
+  organization: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+  notifications: boolean;
+  newsletter: boolean;
+}
+
+interface OnboardingProgress {
+  timestamp: number;
+  formData: Record<string, string | boolean>;
+  currentStep: number;
+}
+
 const onboardingSteps = [
   {
     id: 'personal',
@@ -105,7 +127,7 @@ export default function OnboardingPage() {
       : 'skip'
   );
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<OnboardingFormData>({
     firstName: '',
     lastName: '',
     role: '',
@@ -189,30 +211,39 @@ export default function OnboardingPage() {
     if (!user?.id) return;
 
     const progressKey = `onboarding-progress-${user.id}`;
-    const progressData = {
-      currentStep,
-      formData,
+    
+    // Filter out undefined values to match the expected type
+    const cleanFormData: Record<string, string | boolean> = {};
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== undefined && (typeof value === 'string' || typeof value === 'boolean')) {
+        cleanFormData[key] = value;
+      }
+    });
+    
+    const progressData: OnboardingProgress = {
       timestamp: Date.now(),
+      formData: cleanFormData,
+      currentStep,
     };
 
     try {
       localStorage.setItem(progressKey, JSON.stringify(progressData));
-    } catch (error) {
+    } catch {
       // Failed to save onboarding progress
+      console.warn('Failed to save onboarding progress to localStorage');
     }
-  }, [user?.id, currentStep, formData]);
+  }, [user?.id, formData, currentStep]);
 
   // Load progress from localStorage
-  const loadProgress = useCallback(() => {
+  const loadProgress = useCallback((): OnboardingProgress | null => {
     if (!user?.id) return null;
 
     const progressKey = `onboarding-progress-${user.id}`;
-
     try {
       const savedProgress = localStorage.getItem(progressKey);
       if (!savedProgress) return null;
 
-      const progressData = JSON.parse(savedProgress);
+      const progressData: OnboardingProgress = JSON.parse(savedProgress) as OnboardingProgress;
 
       // Check if progress is recent (within 30 days)
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
@@ -222,7 +253,7 @@ export default function OnboardingPage() {
       }
 
       return progressData;
-    } catch (error) {
+    } catch {
       // Failed to load onboarding progress
       return null;
     }
@@ -248,7 +279,7 @@ export default function OnboardingPage() {
         ...savedProgress.formData,
         // Keep pre-populated organisation if it exists
         organization:
-          prevData.organization || savedProgress.formData.organization,
+          prevData.organization || (typeof savedProgress.formData.organization === 'string' ? savedProgress.formData.organization : ''),
       }));
       setCurrentStep(savedProgress.currentStep);
       setProgressRestored(true);
@@ -264,7 +295,7 @@ export default function OnboardingPage() {
   const getRequiredFieldsForStep = useCallback(
     (step: number) => {
       switch (step) {
-        case 0: // Personal Information
+        case 0: { // Personal Information
           const requiredFields = ['firstName', 'lastName', 'email', 'role'];
           // Add customRole if "other" is selected
           if (formData.role === 'other') {
@@ -278,14 +309,16 @@ export default function OnboardingPage() {
             requiredFields.push('invalidEmail');
           }
           return requiredFields;
-        case 1: // Work Information
+        }
+        case 1: { // Work Information
           const workFields = ['department'];
           // Only require organisation if it's not pre-populated
           if (!formData.organization) {
             workFields.push('organization');
           }
           return workFields;
-        case 2: // Security
+        }
+        case 2: { // Security
           const securityFields = [
             'currentPassword',
             'newPassword',
@@ -303,6 +336,7 @@ export default function OnboardingPage() {
             return [...securityFields, 'passwordTooWeak'];
           }
           return securityFields;
+        }
         case 3: // Preferences
           return [];
         case 4: // Complete
@@ -324,7 +358,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     const requiredFields = getRequiredFieldsForStep(currentStep);
     const missing = requiredFields.filter((field) => {
-      const value = formData[field as keyof typeof formData];
+      const value = formData[field as keyof OnboardingFormData];
       return typeof value !== 'string' || value.trim() === '';
     });
     setMissingFields(missing);
@@ -389,7 +423,7 @@ export default function OnboardingPage() {
               });
 
               if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json() as { error?: string };
                 throw new Error(errorData.error || 'Failed to update email');
               }
 
@@ -404,7 +438,7 @@ export default function OnboardingPage() {
               return;
             }
           }
-        } catch (profileError) {
+        } catch {
           setError('Failed to update profile information. Please try again.');
           return;
         }
@@ -464,9 +498,9 @@ export default function OnboardingPage() {
 
       // Filter out sensitive password data before sending to API
       const {
-        currentPassword,
-        newPassword,
-        confirmPassword,
+        currentPassword: _currentPassword,
+        newPassword: _newPassword,
+        confirmPassword: _confirmPassword,
         ...safeOnboardingData
       } = formData;
 
@@ -484,13 +518,12 @@ export default function OnboardingPage() {
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         try {
-          const errorData = await response.json();
+          const errorData = await response.json() as { error?: string };
           errorMessage = errorData.error || errorMessage;
         } catch {
           // Response is not JSON, get text instead
           const errorText = await response.text();
-          errorMessage =
-            `Server error: ${errorText.slice(0, 100)}...` || errorMessage;
+          errorMessage = `Server error: ${errorText.slice(0, 100)}...`;
         }
         throw new Error(errorMessage);
       }
@@ -503,7 +536,7 @@ export default function OnboardingPage() {
       // Redirect to success page which will handle the final redirect
       // This gives time for the session to update
       window.location.replace('/onboarding-success');
-    } catch (error) {
+    } catch {
       setError('Failed to complete onboarding. Please try again.');
     } finally {
       setIsCompleting(false);
@@ -523,13 +556,13 @@ export default function OnboardingPage() {
         return formData.newPassword === formData.confirmPassword;
       }
       if (field === 'passwordTooWeak') {
-        return formData.newPassword.length >= 8;
+        return formData.newPassword && formData.newPassword.length >= 8;
       }
       if (field === 'invalidEmail') {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       }
 
-      const value = formData[field as keyof typeof formData];
+      const value = formData[field as keyof OnboardingFormData];
       return typeof value === 'string' && value.trim() !== '';
     });
   };
@@ -560,7 +593,7 @@ export default function OnboardingPage() {
       const fieldValue =
         fieldName === field
           ? value
-          : newFormData[fieldName as keyof typeof newFormData];
+          : newFormData[fieldName as keyof OnboardingFormData];
       return typeof fieldValue !== 'string' || fieldValue.trim() === '';
     });
 

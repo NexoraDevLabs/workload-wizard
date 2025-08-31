@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === 'object' && 'errors' in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in err) {
         return NextResponse.json(
-          { error: 'Invalid request body', details: (err as any).errors },
+          { error: 'Invalid request body', details: (err as { errors: unknown }).errors },
           { status: 400 }
         );
       }
@@ -248,8 +248,7 @@ export async function POST(request: NextRequest) {
           if (systemRoles) convexUpdates.systemRoles = systemRoles;
           // Apply organisation change to Convex when admin
           if (isAdmin && organisationId) {
-            (convexUpdates as any).organisationId =
-              organisationId as unknown as Id<'organisations'>;
+            convexUpdates.organisationId = organisationId;
           }
           if (typeof isActive === 'boolean') convexUpdates.isActive = isActive;
 
@@ -267,10 +266,10 @@ export async function POST(request: NextRequest) {
               await getConvexClient().mutation(api.users.ensureMembership, {
                 userId,
                 organisationId:
-                  organisationId as unknown as Id<'organisations'>,
+                  organisationId as Id<'organisations'>,
                 isPrimary: true,
-              } as any);
-            } catch (e) {
+              });
+            } catch {
               // ensureMembership failed
             }
           }
@@ -293,8 +292,8 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-    } catch (error) {
-      // Error updating user in Convex
+    } catch {
+      // Error updating user
       // If Convex update fails, we'll continue since Clerk is the primary source
     }
 
@@ -329,7 +328,7 @@ export async function POST(request: NextRequest) {
             );
           }
         }
-      } catch (err) {
+      } catch {
         // Organisational multi-role change failed
       }
     } else if (organisationalRoleId) {
@@ -405,9 +404,11 @@ export async function POST(request: NextRequest) {
                 }
               );
             }
-          } catch {}
+          } catch {
+            // Ignore role lookup errors silently
+          }
         }
-      } catch (err) {
+      } catch {
         // Organisational role change failed
       }
     }
@@ -416,7 +417,7 @@ export async function POST(request: NextRequest) {
       { message: 'User updated successfully' },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     // Error updating user
 
     return NextResponse.json(

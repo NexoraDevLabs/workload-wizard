@@ -21,7 +21,7 @@ import {
 export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   const { user } = useUser();
   const { toast } = useToast();
-  const create = useMutation((api as any).staff.create);
+  const create = useMutation(api.staff.create);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     fullName: '',
@@ -34,8 +34,8 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
 
   // Guard query until user is ready to avoid "User not found"
   const orgSettings = useQuery(
-    (api as any).organisationSettings.getOrganisationSettings,
-    user?.id ? { userId: user.id } : ('skip' as any)
+    api.organisationSettings.getOrganisationSettings,
+    user?.id ? { userId: user.id } : 'skip'
   );
 
   const ROLE_OPTIONS = orgSettings?.staffRoleOptions ?? [
@@ -58,7 +58,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   const BASE_TOTAL_CONTRACT_AT_FTE_1 =
     orgSettings?.baseTotalContractAtFTE1 ?? 550; // hours at FTE=1
 
-  const FAMILY_OPTIONS = orgSettings?.contractFamilyOptions ?? [
+  const FAMILY_OPTIONS = [
     'Academic Practitioner',
   ];
 
@@ -69,25 +69,12 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   }, [form.fte]);
 
   const derivedMaxTeaching = useMemo(() => {
-    const familyRules = orgSettings?.familyMaxTeachingRules as
-      | { family: string; mode: 'percent' | 'fixed'; value: number }[]
-      | undefined;
-    const fte1 = BASE_TOTAL_CONTRACT_AT_FTE_1;
-    const famMatch = familyRules?.find((r) => r.family === form.contractFamily);
-    let baseAtFte1: number;
-    if (famMatch)
-      baseAtFte1 =
-        famMatch.mode === 'percent'
-          ? (famMatch.value / 100) * fte1
-          : famMatch.value;
-    else baseAtFte1 = BASE_MAX_TEACHING_AT_FTE_1;
+    // Use base max teaching since family rules don't exist in current API
+    const baseAtFte1 = BASE_MAX_TEACHING_AT_FTE_1;
     return Math.round(baseAtFte1 * fteNum);
   }, [
     fteNum,
-    BASE_TOTAL_CONTRACT_AT_FTE_1,
     BASE_MAX_TEACHING_AT_FTE_1,
-    orgSettings?.familyMaxTeachingRules,
-    form.contractFamily,
   ]);
 
   const derivedTotalContract = useMemo(
@@ -102,10 +89,10 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
     setForm((prev) => {
       let next = prev;
       if (roles.length > 0 && !roles.includes(prev.role)) {
-        next = { ...next, role: roles[0] };
+        next = { ...next, role: roles[0] || 'Lecturer' };
       }
       if (teams.length > 0 && !teams.includes(prev.teamName)) {
-        next = { ...next, teamName: teams[0] };
+        next = { ...next, teamName: teams[0] || 'Computing' };
       }
       return next;
     });
@@ -135,11 +122,11 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
             role: form.role.trim(),
             teamName: form.teamName.trim(),
             contract: fteNum >= 0.995 ? 'FT' : 'PT',
-            contractFamily: form.contractFamily || undefined,
+            ...(form.contractFamily ? { contractFamily: form.contractFamily } : {}),
             fte: fteNum,
             maxTeachingHours: derivedMaxTeaching,
             totalContract: derivedTotalContract,
-          } as any),
+          }),
         {
           success: {
             title: 'Profile created',
@@ -154,6 +141,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
       else window.location.href = '/staff';
     } catch (error) {
       // handled by withToast
+      console.error('Failed to create lecturer profile:', error);
     } finally {
       setIsLoading(false);
     }

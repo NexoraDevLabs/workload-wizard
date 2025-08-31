@@ -52,10 +52,8 @@ function AcademicYearProviderInternal({
   const { toast } = useToast();
 
   // Management detection from convex user.systemRoles
-  const apiAny = api as any;
-
   const convexUser = useQuery(
-    apiAny.users.getBySubject,
+    api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   ) as
     | { systemRoles?: string[]; organisationId?: Id<'organisations'> }
@@ -78,13 +76,13 @@ function AcademicYearProviderInternal({
 
   // Fetch academic years for organisation, server decides visibility based on permissions
   const allYears = useQuery(
-    apiAny.academicYears.listForOrganisation,
+    api.academicYears.listForOrganisation,
     convexUser ? { userId: user!.id } : 'skip'
   ) as AcademicYear[] | undefined;
 
   // Load server preferences (selected year + includeDrafts)
   const preferences = useQuery(
-    apiAny.academicYears.getPreferences,
+    api.academicYears.getPreferences,
     convexUser ? { userId: user!.id } : 'skip'
   ) as
     | {
@@ -106,13 +104,15 @@ function AcademicYearProviderInternal({
       setIncludeDraftsState(!!preferences.includeDrafts);
       return;
     }
-    try {
-      const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
-      if (raw !== null) setIncludeDraftsState(raw === '1');
-    } catch {}
+          try {
+        const raw = localStorage.getItem(`ay_drafts:${orgIdStr}`);
+        if (raw !== null) setIncludeDraftsState(raw === '1');
+      } catch {
+        // Ignore localStorage errors silently
+      }
   }, [orgIdStr, preferences?.includeDrafts]);
 
-  const setPrefsMutation = useMutation(apiAny.academicYears.setPreferences);
+  const setPrefsMutation = useMutation(api.academicYears.setPreferences);
 
   const setIncludeDrafts = useCallback(
     (v: boolean) => {
@@ -134,7 +134,9 @@ function AcademicYearProviderInternal({
       try {
         if (orgIdStr)
           localStorage.setItem(`ay_drafts:${orgIdStr}`, v ? '1' : '0');
-      } catch {}
+      } catch {
+        // Ignore localStorage errors silently
+      }
     },
     [orgIdStr, setPrefsMutation, user?.id, toast]
   );
@@ -178,7 +180,9 @@ function AcademicYearProviderInternal({
         if (currentYearId !== stored) setCurrentYearIdState(stored);
         return;
       }
-    } catch {}
+    } catch {
+      // Ignore localStorage errors silently
+    }
     // Otherwise ensure a sensible default
     if (!currentYearId && defaultYearId) {
       setCurrentYearIdState(defaultYearId);
@@ -215,13 +219,15 @@ function AcademicYearProviderInternal({
       }
       try {
         if (orgIdStr) localStorage.setItem(`ay_current:${orgIdStr}`, id);
-      } catch {}
+      } catch {
+        // Ignore localStorage errors silently
+      }
     },
     [orgIdStr, setPrefsMutation, user?.id, toast]
   );
 
   // Mutations
-  const updateYear = useMutation(apiAny.academicYears.update);
+  const updateYear = useMutation(api.academicYears.update);
 
   const setAsDefaultForOrg = useCallback(
     async (id: string) => {

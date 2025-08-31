@@ -1,8 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -48,7 +47,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, Save, X, Paperclip, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, Paperclip, Settings } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -69,13 +68,7 @@ interface Role {
   organisationId: string;
 }
 
-interface Permission {
-  id: string;
-  group: string;
-  description: string;
-  defaultRoles: string[];
-  isActive: boolean;
-}
+
 
 interface RoleWithPermissions extends Role {
   permissionDetails: Array<{
@@ -113,7 +106,7 @@ export default function OrganisationRolesPage() {
 
   // Get system permissions
   const systemPermissions = useQuery(api.permissions.getSystemPermissions);
-  const stagedForRole = useQuery(
+  const _stagedForRole = useQuery(
     api.permissions.getOrganisationPermissions,
     editingRole?._id
       ? { roleId: editingRole._id as unknown as Id<'user_roles'> }
@@ -764,8 +757,8 @@ export default function OrganisationRolesPage() {
                 Cancel
               </Button>
               <Button
-                onClick={() => {
-                  handlePermissionToggle(
+                onClick={async () => {
+                  await handlePermissionToggle(
                     confirmApply.roleId,
                     confirmApply.permissionId,
                     true,

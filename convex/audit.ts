@@ -1,7 +1,6 @@
 import {
   mutation,
   query,
-  type QueryCtx,
   type MutationCtx,
 } from './_generated/server';
 import { v } from 'convex/values';
@@ -179,7 +178,7 @@ export const list = query({
     let query = ctx.db
       .query('audit_logs')
       .withIndex('by_timestamp', (q) =>
-        q.gte('timestamp', (args.startDate ?? 0) as any)
+        q.gte('timestamp', args.startDate ?? 0)
       )
       .order('desc');
 

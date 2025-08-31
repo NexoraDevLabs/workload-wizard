@@ -39,7 +39,7 @@ export default function PostHogTestPage() {
       } else {
         // PostHog key not configured
       }
-    } catch (error) {
+    } catch {
       // Failed to initialize PostHog
     }
   };
@@ -65,7 +65,7 @@ export default function PostHogTestPage() {
       } else {
         // PostHog capture not available
       }
-    } catch (error) {
+    } catch {
       // Custom events test failed
     }
   };
@@ -97,7 +97,7 @@ export default function PostHogTestPage() {
       } else {
         // Analytics service not available
       }
-    } catch (error) {
+    } catch {
       // Analytics service test failed
     }
   };
@@ -120,7 +120,7 @@ export default function PostHogTestPage() {
       } else {
         // PostHog people API not available
       }
-    } catch (error) {
+    } catch {
       // Failed to set user properties
     }
   };

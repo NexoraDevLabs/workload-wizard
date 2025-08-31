@@ -106,7 +106,7 @@ function FeaturebaseMessengerInternal() {
   useEffect(() => {
     if (!isLoaded || !user?.id) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const res = await fetch('/api/featurebase/user-hash');
         if (res.ok) {
@@ -192,6 +192,7 @@ function FeaturebaseMessengerInternal() {
       }:${context.systemRoles || ''}:${context.orgRoles || ''}`;
       if (hasBootedRef.current === bootKey) return;
       hasBootedRef.current = bootKey;
+      // Handle the promise properly
       win.Featurebase!('boot', payload);
     }
 

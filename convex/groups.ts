@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
 
+
 // List groups under a module iteration
 export const listByIteration = query({
   args: { moduleIterationId: v.id('module_iterations') },
@@ -11,22 +12,22 @@ export const listByIteration = query({
     const iteration = await ctx.db.get(args.moduleIterationId);
     if (!iteration) return [];
     const moduleDoc = iteration
-      ? await ctx.db.get((iteration as any).moduleId)
+      ? await ctx.db.get(iteration.moduleId)
       : null;
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return [];
     if (moduleDoc) {
       await requireOrgPermission(
-        ctx as any,
+        ctx,
         identity.subject,
         'groups.view',
-        (moduleDoc as any).organisationId
+        moduleDoc.organisationId
       );
     }
     const groups = await ctx.db
-      .query('module_groups' as any)
-      .withIndex('by_iteration' as any, (q) =>
-        (q as any).eq('moduleIterationId', args.moduleIterationId as any)
+      .query('module_groups')
+      .withIndex('by_iteration', (q) =>
+        q.eq('moduleIterationId', args.moduleIterationId)
       )
       .order('asc')
       .collect();
@@ -50,14 +51,14 @@ export const create = mutation({
     const moduleDoc = await ctx.db.get(iteration.moduleId);
     if (!moduleDoc) throw new Error('Module not found');
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'groups.create',
-      (moduleDoc as any).organisationId
+      moduleDoc.organisationId
     );
 
     const now = Date.now();
-    const id = await (ctx.db as any).insert('module_groups', {
+    const id = await ctx.db.insert('module_groups', {
       moduleIterationId: args.moduleIterationId,
       name: args.name,
       ...(typeof args.sizePlanned === 'number'
@@ -77,7 +78,9 @@ export const create = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for group creation:', e);
+    }
 
     return id;
   },
@@ -97,13 +100,13 @@ export const createAutoForIteration = mutation({
 
     const iteration = await ctx.db.get(args.moduleIterationId);
     if (!iteration) throw new Error('Module iteration not found');
-    const moduleDoc = await ctx.db.get((iteration as any).moduleId);
+    const moduleDoc = await ctx.db.get(iteration.moduleId);
     if (!moduleDoc) throw new Error('Module not found');
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'groups.create',
-      (moduleDoc as any).organisationId
+      moduleDoc.organisationId
     );
 
     const now = Date.now();
@@ -113,7 +116,7 @@ export const createAutoForIteration = mutation({
       const total = Math.max(0, Math.floor(entry.groups || 0));
       for (let i = 1; i <= total; i++) {
         const name = campus ? `${campus} ${i}` : `Group ${i}`;
-        await (ctx.db as any).insert('module_groups', {
+        await ctx.db.insert('module_groups', {
           moduleIterationId: args.moduleIterationId,
           name,
           ...(campus ? { campusId: campus } : {}),
@@ -134,9 +137,11 @@ export const createAutoForIteration = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for auto group creation:', e);
+    }
 
-    return { created } as any;
+    return { created };
   },
 });
 
@@ -146,20 +151,20 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) throw new Error('Unauthenticated');
-    const existing = await (ctx.db as any).get(args.id as any);
+    const existing = await ctx.db.get(args.id);
     if (!existing) return args.id;
     const iteration = await ctx.db.get(existing.moduleIterationId);
     const moduleDoc = iteration
-      ? await ctx.db.get((iteration as any).moduleId)
+      ? await ctx.db.get(iteration.moduleId)
       : null;
     if (!moduleDoc) return args.id;
     await requireOrgPermission(
-      ctx as any,
+      ctx,
       identity.subject,
       'groups.delete',
-      (moduleDoc as any).organisationId
+      moduleDoc.organisationId
     );
-    await (ctx.db as any).delete(args.id as any);
+    await ctx.db.delete(args.id);
     try {
       await writeAudit(ctx, {
         action: 'delete',
@@ -170,7 +175,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'org',
       });
-    } catch {}
+    } catch (e) {
+      console.error('Error writing audit for group deletion:', e);
+    }
     return args.id;
   },
 });

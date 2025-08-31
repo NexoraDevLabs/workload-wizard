@@ -86,7 +86,7 @@ const Testimonials = () => {
                 <Quote className="w-8 h-8 text-primary/30 mb-4" />
 
                 <div className="flex items-center gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
+                  {Array.from({ length: testimonial.rating }, (_, i) => (
                     <Star
                       key={i}
                       className="w-4 h-4 fill-primary text-primary"

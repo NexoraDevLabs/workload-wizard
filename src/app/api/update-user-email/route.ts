@@ -41,9 +41,10 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === 'object' && 'errors' in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const zodError = err as { errors: unknown };
         return NextResponse.json(
-          { error: 'Invalid request body', details: (err as any).errors },
+          { error: 'Invalid request body', details: zodError.errors },
           { status: 400 }
         );
       }
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    } catch (error) {
+    } catch {
       // Error checking existing email
       // Continue with the update even if we can't verify uniqueness
     }
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
       if (existingEmail.id !== newEmailAddress.id) {
         try {
           await clerk.emailAddresses.deleteEmailAddress(existingEmail.id);
-        } catch (error) {
+        } catch {
           // 404 or other errors are fine - old email might already be removed
           // This is not critical to the main functionality
         }
@@ -183,7 +184,7 @@ export async function POST(request: NextRequest) {
           });
         }
       }
-    } catch (error) {
+    } catch {
       // Error updating email in Convex
       // If Convex update fails, we should rollback the Clerk update
       // For now, we'll just log the error and continue

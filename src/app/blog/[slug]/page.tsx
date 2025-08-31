@@ -14,18 +14,49 @@ import Footer from '@/components/Footer';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import { useState, useEffect } from 'react';
 
-type Post = {
+interface SanityImage {
+  _type: 'image';
+  asset: {
+    _ref: string;
+    _type: 'reference';
+  };
+  alt?: string;
+  crop?: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  };
+  hotspot?: {
+    x: number;
+    y: number;
+    height: number;
+    width: number;
+  };
+}
+
+interface SanityBlock {
+  _type: string;
+  children?: React.ReactNode;
+  [key: string]: unknown;
+}
+
+interface SanityLink {
+  href: string;
+}
+
+interface Post {
   _id: string;
   title: string;
   slug: { current: string };
   excerpt?: string;
-  body?: any[];
+  body?: SanityBlock[];
   publishedAt: string;
   readingTime?: number;
-  coverImage?: any;
+  coverImage?: SanityImage;
   categories?: { title: string; slug?: { current: string } }[];
-  author?: { name?: string; avatar?: any };
-};
+  author?: { name?: string; avatar?: SanityImage };
+}
 
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]{
   _id,
@@ -52,60 +83,69 @@ function formatDate(iso: string) {
   }
 }
 
+interface BlockComponentProps {
+  children: React.ReactNode;
+}
+
+interface LinkComponentProps {
+  value: SanityLink;
+  children: React.ReactNode;
+}
+
 const portableComponents = {
   // Map Sanity block styles to semantic HTML so Tailwind Typography renders correctly
   block: {
-    h1: ({ children }: any) => (
+    h1: ({ children }: BlockComponentProps) => (
       <h1 className="mt-10 mb-4 text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
         {children}
       </h1>
     ),
-    h2: ({ children }: any) => (
+    h2: ({ children }: BlockComponentProps) => (
       <h2 className="mt-10 mb-3 text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
         {children}
       </h2>
     ),
-    h3: ({ children }: any) => (
+    h3: ({ children }: BlockComponentProps) => (
       <h3 className="mt-8 mb-3 text-xl md:text-2xl font-semibold tracking-tight text-slate-900">
         {children}
       </h3>
     ),
-    h4: ({ children }: any) => (
+    h4: ({ children }: BlockComponentProps) => (
       <h4 className="mt-6 mb-2 text-lg md:text-xl font-semibold tracking-tight text-slate-900">
         {children}
       </h4>
     ),
-    normal: ({ children }: any) => (
+    normal: ({ children }: BlockComponentProps) => (
       <p className="my-4 leading-relaxed text-slate-700">{children}</p>
     ),
-    blockquote: ({ children }: any) => (
+    blockquote: ({ children }: BlockComponentProps) => (
       <blockquote className="my-6 border-l-4 border-blue-200 pl-4 italic text-slate-600 bg-blue-50 py-2 rounded-r">
         {children}
       </blockquote>
     ),
   },
   list: {
-    bullet: ({ children }: any) => (
+    bullet: ({ children }: BlockComponentProps) => (
       <ul className="my-4 ml-5 list-disc space-y-1 text-slate-700">
         {children}
       </ul>
     ),
-    number: ({ children }: any) => (
+    number: ({ children }: BlockComponentProps) => (
       <ol className="my-4 ml-5 list-decimal space-y-1 text-slate-700">
         {children}
       </ol>
     ),
   },
   listItem: {
-    bullet: ({ children }: any) => (
+    bullet: ({ children }: BlockComponentProps) => (
       <li className="leading-relaxed">{children}</li>
     ),
-    number: ({ children }: any) => (
+    number: ({ children }: BlockComponentProps) => (
       <li className="leading-relaxed">{children}</li>
     ),
   },
   marks: {
-    link: ({ value, children }: any) => {
+    link: ({ value, children }: LinkComponentProps) => {
       const { href } = value;
       return (
         <a
@@ -139,7 +179,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         });
         if (fetchedPost) {
           setPost(fetchedPost);
-          if (fetchedPost.coverImage) {
+          if (fetchedPost.coverImage?.asset?._ref) {
             setCoverUrl(
               urlFor(fetchedPost.coverImage)
                 .width(1600)
@@ -149,14 +189,14 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             );
           }
         }
-      } catch (error) {
+      } catch {
         // Failed to fetch post
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPost();
+    void fetchPost();
   }, [params.slug]);
 
   if (loading) {
@@ -307,7 +347,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             {Array.isArray(post.body) ? (
               <PortableText
                 value={post.body}
-                components={portableComponents as any}
+                components={portableComponents}
               />
             ) : null}
           </article>

@@ -10,7 +10,6 @@ import {
   Map,
   FileText,
   Mail,
-  Phone,
   MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -21,7 +20,7 @@ export default function SupportPage() {
   const openFeaturebaseWidget = useCallback(() => {
     if (typeof window !== 'undefined' && window.Featurebase) {
       try {
-        const fb = window.Featurebase as any;
+        const fb = window.Featurebase as ((...args: unknown[]) => void) & { q?: unknown[] };
         const appId = process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID || '';
 
         // PRE-CLEANUP: Remove any existing CSS effects BEFORE opening the widget
@@ -64,13 +63,13 @@ export default function SupportPage() {
           // Try API methods first
           try {
             fb('open');
-          } catch (_error) {
+          } catch {
             // Silent fallback
           }
 
           try {
             fb('openFeedbackWidget');
-          } catch (_error) {
+          } catch {
             // Silent fallback
           }
 
@@ -167,18 +166,18 @@ export default function SupportPage() {
                           htmlEl.style.transform = 'none';
                       });
                     }
-                  } catch (_error) {
+                  } catch {
                     // Silent fallback
                   }
                 }, 2000); // Clean up after 2 seconds
               }
-            } catch (_error) {
+            } catch {
               // Silent fallback - open in new tab
               window.open('https://workloadwizard.featurebase.app/', '_blank');
             }
           }, 1000); // Wait 1 second for CSS effects to clear
         }, 500); // Initial delay for initialization
-      } catch (_error) {
+      } catch {
         // If all else fails, open in new tab
         window.open('https://workloadwizard.featurebase.app/', '_blank');
       }
@@ -218,7 +217,7 @@ export default function SupportPage() {
         void iframe.contentDocument.body.offsetHeight;
         iframe.contentDocument.body.style.display = '';
       }
-    } catch (_error) {
+    } catch {
       // Silent fallback - iframe might be cross-origin
     }
   };
@@ -260,7 +259,7 @@ export default function SupportPage() {
                   if (sendMessageButton) {
                     break;
                   }
-                } catch (_e) {
+                } catch {
                   // Skip invalid selectors
                 }
               }
@@ -310,7 +309,7 @@ export default function SupportPage() {
                   if (messagesTab) {
                     break;
                   }
-                } catch (_e) {
+                } catch {
                   // Skip invalid selectors
                 }
               }
@@ -344,7 +343,7 @@ export default function SupportPage() {
                           if (newChatButton) {
                             break;
                           }
-                        } catch (_e) {
+                        } catch {
                           // Skip invalid selectors
                         }
                       }
@@ -353,7 +352,7 @@ export default function SupportPage() {
                         (newChatButton as HTMLElement).click();
                       }
                     }
-                  } catch (_error) {
+                  } catch {
                     // Error finding new chat button
                   }
                 }, 1000); // Wait 1 second for Messages tab to fully load
@@ -364,12 +363,12 @@ export default function SupportPage() {
                 );
               }
             }
-          } catch (_error) {
+          } catch {
             // Error navigating to Messages tab
           }
         }, 1000);
       }
-    } catch (_error) {
+    } catch {
       // Error in navigateToMessagesTab
     }
   };

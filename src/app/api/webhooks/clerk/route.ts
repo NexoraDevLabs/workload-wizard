@@ -5,7 +5,7 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 
 // Lazy import to avoid build-time issues
-let statsigAdapter: any = null;
+let statsigAdapter: unknown = null;
 async function getStatsigAdapter() {
   if (!statsigAdapter) {
     const { statsigAdapter: adapter } = await import('@/flags');
@@ -13,6 +13,8 @@ async function getStatsigAdapter() {
   }
   return statsigAdapter;
 }
+
+
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
   }
 
   // Get the body
-  const payload = await req.json();
+  const payload = await req.json() as Record<string, unknown>;
   const body = JSON.stringify(payload);
 
   // Webhook payload type logged
@@ -109,7 +111,7 @@ export async function POST(req: Request) {
       // Unhandled webhook event
     }
     // Webhook processed successfully
-  } catch (error) {
+  } catch {
     // Error handling webhook
     return new Response('Error processing webhook', { status: 500 });
   }
@@ -167,47 +169,42 @@ async function handleUserCreated(userData: ClerkUserData) {
 
   // Creating user in Convex
 
-  try {
-    // Create user in Convex
-    await getConvexClient().mutation(api.users.create, {
+  // Create user in Convex
+  await getConvexClient().mutation(api.users.create, {
+    email: primaryEmail.email_address,
+    username: (userData as unknown as { username?: string }).username || '',
+    givenName: (userData.first_name as string) || '',
+    familyName: (userData.last_name as string) || '',
+    fullName:
+      `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+    systemRoles: roles,
+    // webhook path may include organisationId; API accepts optional and validates/derives server-side
+    organisationId: organisationId,
+    pictureUrl: userData.image_url as string,
+    subject: userData.id,
+    tokenIdentifier: primaryEmail.id,
+  });
+
+  // User created in Convex
+
+  // Also create the user in Statsig Users by logging an event
+  const adapter = await getStatsigAdapter();
+  const Statsig = await adapter.initialize();
+  await Statsig.logEvent(
+    {
+      userID: userData.id,
       email: primaryEmail.email_address,
-      username: (userData as unknown as { username?: string }).username || '',
-      givenName: (userData.first_name as string) || '',
-      familyName: (userData.last_name as string) || '',
-      fullName:
-        `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-      systemRoles: roles,
-      // webhook path may include organisationId; API accepts optional and validates/derives server-side
-      organisationId: organisationId as unknown as any,
-      pictureUrl: userData.image_url as string,
-      subject: userData.id,
-      tokenIdentifier: primaryEmail.id,
-    });
-
-    // User created in Convex
-
-    // Also create the user in Statsig Users by logging an event
-    const adapter = await getStatsigAdapter();
-    const Statsig = await adapter.initialize();
-    await Statsig.logEvent(
-      {
-        userID: userData.id,
-        email: primaryEmail.email_address,
-        custom: {
-          fullName:
-            `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-          organisationId,
-          roles,
-          source: 'clerk.webhook',
-        },
+      custom: {
+        fullName:
+          `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+        organisationId,
+        roles,
+        source: 'clerk.webhook',
       },
-      'user_created'
-    );
-    await Statsig.flush();
-  } catch (error) {
-    // Error creating user in Convex
-    throw error;
-  }
+    },
+    'user_created'
+  );
+  await Statsig.flush();
 }
 
 async function handleUserUpdated(userData: ClerkUserData) {
@@ -246,26 +243,28 @@ async function handleUserUpdated(userData: ClerkUserData) {
 
   // Mirror update to Statsig
   const adapter = await getStatsigAdapter();
-  const Statsig = await adapter.initialize();
-  await Statsig.logEvent(
-    {
-      userID: userData.id,
-      email: primaryEmail?.email_address as string,
-      custom: {
-        fullName:
-          `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-        organisationId: (publicMetadata.organisationId as string) || undefined,
-        roles:
-          (publicMetadata.roles as string[]) ||
-          ((publicMetadata.role as string | undefined)
-            ? [publicMetadata.role as string]
-            : []),
-        source: 'clerk.webhook',
+  if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
+    const Statsig = await (adapter as { initialize(): Promise<{ logEvent: (event: unknown, name: string) => Promise<void>; flush: () => Promise<void> }> }).initialize();
+    await Statsig.logEvent(
+      {
+        userID: userData.id,
+        email: primaryEmail?.email_address as string,
+        custom: {
+          fullName:
+            `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
+          organisationId: (publicMetadata.organisationId as string) || undefined,
+          roles:
+            (publicMetadata.roles as string[]) ||
+            ((publicMetadata.role as string | undefined)
+              ? [publicMetadata.role as string]
+              : []),
+          source: 'clerk.webhook',
+        },
       },
-    },
-    'user_updated'
-  );
-  await Statsig.flush();
+      'user_updated'
+    );
+    await Statsig.flush();
+  }
 }
 
 async function handleUserDeleted(userData: DeletedUserData) {
@@ -290,24 +289,23 @@ async function handleSessionCreated(sessionData: unknown) {
   // Handling session.created event for user
   // Session data logged
 
-  try {
-    // Update last sign in time in Convex
-    await getConvexClient().mutation(api.users.updateLastSignIn, {
-      userId: s.user_id as string,
-    });
+  // Update last sign in time in Convex
+  await getConvexClient().mutation(api.users.updateLastSignIn, {
+    userId: s.user_id as string,
+  });
 
-    // Last sign in time updated in Convex for user
+  // Last sign in time updated in Convex for user
 
-    // Log a login event to Statsig to ensure the user appears in Users
-    const adapter = await getStatsigAdapter();
-    const Statsig = await adapter.initialize();
+  // Log a login event to Statsig to ensure the user appears in Users
+  const adapter = await getStatsigAdapter();
+  if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
+    const Statsig = await (adapter as { initialize(): Promise<{ logEvent: (event: unknown, name: string) => Promise<void>; flush: () => Promise<void> }> }).initialize();
     await Statsig.logEvent(
       { userID: (s.user_id as string) || 'unknown' },
       'login'
     );
     await Statsig.flush();
-  } catch (error) {
-    // Error updating last sign in time
-    throw error;
   }
 }
+
+

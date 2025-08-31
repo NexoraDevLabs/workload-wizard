@@ -32,12 +32,8 @@ export function usePinkMode() {
       } else {
         document.documentElement.classList.remove('pink-mode');
       }
-    } catch (_error) {
-      // Default to disabled if there's an error
-      setIsPinkModeEnabled(false);
-      document.documentElement.classList.remove('pink-mode');
-    } finally {
-      setIsLoading(false);
+    } catch {
+      console.error('Failed to set pink mode');
     }
   }, []);
 
@@ -49,7 +45,7 @@ export function usePinkMode() {
     try {
       const overridesStr = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
       if (overridesStr) {
-        const overrides = JSON.parse(overridesStr);
+        const overrides: Record<string, boolean> = JSON.parse(overridesStr) as Record<string, boolean>;
         const pinkModeOverride = overrides[FeatureFlags.PINK_MODE];
 
         if (pinkModeOverride !== undefined) {
@@ -63,13 +59,13 @@ export function usePinkMode() {
           }
         }
       }
-    } catch (_error) {
+    } catch {
       // Failed to check local storage for pink mode
     }
   }, []);
 
   useEffect(() => {
-    checkPinkMode();
+    void checkPinkMode();
   }, [checkPinkMode]);
 
   // Listen for storage changes (when localStorage is updated from other tabs/windows)
@@ -119,7 +115,7 @@ export function usePinkMode() {
       } else {
         document.documentElement.classList.remove('pink-mode');
       }
-    } catch (_error) {
+    } catch {
       // Failed to refresh pink mode status
     } finally {
       setIsLoading(false);

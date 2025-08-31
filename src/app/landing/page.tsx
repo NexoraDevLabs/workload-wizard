@@ -50,7 +50,7 @@ export default function LandingPage() {
         }),
       });
       if (!res.ok) throw new Error('Request failed');
-      const json = await res.json();
+      const json = await res.json() as { already?: boolean };
       if (json?.already) {
         toast({
           title: "You're already on the waitlist",

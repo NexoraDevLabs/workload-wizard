@@ -74,6 +74,168 @@ import {
   PermissionsManageGate,
 } from '@/components/common/PermissionGate';
 
+// Types moved outside component
+type SortField =
+  | 'name'
+  | 'email'
+  | 'username'
+  | 'role'
+  | 'organisation'
+  | 'status'
+  | 'created'
+  | 'lastSignIn';
+type SortDirection = 'asc' | 'desc';
+
+// Helper functions moved outside component to avoid dependency issues
+const getRoleLabel = (role: string) => {
+  switch (role) {
+    case 'orgadmin':
+      return 'Organisation Admin';
+    case 'sysadmin':
+      return 'System Admin';
+    case 'developer':
+      return 'Developer';
+    case 'user':
+      return 'User';
+    case 'trial':
+      return 'Trial';
+    default:
+      return role;
+  }
+};
+
+const getRolesDisplay = (roles: string[]) => {
+  if (!roles || roles.length === 0) return 'No roles';
+  if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
+
+  // For multiple roles, show the highest priority role first
+  const priorityOrder = [
+    'sysadmin',
+    'developer',
+    'orgadmin',
+    'user',
+    'trial',
+  ];
+  const sortedRoles = [...roles].sort((a, b) => {
+    const aIndex = priorityOrder.indexOf(a);
+    const bIndex = priorityOrder.indexOf(b);
+    return aIndex - bIndex;
+  });
+
+  return sortedRoles.map((role) => getRoleLabel(role)).join(', ');
+};
+
+// Sorting function moved outside component
+const sortUsers = (
+  usersToSort: User[],
+  field: SortField,
+  direction: SortDirection
+) => {
+  return [...usersToSort].sort((a, b) => {
+    let aValue: string | number;
+    let bValue: string | number;
+
+    switch (field) {
+      case 'name':
+        aValue = `${a.firstName || ''} ${a.lastName || ''}`
+          .toLowerCase()
+          .trim();
+        bValue = `${b.firstName || ''} ${b.lastName || ''}`
+          .toLowerCase()
+          .trim();
+        break;
+      case 'email':
+        aValue = (a.email || '').toLowerCase();
+        bValue = (b.email || '').toLowerCase();
+        break;
+      case 'username':
+        aValue = (a.username || '').toLowerCase();
+        bValue = (b.username || '').toLowerCase();
+        break;
+      case 'role':
+        aValue = getRolesDisplay(a.roles || []).toLowerCase();
+        bValue = getRolesDisplay(b.roles || []).toLowerCase();
+        break;
+      case 'organisation':
+        aValue = (a.organisation?.name || '').toLowerCase();
+        bValue = (b.organisation?.name || '').toLowerCase();
+        break;
+      case 'status':
+        aValue = a.isActive ? 1 : 0;
+        bValue = b.isActive ? 1 : 0;
+        break;
+      case 'created':
+        aValue = a.createdAt;
+        bValue = b.createdAt;
+        break;
+      case 'lastSignIn':
+        aValue = a.lastSignInAt || 0;
+        bValue = b.lastSignInAt || 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+};
+
+// Apply filters function moved outside component to avoid dependency issues
+const applyFilters = (
+  users: User[],
+  searchTerm: string,
+  roleFilter: string,
+  organisationFilter: string,
+  statusFilter: string,
+  selectedOrganisationId: string,
+  setFilteredUsers: (users: User[]) => void
+) => {
+  let filtered = [...users];
+
+  // Search filter
+  if (searchTerm) {
+    const term = searchTerm.toLowerCase();
+    filtered = filtered.filter(
+      (user) =>
+        (user.firstName && user.firstName.toLowerCase().includes(term)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(term)) ||
+        (user.email && user.email.toLowerCase().includes(term)) ||
+        (user.username && user.username.toLowerCase().includes(term))
+    );
+  }
+
+  // Role filter
+  if (roleFilter !== 'all') {
+    filtered = filtered.filter(
+      (user) => user.roles && user.roles.includes(roleFilter)
+    );
+  }
+
+  // Organisation filter
+  if (organisationFilter !== 'all') {
+    filtered = filtered.filter(
+      (user) => user.organisation?.id === organisationFilter
+    );
+  }
+
+  // Selected organisation filter (for admin cross-organisation viewing)
+  if (selectedOrganisationId !== 'all') {
+    filtered = filtered.filter(
+      (user) => user.organisationId === selectedOrganisationId
+    );
+  }
+
+  // Status filter
+  if (statusFilter !== 'all') {
+    const isActive = statusFilter === 'active';
+    filtered = filtered.filter((user) => user.isActive === isActive);
+  }
+
+  setFilteredUsers(filtered);
+};
+
 interface User {
   id: string;
   subject?: string; // Clerk user ID
@@ -103,17 +265,6 @@ interface ApiResponse {
     email: string;
   };
 }
-
-type SortField =
-  | 'name'
-  | 'email'
-  | 'username'
-  | 'role'
-  | 'organisation'
-  | 'status'
-  | 'created'
-  | 'lastSignIn';
-type SortDirection = 'asc' | 'desc';
 
 export interface UsersListRef {
   handleCreateUser: () => void;
@@ -255,7 +406,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
         setSelectedUserIds(new Set());
         setAssigningUser(null);
         setIsBulkAssign(false);
-        fetchUsers();
+        await fetchUsers();
       } else {
         if (!assigningUser?.subject && !assigningUser?.id) return;
         const res = await fetch('/api/update-user', {
@@ -274,7 +425,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
         }
         toast({ title: 'Success', description: 'Roles updated' });
         setAssigningUser(null);
-        fetchUsers();
+        await fetchUsers();
       }
     } catch (e) {
       toast({
@@ -306,8 +457,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     setEditingUser(null);
   };
 
-  const handleUserUpdated = () => {
-    fetchUsers(); // Refresh the user list
+  const handleUserUpdated = async () => {
+    await fetchUsers(); // Refresh the user list
   };
 
   const handleCreateUser = () => {
@@ -318,8 +469,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     setCreatingUser(false);
   };
 
-  const handleUserCreated = () => {
-    fetchUsers(); // Refresh the user list
+  const handleUserCreated = async () => {
+    await fetchUsers(); // Refresh the user list
   };
 
   const handleToggleUserStatus = async (user: User) => {
@@ -347,7 +498,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       }
 
       // Refresh the user list
-      fetchUsers();
+      await fetchUsers();
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'Failed to update user status'
@@ -367,8 +518,8 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const getUniqueOrganisations = () => {
     const orgs = users
       .map((user) => user.organisation)
-      .filter((org) => org !== null && org !== undefined)
-      .map((org) => ({ id: org!.id, name: org!.name, code: org!.code }));
+      .filter((org): org is NonNullable<typeof org> => org !== null && org !== undefined)
+      .map((org) => ({ id: org.id, name: org.name, code: org.code }));
 
     // Remove duplicates based on id
     return Array.from(new Map(orgs.map((org) => [org.id, org])).values());
@@ -378,63 +529,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const getUniqueRoles = () => {
     const allRoles = users.flatMap((user) => user.roles || []);
     return Array.from(new Set(allRoles)).sort();
-  };
-
-  // Sorting function
-  const sortUsers = (
-    usersToSort: User[],
-    field: SortField,
-    direction: SortDirection
-  ) => {
-    return [...usersToSort].sort((a, b) => {
-      let aValue: string | number;
-      let bValue: string | number;
-
-      switch (field) {
-        case 'name':
-          aValue = `${a.firstName || ''} ${a.lastName || ''}`
-            .toLowerCase()
-            .trim();
-          bValue = `${b.firstName || ''} ${b.lastName || ''}`
-            .toLowerCase()
-            .trim();
-          break;
-        case 'email':
-          aValue = (a.email || '').toLowerCase();
-          bValue = (b.email || '').toLowerCase();
-          break;
-        case 'username':
-          aValue = (a.username || '').toLowerCase();
-          bValue = (b.username || '').toLowerCase();
-          break;
-        case 'role':
-          aValue = getRolesDisplay(a.roles || []).toLowerCase();
-          bValue = getRolesDisplay(b.roles || []).toLowerCase();
-          break;
-        case 'organisation':
-          aValue = (a.organisation?.name || '').toLowerCase();
-          bValue = (b.organisation?.name || '').toLowerCase();
-          break;
-        case 'status':
-          aValue = a.isActive ? 1 : 0;
-          bValue = b.isActive ? 1 : 0;
-          break;
-        case 'created':
-          aValue = a.createdAt;
-          bValue = b.createdAt;
-          break;
-        case 'lastSignIn':
-          aValue = a.lastSignInAt || 0;
-          bValue = b.lastSignInAt || 0;
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
-      return 0;
-    });
   };
 
   // Handle column header click for sorting
@@ -459,61 +553,17 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     );
   };
 
-  // Apply filters
-  const applyFilters = () => {
-    let filtered = [...users];
-
-    // Search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (user) =>
-          (user.firstName && user.firstName.toLowerCase().includes(term)) ||
-          (user.lastName && user.lastName.toLowerCase().includes(term)) ||
-          (user.email && user.email.toLowerCase().includes(term)) ||
-          (user.username && user.username.toLowerCase().includes(term))
-      );
-    }
-
-    // Role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(
-        (user) => user.roles && user.roles.includes(roleFilter)
-      );
-    }
-
-    // Organisation filter
-    if (organisationFilter !== 'all') {
-      filtered = filtered.filter(
-        (user) => user.organisation?.id === organisationFilter
-      );
-    }
-
-    // Selected organisation filter (for admin cross-organisation viewing)
-    if (selectedOrganisationId !== 'all') {
-      filtered = filtered.filter(
-        (user) => user.organisationId === selectedOrganisationId
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      const isActive = statusFilter === 'active';
-      filtered = filtered.filter((user) => user.isActive === isActive);
-    }
-
-    setFilteredUsers(filtered);
-  };
-
-  // Apply sorting to filtered users
-  useEffect(() => {
-    const sorted = sortUsers(filteredUsers, sortField, sortDirection);
-    setSortedUsers(sorted);
-  }, [filteredUsers, sortField, sortDirection]);
-
   // Apply filters whenever filters or users change
   useEffect(() => {
-    applyFilters();
+    applyFilters(
+      users,
+      searchTerm,
+      roleFilter,
+      organisationFilter,
+      statusFilter,
+      selectedOrganisationId,
+      setFilteredUsers
+    );
   }, [
     users,
     searchTerm,
@@ -522,6 +572,12 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     statusFilter,
     selectedOrganisationId,
   ]);
+
+  // Apply sorting to filtered users
+  useEffect(() => {
+    const sorted = sortUsers(filteredUsers, sortField, sortDirection);
+    setSortedUsers(sorted);
+  }, [filteredUsers, sortField, sortDirection]);
 
   // Initial load and fetch users
   useEffect(() => {
@@ -554,23 +610,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
     });
   };
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'orgadmin':
-        return 'Organisation Admin';
-      case 'sysadmin':
-        return 'System Admin';
-      case 'developer':
-        return 'Developer';
-      case 'user':
-        return 'User';
-      case 'trial':
-        return 'Trial';
-      default:
-        return role;
-    }
-  };
-
   const getRoleBadgeClass = (role: string) => {
     switch (role) {
       case 'orgadmin':
@@ -586,27 +625,6 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
-  };
-
-  const getRolesDisplay = (roles: string[]) => {
-    if (!roles || roles.length === 0) return 'No roles';
-    if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
-
-    // For multiple roles, show the highest priority role first
-    const priorityOrder = [
-      'sysadmin',
-      'developer',
-      'orgadmin',
-      'user',
-      'trial',
-    ];
-    const sortedRoles = [...roles].sort((a, b) => {
-      const aIndex = priorityOrder.indexOf(a);
-      const bIndex = priorityOrder.indexOf(b);
-      return aIndex - bIndex;
-    });
-
-    return sortedRoles.map((role) => getRoleLabel(role)).join(', ');
   };
 
   if (isLoading) {

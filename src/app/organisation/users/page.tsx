@@ -1,8 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -34,7 +33,6 @@ import {
   UserCheck,
   UserX,
   RefreshCw,
-  GitCompareArrows,
   ShieldCheck,
   Filter,
   Search,
@@ -58,7 +56,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -164,7 +161,9 @@ export default function OrganisationUsersPage() {
   // Permission: can this actor assign elevated roles (sysadmin/developer/trial)?
   const canAssignElevated = (() => {
     const meta = user?.publicMetadata as Record<string, unknown> | undefined;
-    const roles: string[] = Array.isArray(meta?.roles) ? meta.roles : [];
+    const roles: string[] = Array.isArray(meta?.roles) 
+      ? (meta.roles as unknown[]).filter((r): r is string => typeof r === 'string')
+      : [];
     const role: string | undefined =
       typeof meta?.role === 'string' ? meta.role : undefined;
     return (
@@ -184,27 +183,61 @@ export default function OrganisationUsersPage() {
     return Array.from(new Set(all)).sort();
   };
 
-  const getRolesDisplay = (roles: string[]) => {
-    if (!roles || roles.length === 0) return 'No roles';
-    if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
-    const priorityOrder = [
-      'sysadmin',
-      'developer',
-      'orgadmin',
-      'user',
-      'trial',
-    ];
-    const sorted = [...roles].sort(
-      (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
-    );
-    return sorted.map(getRoleLabel).join(', ');
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'orgadmin':
+        return 'Organisation Admin';
+      case 'sysadmin':
+        return 'System Admin';
+      case 'developer':
+        return 'Developer';
+      case 'user':
+        return 'User';
+      case 'trial':
+        return 'Trial';
+      default:
+        return role;
+    }
   };
 
-  const sortUsers = (
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'orgadmin':
+        return 'bg-red-100 text-red-800';
+      case 'sysadmin':
+        return 'bg-purple-100 text-purple-800';
+      case 'developer':
+        return 'bg-blue-100 text-blue-800';
+      case 'user':
+        return 'bg-green-100 text-green-800';
+      case 'trial':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const sortUsers = useCallback((
     list: User[],
     field: SortField,
     direction: SortDirection
   ) => {
+    const getRolesDisplay = (roles: string[]) => {
+      if (!roles || roles.length === 0) return 'No roles';
+      if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
+      const priorityOrder = [
+        'sysadmin',
+        'developer',
+        'orgadmin',
+        'user',
+        'trial',
+      ];
+      const sorted = [...roles].sort(
+        (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
+      );
+      return sorted.map(getRoleLabel).join(', ');
+    };
+
     return [...list].sort((a, b) => {
       let aVal: string | number;
       let bVal: string | number;
@@ -248,7 +281,7 @@ export default function OrganisationUsersPage() {
       if (aVal > bVal) return direction === 'asc' ? 1 : -1;
       return 0;
     });
-  };
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field)
@@ -270,7 +303,7 @@ export default function OrganisationUsersPage() {
   };
 
   // Filter + sort derive
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let list = [...(organisationUsers || [])] as User[];
     if (searchTerm) {
       const t = searchTerm.toLowerCase();
@@ -294,19 +327,19 @@ export default function OrganisationUsersPage() {
     if (statusFilter !== 'all')
       list = list.filter((u) => u.isActive === (statusFilter === 'active'));
     setFilteredUsers(list);
-  };
+  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter]);
 
   // effects
 
   // Re-run filters when data or filters change
   useEffect(() => {
     applyFilters();
-  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter]);
+  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter, applyFilters]);
 
   // Sort changes
   useEffect(() => {
     setSortedUsers(sortUsers(filteredUsers, sortField, sortDirection));
-  }, [filteredUsers, sortField, sortDirection]);
+  }, [filteredUsers, sortField, sortDirection, sortUsers]);
 
   // Selection helpers
   const toggleSelectAll = () => {
@@ -359,7 +392,10 @@ export default function OrganisationUsersPage() {
               organisationId: currentUser?.organisationId,
             }),
           }).then(async (r) => {
-            if (!r.ok) throw new Error((await r.json()).error || 'Failed');
+            if (!r.ok) {
+              const errorData = await r.json() as { error: string };
+              throw new Error(errorData.error || 'Failed');
+            }
           })
         );
         await Promise.all(updates);
@@ -378,10 +414,13 @@ export default function OrganisationUsersPage() {
             organisationId: currentUser?.organisationId,
           }),
         });
-        if (!res.ok) throw new Error((await res.json()).error || 'Failed');
+        if (!res.ok) {
+          const errorData = await res.json() as { error: string };
+          throw new Error(errorData.error || 'Failed');
+        }
       }
       setAssigningUser(null);
-    } catch (e) {
+    } catch {
       // Error assigning user
     }
   };
@@ -399,40 +438,6 @@ export default function OrganisationUsersPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'orgadmin':
-        return 'Organisation Admin';
-      case 'sysadmin':
-        return 'System Admin';
-      case 'developer':
-        return 'Developer';
-      case 'user':
-        return 'User';
-      case 'trial':
-        return 'Trial';
-      default:
-        return role;
-    }
-  };
-
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-      case 'orgadmin':
-        return 'bg-red-100 text-red-800';
-      case 'sysadmin':
-        return 'bg-purple-100 text-purple-800';
-      case 'developer':
-        return 'bg-blue-100 text-blue-800';
-      case 'user':
-        return 'bg-green-100 text-green-800';
-      case 'trial':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const handleToggleUserStatus = async (targetUser: User) => {
@@ -456,7 +461,7 @@ export default function OrganisationUsersPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error: string };
         throw new Error(errorData.error || 'Failed to update user status');
       }
 

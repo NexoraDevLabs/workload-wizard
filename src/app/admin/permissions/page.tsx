@@ -72,8 +72,7 @@ interface SystemRoleTemplate {
   updatedAt: number;
 }
 
-// Loosely-typed alias to avoid prop mismatch errors until component/types converge
-const GenericDeleteModalAny: any = GenericDeleteModal as any;
+// Use the original component directly
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -577,10 +576,10 @@ export default function AdminPermissionsPage() {
               method: 'POST',
             });
             if (!res.ok) {
-              const body = await res.json().catch(() => ({}));
+              const body = await res.json().catch(() => ({})) as { error?: string };
               throw new Error(body.error || `HTTP ${res.status}`);
             }
-            const data = await res.json();
+            const data = await res.json() as { result?: { created?: number; updated?: number; skipped?: number } };
             toast({
               title: 'Planning permissions seeded',
               description: `Created: ${data.result?.created ?? 0}, Updated: ${data.result?.updated ?? 0}, Skipped: ${data.result?.skipped ?? 0}`,
@@ -904,41 +903,11 @@ export default function AdminPermissionsPage() {
 
       {/* Delete Confirmation Modal */}
       {deletingPermission && (
-        <GenericDeleteModalAny
-          isOpen={true}
-          onClose={() => {
-            setDeletingPermission(null);
-            setForceDelete(false);
-          }}
-          onConfirm={handleDelete}
-          title="Delete Permission"
-          description="This action cannot be undone"
-          itemName="permission"
-          itemDetails={{
-            'Permission ID': deletingPermission.id,
-            Group: deletingPermission.group,
-            Description: deletingPermission.description,
-            'Default Roles':
-              deletingPermission.defaultRoles.length > 0
-                ? deletingPermission.defaultRoles.join(', ')
-                : 'None',
-          }}
-          warningMessage={
-            forceDelete
-              ? 'Force delete will automatically remove this permission from ALL roles and organisations before deletion. This cannot be undone!'
-              : "This will permanently remove the permission from the system. If deletion fails, you'll need to remove this permission from all roles first, or use Force Delete."
-          }
-          confirmButtonText="Delete Permission"
-          showForceDelete={hasAnyRole(user, ['sysadmin', 'developer'])}
-          forceDelete={forceDelete}
-          onForceDeleteChange={setForceDelete}
-          onError={(error: unknown) => {
-            // Delete error
-          }}
-          // Props required by current GenericDeleteModal implementation
+        <GenericDeleteModal
           entityType="Permission"
           entityName={deletingPermission.description || deletingPermission.id}
           entityCode={deletingPermission.id}
+          onConfirm={handleDelete}
           onCancel={() => {
             setDeletingPermission(null);
             setForceDelete(false);
@@ -996,12 +965,16 @@ export default function AdminPermissionsPage() {
                   const items = raw.map((x: Record<string, unknown>) => ({
                     id:
                       (x['Permission ID'] as string | undefined) ??
-                      (x.id as string),
+                      (x.id as string | undefined) ??
+                      '',
                     group:
-                      (x['Group'] as string | undefined) ?? (x.group as string),
+                      (x['Group'] as string | undefined) ?? 
+                      (x.group as string | undefined) ??
+                      '',
                     description:
                       (x['Description'] as string | undefined) ??
-                      (x.description as string),
+                      (x.description as string | undefined) ??
+                      '',
                     defaultRoles:
                       (x['Default Roles'] as string[] | undefined) ??
                       (x.defaultRoles as string[] | undefined) ??
@@ -1049,7 +1022,10 @@ export default function AdminPermissionsPage() {
       </Dialog>
 
       {/* Create/Edit Template Dialog */}
-      <Dialog open={showTemplateForm} onOpenChange={setShowTemplateForm}>
+      <Dialog
+        open={showTemplateForm}
+        onOpenChange={setShowTemplateForm}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
@@ -1131,9 +1107,9 @@ export default function AdminPermissionsPage() {
 
       {/* Delete Template Confirmation */}
       {deletingTemplate && (
-        <GenericDeleteModalAny
-          isOpen={true}
-          onClose={() => setDeletingTemplate(null)}
+        <GenericDeleteModal
+          entityType="Default Role Template"
+          entityName={deletingTemplate.name}
           onConfirm={async () => {
             try {
               await deleteTemplate({
@@ -1159,17 +1135,6 @@ export default function AdminPermissionsPage() {
               });
             }
           }}
-          title="Delete Default Role Template"
-          description="This will deactivate the template. Existing organisations are not affected."
-          itemName="default role template"
-          itemDetails={{
-            Name: deletingTemplate.name,
-            Description: deletingTemplate.description || '',
-          }}
-          confirmButtonText="Delete Template"
-          // Props required by current GenericDeleteModal implementation
-          entityType="Default Role Template"
-          entityName={deletingTemplate.name}
           onCancel={() => setDeletingTemplate(null)}
         />
       )}

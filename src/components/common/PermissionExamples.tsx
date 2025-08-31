@@ -31,14 +31,15 @@ export function PermissionExamples() {
 
   const handleAction = async (
     actionName: string,
-    action: () => Promise<any>
+    action: () => Promise<unknown>
   ) => {
     try {
       const result = await action();
       setMessage(`Successfully executed: ${actionName}`);
       return result;
     } catch (error) {
-      setMessage(`Error executing ${actionName}: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setMessage(`Error executing ${actionName}: ${errorMessage}`);
     }
   };
 

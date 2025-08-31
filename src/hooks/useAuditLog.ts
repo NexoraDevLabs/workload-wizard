@@ -30,7 +30,7 @@ export function useAuditLog(options: UseAuditLogOptions) {
           ...(severity ? { severity } : {}),
         });
       } catch (_error) {
-        // Failed to log audit event
+        console.error('Failed to fetch audit logs:', _error);
       }
     },
     [entityType, entityId, entityName]

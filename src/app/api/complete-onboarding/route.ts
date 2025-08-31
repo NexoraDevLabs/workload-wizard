@@ -19,6 +19,14 @@ function getConvexClient(): ConvexHttpClient {
   return convexClient;
 }
 
+interface OnboardingData {
+  firstName?: string;
+  lastName?: string;
+  jobRole?: string;
+  department?: string;
+  phone?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const user = await currentUser();
@@ -28,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body = await request.json() as { onboardingData: OnboardingData };
     const { onboardingData } = body;
 
     // Only call Convex if the user exists there; avoid 500s if webhook hasn't created it yet
@@ -44,7 +52,7 @@ export async function POST(request: NextRequest) {
       } else {
         // complete-onboarding: Convex user not found; skipping Convex update
       }
-    } catch (convexErr) {
+    } catch {
       // complete-onboarding: Convex call failed
       // Continue; Clerk will still be updated below
     }
@@ -79,7 +87,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     // Error completing onboarding
     return NextResponse.json(
       { error: 'Failed to complete onboarding' },

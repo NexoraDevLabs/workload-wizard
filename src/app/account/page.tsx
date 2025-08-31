@@ -24,8 +24,6 @@ import {
   Mail,
   Calendar,
   ArrowRight,
-  Users,
-  Building,
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';

@@ -84,7 +84,7 @@ export function EditOrganisationForm({
           updateOrganisation({
             ...dataBase,
             ...optional,
-          } as any),
+          }),
         {
           success: {
             title: 'Organisation updated',

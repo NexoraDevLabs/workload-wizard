@@ -170,10 +170,10 @@ export function AuditLogsViewer({
   forcedFilters?: ForcedFilters;
 }) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [stats, setStats] = useState<AuditStats | null>(null);
+  const [_stats, setStats] = useState<AuditStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [_selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -269,7 +269,7 @@ export function AuditLogsViewer({
         setIsLoading(false);
       }
     },
-    [filters]
+    [filters, forcedFilters?.type, forcedFilters?.organisationId]
   );
 
   const loadStats = useCallback(async () => {
@@ -279,7 +279,7 @@ export function AuditLogsViewer({
           ? { startDate: Date.now() - filters.timeRange * 60 * 60 * 1000 }
           : {}),
       });
-      setStats(auditStats as AuditStats);
+      setStats(auditStats);
       // Update the total filtered logs count from stats
       if (
         auditStats &&
@@ -288,7 +288,7 @@ export function AuditLogsViewer({
       ) {
         setTotalFilteredLogs(auditStats.totalLogs);
       }
-    } catch (error) {
+    } catch {
       setStats(null);
     }
   }, [filters.timeRange]);
@@ -297,15 +297,15 @@ export function AuditLogsViewer({
     setCurrentPage(1);
     setTotalLogs(0);
     // Don't reset totalFilteredLogs here - it will be set by loadStats
-    loadLogs(1, undefined, true);
-    loadStats();
+    void loadLogs(1, undefined, true);
+    void loadStats();
   }, [loadLogs, loadStats]);
 
   const loadMore = useCallback(() => {
     if (hasMore && nextCursor && !isLoading) {
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
-      loadLogs(nextPage, nextCursor);
+      void loadLogs(nextPage, nextCursor);
     }
   }, [hasMore, nextCursor, isLoading, currentPage, loadLogs]);
 
@@ -315,7 +315,7 @@ export function AuditLogsViewer({
         setCurrentPage(1);
         setTotalLogs(0);
         // Don't reset totalFilteredLogs - it will be set by loadStats
-        loadLogs(1, undefined, true);
+        void loadLogs(1, undefined, true);
       } else if (page < currentPage) {
         // For going back, we need to reset and reload from the beginning
         // This is a limitation of cursor-based pagination
@@ -444,9 +444,9 @@ export function AuditLogsViewer({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 setError(null);
-                loadLogs();
+                await loadLogs();
               }}
               className="mt-2"
             >
@@ -483,7 +483,7 @@ export function AuditLogsViewer({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => loadLogs(1)}
+                onClick={async () => await loadLogs(1)}
                 disabled={isLoading}
               >
                 <RefreshCw

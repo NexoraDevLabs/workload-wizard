@@ -2,8 +2,6 @@
 
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { AuditLogsViewer } from '@/components/domain/AuditLogsViewer';
-import { Button } from '@/components/ui/button';
-import { Download, Settings } from 'lucide-react';
 import { AuditViewGate } from '@/components/common/PermissionGate';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build

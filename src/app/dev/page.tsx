@@ -1,17 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   TestTube,
   Flag,
-  Activity,
-  Settings,
-  Database,
-  Users,
   Shield,
-  FileText,
-  Palette,
 } from 'lucide-react';
 import Link from 'next/link';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';

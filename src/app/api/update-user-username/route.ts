@@ -62,9 +62,10 @@ export async function POST(request: NextRequest) {
     try {
       parsed = BodySchema.parse(await request.json());
     } catch (err) {
-      if (err && typeof err === 'object' && 'errors' in (err as any)) {
+      if (err && typeof err === 'object' && 'errors' in err) {
+        const zodError = err as { errors: unknown };
         return NextResponse.json(
-          { error: 'Invalid request body', details: (err as any).errors },
+          { error: 'Invalid request body', details: zodError.errors },
           { status: 400 }
         );
       }
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    } catch (error) {
+    } catch {
       // Error checking existing username
       // Continue with the update even if we can't verify uniqueness
     }
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
           // For now, we'll just update Clerk since that's the primary source
         }
       }
-    } catch (error) {
+    } catch {
       // Error updating username in Convex
       // If Convex update fails, we'll continue since Clerk is the primary source for username
     }

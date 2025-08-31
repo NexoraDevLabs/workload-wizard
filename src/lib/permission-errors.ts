@@ -1,12 +1,18 @@
 import { redirect } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
+// Define error types with statusCode
+interface ErrorWithStatusCode extends Error {
+  statusCode?: number;
+}
+
 // Server-side permission error handler
 export function handlePermissionError(
   error: Error,
   redirectTo = '/unauthorised'
 ) {
-  if ((error as any).statusCode === 403) {
+  const errorWithStatus = error as ErrorWithStatusCode;
+  if (errorWithStatus.statusCode === 403) {
     redirect(redirectTo);
   }
   throw error;
@@ -18,7 +24,8 @@ export function handleClientPermissionError(
   action: string,
   redirectTo = '/unauthorised'
 ) {
-  if ((error as any).statusCode === 403 || error.message === 'Forbidden') {
+  const errorWithStatus = error as ErrorWithStatusCode;
+  if (errorWithStatus.statusCode === 403 || error.message === 'Forbidden') {
     // Use global toast helpers (non-hook) in non-React context
     toast.error('Access denied', `You don't have permission to ${action}.`);
 
@@ -36,8 +43,9 @@ export function handleClientPermissionError(
 
 // Utility to check if an error is a permission error
 export function isPermissionError(error: Error): boolean {
+  const errorWithStatus = error as ErrorWithStatusCode;
   return (
-    (error as any).statusCode === 403 ||
+    errorWithStatus.statusCode === 403 ||
     error.message === 'Forbidden' ||
     error.message.includes('permission') ||
     error.message.includes('access denied')

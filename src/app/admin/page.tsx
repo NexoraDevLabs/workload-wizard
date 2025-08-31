@@ -19,8 +19,6 @@ import {
   Shield,
   FileText,
   RefreshCw,
-  Plus,
-  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { listUsers } from '@/lib/actions/userActions';
@@ -70,7 +68,7 @@ export default function AdminDashboardPage() {
         totalOrganisations: organisations.length,
         activeUsers,
       });
-    } catch (error) {
+    } catch {
       // Error fetching stats
     } finally {
       setIsLoadingStats(false);
@@ -85,7 +83,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (isLoaded && hasAnyRole(user, ['sysadmin', 'developer'])) {
-      fetchStats();
+      void fetchStats();
     }
   }, [isLoaded, user]);
 

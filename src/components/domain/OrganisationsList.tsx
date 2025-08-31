@@ -39,11 +39,20 @@ export function OrganisationsList() {
   const { toast } = useToast();
   const organisations = useQuery(api.organisations.list);
   const deleteOrganisation = useMutation(api.organisations.remove);
-  const reseedOrg = useMutation(api.organisations.reseedDefaultsForOrg as any);
+  const reseedOrg = useMutation(api.organisations.reseedDefaultsForOrg);
   const reseedAll = useMutation(
-    api.organisations.reseedDefaultsAcrossOrganisations as any
+    api.organisations.reseedDefaultsAcrossOrganisations
   );
-  const [editingOrganisation, setEditingOrganisation] = useState<any>(null);
+  
+  interface EditingOrganisation {
+    _id: string;
+    name: string;
+    code: string;
+    status: string;
+    isActive: boolean;
+  }
+  
+  const [editingOrganisation, setEditingOrganisation] = useState<EditingOrganisation | null>(null);
   const [isSeeding, setIsSeeding] = useState<string | null>(null);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [confirmOrgId, setConfirmOrgId] = useState<string | null>(null);
@@ -66,7 +75,7 @@ export function OrganisationsList() {
     if (!confirm('Are you sure you want to delete this organisation?')) return;
 
     try {
-      await deleteOrganisation({ id: id as unknown as Id<'organisations'> });
+      await deleteOrganisation({ id: id as Id<'organisations'> });
     } catch (err) {
       toast({
         title: 'Failed to delete organisation',
@@ -76,11 +85,7 @@ export function OrganisationsList() {
     }
   };
 
-  const handleEditOrganisation = (organisation: {
-    _id: string;
-    name: string;
-    code: string;
-  }) => {
+  const handleEditOrganisation = (organisation: EditingOrganisation) => {
     setEditingOrganisation(organisation);
   };
 
@@ -148,7 +153,7 @@ export function OrganisationsList() {
                       onClick={async () => {
                         try {
                           setIsSeeding('all');
-                          await reseedAll({} as any);
+                          await reseedAll({});
                           toast({
                             title: 'Defaults seeded across organisations',
                           });
@@ -285,7 +290,7 @@ export function OrganisationsList() {
                                       await reseedOrg({
                                         organisationId:
                                           org._id as unknown as Id<'organisations'>,
-                                      } as any);
+                                      });
                                       toast({
                                         title: 'Defaults seeded',
                                         description: `${org.name} reseeded successfully`,

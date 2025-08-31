@@ -27,7 +27,7 @@ export function withPermission<P extends object>(
     hideForbidden = false,
   } = options;
 
-  const PermissionWrappedComponent = forwardRef<any, P>((props, ref) => {
+  const PermissionWrappedComponent = forwardRef<ComponentRef<P>, P>((props, ref) => {
     const { gateElement, canPerform } = usePermissionManager(organisationId);
 
     // Gate the component state

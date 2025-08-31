@@ -10,7 +10,7 @@ import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSideb
 import { OrganisationForm } from '@/components/domain/OrganisationForm';
 import { OrganisationsList } from '@/components/domain/OrganisationsList';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { hasAnyRole } from '@/lib/utils';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';

@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
-import { clerkClient } from '@clerk/nextjs/server';
+
 import { requirePermission } from './permissions';
 import { writeAudit } from './audit';
 import type { Id, Doc } from './_generated/dataModel';
@@ -38,11 +38,6 @@ export const create = mutation({
         .withIndex('by_subject', (q) => q.eq('subject', args.userId as string))
         .first();
       if (actor) {
-        const isSystem =
-          Array.isArray(actor.systemRoles) &&
-          actor.systemRoles.some((r: string) =>
-            ['admin', 'sysadmin', 'developer'].includes(r)
-          );
         // If explicit organisationId provided, allow assigning user to a different org
         if (args.organisationId) {
           derivedOrganisationId = args.organisationId as Id<'organisations'>;
@@ -104,7 +99,9 @@ export const create = mutation({
           severity: 'info',
           type: 'sys',
         });
-      } catch {}
+      } catch {
+      // Ignore audit write errors silently
+    }
     }
 
     return userId;
@@ -143,7 +140,7 @@ export const update = mutation({
       String(targetUser.organisationId)
     );
 
-    const { id, currentUserId, ...updates } = args;
+    const { id, ...updates } = args;
 
     // Guardrails: Only system admins (sysadmin/developer/admin) may modify systemRoles
     if (updates.systemRoles) {
@@ -210,7 +207,9 @@ export const update = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
   },
 });
 
@@ -317,7 +316,9 @@ export const updateEmail = mutation({
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
   },
 });
 
@@ -335,16 +336,19 @@ export const list = query({
           q.eq('organisationId', args.organisationId as Id<'organisations'>)
         )
         .collect()
-        .catch(() => [] as any[]);
+        .catch(() => [] as Array<{ userId: string }>);
 
       if (Array.isArray(memberships) && memberships.length > 0) {
         const userIds = memberships.map((m) => m.userId);
-        users = await ctx.db
-          .query('users')
-          .filter((q) =>
-            (q as any).in((q as any).field('subject'), userIds as any)
-          )
-          .collect();
+        // Use OR conditions instead of 'in' operator
+        const userQueries = userIds.map((userId) =>
+          ctx.db
+            .query('users')
+            .withIndex('by_subject', (q) => q.eq('subject', userId))
+            .first()
+        );
+        const userResults = await Promise.all(userQueries);
+        users = userResults.filter((u): u is NonNullable<typeof u> => u !== null);
       } else {
         users = await ctx.db
           .query('users')
@@ -468,7 +472,9 @@ export const remove = mutation({
         severity: 'warning',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },
@@ -503,7 +509,9 @@ export const hardDelete = mutation({
         severity: 'critical',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },
@@ -581,7 +589,7 @@ export const updateByWebhook = mutation({
       throw new Error('User not found');
     }
 
-    const { userId, ...updates } = args;
+    const { ...updates } = args;
 
     // Build a safe update object with correct types
     const processedUpdates: Partial<Doc<'users'>> & Record<string, unknown> =
@@ -641,13 +649,15 @@ export const updateByWebhook = mutation({
         entityName: user.fullName || user.email,
         performedBy: 'system',
         organisationId:
-          (processedUpdates.organisationId as any) || user.organisationId,
+          processedUpdates.organisationId || user.organisationId,
         details: 'User updated via webhook',
         metadata: JSON.stringify(processedUpdates),
         severity: 'info',
         type: 'sys',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },
@@ -656,7 +666,15 @@ export const updateByWebhook = mutation({
 export const completeOnboarding = mutation({
   args: {
     subject: v.string(), // Clerk user ID
-    onboardingData: v.any(),
+    onboardingData: v.object({
+      firstName: v.optional(v.string()),
+      lastName: v.optional(v.string()),
+      email: v.optional(v.string()),
+      phone: v.optional(v.string()),
+      department: v.optional(v.string()),
+      role: v.optional(v.string()),
+      customRole: v.optional(v.string()),
+    }),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -731,7 +749,9 @@ export const completeOnboarding = mutation({
         severity: 'info',
         type: 'org',
       });
-    } catch {}
+    } catch {
+      // Ignore audit write errors silently
+    }
 
     return user._id;
   },

@@ -43,14 +43,13 @@ type GenericDeleteModalProps =
     };
 
 export function GenericDeleteModal(props: GenericDeleteModalProps) {
-  const isControlled = typeof (props as any).open === 'boolean';
-  const isOpen = isControlled ? (props as any).open : true;
+  const isControlled = typeof props.open === 'boolean';
 
-  const { isDeleting = false } = props as any;
+  const { isDeleting = false } = props;
 
   const onClose = () => {
-    if (isControlled) (props as any).onOpenChange?.(false);
-    else (props as any).onCancel?.();
+    if (isControlled) props.onOpenChange?.(false);
+    else props.onCancel?.();
   };
 
   const [isLoading, setIsLoading] = useState(false);
@@ -58,27 +57,27 @@ export function GenericDeleteModal(props: GenericDeleteModalProps) {
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
-      await (props as any).onConfirm?.();
+      await props.onConfirm?.();
     } finally {
       setIsLoading(false);
-      if (isControlled) (props as any).onOpenChange?.(false);
+      if (isControlled) props.onOpenChange?.(false);
     }
   };
 
-  const entityType: string | undefined = (props as any).entityType;
-  const entityName: string | undefined = (props as any).entityName;
-  const entityCode: string | undefined = (props as any).entityCode;
+  const entityType: string | undefined = props.entityType;
+  const entityName: string | undefined = props.entityName;
+  const entityCode: string | undefined = props.entityCode;
 
   const title =
-    (props as any).title ??
+    props.title ??
     (entityType ? `Delete ${entityType}` : 'Are you sure?');
   const description =
-    (props as any).description ??
+    props.description ??
     (entityType
       ? 'This action cannot be undone'
       : 'This action cannot be undone.');
   const confirmText =
-    (props as any).confirmText ??
+    props.confirmText ??
     (entityType ? `Delete ${entityType}` : 'Confirm');
 
   const displayName =
