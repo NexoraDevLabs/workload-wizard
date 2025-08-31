@@ -183,20 +183,38 @@ export default function OrganisationUsersPage() {
     return Array.from(new Set(all)).sort();
   };
 
-  const getRolesDisplay = (roles: string[]) => {
-    if (!roles || roles.length === 0) return 'No roles';
-    if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
-    const priorityOrder = [
-      'sysadmin',
-      'developer',
-      'orgadmin',
-      'user',
-      'trial',
-    ];
-    const sorted = [...roles].sort(
-      (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
-    );
-    return sorted.map(getRoleLabel).join(', ');
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'orgadmin':
+        return 'Organisation Admin';
+      case 'sysadmin':
+        return 'System Admin';
+      case 'developer':
+        return 'Developer';
+      case 'user':
+        return 'User';
+      case 'trial':
+        return 'Trial';
+      default:
+        return role;
+    }
+  };
+
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'orgadmin':
+        return 'bg-red-100 text-red-800';
+      case 'sysadmin':
+        return 'bg-purple-100 text-purple-800';
+      case 'developer':
+        return 'bg-blue-100 text-blue-800';
+      case 'user':
+        return 'bg-green-100 text-green-800';
+      case 'trial':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const sortUsers = useCallback((
@@ -204,6 +222,22 @@ export default function OrganisationUsersPage() {
     field: SortField,
     direction: SortDirection
   ) => {
+    const getRolesDisplay = (roles: string[]) => {
+      if (!roles || roles.length === 0) return 'No roles';
+      if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
+      const priorityOrder = [
+        'sysadmin',
+        'developer',
+        'orgadmin',
+        'user',
+        'trial',
+      ];
+      const sorted = [...roles].sort(
+        (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
+      );
+      return sorted.map(getRoleLabel).join(', ');
+    };
+
     return [...list].sort((a, b) => {
       let aVal: string | number;
       let bVal: string | number;
@@ -247,7 +281,7 @@ export default function OrganisationUsersPage() {
       if (aVal > bVal) return direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [getRolesDisplay]);
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field)
@@ -404,40 +438,6 @@ export default function OrganisationUsersPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'orgadmin':
-        return 'Organisation Admin';
-      case 'sysadmin':
-        return 'System Admin';
-      case 'developer':
-        return 'Developer';
-      case 'user':
-        return 'User';
-      case 'trial':
-        return 'Trial';
-      default:
-        return role;
-    }
-  };
-
-  const getRoleBadgeClass = (role: string) => {
-    switch (role) {
-      case 'orgadmin':
-        return 'bg-red-100 text-red-800';
-      case 'sysadmin':
-        return 'bg-purple-100 text-purple-800';
-      case 'developer':
-        return 'bg-blue-100 text-blue-800';
-      case 'user':
-        return 'bg-green-100 text-green-800';
-      case 'trial':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const handleToggleUserStatus = async (targetUser: User) => {

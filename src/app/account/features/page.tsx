@@ -48,7 +48,12 @@ function getLocalFlagOverrides(): Record<string, boolean> {
 
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
-    return stored ? JSON.parse(stored) : {};
+    if (!stored) return {};
+    const parsed = JSON.parse(stored);
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as Record<string, boolean>;
+    }
+    return {};
   } catch {
     // Failed to get local flag overrides
     return {};

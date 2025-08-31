@@ -44,7 +44,6 @@ import { analytics } from '@/lib/analytics';
 
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';
-import { useQuery as useConvexQuery } from 'convex/react';
 
 // Type definitions for the component
 interface ModuleTeachingHours {

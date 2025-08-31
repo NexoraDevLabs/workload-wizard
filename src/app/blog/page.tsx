@@ -27,7 +27,13 @@ type Post = {
   excerpt?: string;
   publishedAt: string;
   readingTime?: number;
-  coverImage?: unknown;
+  coverImage?: {
+    asset: {
+      _ref: string;
+      _type: string;
+    };
+    alt?: string;
+  };
   categories?: { title: string; slug?: { current: string } }[];
   author?: { name?: string; avatar?: unknown };
 };
@@ -161,7 +167,7 @@ export default function BlogIndexPage() {
                   className="block"
                 >
                   {/* Cover Image - positioned at very top of card */}
-                  {post.coverImage ? (
+                  {post.coverImage && post.coverImage.asset ? (
                     <div className="relative h-56 overflow-hidden bg-slate-100 dark:bg-slate-700 rounded-t-xl">
                       <Image
                         src={urlFor(post.coverImage)

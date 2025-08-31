@@ -14,6 +14,23 @@ async function getStatsigAdapter() {
   return statsigAdapter;
 }
 
+// Helper function to safely use Statsig adapter
+async function safelyUseStatsig<T>(
+  operation: (adapter: unknown) => Promise<T>
+): Promise<T | null> {
+  try {
+    const adapter = await getStatsigAdapter();
+    if (!adapter || typeof adapter !== 'object' || adapter === null) {
+      console.warn('Statsig adapter not available or invalid');
+      return null;
+    }
+    return await operation(adapter);
+  } catch (error) {
+    console.error('Error using Statsig adapter:', error);
+    return null;
+  }
+}
+
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
 
@@ -301,3 +318,9 @@ async function handleSessionCreated(sessionData: unknown) {
   );
   await Statsig.flush();
 }
+
+// Type for the Statsig instance
+type StatsigInstance = {
+  logEvent: (user: { userID: string; email?: string; custom?: Record<string, unknown> }, eventName: string, value?: string | number | null, metadata?: Record<string, unknown> | null) => void;
+  flush: () => Promise<void>;
+};

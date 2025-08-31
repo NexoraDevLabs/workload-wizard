@@ -1,6 +1,6 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
-import type { QueryCtx, MutationCtx } from './_generated/dataModel';
+import type { QueryCtx, MutationCtx } from './_generated/server';
 import { writeAudit } from './audit';
 
 function isSystemUser(systemRoles?: string[] | null) {

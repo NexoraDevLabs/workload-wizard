@@ -576,10 +576,10 @@ export default function AdminPermissionsPage() {
               method: 'POST',
             });
             if (!res.ok) {
-              const body = await res.json().catch(() => ({}));
+              const body = await res.json().catch(() => ({})) as { error?: string };
               throw new Error(body.error || `HTTP ${res.status}`);
             }
-            const data = await res.json();
+            const data = await res.json() as { result?: { created?: number; updated?: number; skipped?: number } };
             toast({
               title: 'Planning permissions seeded',
               description: `Created: ${data.result?.created ?? 0}, Updated: ${data.result?.updated ?? 0}, Skipped: ${data.result?.skipped ?? 0}`,

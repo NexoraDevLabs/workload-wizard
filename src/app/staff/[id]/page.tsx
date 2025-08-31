@@ -586,11 +586,11 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profil
   const orgCategories = useQuery(
     api.allocations.listOrganisationAdminCategories,
     user?.id ? {} : 'skip'
-  ) as Doc<'organisation_admin_allocation_categories'>[] | undefined;
+  );
   const sysCategories = useQuery(
     api.allocations.listAdminCategories,
     {}
-  ) as Doc<'admin_allocation_categories'>[] | undefined;
+  );
   const categories =
     orgCategories && orgCategories.length > 0 ? orgCategories : sysCategories;
   const rows = useQuery(

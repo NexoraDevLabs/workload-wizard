@@ -69,9 +69,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
   }, [form.fte]);
 
   const derivedMaxTeaching = useMemo(() => {
-    const familyRules = orgSettings?.familyMaxTeachingRules as
-      | { family: string; mode: 'percent' | 'fixed'; value: number }[]
-      | undefined;
+    const familyRules = orgSettings?.familyMaxTeachingRules;
     const fte1 = BASE_TOTAL_CONTRACT_AT_FTE_1;
     const famMatch = familyRules?.find((r) => r.family === form.contractFamily);
     let baseAtFte1: number;
@@ -152,8 +150,9 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
 
       if (onSuccess) onSuccess();
       else window.location.href = '/staff';
-    } catch {
+    } catch (error) {
       // handled by withToast
+      console.error('Failed to create lecturer profile:', error);
     } finally {
       setIsLoading(false);
     }

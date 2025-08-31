@@ -20,6 +20,7 @@ interface SanityImage {
     _ref: string;
     _type: 'reference';
   };
+  alt?: string;
   crop?: {
     top: number;
     bottom: number;
@@ -178,7 +179,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         });
         if (fetchedPost) {
           setPost(fetchedPost);
-          if (fetchedPost.coverImage) {
+          if (fetchedPost.coverImage && fetchedPost.coverImage.asset) {
             setCoverUrl(
               urlFor(fetchedPost.coverImage)
                 .width(1600)
