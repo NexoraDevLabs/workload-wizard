@@ -31,13 +31,25 @@ function FeatureFlagProviderInternal({ children }: FeatureFlagProviderProps) {
       }
 
       // Identify user in PostHog for feature flags
-      identifyUserForFeatureFlags(user).catch((error) => {
-        console.error('Failed to identify user for feature flags:', error);
-      });
+      if (user) {
+        const featureFlagUser = {
+          id: user.id,
+          ...(user.fullName ? { fullName: user.fullName } : {}),
+          emailAddresses: user.emailAddresses,
+        };
+        identifyUserForFeatureFlags(featureFlagUser).catch((error) => {
+          console.error('Failed to identify user for feature flags:', error);
+        });
+      }
 
       // Bootstrap feature flags for the user
       if (user) {
-        bootstrapFeatureFlags(user).catch((error) => {
+        const featureFlagUser = {
+          id: user.id,
+          ...(user.fullName ? { fullName: user.fullName } : {}),
+          emailAddresses: user.emailAddresses,
+        };
+        bootstrapFeatureFlags(featureFlagUser).catch((error) => {
           console.error('Failed to bootstrap feature flags:', error);
         });
       }

@@ -2,10 +2,7 @@
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -109,13 +106,7 @@ const getRolesDisplay = (roles: string[]) => {
   if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
 
   // For multiple roles, show the highest priority role first
-  const priorityOrder = [
-    'sysadmin',
-    'developer',
-    'orgadmin',
-    'user',
-    'trial',
-  ];
+  const priorityOrder = ['sysadmin', 'developer', 'orgadmin', 'user', 'trial'];
   const sortedRoles = [...roles].sort((a, b) => {
     const aIndex = priorityOrder.indexOf(a);
     const bIndex = priorityOrder.indexOf(b);
@@ -393,7 +384,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
             }),
           }).then(async (r) => {
             if (!r.ok) {
-              const d = await r.json() as ApiResponse;
+              const d = (await r.json()) as ApiResponse;
               throw new Error(d.error || 'Failed to assign roles');
             }
           });
@@ -420,7 +411,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
           }),
         });
         if (!res.ok) {
-          const data = await res.json() as ApiResponse;
+          const data = (await res.json()) as ApiResponse;
           throw new Error(data.error || 'Failed to assign roles');
         }
         toast({ title: 'Success', description: 'Roles updated' });
@@ -493,7 +484,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as ApiResponse;
+        const errorData = (await response.json()) as ApiResponse;
         throw new Error(errorData.error || 'Failed to update user status');
       }
 
@@ -518,7 +509,10 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
   const getUniqueOrganisations = () => {
     const orgs = users
       .map((user) => user.organisation)
-      .filter((org): org is NonNullable<typeof org> => org !== null && org !== undefined)
+      .filter(
+        (org): org is NonNullable<typeof org> =>
+          org !== null && org !== undefined
+      )
       .map((org) => ({ id: org.id, name: org.name, code: org.code }));
 
     // Remove duplicates based on id

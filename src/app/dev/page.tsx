@@ -1,11 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  TestTube,
-  Flag,
-  Shield,
-} from 'lucide-react';
+import { TestTube, Flag, Shield, Settings, Database } from 'lucide-react';
 import Link from 'next/link';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 

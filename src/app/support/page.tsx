@@ -20,7 +20,9 @@ export default function SupportPage() {
   const openFeaturebaseWidget = useCallback(() => {
     if (typeof window !== 'undefined' && window.Featurebase) {
       try {
-        const fb = window.Featurebase as ((...args: unknown[]) => void) & { q?: unknown[] };
+        const fb = window.Featurebase as ((...args: unknown[]) => void) & {
+          q?: unknown[];
+        };
         const appId = process.env.NEXT_PUBLIC_FEATUREBASE_APP_ID || '';
 
         // PRE-CLEANUP: Remove any existing CSS effects BEFORE opening the widget

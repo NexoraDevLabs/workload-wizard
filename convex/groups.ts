@@ -3,7 +3,6 @@ import { v } from 'convex/values';
 import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
 
-
 // List groups under a module iteration
 export const listByIteration = query({
   args: { moduleIterationId: v.id('module_iterations') },
@@ -11,9 +10,7 @@ export const listByIteration = query({
     // Enforce view via module org
     const iteration = await ctx.db.get(args.moduleIterationId);
     if (!iteration) return [];
-    const moduleDoc = iteration
-      ? await ctx.db.get(iteration.moduleId)
-      : null;
+    const moduleDoc = iteration ? await ctx.db.get(iteration.moduleId) : null;
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.subject) return [];
     if (moduleDoc) {
@@ -154,9 +151,7 @@ export const remove = mutation({
     const existing = await ctx.db.get(args.id);
     if (!existing) return args.id;
     const iteration = await ctx.db.get(existing.moduleIterationId);
-    const moduleDoc = iteration
-      ? await ctx.db.get(iteration.moduleId)
-      : null;
+    const moduleDoc = iteration ? await ctx.db.get(iteration.moduleId) : null;
     if (!moduleDoc) return args.id;
     await requireOrgPermission(
       ctx,

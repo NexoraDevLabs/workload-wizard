@@ -13,8 +13,21 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 import { PermissionGate } from '@/components/common/PermissionGate';
-import { CheckCircle, AlertTriangle, User, Link2, RefreshCw, Edit, Shield } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  CheckCircle,
+  AlertTriangle,
+  User,
+  Link2,
+  RefreshCw,
+  Edit,
+  Shield,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { withToast } from '@/lib/utils';
@@ -99,23 +112,25 @@ export default function LecturerProfilePage() {
   const deactivateMutation = useMutation(api.staff.edit);
   const updateUserAvatarMutation = useMutation(api.users.updateUserAvatar);
 
-  const handleEdit = async (formData: Partial<{
-    _id: string;
-    fullName: string;
-    email: string;
-    contract: string;
-    fte: number;
-    maxTeachingHours: number;
-    totalContract: number;
-    role?: string;
-    teamName?: string;
-    prefWorkingLocation?: string;
-    prefSpecialism?: string;
-    prefNotes?: string;
-    isActive: boolean;
-    contractFamily?: string;
-    prefWorkingTime?: 'am' | 'pm' | 'all_day';
-  }>) => {
+  const handleEdit = async (
+    formData: Partial<{
+      _id: string;
+      fullName: string;
+      email: string;
+      contract: string;
+      fte: number;
+      maxTeachingHours: number;
+      totalContract: number;
+      role?: string;
+      teamName?: string;
+      prefWorkingLocation?: string;
+      prefSpecialism?: string;
+      prefNotes?: string;
+      isActive: boolean;
+      contractFamily?: string;
+      prefWorkingTime?: 'am' | 'pm' | 'all_day';
+    }>
+  ) => {
     try {
       await editMutation({
         profileId: profileId as Id<'lecturer_profiles'>,
@@ -443,15 +458,19 @@ export default function LecturerProfilePage() {
   );
 }
 
-function ModuleAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profiles'> }) {
+function ModuleAllocationsTable({
+  lecturerId,
+}: {
+  lecturerId: Id<'lecturer_profiles'>;
+}) {
   const { currentYear } = useAcademicYear();
   const rows = useQuery(
     api.allocations.listForLecturerDetailed,
     currentYear?._id
-              ? ({
+      ? {
           lecturerId: lecturerId,
           academicYearId: currentYear._id,
-        })
+        }
       : 'skip'
   ) as LecturerAllocationDetail[] | undefined;
   const [sortBy, setSortBy] = useState<'module' | 'hours' | 'type'>('module');
@@ -518,7 +537,9 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profi
           <select
             className="border rounded px-2 py-1"
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as 'all' | 'teaching' | 'admin')}
+            onChange={(e) =>
+              setTypeFilter(e.target.value as 'all' | 'teaching' | 'admin')
+            }
           >
             <option value="all">All</option>
             <option value="teaching">Teaching</option>
@@ -530,7 +551,9 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profi
           <select
             className="border rounded px-2 py-1"
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'module' | 'hours' | 'type')}
+            onChange={(e) =>
+              setSortBy(e.target.value as 'module' | 'hours' | 'type')
+            }
           >
             <option value="module">Module</option>
             <option value="hours">Hours</option>
@@ -579,7 +602,11 @@ function ModuleAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profi
   );
 }
 
-function AdminAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profiles'> }) {
+function AdminAllocationsTable({
+  lecturerId,
+}: {
+  lecturerId: Id<'lecturer_profiles'>;
+}) {
   const { currentYear } = useAcademicYear();
   const { user } = useUser();
   const { toast } = useToast();
@@ -587,10 +614,7 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profil
     api.allocations.listOrganisationAdminCategories,
     user?.id ? {} : 'skip'
   );
-  const sysCategories = useQuery(
-    api.allocations.listAdminCategories,
-    {}
-  );
+  const sysCategories = useQuery(api.allocations.listAdminCategories, {});
   const categories =
     orgCategories && orgCategories.length > 0 ? orgCategories : sysCategories;
   const rows = useQuery(
@@ -601,7 +625,15 @@ function AdminAllocationsTable({ lecturerId }: { lecturerId: Id<'lecturer_profil
           academicYearId: currentYear._id,
         }
       : 'skip'
-  ) as Array<{ allocation: Doc<'admin_allocations'>; category: Doc<'admin_allocation_categories'> | Doc<'organisation_admin_allocation_categories'> | null }> | undefined;
+  ) as
+    | Array<{
+        allocation: Doc<'admin_allocations'>;
+        category:
+          | Doc<'admin_allocation_categories'>
+          | Doc<'organisation_admin_allocation_categories'>
+          | null;
+      }>
+    | undefined;
   const upsert = useMutation(api.allocations.upsertAdminAllocation);
   const remove = useMutation(api.allocations.removeAdminAllocation);
   const [isSaving, setIsSaving] = useState<string | null>(null);

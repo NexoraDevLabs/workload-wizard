@@ -58,10 +58,10 @@ export async function POST(req: NextRequest) {
       // Type assertion with proper error handling
       const contactList = list as unknown as ResendContactList;
       const alreadyExists = Array.isArray(contactList?.data)
-        ? contactList.data?.some(
+        ? (contactList.data?.some(
             (c: ResendContact) =>
               String(c?.email || '').toLowerCase() === email.toLowerCase()
-          ) ?? false
+          ) ?? false)
         : false;
       if (alreadyExists) {
         return NextResponse.json({ ok: true, already: true });
@@ -89,9 +89,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Add tags for segmentation
-    const withTags = { 
+    const withTags = {
       ...basePayload,
-      tags: ['newsletter']
+      tags: ['newsletter'],
     } as typeof basePayload & { tags: string[] };
     if (source && source.trim()) withTags.tags.push(`source:${source}`);
     if (organisation && organisation.trim())

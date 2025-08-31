@@ -32,8 +32,12 @@ export function PermissionGate({
   showToast = false,
   redirectOnDeny = false,
 }: PermissionGateProps) {
-  const { gateElement, _canPerform, isSystemAdmin, isOrgAdmin } =
-    usePermissionManager(organisationId);
+  const {
+    gateElement,
+    canPerform: _canPerform,
+    isSystemAdmin,
+    isOrgAdmin,
+  } = usePermissionManager(organisationId);
 
   // If no permission specified, check if user has any admin access
   if (!permission) {

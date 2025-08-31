@@ -244,16 +244,13 @@ export default function CourseDetailPage() {
   const [campusRows, setCampusRows] = useState<
     Array<{ campus: string; count: string }>
   >([]);
-  const settings = useQuery(
-    api.organisationSettings.getForActor,
-    {}
-  ) as OrganisationSettings | null | undefined;
-
+  const settings = useQuery(api.organisationSettings.getForActor, {}) as
+    | OrganisationSettings
+    | null
+    | undefined;
 
   const updateCourse = useMutation(api.courses.update);
-  const initialiseSplit = useMutation(
-    api.courses.initialiseRecommendedGroups
-  );
+  const initialiseSplit = useMutation(api.courses.initialiseRecommendedGroups);
   const canAdd = useMemo(() => {
     const val = Number(yearInput);
     const formatOk = Number.isFinite(val) && val >= 1 && val <= 10;
@@ -309,7 +306,7 @@ export default function CourseDetailPage() {
       );
     } else if (Array.isArray(course.campuses)) {
       setCampusRows(
-        (course.campuses).map((c) => ({
+        course.campuses.map((c) => ({
           campus: c,
           count: '',
         }))
@@ -691,9 +688,7 @@ function CourseYearModules({
           data-testid="attach-module-btn"
           disabled={
             !selected ||
-            (attached || []).some(
-              (a) => String(a.module?._id) === selected
-            ) ||
+            (attached || []).some((a) => String(a.module?._id) === selected) ||
             isAttaching
           }
           onClick={async () => {
@@ -818,9 +813,9 @@ function ModuleIterationAndGroupsAndAllocations({
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,
-          currentYear?._id
-        ? { moduleId: moduleId as Id<'modules'>, academicYearId: currentYear._id }
-        : 'skip'
+    currentYear?._id
+      ? { moduleId: moduleId as Id<'modules'>, academicYearId: currentYear._id }
+      : 'skip'
   );
   const createIteration = useMutation(api.modules.createIterationForYear);
 
@@ -829,14 +824,10 @@ function ModuleIterationAndGroupsAndAllocations({
 
   const groups = useQuery(
     api.groups.listByIteration,
-    hasIteration && iteration
-      ? { moduleIterationId: iteration._id }
-      : 'skip'
+    hasIteration && iteration ? { moduleIterationId: iteration._id } : 'skip'
   ) as Array<Group> | undefined;
   const createGroup = useMutation(api.groups.create);
-  const autoCreateGroups = useMutation(
-    api.groups.createAutoForIteration
-  );
+  const autoCreateGroups = useMutation(api.groups.createAutoForIteration);
 
   // Allocations UI bits
   const profiles = useQuery(
@@ -1175,7 +1166,8 @@ function ModuleIterationAndGroupsAndAllocations({
                       try {
                         await assign({
                           groupId: selectedGroupId as Id<'module_groups'>,
-                          lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
+                          lecturerId:
+                            selectedLecturerId as Id<'lecturer_profiles'>,
                           academicYearId: currentYear._id,
                           type: 'teaching',
                           ...(hoursOverride.trim()
@@ -1491,7 +1483,9 @@ function ModuleIterationAndGroupsAndAllocations({
                             campus: recList[idx]?.campus,
                             groups: Math.max(
                               0,
-                              Math.floor(Number((inp as HTMLInputElement).value || '0'))
+                              Math.floor(
+                                Number((inp as HTMLInputElement).value || '0')
+                              )
                             ),
                           }));
                         } else {
@@ -1502,9 +1496,7 @@ function ModuleIterationAndGroupsAndAllocations({
                             0,
                             Math.floor(Number(single?.value || '0'))
                           );
-                          campusGroups = [
-                            { campus: undefined, groups: n },
-                          ];
+                          campusGroups = [{ campus: undefined, groups: n }];
                         }
                         await withToast(
                           () =>

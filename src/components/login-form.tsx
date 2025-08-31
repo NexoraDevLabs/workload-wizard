@@ -238,8 +238,6 @@ export function LoginForm({
     }
   };
 
-
-
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -415,8 +413,6 @@ export function LoginForm({
       setIsResetLoading(false);
     }
   };
-
-
 
   const goBackToLogin = () => {
     setShowResetForm(false);

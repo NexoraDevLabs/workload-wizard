@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { withToast } from '@/lib/utils';
 import { z } from 'zod';
 
 interface AdminCategory {
-  _id: string;
+  _id: Id<'admin_allocation_categories'>;
   name: string;
   description?: string;
   minHours?: number;
@@ -32,7 +33,7 @@ export default function AdminAllocationCategoriesPage() {
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
   const [form, setForm] = useState<{
-    id?: string;
+    id?: Id<'admin_allocation_categories'>;
     name: string;
     description: string;
     minHours?: string;
@@ -41,7 +42,7 @@ export default function AdminAllocationCategoriesPage() {
 
   const handleEdit = (cat: AdminCategory) => {
     setForm({
-      id: String(cat._id),
+      id: cat._id,
       name: cat.name,
       description: cat.description || '',
       minHours: typeof cat.minHours === 'number' ? String(cat.minHours) : '',
@@ -98,7 +99,9 @@ export default function AdminAllocationCategoriesPage() {
       await withToast(
         () =>
           upsert({
-            ...(parsed.data.id ? { id: parsed.data.id } : {}),
+            ...(parsed.data.id
+              ? { id: parsed.data.id as Id<'admin_allocation_categories'> }
+              : {}),
             name: parsed.data.name,
             ...(parsed.data.description
               ? { description: parsed.data.description }
@@ -122,9 +125,9 @@ export default function AdminAllocationCategoriesPage() {
     }
   };
 
-  const handleRemove = async (id: string) => {
+  const handleRemove = async (id: Id<'admin_allocation_categories'>) => {
     if (!confirm('Delete this category?')) return;
-    setIsRemoving(id);
+    setIsRemoving(String(id));
     try {
       await withToast(
         () => remove({ id }),
@@ -293,7 +296,7 @@ export default function AdminAllocationCategoriesPage() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleRemove(String(c._id))}
+                        onClick={() => handleRemove(c._id)}
                         disabled={isRemoving === String(c._id)}
                       >
                         Delete

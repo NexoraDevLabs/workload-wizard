@@ -55,22 +55,28 @@ export default function CreateLecturerProfilePage() {
     }
   ) as OrganisationSettings | undefined;
 
-  const ROLE_OPTIONS = useMemo(() => 
-    orgSettings?.staffRoleOptions ?? [
-      'Lecturer',
-      'Senior Lecturer',
-      'Teaching Fellow',
-      'Associate Lecturer',
-      'Professor',
-    ], [orgSettings?.staffRoleOptions]);
+  const ROLE_OPTIONS = useMemo(
+    () =>
+      orgSettings?.staffRoleOptions ?? [
+        'Lecturer',
+        'Senior Lecturer',
+        'Teaching Fellow',
+        'Associate Lecturer',
+        'Professor',
+      ],
+    [orgSettings?.staffRoleOptions]
+  );
 
-  const TEAM_OPTIONS = useMemo(() => 
-    orgSettings?.teamOptions ?? [
-      'Computing',
-      'Engineering',
-      'Business',
-      'Design',
-    ], [orgSettings?.teamOptions]);
+  const TEAM_OPTIONS = useMemo(
+    () =>
+      orgSettings?.teamOptions ?? [
+        'Computing',
+        'Engineering',
+        'Business',
+        'Design',
+      ],
+    [orgSettings?.teamOptions]
+  );
 
   const BASE_MAX_TEACHING_AT_FTE_1 = orgSettings?.baseMaxTeachingAtFTE1 ?? 400; // hours at FTE=1
   const BASE_TOTAL_CONTRACT_AT_FTE_1 =

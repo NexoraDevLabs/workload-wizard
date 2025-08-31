@@ -211,15 +211,18 @@ export default function OnboardingPage() {
     if (!user?.id) return;
 
     const progressKey = `onboarding-progress-${user.id}`;
-    
+
     // Filter out undefined values to match the expected type
     const cleanFormData: Record<string, string | boolean> = {};
     Object.entries(formData).forEach(([key, value]) => {
-      if (value !== undefined && (typeof value === 'string' || typeof value === 'boolean')) {
+      if (
+        value !== undefined &&
+        (typeof value === 'string' || typeof value === 'boolean')
+      ) {
         cleanFormData[key] = value;
       }
     });
-    
+
     const progressData: OnboardingProgress = {
       timestamp: Date.now(),
       formData: cleanFormData,
@@ -243,7 +246,9 @@ export default function OnboardingPage() {
       const savedProgress = localStorage.getItem(progressKey);
       if (!savedProgress) return null;
 
-      const progressData: OnboardingProgress = JSON.parse(savedProgress) as OnboardingProgress;
+      const progressData: OnboardingProgress = JSON.parse(
+        savedProgress
+      ) as OnboardingProgress;
 
       // Check if progress is recent (within 30 days)
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
@@ -279,7 +284,10 @@ export default function OnboardingPage() {
         ...savedProgress.formData,
         // Keep pre-populated organisation if it exists
         organization:
-          prevData.organization || (typeof savedProgress.formData.organization === 'string' ? savedProgress.formData.organization : ''),
+          prevData.organization ||
+          (typeof savedProgress.formData.organization === 'string'
+            ? savedProgress.formData.organization
+            : ''),
       }));
       setCurrentStep(savedProgress.currentStep);
       setProgressRestored(true);
@@ -295,7 +303,8 @@ export default function OnboardingPage() {
   const getRequiredFieldsForStep = useCallback(
     (step: number) => {
       switch (step) {
-        case 0: { // Personal Information
+        case 0: {
+          // Personal Information
           const requiredFields = ['firstName', 'lastName', 'email', 'role'];
           // Add customRole if "other" is selected
           if (formData.role === 'other') {
@@ -310,7 +319,8 @@ export default function OnboardingPage() {
           }
           return requiredFields;
         }
-        case 1: { // Work Information
+        case 1: {
+          // Work Information
           const workFields = ['department'];
           // Only require organisation if it's not pre-populated
           if (!formData.organization) {
@@ -318,7 +328,8 @@ export default function OnboardingPage() {
           }
           return workFields;
         }
-        case 2: { // Security
+        case 2: {
+          // Security
           const securityFields = [
             'currentPassword',
             'newPassword',
@@ -423,7 +434,7 @@ export default function OnboardingPage() {
               });
 
               if (!response.ok) {
-                const errorData = await response.json() as { error?: string };
+                const errorData = (await response.json()) as { error?: string };
                 throw new Error(errorData.error || 'Failed to update email');
               }
 
@@ -518,7 +529,7 @@ export default function OnboardingPage() {
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         try {
-          const errorData = await response.json() as { error?: string };
+          const errorData = (await response.json()) as { error?: string };
           errorMessage = errorData.error || errorMessage;
         } catch {
           // Response is not JSON, get text instead

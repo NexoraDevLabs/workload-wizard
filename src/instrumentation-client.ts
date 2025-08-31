@@ -17,14 +17,16 @@ if (
   process.env.NEXT_PUBLIC_POSTHOG_KEY
 ) {
   // Handle the promise properly
-  import('posthog-js').then((posthog) => {
-    posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host:
-        process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
+  import('posthog-js')
+    .then((posthog) => {
+      posthog.default.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+        api_host:
+          process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com',
+      });
+    })
+    .catch(() => {
+      // Silent fail for PostHog initialization
     });
-  }).catch(() => {
-    // Silent fail for PostHog initialization
-  });
 }
 
 if (!E2E && process.env.NEXT_PUBLIC_SENTRY_DSN) {

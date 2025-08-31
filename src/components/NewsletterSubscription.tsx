@@ -71,7 +71,7 @@ export default function NewsletterSubscription({
         }),
       });
       if (!res.ok) throw new Error('Request failed');
-      const json = await res.json() as { already?: boolean };
+      const json = (await res.json()) as { already?: boolean };
 
       if (json?.already) {
         toast({

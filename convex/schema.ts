@@ -55,15 +55,19 @@ export default defineSchema({
     isActive: v.boolean(),
     lastSignInAt: v.optional(v.float64()),
     onboardingCompleted: v.optional(v.boolean()),
-    onboardingData: v.optional(v.object({
-      jobRole: v.optional(v.string()),
-      department: v.optional(v.string()),
-      phone: v.optional(v.string()),
-      preferences: v.optional(v.object({
-        theme: v.optional(v.string()),
-        notifications: v.optional(v.boolean()),
-      })),
-    })),
+    onboardingData: v.optional(
+      v.object({
+        jobRole: v.optional(v.string()),
+        department: v.optional(v.string()),
+        phone: v.optional(v.string()),
+        preferences: v.optional(
+          v.object({
+            theme: v.optional(v.string()),
+            notifications: v.optional(v.boolean()),
+          })
+        ),
+      })
+    ),
     onboardingCompletedAt: v.optional(v.float64()),
     createdAt: v.float64(),
     updatedAt: v.float64(),

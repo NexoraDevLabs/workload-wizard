@@ -576,10 +576,14 @@ export default function AdminPermissionsPage() {
               method: 'POST',
             });
             if (!res.ok) {
-              const body = await res.json().catch(() => ({})) as { error?: string };
+              const body = (await res.json().catch(() => ({}))) as {
+                error?: string;
+              };
               throw new Error(body.error || `HTTP ${res.status}`);
             }
-            const data = await res.json() as { result?: { created?: number; updated?: number; skipped?: number } };
+            const data = (await res.json()) as {
+              result?: { created?: number; updated?: number; skipped?: number };
+            };
             toast({
               title: 'Planning permissions seeded',
               description: `Created: ${data.result?.created ?? 0}, Updated: ${data.result?.updated ?? 0}, Skipped: ${data.result?.skipped ?? 0}`,
@@ -965,20 +969,34 @@ export default function AdminPermissionsPage() {
                     throw new Error('JSON must be an array');
                   const items = raw.map((x: Record<string, unknown>) => ({
                     id:
-                      (typeof x['Permission ID'] === 'string' ? x['Permission ID'] : undefined) ??
+                      (typeof x['Permission ID'] === 'string'
+                        ? x['Permission ID']
+                        : undefined) ??
                       (typeof x.id === 'string' ? x.id : undefined) ??
                       '',
                     group:
-                      (typeof x['Group'] === 'string' ? x['Group'] : undefined) ?? 
+                      (typeof x['Group'] === 'string'
+                        ? x['Group']
+                        : undefined) ??
                       (typeof x.group === 'string' ? x.group : undefined) ??
                       '',
                     description:
-                      (typeof x['Description'] === 'string' ? x['Description'] : undefined) ??
-                      (typeof x.description === 'string' ? x.description : undefined) ??
+                      (typeof x['Description'] === 'string'
+                        ? x['Description']
+                        : undefined) ??
+                      (typeof x.description === 'string'
+                        ? x.description
+                        : undefined) ??
                       '',
                     defaultRoles:
-                      (Array.isArray(x['Default Roles']) && x['Default Roles'].every(v => typeof v === 'string') ? x['Default Roles'] : undefined) ??
-                      (Array.isArray(x.defaultRoles) && x.defaultRoles.every(v => typeof v === 'string') ? x.defaultRoles : undefined) ??
+                      (Array.isArray(x['Default Roles']) &&
+                      x['Default Roles'].every((v) => typeof v === 'string')
+                        ? x['Default Roles']
+                        : undefined) ??
+                      (Array.isArray(x.defaultRoles) &&
+                      x.defaultRoles.every((v) => typeof v === 'string')
+                        ? x.defaultRoles
+                        : undefined) ??
                       [],
                   }));
                   const res = await importPermissions({
@@ -991,7 +1009,8 @@ export default function AdminPermissionsPage() {
                       ? {
                           performedByName:
                             `${user?.firstName || ''} ${user?.lastName || ''}`.trim() ||
-                            user?.emailAddresses?.[0]?.emailAddress || '',
+                            user?.emailAddresses?.[0]?.emailAddress ||
+                            '',
                         }
                       : {}),
                   });
@@ -1023,10 +1042,7 @@ export default function AdminPermissionsPage() {
       </Dialog>
 
       {/* Create/Edit Template Dialog */}
-      <Dialog
-        open={showTemplateForm}
-        onOpenChange={setShowTemplateForm}
-      >
+      <Dialog open={showTemplateForm} onOpenChange={setShowTemplateForm}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>

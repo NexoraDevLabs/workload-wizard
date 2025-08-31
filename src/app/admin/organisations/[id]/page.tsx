@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
@@ -24,7 +25,7 @@ import {
 
 export default function AdminOrganisationOverviewPage() {
   const params = useParams();
-  const organisationId = params?.id as string;
+  const organisationId = params?.id as Id<'organisations'>;
   const { user, isLoaded } = useUser();
   const router = useRouter();
 
@@ -106,12 +107,14 @@ export default function AdminOrganisationOverviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(courses || []).map((c: { _id: string; code: string; name: string }) => (
-                    <TableRow key={String(c._id)}>
-                      <TableCell className="font-medium">{c.code}</TableCell>
-                      <TableCell>{c.name}</TableCell>
-                    </TableRow>
-                  ))}
+                  {(courses || []).map(
+                    (c: { _id: string; code: string; name: string }) => (
+                      <TableRow key={String(c._id)}>
+                        <TableCell className="font-medium">{c.code}</TableCell>
+                        <TableCell>{c.name}</TableCell>
+                      </TableRow>
+                    )
+                  )}
                   {(courses?.length || 0) === 0 && (
                     <TableRow>
                       <TableCell
@@ -144,13 +147,20 @@ export default function AdminOrganisationOverviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(modules || []).map((m: { _id: string; code: string; name: string; credits?: number }) => (
-                    <TableRow key={String(m._id)}>
-                      <TableCell className="font-medium">{m.code}</TableCell>
-                      <TableCell>{m.name}</TableCell>
-                      <TableCell>{m.credits ?? '-'}</TableCell>
-                    </TableRow>
-                  ))}
+                  {(modules || []).map(
+                    (m: {
+                      _id: string;
+                      code: string;
+                      name: string;
+                      credits?: number;
+                    }) => (
+                      <TableRow key={String(m._id)}>
+                        <TableCell className="font-medium">{m.code}</TableCell>
+                        <TableCell>{m.name}</TableCell>
+                        <TableCell>{m.credits ?? '-'}</TableCell>
+                      </TableRow>
+                    )
+                  )}
                   {(modules?.length || 0) === 0 && (
                     <TableRow>
                       <TableCell
@@ -182,14 +192,24 @@ export default function AdminOrganisationOverviewPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(users || []).slice(0, 10).map((u: { _id: string; fullName?: string; givenName: string; familyName: string; email: string }) => (
-                    <TableRow key={String(u._id)}>
-                      <TableCell className="font-medium">
-                        {u.fullName || `${u.givenName} ${u.familyName}`}
-                      </TableCell>
-                      <TableCell>{u.email}</TableCell>
-                    </TableRow>
-                  ))}
+                  {(users || [])
+                    .slice(0, 10)
+                    .map(
+                      (u: {
+                        _id: string;
+                        fullName?: string;
+                        givenName: string;
+                        familyName: string;
+                        email: string;
+                      }) => (
+                        <TableRow key={String(u._id)}>
+                          <TableCell className="font-medium">
+                            {u.fullName || `${u.givenName} ${u.familyName}`}
+                          </TableCell>
+                          <TableCell>{u.email}</TableCell>
+                        </TableRow>
+                      )
+                    )}
                   {(users?.length || 0) === 0 && (
                     <TableRow>
                       <TableCell

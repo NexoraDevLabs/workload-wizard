@@ -1,7 +1,5 @@
 'use client';
 
-
-
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json() as { onboardingData: OnboardingData };
+    const body = (await request.json()) as { onboardingData: OnboardingData };
     const { onboardingData } = body;
 
     // Only call Convex if the user exists there; avoid 500s if webhook hasn't created it yet

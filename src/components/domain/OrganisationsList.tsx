@@ -43,19 +43,24 @@ export function OrganisationsList() {
   const reseedAll = useMutation(
     api.organisations.reseedDefaultsAcrossOrganisations
   );
-  
+
   interface EditingOrganisation {
-    _id: string;
+    _id: Id<'organisations'>;
     name: string;
     code: string;
     status: string;
     isActive: boolean;
   }
-  
-  const [editingOrganisation, setEditingOrganisation] = useState<EditingOrganisation | null>(null);
-  const [isSeeding, setIsSeeding] = useState<string | null>(null);
+
+  const [editingOrganisation, setEditingOrganisation] =
+    useState<EditingOrganisation | null>(null);
+  const [isSeeding, setIsSeeding] = useState<
+    Id<'organisations'> | 'all' | null
+  >(null);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
-  const [confirmOrgId, setConfirmOrgId] = useState<string | null>(null);
+  const [confirmOrgId, setConfirmOrgId] = useState<Id<'organisations'> | null>(
+    null
+  );
 
   // Handle case where Convex might not be ready
   if (organisations === undefined && typeof window !== 'undefined') {
@@ -71,11 +76,11 @@ export function OrganisationsList() {
     );
   }
 
-  const handleDeleteOrganisation = async (id: string) => {
+  const handleDeleteOrganisation = async (id: Id<'organisations'>) => {
     if (!confirm('Are you sure you want to delete this organisation?')) return;
 
     try {
-      await deleteOrganisation({ id: id as Id<'organisations'> });
+      await deleteOrganisation({ id });
     } catch (err) {
       toast({
         title: 'Failed to delete organisation',
@@ -254,9 +259,9 @@ export function OrganisationsList() {
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog
-                            open={confirmOrgId === String(org._id)}
+                            open={confirmOrgId === org._id}
                             onOpenChange={(open) =>
-                              setConfirmOrgId(open ? String(org._id) : null)
+                              setConfirmOrgId(open ? org._id : null)
                             }
                           >
                             <AlertDialogTrigger asChild>
@@ -286,10 +291,9 @@ export function OrganisationsList() {
                                 <AlertDialogAction
                                   onClick={async () => {
                                     try {
-                                      setIsSeeding(String(org._id));
+                                      setIsSeeding(org._id);
                                       await reseedOrg({
-                                        organisationId:
-                                          org._id as unknown as Id<'organisations'>,
+                                        organisationId: org._id,
                                       });
                                       toast({
                                         title: 'Defaults seeded',

@@ -161,8 +161,10 @@ export default function OrganisationUsersPage() {
   // Permission: can this actor assign elevated roles (sysadmin/developer/trial)?
   const canAssignElevated = (() => {
     const meta = user?.publicMetadata as Record<string, unknown> | undefined;
-    const roles: string[] = Array.isArray(meta?.roles) 
-      ? (meta.roles as unknown[]).filter((r): r is string => typeof r === 'string')
+    const roles: string[] = Array.isArray(meta?.roles)
+      ? (meta.roles as unknown[]).filter(
+          (r): r is string => typeof r === 'string'
+        )
       : [];
     const role: string | undefined =
       typeof meta?.role === 'string' ? meta.role : undefined;
@@ -217,71 +219,70 @@ export default function OrganisationUsersPage() {
     }
   };
 
-  const sortUsers = useCallback((
-    list: User[],
-    field: SortField,
-    direction: SortDirection
-  ) => {
-    const getRolesDisplay = (roles: string[]) => {
-      if (!roles || roles.length === 0) return 'No roles';
-      if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
-      const priorityOrder = [
-        'sysadmin',
-        'developer',
-        'orgadmin',
-        'user',
-        'trial',
-      ];
-      const sorted = [...roles].sort(
-        (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
-      );
-      return sorted.map(getRoleLabel).join(', ');
-    };
+  const sortUsers = useCallback(
+    (list: User[], field: SortField, direction: SortDirection) => {
+      const getRolesDisplay = (roles: string[]) => {
+        if (!roles || roles.length === 0) return 'No roles';
+        if (roles.length === 1 && roles[0]) return getRoleLabel(roles[0]);
+        const priorityOrder = [
+          'sysadmin',
+          'developer',
+          'orgadmin',
+          'user',
+          'trial',
+        ];
+        const sorted = [...roles].sort(
+          (a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
+        );
+        return sorted.map(getRoleLabel).join(', ');
+      };
 
-    return [...list].sort((a, b) => {
-      let aVal: string | number;
-      let bVal: string | number;
-      switch (field) {
-        case 'name':
-          aVal = `${a.givenName || ''} ${a.familyName || ''}`
-            .toLowerCase()
-            .trim();
-          bVal = `${b.givenName || ''} ${b.familyName || ''}`
-            .toLowerCase()
-            .trim();
-          break;
-        case 'email':
-          aVal = (a.email || '').toLowerCase();
-          bVal = (b.email || '').toLowerCase();
-          break;
-        case 'username':
-          aVal = (a.username || '').toLowerCase();
-          bVal = (b.username || '').toLowerCase();
-          break;
-        case 'role':
-          aVal = getRolesDisplay(a.systemRoles || []).toLowerCase();
-          bVal = getRolesDisplay(b.systemRoles || []).toLowerCase();
-          break;
-        case 'status':
-          aVal = a.isActive ? 1 : 0;
-          bVal = b.isActive ? 1 : 0;
-          break;
-        case 'created':
-          aVal = a.createdAt;
-          bVal = b.createdAt;
-          break;
-        case 'lastSignIn':
-          aVal = a.lastSignInAt || 0;
-          bVal = b.lastSignInAt || 0;
-          break;
-        default:
-          return 0;
-      }
-      if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-      if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, []);
+      return [...list].sort((a, b) => {
+        let aVal: string | number;
+        let bVal: string | number;
+        switch (field) {
+          case 'name':
+            aVal = `${a.givenName || ''} ${a.familyName || ''}`
+              .toLowerCase()
+              .trim();
+            bVal = `${b.givenName || ''} ${b.familyName || ''}`
+              .toLowerCase()
+              .trim();
+            break;
+          case 'email':
+            aVal = (a.email || '').toLowerCase();
+            bVal = (b.email || '').toLowerCase();
+            break;
+          case 'username':
+            aVal = (a.username || '').toLowerCase();
+            bVal = (b.username || '').toLowerCase();
+            break;
+          case 'role':
+            aVal = getRolesDisplay(a.systemRoles || []).toLowerCase();
+            bVal = getRolesDisplay(b.systemRoles || []).toLowerCase();
+            break;
+          case 'status':
+            aVal = a.isActive ? 1 : 0;
+            bVal = b.isActive ? 1 : 0;
+            break;
+          case 'created':
+            aVal = a.createdAt;
+            bVal = b.createdAt;
+            break;
+          case 'lastSignIn':
+            aVal = a.lastSignInAt || 0;
+            bVal = b.lastSignInAt || 0;
+            break;
+          default:
+            return 0;
+        }
+        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    },
+    []
+  );
 
   const handleSort = (field: SortField) => {
     if (sortField === field)
@@ -334,7 +335,14 @@ export default function OrganisationUsersPage() {
   // Re-run filters when data or filters change
   useEffect(() => {
     applyFilters();
-  }, [organisationUsers, searchTerm, roleFilter, orgRoleFilter, statusFilter, applyFilters]);
+  }, [
+    organisationUsers,
+    searchTerm,
+    roleFilter,
+    orgRoleFilter,
+    statusFilter,
+    applyFilters,
+  ]);
 
   // Sort changes
   useEffect(() => {
@@ -393,7 +401,7 @@ export default function OrganisationUsersPage() {
             }),
           }).then(async (r) => {
             if (!r.ok) {
-              const errorData = await r.json() as { error: string };
+              const errorData = (await r.json()) as { error: string };
               throw new Error(errorData.error || 'Failed');
             }
           })
@@ -415,7 +423,7 @@ export default function OrganisationUsersPage() {
           }),
         });
         if (!res.ok) {
-          const errorData = await res.json() as { error: string };
+          const errorData = (await res.json()) as { error: string };
           throw new Error(errorData.error || 'Failed');
         }
       }
@@ -461,7 +469,7 @@ export default function OrganisationUsersPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as { error: string };
+        const errorData = (await response.json()) as { error: string };
         throw new Error(errorData.error || 'Failed to update user status');
       }
 

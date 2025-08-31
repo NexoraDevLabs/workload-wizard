@@ -38,7 +38,8 @@ export function PermissionExamples() {
       setMessage(`Successfully executed: ${actionName}`);
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       setMessage(`Error executing ${actionName}: ${errorMessage}`);
     }
   };

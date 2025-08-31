@@ -3,11 +3,15 @@ import { headers } from 'next/headers';
 import type { WebhookEvent } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 
 // Define proper types for Statsig adapter
 interface StatsigAdapter {
   initialize: () => Promise<{
-    logEvent: (event: Record<string, unknown>, eventName: string) => Promise<void>;
+    logEvent: (
+      event: Record<string, unknown>,
+      eventName: string
+    ) => Promise<void>;
     flush: () => Promise<void>;
   }>;
 }
@@ -38,8 +42,6 @@ async function getStatsigAdapter(): Promise<StatsigAdapter | null> {
   }
   return statsigAdapter;
 }
-
-
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -84,7 +86,7 @@ export async function POST(req: Request) {
   }
 
   // Get the body
-  const payload = await req.json() as Record<string, unknown>;
+  const payload = (await req.json()) as Record<string, unknown>;
   const body = JSON.stringify(payload);
 
   // Webhook payload type logged
@@ -166,6 +168,31 @@ interface DeletedUserData {
   id?: string;
 }
 
+interface UserCreatePayload {
+  email: string;
+  username: string;
+  givenName: string;
+  familyName: string;
+  fullName: string;
+  systemRoles: string[];
+  pictureUrl: string;
+  subject: string;
+  tokenIdentifier: string;
+  organisationId?: Id<'organisations'>;
+}
+
+interface UserUpdatePayload {
+  userId: string;
+  email: string;
+  username: string;
+  givenName: string;
+  familyName: string;
+  fullName: string;
+  systemRoles: string[];
+  pictureUrl: string;
+  organisationId?: Id<'organisations'>;
+}
+
 async function handleUserCreated(userData: ClerkUserData) {
   // Handling user.created event for user
 
@@ -195,7 +222,7 @@ async function handleUserCreated(userData: ClerkUserData) {
   // Creating user in Convex
 
   // Create user in Convex
-  await getConvexClient().mutation(api.users.create, {
+  const createPayload: UserCreatePayload = {
     email: primaryEmail.email_address,
     username: (userData as unknown as { username?: string }).username || '',
     givenName: (userData.first_name as string) || '',
@@ -203,12 +230,18 @@ async function handleUserCreated(userData: ClerkUserData) {
     fullName:
       `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
     systemRoles: roles,
-    // webhook path may include organisationId; API accepts optional and validates/derives server-side
-    organisationId: organisationId,
     pictureUrl: userData.image_url as string,
     subject: userData.id,
     tokenIdentifier: primaryEmail.id,
-  });
+  };
+
+  // Only add organisationId if it's a valid non-empty string
+  if (organisationId && organisationId.trim() !== '') {
+    // Convert string to Convex ID type - this is safe for webhook data
+    createPayload.organisationId = organisationId as Id<'organisations'>;
+  }
+
+  await getConvexClient().mutation(api.users.create, createPayload);
 
   // User created in Convex
 
@@ -217,7 +250,12 @@ async function handleUserCreated(userData: ClerkUserData) {
     const adapter = await getStatsigAdapter();
     if (adapter && typeof adapter === 'object' && 'initialize' in adapter) {
       const Statsig = await adapter.initialize();
-      if (Statsig && typeof Statsig === 'object' && 'logEvent' in Statsig && 'flush' in Statsig) {
+      if (
+        Statsig &&
+        typeof Statsig === 'object' &&
+        'logEvent' in Statsig &&
+        'flush' in Statsig
+      ) {
         await Statsig.logEvent(
           {
             userID: userData.id,
@@ -256,7 +294,7 @@ async function handleUserUpdated(userData: ClerkUserData) {
     (userData.public_metadata as Record<string, unknown>) || {};
 
   // Update user in Convex using webhook-specific mutation
-  const updatePayload: any = {
+  const updatePayload: UserUpdatePayload = {
     userId: userData.id,
     email: primaryEmail?.email_address as string,
     username: (userData as unknown as { username?: string }).username || '',
@@ -273,7 +311,8 @@ async function handleUserUpdated(userData: ClerkUserData) {
   };
 
   if (publicMetadata.organisationId) {
-    updatePayload.organisationId = publicMetadata.organisationId as string;
+    updatePayload.organisationId =
+      publicMetadata.organisationId as Id<'organisations'>;
   }
 
   await getConvexClient().mutation(api.users.updateByWebhook, updatePayload);
@@ -282,10 +321,20 @@ async function handleUserUpdated(userData: ClerkUserData) {
 
   // Mirror update to Statsig
   const adapter = await getStatsigAdapter();
-  if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
+  if (
+    adapter &&
+    typeof adapter === 'object' &&
+    adapter !== null &&
+    'initialize' in adapter
+  ) {
     try {
       const Statsig = await adapter.initialize();
-      if (Statsig && typeof Statsig === 'object' && 'logEvent' in Statsig && 'flush' in Statsig) {
+      if (
+        Statsig &&
+        typeof Statsig === 'object' &&
+        'logEvent' in Statsig &&
+        'flush' in Statsig
+      ) {
         await Statsig.logEvent(
           {
             userID: userData.id,
@@ -293,7 +342,8 @@ async function handleUserUpdated(userData: ClerkUserData) {
             custom: {
               fullName:
                 `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-              organisationId: (publicMetadata.organisationId as string) || undefined,
+              organisationId:
+                (publicMetadata.organisationId as string) || undefined,
               roles:
                 (publicMetadata.roles as string[]) ||
                 ((publicMetadata.role as string | undefined)
@@ -316,12 +366,12 @@ async function handleUserUpdated(userData: ClerkUserData) {
 async function handleUserDeleted(userData: DeletedUserData) {
   // Handling user.deleted event for user
 
-      // Soft delete user in Convex
-    if (userData.id) {
-      await getConvexClient().mutation(api.users.remove, {
-        userId: userData.id,
-      });
-    }
+  // Soft delete user in Convex
+  if (userData.id) {
+    await getConvexClient().mutation(api.users.remove, {
+      userId: userData.id,
+    });
+  }
 
   // User deleted from Convex
 }
@@ -344,8 +394,20 @@ async function handleSessionCreated(sessionData: unknown) {
 
   // Log a login event to Statsig to ensure the user appears in Users
   const adapter = await getStatsigAdapter();
-  if (adapter && typeof adapter === 'object' && adapter !== null && 'initialize' in adapter) {
-    const Statsig = await (adapter as { initialize(): Promise<{ logEvent: (event: unknown, name: string) => Promise<void>; flush: () => Promise<void> }> }).initialize();
+  if (
+    adapter &&
+    typeof adapter === 'object' &&
+    adapter !== null &&
+    'initialize' in adapter
+  ) {
+    const Statsig = await (
+      adapter as {
+        initialize(): Promise<{
+          logEvent: (event: unknown, name: string) => Promise<void>;
+          flush: () => Promise<void>;
+        }>;
+      }
+    ).initialize();
     await Statsig.logEvent(
       { userID: (s.user_id as string) || 'unknown' },
       'login'
@@ -353,5 +415,3 @@ async function handleSessionCreated(sessionData: unknown) {
     await Statsig.flush();
   }
 }
-
-

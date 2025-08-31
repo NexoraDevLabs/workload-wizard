@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
     if (RESEND_AUDIENCE_ID && !existingWaitlistEntry) {
       // Check for existing contact to avoid duplicate emails/entries
       try {
-        const list = await resend.contacts.list({
+        const list = (await resend.contacts.list({
           audienceId: RESEND_AUDIENCE_ID,
-        }) as unknown as ResendContactsListResponse;
+        })) as unknown as ResendContactsListResponse;
         const alreadyExists = Array.isArray(list?.data)
           ? list.data?.some(
               (c: ResendContact) =>

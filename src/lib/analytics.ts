@@ -299,10 +299,11 @@ export class AnalyticsService {
    * Get session metrics
    */
   getSessionMetrics(): SessionMetrics {
-    if (!this.checkInitialization()) return {
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-    };
+    if (!this.checkInitialization())
+      return {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      };
 
     try {
       return {
@@ -323,25 +324,32 @@ export class AnalyticsService {
    * Get performance metrics
    */
   getPerformanceMetrics(): PerformanceMetrics {
-    if (!this.checkInitialization()) return {
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-    };
+    if (!this.checkInitialization())
+      return {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      };
 
     try {
       const navigation = performance.getEntriesByType(
         'navigation'
       )[0] as PerformanceNavigationTiming;
 
+      const firstPaint =
+        performance.getEntriesByName('first-paint')[0]?.startTime;
+      const firstContentfulPaint = performance.getEntriesByName(
+        'first-contentful-paint'
+      )[0]?.startTime;
+
       return {
         page_load_time: navigation?.loadEventEnd - navigation?.loadEventStart,
         dom_content_loaded:
           navigation?.domContentLoadedEventEnd -
           navigation?.domContentLoadedEventStart,
-        first_paint: performance.getEntriesByName('first-paint')[0]?.startTime,
-        first_contentful_paint: performance.getEntriesByName(
-          'first-contentful-paint'
-        )[0]?.startTime,
+        ...(firstPaint !== undefined ? { first_paint: firstPaint } : {}),
+        ...(firstContentfulPaint !== undefined
+          ? { first_contentful_paint: firstContentfulPaint }
+          : {}),
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
       };

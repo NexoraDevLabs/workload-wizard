@@ -8,7 +8,13 @@ if (process.env.ANALYZE === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
   const bundleAnalyzer = require('@next/bundle-analyzer');
   // Properly type the bundle analyzer function with explicit typing
-  const bundleAnalyzerFn = (bundleAnalyzer as { default: (options: { enabled: boolean }) => (config: NextConfig) => NextConfig }).default;
+  const bundleAnalyzerFn = (
+    bundleAnalyzer as {
+      default: (options: {
+        enabled: boolean;
+      }) => (config: NextConfig) => NextConfig;
+    }
+  ).default;
   withBundleAnalyzer = bundleAnalyzerFn({
     enabled: true,
   });
@@ -22,9 +28,15 @@ const nextConfig: NextConfig = {
   },
   webpack: (config): NextConfig => {
     // Reduce noisy infrastructure logs in CI
-    if (config && typeof config === 'object' && 'infrastructureLogging' in config) {
+    if (
+      config &&
+      typeof config === 'object' &&
+      'infrastructureLogging' in config
+    ) {
       // Properly type the webpack config with explicit typing
-      const webpackConfig = config as { infrastructureLogging?: { level?: string } };
+      const webpackConfig = config as {
+        infrastructureLogging?: { level?: string };
+      };
       if (webpackConfig.infrastructureLogging) {
         webpackConfig.infrastructureLogging.level = 'error';
       }

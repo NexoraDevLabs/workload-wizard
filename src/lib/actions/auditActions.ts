@@ -637,8 +637,9 @@ export async function getAuditLogs(filters?: {
 
   try {
     // Drop cursor here (typed as Convex Id on server). Client can manage paging with returned nextCursor
-    const { cursor: _cursor, ...rest } = filters || {};
+    const { cursor: _cursor, organisationId: _orgId, ...rest } = filters || {};
     void _cursor;
+    void _orgId;
     type AuditListQueryArgs = {
       entityType?: string;
       entityId?: string;
@@ -656,19 +657,30 @@ export async function getAuditLogs(filters?: {
 
     // If caller is org-scoped (i.e., not system admin), force type/org filters defensively
     const hardenedFilters: AuditListQueryArgs = {
-      ...(rest || {}),
+      ...rest,
       ...(isSystemAdmin
         ? {}
         : {
             type: 'org',
-            organisationId:
-              (filters?.organisationId as Id<'organisations'>) ??
-              (currentUserData.publicMetadata?.organisationId as Id<'organisations'>),
+            ...(filters?.organisationId
+              ? {
+                  organisationId: filters.organisationId as Id<'organisations'>,
+                }
+              : {}),
+            ...(currentUserData.publicMetadata?.organisationId
+              ? {
+                  organisationId: currentUserData.publicMetadata
+                    .organisationId as Id<'organisations'>,
+                }
+              : {}),
           }),
     };
 
     // Ensure organisationId is properly typed
-    if (hardenedFilters.organisationId && typeof hardenedFilters.organisationId === 'string') {
+    if (
+      hardenedFilters.organisationId &&
+      typeof hardenedFilters.organisationId === 'string'
+    ) {
       // Type is already correct, no assignment needed
     }
 

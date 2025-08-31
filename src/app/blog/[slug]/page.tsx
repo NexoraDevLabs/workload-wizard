@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { PortableTextComponents } from 'next-sanity';
 import { PortableText } from 'next-sanity';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
@@ -39,10 +40,6 @@ interface SanityBlock {
   _type: string;
   children?: React.ReactNode;
   [key: string]: unknown;
-}
-
-interface SanityLink {
-  href: string;
 }
 
 interface Post {
@@ -83,70 +80,63 @@ function formatDate(iso: string) {
   }
 }
 
-interface BlockComponentProps {
-  children: React.ReactNode;
-}
-
-interface LinkComponentProps {
-  value: SanityLink;
-  children: React.ReactNode;
-}
-
-const portableComponents = {
+const portableComponents: PortableTextComponents = {
   // Map Sanity block styles to semantic HTML so Tailwind Typography renders correctly
   block: {
-    h1: ({ children }: BlockComponentProps) => (
+    h1: ({ children }) => (
       <h1 className="mt-10 mb-4 text-3xl md:text-4xl font-bold tracking-tight text-slate-900">
         {children}
       </h1>
     ),
-    h2: ({ children }: BlockComponentProps) => (
+    h2: ({ children }) => (
       <h2 className="mt-10 mb-3 text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
         {children}
       </h2>
     ),
-    h3: ({ children }: BlockComponentProps) => (
+    h3: ({ children }) => (
       <h3 className="mt-8 mb-3 text-xl md:text-2xl font-semibold tracking-tight text-slate-900">
         {children}
       </h3>
     ),
-    h4: ({ children }: BlockComponentProps) => (
+    h4: ({ children }) => (
       <h4 className="mt-6 mb-2 text-lg md:text-xl font-semibold tracking-tight text-slate-900">
         {children}
       </h4>
     ),
-    normal: ({ children }: BlockComponentProps) => (
+    normal: ({ children }) => (
       <p className="my-4 leading-relaxed text-slate-700">{children}</p>
     ),
-    blockquote: ({ children }: BlockComponentProps) => (
+    blockquote: ({ children }) => (
       <blockquote className="my-6 border-l-4 border-blue-200 pl-4 italic text-slate-600 bg-blue-50 py-2 rounded-r">
         {children}
       </blockquote>
     ),
   },
   list: {
-    bullet: ({ children }: BlockComponentProps) => (
+    bullet: ({ children }) => (
       <ul className="my-4 ml-5 list-disc space-y-1 text-slate-700">
         {children}
       </ul>
     ),
-    number: ({ children }: BlockComponentProps) => (
+    number: ({ children }) => (
       <ol className="my-4 ml-5 list-decimal space-y-1 text-slate-700">
         {children}
       </ol>
     ),
   },
   listItem: {
-    bullet: ({ children }: BlockComponentProps) => (
-      <li className="leading-relaxed">{children}</li>
-    ),
-    number: ({ children }: BlockComponentProps) => (
-      <li className="leading-relaxed">{children}</li>
-    ),
+    bullet: ({ children }) => <li className="leading-relaxed">{children}</li>,
+    number: ({ children }) => <li className="leading-relaxed">{children}</li>,
   },
   marks: {
-    link: ({ value, children }: LinkComponentProps) => {
-      const { href } = value;
+    link: ({
+      value,
+      children,
+    }: {
+      value?: { href?: string };
+      children?: React.ReactNode;
+    }) => {
+      const href = value?.href || '#';
       return (
         <a
           href={href}
@@ -177,24 +167,27 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         const fetchedPost = await client.fetch<Post | null>(POST_QUERY, {
           slug: params.slug,
         });
-        if (fetchedPost && typeof fetchedPost === 'object' && fetchedPost !== null && '_id' in fetchedPost) {
+        if (
+          fetchedPost &&
+          typeof fetchedPost === 'object' &&
+          fetchedPost !== null &&
+          '_id' in fetchedPost
+        ) {
           setPost(fetchedPost);
           // Use proper type guards for the coverImage
           const coverImage = fetchedPost.coverImage;
-          if (coverImage && 
-              typeof coverImage === 'object' && 
-              'asset' in coverImage && 
-              coverImage.asset && 
-              typeof coverImage.asset === 'object' && 
-              '_ref' in coverImage.asset && 
-              '_type' in coverImage.asset &&
-              coverImage.asset._type === 'reference') {
+          if (
+            coverImage &&
+            typeof coverImage === 'object' &&
+            'asset' in coverImage &&
+            coverImage.asset &&
+            typeof coverImage.asset === 'object' &&
+            '_ref' in coverImage.asset &&
+            '_type' in coverImage.asset &&
+            coverImage.asset._type === 'reference'
+          ) {
             setCoverUrl(
-              urlFor(coverImage)
-                .width(1600)
-                .height(840)
-                .fit('crop')
-                .url()
+              urlFor(coverImage).width(1600).height(840).fit('crop').url()
             );
           }
         }
@@ -354,10 +347,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           {/* Article Content */}
           <article className="prose prose-slate prose-lg max-w-none dark:prose-invert [&_p]:text-slate-700 dark:[&_p]:text-white [&_h1]:text-slate-900 dark:[&_h1]:text-white [&_h2]:text-slate-900 dark:[&_h2]:text-white [&_h3]:text-slate-900 dark:[&_h3]:text-white [&_h4]:text-slate-900 dark:[&_h4]:text-white [&_strong]:text-slate-900 dark:[&_strong]:text-white [&_blockquote]:text-slate-600 dark:[&_blockquote]:text-white [&_li]:text-slate-700 dark:[&_li]:text-white [&_ul]:text-slate-700 dark:[&_ul]:text-white [&_ol]:text-slate-700 dark:[&_ol]:text-white">
             {Array.isArray(post.body) ? (
-              <PortableText
-                value={post.body}
-                components={portableComponents}
-              />
+              <PortableText value={post.body} components={portableComponents} />
             ) : null}
           </article>
         </div>

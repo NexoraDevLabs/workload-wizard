@@ -10,7 +10,9 @@ export interface FeatureFlagUser {
 }
 
 // Identify user in Statsig for feature flags
-export async function identifyUserForFeatureFlags(user: FeatureFlagUser): Promise<void> {
+export async function identifyUserForFeatureFlags(
+  user: FeatureFlagUser
+): Promise<void> {
   try {
     if (!user) return;
 
@@ -33,7 +35,9 @@ export async function identifyUserForFeatureFlags(user: FeatureFlagUser): Promis
 }
 
 // Bootstrap feature flags for a user
-export async function bootstrapFeatureFlags(user: FeatureFlagUser): Promise<void> {
+export async function bootstrapFeatureFlags(
+  user: FeatureFlagUser
+): Promise<void> {
   try {
     if (!user) return;
 

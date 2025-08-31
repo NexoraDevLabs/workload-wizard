@@ -149,12 +149,8 @@ export const listForLecturer = query({
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('group_allocations')
-      .withIndex('by_lecturer', (q) =>
-        q.eq('lecturerId', args.lecturerId)
-      )
-      .filter((q) =>
-        q.eq(q.field('academicYearId'), args.academicYearId)
-      )
+      .withIndex('by_lecturer', (q) => q.eq('lecturerId', args.lecturerId))
+      .filter((q) => q.eq(q.field('academicYearId'), args.academicYearId))
       .collect();
     return rows;
   },
@@ -181,12 +177,8 @@ export const computeLecturerTotals = query({
 
     const allocations = await ctx.db
       .query('group_allocations')
-      .withIndex('by_lecturer', (q) =>
-        q.eq('lecturerId', args.lecturerId)
-      )
-      .filter((q) =>
-        q.eq(q.field('academicYearId'), args.academicYearId)
-      )
+      .withIndex('by_lecturer', (q) => q.eq('lecturerId', args.lecturerId))
+      .filter((q) => q.eq(q.field('academicYearId'), args.academicYearId))
       .collect();
 
     return computeTotals(allocations);
@@ -199,9 +191,7 @@ export const listForGroup = query({
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('group_allocations')
-      .withIndex('by_group', (q) =>
-        q.eq('groupId', args.groupId)
-      )
+      .withIndex('by_group', (q) => q.eq('groupId', args.groupId))
       .collect();
 
     const lecturers = await Promise.all(
@@ -220,12 +210,8 @@ export const listForLecturerDetailed = query({
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query('group_allocations')
-      .withIndex('by_lecturer', (q) =>
-        q.eq('lecturerId', args.lecturerId)
-      )
-      .filter((q) =>
-        q.eq(q.field('academicYearId'), args.academicYearId)
-      )
+      .withIndex('by_lecturer', (q) => q.eq('lecturerId', args.lecturerId))
+      .filter((q) => q.eq(q.field('academicYearId'), args.academicYearId))
       .collect();
     const groups = await Promise.all(rows.map((r) => ctx.db.get(r.groupId)));
     const iterations = await Promise.all(
@@ -257,9 +243,7 @@ export const removeAllocationsForGroups = mutation({
     for (const gid of args.groupIds) {
       const rows = await ctx.db
         .query('group_allocations')
-        .withIndex('by_group', (q) =>
-          q.eq('groupId', gid)
-        )
+        .withIndex('by_group', (q) => q.eq('groupId', gid))
         .collect();
       all.push(...rows);
     }
@@ -384,12 +368,8 @@ export const getLecturerTotals = query({
 
     const allocations = await ctx.db
       .query('group_allocations')
-      .withIndex('by_lecturer', (q) =>
-        q.eq('lecturerId', args.lecturerId)
-      )
-      .filter((q) =>
-        q.eq(q.field('academicYearId'), args.academicYearId)
-      )
+      .withIndex('by_lecturer', (q) => q.eq('lecturerId', args.lecturerId))
+      .filter((q) => q.eq(q.field('academicYearId'), args.academicYearId))
       .collect();
 
     const totals = computeTotals(allocations);
@@ -443,12 +423,8 @@ export const listAdminAllocations = query({
     if (!lecturer) return [];
     const rows = await ctx.db
       .query('admin_allocations')
-      .withIndex('by_year', (q) =>
-        q.eq('academicYearId', args.academicYearId)
-      )
-      .filter((q) =>
-        q.eq(q.field('staffId'), String(args.lecturerId))
-      )
+      .withIndex('by_year', (q) => q.eq('academicYearId', args.academicYearId))
+      .filter((q) => q.eq(q.field('staffId'), String(args.lecturerId)))
       .collect();
     // join category names (skip invalid/custom ids)
     const categories = await Promise.all(
@@ -459,13 +435,17 @@ export const listAdminAllocations = query({
             return null;
           // Try to get the category from either table
           try {
-            const orgCategory = await ctx.db.get(r.categoryId as Id<'organisation_admin_allocation_categories'>);
+            const orgCategory = await ctx.db.get(
+              r.categoryId as Id<'organisation_admin_allocation_categories'>
+            );
             if (orgCategory) return orgCategory;
           } catch {
             // Not an org category, try system category
           }
           try {
-            const sysCategory = await ctx.db.get(r.categoryId as Id<'admin_allocation_categories'>);
+            const sysCategory = await ctx.db.get(
+              r.categoryId as Id<'admin_allocation_categories'>
+            );
             if (sysCategory) return sysCategory;
           } catch {
             // Not a system category either
@@ -624,8 +604,7 @@ export const upsertAdminAllocation = mutation({
         );
         if (
           orgCategory &&
-          String(orgCategory.organisationId) ===
-            String(lecturer.organisationId)
+          String(orgCategory.organisationId) === String(lecturer.organisationId)
         ) {
           minH = orgCategory.minHours;
           maxH = orgCategory.maxHours;
@@ -805,10 +784,7 @@ export const upsertOrganisationAdminCategory = mutation({
     if (args.id) {
       const existing = await ctx.db.get(args.id);
       if (!existing) throw new Error('Category not found');
-      if (
-        String(existing.organisationId) !==
-        String(actor.organisationId)
-      )
+      if (String(existing.organisationId) !== String(actor.organisationId))
         throw new Error('Cannot modify other organisation categories');
       await ctx.db.patch(args.id, {
         name: args.name,
@@ -880,10 +856,7 @@ export const removeOrganisationAdminCategory = mutation({
     );
     const existing = await ctx.db.get(args.id);
     if (!existing) return args.id;
-    if (
-      String(existing.organisationId) !==
-      String(actor.organisationId)
-    )
+    if (String(existing.organisationId) !== String(actor.organisationId))
       throw new Error('Cannot delete other organisation categories');
     await ctx.db.delete(args.id);
     try {
@@ -927,7 +900,7 @@ export const seedOrgAdminCategories = mutation({
         createdAt: now,
         updatedAt: now,
       };
-      
+
       if (d.description !== undefined) {
         insertData.description = d.description;
       }
@@ -937,8 +910,11 @@ export const seedOrgAdminCategories = mutation({
       if (d.maxHours !== undefined) {
         insertData.maxHours = d.maxHours;
       }
-      
-      await ctx.db.insert('organisation_admin_allocation_categories', insertData);
+
+      await ctx.db.insert(
+        'organisation_admin_allocation_categories',
+        insertData
+      );
     }
     return { created: defaults.length };
   },
@@ -953,9 +929,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
     await requirePermission(ctx, identity.subject, 'permissions.manage');
 
     const now = Date.now();
-    const sysCats = await ctx.db
-      .query('admin_allocation_categories')
-      .collect();
+    const sysCats = await ctx.db.query('admin_allocation_categories').collect();
     const orgs = await ctx.db
       .query('organisations')
       .filter((q) => q.eq(q.field('isActive'), true))
@@ -967,9 +941,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
     for (const org of orgs) {
       const orgCats = await ctx.db
         .query('organisation_admin_allocation_categories')
-        .withIndex('by_organisation', (q) =>
-          q.eq('organisationId', org._id)
-        )
+        .withIndex('by_organisation', (q) => q.eq('organisationId', org._id))
         .collect();
       for (const sc of sysCats) {
         const existing = orgCats.find(
@@ -990,7 +962,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
             createdAt: now,
             updatedAt: now,
           };
-          
+
           if (sc.description !== undefined) {
             insertData.description = sc.description;
           }
@@ -1000,8 +972,11 @@ export const pushAdminCategoriesToOrganisations = mutation({
           if (sc.maxHours !== undefined) {
             insertData.maxHours = sc.maxHours;
           }
-          
-          await ctx.db.insert('organisation_admin_allocation_categories', insertData);
+
+          await ctx.db.insert(
+            'organisation_admin_allocation_categories',
+            insertData
+          );
           created++;
         } else if (args.forceApply) {
           const patchData: {
@@ -1012,7 +987,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
           } = {
             updatedAt: now,
           };
-          
+
           if (sc.description !== undefined) {
             patchData.description = sc.description;
           }
@@ -1022,7 +997,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
           if (sc.maxHours !== undefined) {
             patchData.maxHours = sc.maxHours;
           }
-          
+
           await ctx.db.patch(existing._id, patchData);
           updated++;
         }

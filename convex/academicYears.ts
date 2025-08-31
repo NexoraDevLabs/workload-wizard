@@ -118,7 +118,7 @@ export const listForOrganisation = query({
           q.eq(q.field('status'), 'draft')
         );
         const archivedCond = q.eq(q.field('status'), 'archived');
-        
+
         // Build conditions based on permissions
         if (canLive && !canStaging && !canArchived) {
           return liveCond;
@@ -266,8 +266,7 @@ export const update = mutation({
     if (typeof args.name !== 'undefined') updates.name = args.name;
     if (typeof args.startDate !== 'undefined')
       updates.startDate = args.startDate;
-    if (typeof args.endDate !== 'undefined')
-      updates.endDate = args.endDate;
+    if (typeof args.endDate !== 'undefined') updates.endDate = args.endDate;
     if (typeof args.isDefaultForOrg !== 'undefined') {
       updates.isDefaultForOrg = args.isDefaultForOrg;
       if (args.isDefaultForOrg) {

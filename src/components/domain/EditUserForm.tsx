@@ -169,7 +169,7 @@ export function EditUserForm({
       // Check if any updates failed
       for (const response of responses) {
         if (!response.ok) {
-          const errorData = await response.json() as ApiResponse;
+          const errorData = (await response.json()) as ApiResponse;
           throw new Error(errorData.error || 'Failed to update user');
         }
       }
@@ -242,7 +242,7 @@ export function EditUserForm({
         isSysadmin,
       });
 
-      const result = await response.json() as ApiResponse;
+      const result = (await response.json()) as ApiResponse;
       setMessage({
         type: 'success',
         text:

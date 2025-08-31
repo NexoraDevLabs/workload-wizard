@@ -1,7 +1,4 @@
-import {
-  mutation,
-  query,
-} from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
@@ -27,9 +24,7 @@ export const listByOrganisation = query({
 
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return [];
 
@@ -95,9 +90,7 @@ export const create = mutation({
 
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) throw new Error('User not found');
 
@@ -164,7 +157,8 @@ export const create = mutation({
     };
 
     if (args.credits !== undefined) insertData.credits = args.credits;
-    if (args.leaderProfileId !== undefined) insertData.leaderProfileId = args.leaderProfileId;
+    if (args.leaderProfileId !== undefined)
+      insertData.leaderProfileId = args.leaderProfileId;
     if (args.level !== undefined) insertData.level = args.level;
     if (teachingHours !== undefined) insertData.teachingHours = teachingHours;
     if (markingHours !== undefined) insertData.markingHours = markingHours;
@@ -313,9 +307,7 @@ export const isCodeAvailable = query({
     // Derive organisation from actor
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return { available: false };
 
@@ -386,9 +378,7 @@ export const attachToCourseYear = mutation({
     const existing = await ctx.db
       .query('course_year_modules')
       .withIndex('by_course_year_module', (q) =>
-        q
-          .eq('courseYearId', args.courseYearId)
-          .eq('moduleId', args.moduleId)
+        q.eq('courseYearId', args.courseYearId).eq('moduleId', args.moduleId)
       )
       .first();
     if (existing) return existing._id;
@@ -446,9 +436,7 @@ export const detachFromCourseYear = mutation({
     const existing = await ctx.db
       .query('course_year_modules')
       .withIndex('by_course_year_module', (q) =>
-        q
-          .eq('courseYearId', args.courseYearId)
-          .eq('moduleId', args.moduleId)
+        q.eq('courseYearId', args.courseYearId).eq('moduleId', args.moduleId)
       )
       .first();
     if (!existing) return null;
@@ -502,9 +490,7 @@ export const getIterationForDefaultYear = query({
     if (!identity?.subject) return null;
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) return null;
 
@@ -520,9 +506,7 @@ export const getIterationForDefaultYear = query({
     const existing = await ctx.db
       .query('module_iterations')
       .withIndex('by_module_year', (q) =>
-        q
-          .eq('moduleId', args.moduleId)
-          .eq('academicYearId', defaultYear._id)
+        q.eq('moduleId', args.moduleId).eq('academicYearId', defaultYear._id)
       )
       .first();
     return existing ?? null;
@@ -598,9 +582,7 @@ export const createIterationForDefaultYear = mutation({
     if (!identity?.subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) =>
-        q.eq('subject', identity.subject)
-      )
+      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
       .first();
     if (!actor) throw new Error('User not found');
 
@@ -628,9 +610,7 @@ export const createIterationForDefaultYear = mutation({
     const existing = await ctx.db
       .query('module_iterations')
       .withIndex('by_module_year', (q) =>
-        q
-          .eq('moduleId', args.moduleId)
-          .eq('academicYearId', defaultYear._id)
+        q.eq('moduleId', args.moduleId).eq('academicYearId', defaultYear._id)
       )
       .first();
     if (existing) return existing._id;

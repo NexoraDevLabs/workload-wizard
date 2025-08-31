@@ -2,7 +2,8 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { ensureDefaultsForOrg } from './permissions';
 import { writeAudit } from './audit';
-
+import { api } from './_generated/api';
+import type { Id } from './_generated/dataModel';
 
 // Get all organisations
 export const list = query({
@@ -27,16 +28,12 @@ export const reseedDefaultsForOrg = mutation({
     const subject = identity?.subject ?? 'system';
 
     // Roles & permissions
-    await ensureDefaultsForOrg(
-      ctx,
-      args.organisationId
-    );
+    await ensureDefaultsForOrg(ctx, args.organisationId);
 
     // Admin allocation categories from system defaults
-    await ctx.runMutation(
-      { path: 'allocations/seedOrgAdminCategories' },
-      { organisationId: args.organisationId }
-    );
+    await ctx.runMutation(api.allocations.seedOrgAdminCategories, {
+      organisationId: args.organisationId,
+    });
 
     // Ensure organisation settings exist
     const existingSettings = await ctx.db
@@ -92,10 +89,9 @@ export const reseedDefaultsAcrossOrganisations = mutation({
       .collect();
     let processed = 0;
     for (const org of orgs) {
-      await ctx.runMutation(
-        { path: 'organisations/reseedDefaultsForOrg' },
-        { organisationId: org._id }
-      );
+      await ctx.runMutation(api.organisations.reseedDefaultsForOrg, {
+        organisationId: org._id,
+      });
       processed++;
     }
     return { organisationsProcessed: processed };
@@ -154,13 +150,21 @@ export const create = mutation({
         .collect();
 
       for (const cat of systemCategories) {
-        const insertData: any = {
+        const insertData: {
+          organisationId: Id<'organisations'>;
+          name: string;
+          description?: string;
+          minHours?: number;
+          maxHours?: number;
+          createdAt: number;
+          updatedAt: number;
+        } = {
           organisationId,
           name: cat.name,
           createdAt: now,
           updatedAt: now,
         };
-        
+
         if (cat.description !== undefined) {
           insertData.description = cat.description;
         }
@@ -170,8 +174,11 @@ export const create = mutation({
         if (cat.maxHours !== undefined) {
           insertData.maxHours = cat.maxHours;
         }
-        
-        await ctx.db.insert('organisation_admin_allocation_categories', insertData);
+
+        await ctx.db.insert(
+          'organisation_admin_allocation_categories',
+          insertData
+        );
       }
     } catch {
       // Failed to seed org admin allocation categories

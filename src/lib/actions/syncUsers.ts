@@ -4,22 +4,29 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import type { hasAdminAccess } from '@/lib/auth/permissions';
+import { hasAdminAccess } from '@/lib/auth/permissions';
 
-// Define proper types for Statsig adapter
-interface StatsigAdapter {
+// Define proper types for Statsig adapter based on the actual types from @flags-sdk/statsig
+interface StatsigAdapterResponse {
   initialize: () => Promise<{
-    logEvent: (event: Record<string, unknown>, eventName: string) => Promise<void>;
+    logEvent: (
+      user: {
+        userID: string;
+        email?: string;
+        custom?: Record<string, unknown>;
+      },
+      eventName: string
+    ) => void;
     flush: () => Promise<void>;
   }>;
 }
 
 // Lazy import to avoid build-time issues
-let statsigAdapter: StatsigAdapter | null = null;
-async function getStatsigAdapter(): Promise<StatsigAdapter> {
+let statsigAdapter: StatsigAdapterResponse | null = null;
+async function getStatsigAdapter(): Promise<StatsigAdapterResponse> {
   if (!statsigAdapter) {
     const { statsigAdapter: adapter } = await import('@/flags');
-    statsigAdapter = adapter;
+    statsigAdapter = adapter as StatsigAdapterResponse;
   }
   return statsigAdapter;
 }
@@ -149,7 +156,7 @@ export async function syncUsersFromClerk() {
         }
 
         // Ensure the user exists in Statsig Users by logging an event
-        await Statsig.logEvent(
+        Statsig.logEvent(
           {
             userID: clerkUser.id,
             email: primaryEmail,

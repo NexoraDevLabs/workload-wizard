@@ -78,7 +78,10 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       if (err && typeof err === 'object' && 'errors' in err) {
         return NextResponse.json(
-          { error: 'Invalid request body', details: (err as { errors: unknown }).errors },
+          {
+            error: 'Invalid request body',
+            details: (err as { errors: unknown }).errors,
+          },
           { status: 400 }
         );
       }
@@ -265,8 +268,7 @@ export async function POST(request: NextRequest) {
             try {
               await getConvexClient().mutation(api.users.ensureMembership, {
                 userId,
-                organisationId:
-                  organisationId as Id<'organisations'>,
+                organisationId: organisationId as Id<'organisations'>,
                 isPrimary: true,
               });
             } catch {

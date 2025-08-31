@@ -69,16 +69,14 @@ export function GenericDeleteModal(props: GenericDeleteModalProps) {
   const entityCode: string | undefined = props.entityCode;
 
   const title =
-    props.title ??
-    (entityType ? `Delete ${entityType}` : 'Are you sure?');
+    props.title ?? (entityType ? `Delete ${entityType}` : 'Are you sure?');
   const description =
     props.description ??
     (entityType
       ? 'This action cannot be undone'
       : 'This action cannot be undone.');
   const confirmText =
-    props.confirmText ??
-    (entityType ? `Delete ${entityType}` : 'Confirm');
+    props.confirmText ?? (entityType ? `Delete ${entityType}` : 'Confirm');
 
   const displayName =
     entityCode && entityName

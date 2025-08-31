@@ -68,8 +68,6 @@ interface Role {
   organisationId: string;
 }
 
-
-
 interface RoleWithPermissions extends Role {
   permissionDetails: Array<{
     id: string;

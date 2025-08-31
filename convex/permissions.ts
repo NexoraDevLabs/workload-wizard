@@ -742,7 +742,14 @@ export const seedPlanningMvpPermissions = mutation({
       },
     ];
 
-    const res = await (ctx as QueryCtx & { runMutation: (path: { path: string }, args: unknown) => Promise<unknown> }).runMutation(
+    const res = await (
+      ctx as QueryCtx & {
+        runMutation: (
+          path: { path: string },
+          args: unknown
+        ) => Promise<unknown>;
+      }
+    ).runMutation(
       {
         path: 'permissions/importSystemPermissions',
       },

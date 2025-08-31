@@ -51,7 +51,11 @@ function getLocalFlagOverrides(): Record<string, boolean> {
     if (!stored) return {};
     // Properly type the parsed JSON result
     const parsed: unknown = JSON.parse(stored);
-    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+    if (
+      typeof parsed === 'object' &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
       // Validate that all values are booleans
       const result: Record<string, boolean> = {};
       for (const [key, value] of Object.entries(parsed)) {
@@ -259,8 +263,6 @@ export default function AccountFeaturesPage() {
   const capitalizeStage = (stage: string) => {
     return stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
   };
-
-
 
   return (
     <StandardizedSidebarLayout

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { X } from 'lucide-react';
-import { createUser } from '@/lib/actions/userActions';
+import { createUser, type CreateUserData } from '@/lib/actions/userActions';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -128,11 +128,17 @@ export function CreateUserForm({
     data.sendEmailInvitation = true;
     data.organisationalRoleId = undefined as unknown as string;
 
+    // Ensure password is always a string for type safety
+    const createUserData: CreateUserData = {
+      ...data,
+      password: data.password || '',
+    };
+
     try {
-      await createUser(data);
+      await createUser(createUserData);
       analytics.track('user.created', {
-        organisationId: data.organisationId,
-        roleCount: data.roles?.length,
+        organisationId: createUserData.organisationId,
+        roleCount: createUserData.roles?.length,
       });
       toast({
         title: 'User created',
