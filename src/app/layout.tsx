@@ -67,7 +67,7 @@ export default async function RootLayout({
   }
 
   // During build time or when environment variables are invalid, provide safe defaults
-  let datafile: Record<string, unknown> = {};
+  let datafile: { user: Record<string, unknown>; [key: string]: unknown } | null = null;
   
   try {
     const { statsigAdapter, identify } = await import('@/flags');
@@ -76,11 +76,11 @@ export default async function RootLayout({
     const response = Statsig.getClientInitializeResponse(user, {
       hash: 'djb2',
     });
-    datafile = response || {};
+    datafile = response || null;
   } catch (error) {
-    // During build time or with invalid env vars, use empty datafile
-    console.warn('Failed to initialize Statsig, using empty datafile:', error);
-    datafile = {};
+    // During build time or with invalid env vars, use null datafile
+    console.warn('Failed to initialize Statsig, using null datafile:', error);
+    datafile = null;
   }
 
   return (
