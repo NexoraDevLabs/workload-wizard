@@ -19,7 +19,8 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 ### 1. CI Workflow (`ci.yml`)
 
 **Purpose**: Core continuous integration checks
-**Triggers**: 
+**Triggers**:
+
 - Push to `main` branch
 - All pull requests
 
@@ -28,6 +29,7 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 #### Jobs
 
 ##### `build`
+
 - **Purpose**: Compile and build the application
 - **Runtime**: ~5-10 minutes
 - **Dependencies**: Node.js 22, pnpm 10
@@ -35,12 +37,14 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 - **Artifacts**: Built application (not persisted)
 
 ##### `test`
+
 - **Purpose**: Run unit tests with Vitest
 - **Runtime**: ~2-5 minutes
 - **Dependencies**: Same as build
 - **Command**: `pnpm test -- --ci`
 
 ##### `audit`
+
 - **Purpose**: Check for known security vulnerabilities in dependencies
 - **Runtime**: ~1-3 minutes
 - **Command**: `pnpm audit --audit-level=high || npm audit --audit-level=high`
@@ -49,7 +53,8 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 ### 2. CodeQL Workflow (`codeql.yml`)
 
 **Purpose**: Static application security testing (SAST)
-**Triggers**: 
+**Triggers**:
+
 - Push to `main` branch
 - All pull requests
 - Weekly schedule (Mondays at 3 AM UTC)
@@ -57,6 +62,7 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 **Required Checks**: `codeql`
 
 #### Analysis Details
+
 - **Languages**: JavaScript/TypeScript
 - **Queries**: `security-extended`, `security-and-quality`
 - **Runtime**: ~15-30 minutes
@@ -65,13 +71,15 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 ### 3. Semgrep Workflow (`semgrep.yml`)
 
 **Purpose**: Additional security scanning with community rules
-**Triggers**: 
+**Triggers**:
+
 - Push to `main` branch
 - All pull requests
 
 **Required Checks**: `semgrep`
 
 #### Scan Details
+
 - **Ruleset**: `p/ci` (OWASP + Semgrep community rules)
 - **Runtime**: ~5-15 minutes
 - **Output**: SARIF uploaded to GitHub Security tab
@@ -81,13 +89,13 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 
 The following checks must pass before any PR can be merged to `main`:
 
-| Check Name | Workflow | Purpose | Typical Runtime |
-|------------|----------|---------|-----------------|
-| `build` | CI | Application builds successfully | 5-10 min |
-| `test` | CI | All unit tests pass | 2-5 min |
-| `audit` | CI | No high-severity vulnerabilities | 1-3 min |
-| `codeql` | CodeQL | No security vulnerabilities found | 15-30 min |
-| `semgrep` | Semgrep | Additional security checks pass | 5-15 min |
+| Check Name | Workflow | Purpose                           | Typical Runtime |
+| ---------- | -------- | --------------------------------- | --------------- |
+| `build`    | CI       | Application builds successfully   | 5-10 min        |
+| `test`     | CI       | All unit tests pass               | 2-5 min         |
+| `audit`    | CI       | No high-severity vulnerabilities  | 1-3 min         |
+| `codeql`   | CodeQL   | No security vulnerabilities found | 15-30 min       |
+| `semgrep`  | Semgrep  | Additional security checks pass   | 5-15 min        |
 
 ## Job Summaries
 
@@ -100,6 +108,7 @@ Every job publishes a Job Summary card that includes:
 - 🔗 Links to results (for security scans)
 
 Example summary sections:
+
 - **Workflow details**: Name, ref, commit SHA
 - **Environment**: Runner OS, Node version, pnpm version
 - **Results**: Status, specific outputs, links to dashboards
@@ -107,6 +116,7 @@ Example summary sections:
 ## Environment Variables
 
 ### CI Environment
+
 All workflows include these environment variables to prevent issues during builds:
 
 ```yaml
@@ -129,13 +139,14 @@ WEBHOOK_SECRET: 'test_webhook_secret'
 ## Secrets Management
 
 ### Required Secrets
+
 Secrets are configured in **Settings → Secrets and variables → Actions**:
 
-| Secret Name | Purpose | Required For |
-|-------------|---------|-------------|
-| `NEXOROID_APP_ID` | GitHub App ID for bot commits | Frontend automation workflows |
-| `NEXOROID_APP_PRIVATE_KEY` | GitHub App private key | Frontend automation workflows |
-| `SEMGREP_APP_TOKEN` | Semgrep Cloud integration | Enhanced Semgrep features (optional) |
+| Secret Name                | Purpose                       | Required For                         |
+| -------------------------- | ----------------------------- | ------------------------------------ |
+| `NEXOROID_APP_ID`          | GitHub App ID for bot commits | Frontend automation workflows        |
+| `NEXOROID_APP_PRIVATE_KEY` | GitHub App private key        | Frontend automation workflows        |
+| `SEMGREP_APP_TOKEN`        | Semgrep Cloud integration     | Enhanced Semgrep features (optional) |
 
 ### Nexoroid Bot Configuration
 
@@ -174,6 +185,7 @@ steps:
 ## Branch Protection
 
 ### Manual Setup
+
 1. Go to **Settings → Branches**
 2. Add rule for `main` branch
 3. Enable the following options:
@@ -181,7 +193,7 @@ steps:
    - **Require branches to be up to date before merging**
    - **Restrict pushes that create files**: Check all required status checks:
      - `build`
-     - `test` 
+     - `test`
      - `audit`
      - `codeql`
      - `semgrep`
@@ -191,6 +203,7 @@ steps:
    - **Dismiss stale reviews when new commits are pushed**
 
 ### As-Code Option
+
 If using the GitHub Settings app, add this to `.github/settings.yml`:
 
 ```yaml
@@ -220,11 +233,13 @@ branches:
 
 **Problem**: `build` job fails
 **Common Causes**:
+
 - TypeScript compilation errors
 - Missing environment variables
 - Dependency issues
 
 **Solutions**:
+
 ```bash
 # Local reproduction
 pnpm install --frozen-lockfile
@@ -244,11 +259,13 @@ pnpm build
 
 **Problem**: `test` job fails
 **Common Causes**:
+
 - Failing unit tests
 - Outdated snapshots
 - Environment setup issues
 
 **Solutions**:
+
 ```bash
 # Run tests locally
 pnpm test
@@ -264,10 +281,12 @@ pnpm test -- --update-snapshots
 
 **Problem**: `audit` job fails
 **Common Causes**:
+
 - High-severity security vulnerabilities
 - Outdated dependencies
 
 **Solutions**:
+
 ```bash
 # Check for vulnerabilities
 pnpm audit
@@ -285,11 +304,13 @@ pnpm update
 
 **Problem**: Security scanning fails or finds issues
 **Common Causes**:
+
 - New security vulnerabilities introduced
 - False positives
 - Configuration issues
 
 **Solutions**:
+
 1. **Review alerts** in GitHub Security tab
 2. **Assess severity** and impact
 3. **Fix real issues** or **suppress false positives**
@@ -299,6 +320,7 @@ pnpm update
 
 **Problem**: Workflows fail due to cached dependencies
 **Solutions**:
+
 - **Re-run workflows** (GitHub UI)
 - **Clear GitHub Actions cache** (Settings → Actions → Caches)
 - **Update lockfile** and commit changes
@@ -307,6 +329,7 @@ pnpm update
 
 **Problem**: Workflows fail due to insufficient permissions
 **Solutions**:
+
 - Check `permissions:` in workflow files
 - Verify repository settings allow Actions
 - Check if organization has restrictions
@@ -323,16 +346,19 @@ pnpm update
 ### Performance Optimization
 
 #### Cache Strategy
+
 - **Node modules**: Cached by `actions/setup-node@v4`
 - **pnpm store**: Global cache across runs
 - **Build output**: Not cached (builds are fast)
 
 #### Parallelization
+
 - Jobs run independently where possible
 - Use appropriate timeouts to prevent hanging
 - Concurrency limits prevent resource conflicts
 
 #### Resource Limits
+
 - **Timeout**: All jobs have appropriate timeouts
 - **Memory**: Set `NODE_OPTIONS: '--max_old_space_size=4096'`
 - **Disk**: Clean up artifacts automatically
@@ -340,6 +366,7 @@ pnpm update
 ## Best Practices
 
 ### Workflow Design
+
 1. **Minimal permissions** - Use least privilege principle
 2. **Clear job names** - Match required status check names exactly
 3. **Proper timeouts** - Prevent hanging jobs
@@ -347,12 +374,14 @@ pnpm update
 5. **Job summaries** - Always provide clear output
 
 ### Security
+
 1. **Pin action versions** - Use specific SHA or version tags
 2. **Secure secrets** - Never log secrets, use GitHub Secrets
 3. **Verify dependencies** - Regular audit runs
 4. **SARIF uploads** - Enable security dashboard integration
 
 ### Maintenance
+
 1. **Regular updates** - Keep actions and dependencies current
 2. **Monitor performance** - Track job run times
 3. **Review alerts** - Address security findings promptly
@@ -363,6 +392,7 @@ pnpm update
 The workflows in `.github/toreview.workflows/` have been streamlined to focus on core requirements:
 
 ### Changes Made
+
 1. **Simplified structure** - Removed complex conditionals
 2. **Standard triggers** - Push to main, all PRs
 3. **Required checks only** - Focus on essential quality gates
@@ -370,6 +400,7 @@ The workflows in `.github/toreview.workflows/` have been streamlined to focus on
 5. **Nexoroid bot ready** - Prepared for automated frontend commits
 
 ### Removed Features
+
 - GitHub status checks (assumed to be stable)
 - Complex path filtering (run on all changes)
 - Workflow queuing (use GitHub's built-in concurrency)
