@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: process.env.CI === 'true',
   },
   experimental: {
-    // Disable optimizeCss to avoid critters dependency issue  
+    // Disable optimizeCss to avoid critters dependency issue
     optimizeCss: false,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
@@ -70,6 +70,7 @@ const nextConfig: NextConfig = {
         webpackConfig.infrastructureLogging.level = 'error';
       }
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return config;
   },
   images: {
