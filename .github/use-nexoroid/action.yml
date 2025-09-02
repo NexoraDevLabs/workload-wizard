@@ -38,9 +38,12 @@ runs:
 
     - name: Configure git identity
       shell: bash
+      env:
+        GIT_USER_NAME: ${{ inputs.git_user_name }}
+        GIT_USER_EMAIL: ${{ inputs.git_user_email }}
       run: |
-        git config --global user.name  "${{ inputs.git_user_name }}"
-        git config --global user.email "${{ inputs.git_user_email }}"
+        git config --global user.name "$GIT_USER_NAME"
+        git config --global user.email "$GIT_USER_EMAIL"
 
     - name: Expose token to env for later steps (optional)
       shell: bash
