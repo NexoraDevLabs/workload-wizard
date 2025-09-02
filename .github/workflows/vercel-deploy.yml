@@ -117,17 +117,30 @@ jobs:
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
           # Explicitly unset Sentry token for preview builds
           SENTRY_AUTH_TOKEN: ''
-          # Remove dummy environment variables to let Vercel env vars take precedence
-          NEXT_PUBLIC_CONVEX_URL: ''
-          CONVEX_DEPLOYMENT: ''
-        run: pnpm dlx vercel@latest build --token "$VERCEL_TOKEN"
+        run: |
+          echo "Building preview deployment..."
+          echo "Current directory: $(pwd)"
+          echo "Environment variables:"
+          echo "  NEXT_PUBLIC_APP_VERSION: $NEXT_PUBLIC_APP_VERSION"
+          echo "  NODE_ENV: $NODE_ENV"
+          echo "Building with Vercel..."
+          pnpm dlx vercel@latest build --token "$VERCEL_TOKEN"
+          echo "Build completed. Checking output..."
+          ls -la .vercel/output/ || echo "No .vercel/output directory found"
+          ls -la .next/ || echo "No .next directory found"
 
       - name: Deploy Preview (dev/PR)
         id: deploy_preview
         if: needs.setup.outputs.is_preview == 'true'
         run: |
-          # Deploy as preview, explicitly NOT production
-          url=$(pnpm -s dlx vercel@latest deploy --prebuilt --target=preview --token "$VERCEL_TOKEN" | tail -n1)
+          echo "Deploying preview..."
+          echo "Checking build artifacts before deployment:"
+          ls -la .vercel/output/ || echo "No .vercel/output directory found"
+          ls -la .next/ || echo "No .next directory found"
+          echo "Deploying with Vercel..."
+          # Deploy as preview deployment (not production)
+          url=$(pnpm -s dlx vercel@latest deploy --prebuilt --token "$VERCEL_TOKEN" | tail -n1)
+          echo "Deployment completed. URL: $url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       # ---------- PRODUCTION (main) ----------
