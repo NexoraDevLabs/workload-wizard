@@ -92,8 +92,8 @@ const config = withBundleAnalyzer(
     org: 'smcnab-tech',
     project: 'workload-wizard',
 
-    // Only print logs for uploading source maps in CI
-    silent: !process.env.CI,
+    // Suppress all Sentry build logs and warnings (including auth token warnings)
+    silent: true,
 
     // For all available options, see:
     // https://docs.sentry.io/product/crons/
