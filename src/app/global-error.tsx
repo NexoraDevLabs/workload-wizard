@@ -37,7 +37,10 @@ export default function GlobalError({
             >
               Try again
             </button>
-            <Link href="/" style={{ color: '#0070f3', textDecoration: 'underline' }}>
+            <Link
+              href="/"
+              style={{ color: '#0070f3', textDecoration: 'underline' }}
+            >
               Go to homepage
             </Link>
           </div>
