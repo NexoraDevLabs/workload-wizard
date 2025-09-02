@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { client } from '@/sanity/client';
+import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { sanityEnabled } from '@/sanity/env';
 
