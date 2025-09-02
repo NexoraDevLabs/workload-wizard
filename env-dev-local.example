@@ -1,7 +1,0 @@
-# Development environment variables (highest priority)
-# Copy this to .env.dev.local
-NODE_ENV=development
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-NEXT_PUBLIC_APP_NAME=Workload Wizard Dev
-DATABASE_URL=postgresql://dev_user:dev_pass@localhost:5432/workload_wizard_dev
-SECRET_KEY=dev_secret_key_123
