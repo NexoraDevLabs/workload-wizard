@@ -11,7 +11,9 @@ try {
   loadEnvironment();
 } catch {
   // Environment loader not found, continuing with default env loading
-  console.warn('Environment loader not found, continuing with default env loading');
+  console.warn(
+    'Environment loader not found, continuing with default env loading'
+  );
 }
 
 // Bundle analyzer configuration
@@ -22,7 +24,9 @@ if (process.env.ANALYZE === 'true') {
   const bundleAnalyzer = require('@next/bundle-analyzer');
   const bundleAnalyzerFn = (
     bundleAnalyzer as {
-      default: (options: { enabled: boolean }) => (config: NextConfig) => NextConfig;
+      default: (options: {
+        enabled: boolean;
+      }) => (config: NextConfig) => NextConfig;
     }
   ).default;
 
@@ -63,7 +67,9 @@ const nextConfig: NextConfig = {
 
   webpack: (config) => {
     // Reduce noisy infrastructure logs in CI
-    const webpackConfig = config as { infrastructureLogging?: { level?: string } };
+    const webpackConfig = config as {
+      infrastructureLogging?: { level?: string };
+    };
     if (webpackConfig.infrastructureLogging) {
       webpackConfig.infrastructureLogging.level = 'error';
     }
