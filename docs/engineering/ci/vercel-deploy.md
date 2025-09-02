@@ -34,6 +34,11 @@ The workflow requires the following repository secrets to be configured:
 - `VERCEL_ORG_ID` - Your Vercel organization/team ID
 - `VERCEL_PROJECT_ID` - The project ID for your Vercel application
 
+### Convex Secrets
+
+- `CONVEX_DEPLOY_KEY_DEV` - Convex deploy key for dev/preview deployments
+- `CONVEX_DEPLOY_KEY_PROD` - Convex deploy key for production deployments
+
 ### Nexoroid GitHub App Secrets
 
 - `NEXOROID_APP_ID` - GitHub App ID for the Nexoroid bot
@@ -47,6 +52,17 @@ The workflow requires the following repository secrets to be configured:
 2. Create a new token with appropriate scope
 3. Update the `VERCEL_TOKEN` secret in GitHub repository settings
 4. Delete the old token from Vercel
+
+### Rotating Convex Deploy Keys
+
+1. Go to [Convex Dashboard > Settings](https://dashboard.convex.dev)
+2. Generate new deploy keys:
+   - **Dev/Preview**: Generate a new "Preview" deploy key
+   - **Production**: Generate a new "Production" deploy key
+3. Update the corresponding secrets in GitHub repository settings:
+   - `CONVEX_DEPLOY_KEY_DEV` for preview deployments
+   - `CONVEX_DEPLOY_KEY_PROD` for production deployments
+4. Delete the old deploy keys from Convex dashboard
 
 ### Rotating GitHub App Private Key
 
@@ -62,7 +78,8 @@ The workflow requires the following repository secrets to be configured:
 - **pnpm caching** - Dependencies are cached between runs
 - **Next.js build cache** - Build artifacts are cached for faster subsequent builds
 - **Concurrency control** - Cancels redundant runs per git reference
-- **Prebuilt deployments** - Uses `vercel build` + `vercel deploy --prebuilt` to avoid duplicate builds
+- **Convex integration** - Automatically deploys Convex functions with each deployment
+- **Environment-specific databases** - Uses dev Convex for previews, prod Convex for production
 
 ### Automated Communication
 
