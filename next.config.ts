@@ -51,8 +51,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: process.env.CI === 'true',
   },
   experimental: {
-    // Enable build optimizations
-    optimizeCss: true,
+    // Disable optimizeCss to avoid critters dependency issue  
+    optimizeCss: false,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
   webpack: (config) => {
