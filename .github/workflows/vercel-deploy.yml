@@ -1,0 +1,166 @@
+name: Vercel Deploy (Dev & Prod)
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  deployments: write
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+jobs:
+  deploy:
+    name: Deploy via Vercel CLI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Nexoroid App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.NEXOROID_APP_ID }}
+          private-key: ${{ secrets.NEXOROID_APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set Nexoroid identity
+        run: |
+          git config --global user.name "Nexoroid"
+          git config --global user.email "nexoroid[bot]@users.noreply.github.com"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install deps (cached)
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            next-${{ runner.os }}-
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "env=preview" >> $GITHUB_OUTPUT
+            echo "is_prod=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" || "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "is_prod=true" >> $GITHUB_OUTPUT
+          else
+            echo "env=preview" >> $GITHUB_OUTPUT
+            echo "is_prod=false" >> $GITHUB_OUTPUT
+          fi
+          echo "ref=${{ github.ref }}" >> $GITHUB_OUTPUT
+          echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Pull Vercel env
+        run: vercel pull --yes --environment=${{ steps.env.outputs.env }} --token "$VERCEL_TOKEN"
+
+      - name: Build (Vercel prebuilt)
+        env:
+          NODE_ENV: production
+        run: vercel build --token "$VERCEL_TOKEN"
+
+      - name: Deploy
+        id: deploy
+        shell: bash
+        run: |
+          if [[ "${{ steps.env.outputs.is_prod }}" == "true" ]]; then
+            url=$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" | tail -n1 | tr -d '\n')
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN" | tail -n1 | tr -d '\n')
+            echo "environment=preview" >> $GITHUB_OUTPUT
+          fi
+          echo "url=$url" >> $GITHUB_OUTPUT
+          echo "Deployed to: $url"
+
+      - name: Post job summary
+        if: always()
+        run: |
+          {
+            echo "## ✅ Vercel Deployment"
+            echo ""
+            echo "- **Environment:** ${{ steps.deploy.outputs.environment }}"
+            echo "- **Ref:** \`${{ steps.env.outputs.ref }}\`"
+            echo "- **Commit:** \`${{ steps.env.outputs.sha }}\`"
+            echo "- **URL:** ${{ steps.deploy.outputs.url }}"
+            echo "- **Workflow:** ${{ github.workflow }} (run #${{ github.run_number }})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on PR (sticky)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const body = [
+              '### 🚀 Vercel Preview Deployment',
+              `**URL:** ${process.env.URL}`,
+              `**Environment:** preview`,
+              `**Commit:** \`${context.sha}\``
+            ].join('\n');
+
+            // Find existing bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const marker = '<!-- vercel-preview-sticky -->';
+            const existing = comments.find(c =>
+              c.user && c.user.type === 'Bot' && c.body && c.body.includes(marker)
+            );
+
+            const bodyWithMarker = `${marker}\n${body}`;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: bodyWithMarker
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: bodyWithMarker
+              });
+            }
+        env:
+          URL: ${{ steps.deploy.outputs.url }}

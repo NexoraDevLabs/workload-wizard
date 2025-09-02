@@ -71,13 +71,13 @@ function getConvex(): ConvexHttpClient | null {
 }
 
 export default clerkMiddleware(async (auth, req) => {
-  // HTTPS redirect - platform-level enforcement preferred, this is fallback
-  const proto = req.headers.get('x-forwarded-proto');
-  if (proto && proto !== 'https') {
-    const url = new URL(req.url);
-    url.protocol = 'https:';
-    return NextResponse.redirect(url, 308);
-  }
+  // HTTPS redirect - DISABLED for Vercel deployments (handled at platform level)
+  // const proto = req.headers.get('x-forwarded-proto');
+  // if (proto && proto !== 'https') {
+  //   const url = new URL(req.url);
+  //   url.protocol = 'https:';
+  //   return NextResponse.redirect(url, 308);
+  // }
 
   const { userId, sessionClaims } = await auth();
 

@@ -3,16 +3,7 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
-// Load environment variables on startup
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-  const { loadEnvironment } = require('./lib/env-loader');
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  loadEnvironment();
-} catch {
-  // Environment loader not found, continuing with default env loading
-  console.warn('Environment loader not found, continuing with default env loading');
-}
+// Environment variables are loaded automatically by Next.js from .env files
 
 // Bundle analyzer configuration
 let withBundleAnalyzer: (config: NextConfig) => NextConfig = (config) => config;
@@ -22,7 +13,9 @@ if (process.env.ANALYZE === 'true') {
   const bundleAnalyzer = require('@next/bundle-analyzer');
   const bundleAnalyzerFn = (
     bundleAnalyzer as {
-      default: (options: { enabled: boolean }) => (config: NextConfig) => NextConfig;
+      default: (options: {
+        enabled: boolean;
+      }) => (config: NextConfig) => NextConfig;
     }
   ).default;
 
@@ -63,7 +56,9 @@ const nextConfig: NextConfig = {
 
   webpack: (config) => {
     // Reduce noisy infrastructure logs in CI
-    const webpackConfig = config as { infrastructureLogging?: { level?: string } };
+    const webpackConfig = config as {
+      infrastructureLogging?: { level?: string };
+    };
     if (webpackConfig.infrastructureLogging) {
       webpackConfig.infrastructureLogging.level = 'error';
     }

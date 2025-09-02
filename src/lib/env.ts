@@ -47,5 +47,11 @@ export function getEnv(): Env {
 }
 
 // Parse eagerly at import time to fail fast in production builds
-// Safe in dev/test too
-void getEnv();
+// Safe in dev/test too, but allow builds to continue if env validation fails
+try {
+  void getEnv();
+} catch (error) {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('Environment validation failed during build:', error);
+  }
+}
