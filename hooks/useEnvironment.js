@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable no-undef */
- 
+
 import { useEffect, useState } from 'react';
 
 export function useEnvironment() {
@@ -34,7 +34,7 @@ export function getServerEnvironment() {
   if (typeof window !== 'undefined') {
     throw new Error('getServerEnvironment can only be used on the server');
   }
-  
+
   const { loadEnvironment } = require('../lib/env-loader');
   return loadEnvironment();
 }
