@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  NODE_OPTIONS: '--max_old_space_size=4096'
+  NEXT_DISABLE_SOURCEMAPS: '1'
+  SENTRY_SKIP_AUTO_RELEASE: '1'
+  SENTRY_SOURCEMAPS: 'false'
+  # Dummy envs so server code doesn't crash in CI
+  NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
+  CONVEX_DEPLOYMENT: 'https://example.invalid'
+  FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
+  STATSIG_SERVER_SECRET_KEY: 'test_server_key'
+  STATSIG_SERVER_API_KEY: 'test_server_key'
+  CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+  WEBHOOK_SECRET: 'test_webhook_secret'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ✅ build completed"
+            echo ""
+            echo "- Workflow: **${{ github.workflow }}**"
+            echo "- Ref: **${{ github.ref_name }}** (${GITHUB_SHA:0:7})"
+            echo "- Runner: **${{ runner.os }}**"
+            echo ""
+            echo "### Key Outputs"
+            echo "- Node: \`$(node -v)\`"
+            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test -- --ci
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ✅ test completed"
+            echo ""
+            echo "- Workflow: **${{ github.workflow }}**"
+            echo "- Ref: **${{ github.ref_name }}** (${GITHUB_SHA:0:7})"
+            echo "- Runner: **${{ runner.os }}**"
+            echo ""
+            echo "### Key Outputs"
+            echo "- Node: \`$(node -v)\`"
+            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- Test runner: **Vitest**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high || npm audit --audit-level=high
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ✅ audit completed"
+            echo ""
+            echo "- Workflow: **${{ github.workflow }}**"
+            echo "- Ref: **${{ github.ref_name }}** (${GITHUB_SHA:0:7})"
+            echo "- Runner: **${{ runner.os }}**"
+            echo ""
+            echo "### Key Outputs"
+            echo "- Node: \`$(node -v)\`"
+            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- Audit level: **high**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"

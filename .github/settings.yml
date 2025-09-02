@@ -1,0 +1,129 @@
+# GitHub repository settings managed by the Settings app
+# https://github.com/probot/settings
+
+repository:
+  name: workload-wizard
+  description: A comprehensive workload management application for educational institutions
+  homepage: https://workload-wizard.vercel.app
+  topics: nextjs, react, typescript, convex, clerk, education, workload-management
+  private: true
+  has_issues: true
+  has_projects: true
+  has_wiki: false
+  has_downloads: false
+  default_branch: main
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: false
+  delete_branch_on_merge: true
+  enable_automated_security_fixes: true
+  enable_vulnerability_alerts: true
+
+branches:
+  - name: main
+    protection:
+      required_status_checks:
+        strict: true
+        contexts:
+          - build
+          - test
+          - audit
+          - codeql
+          - semgrep
+      enforce_admins: true
+      required_linear_history: true
+      allow_force_pushes: false
+      allow_deletions: false
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: false
+        bypass_pull_request_allowances:
+          users: []
+          teams: []
+
+labels:
+  # Priority
+  - name: "priority: critical"
+    color: "d73a4a"
+    description: "Critical priority"
+  - name: "priority: high"
+    color: "ff6b6b"
+    description: "High priority"
+  - name: "priority: medium"
+    color: "fbca04"
+    description: "Medium priority"
+  - name: "priority: low"
+    color: "0e8a16"
+    description: "Low priority"
+
+  # Type
+  - name: "type: bug"
+    color: "d73a4a"
+    description: "Something isn't working"
+  - name: "type: feature"
+    color: "0052cc"
+    description: "New feature or request"
+  - name: "type: enhancement"
+    color: "a2eeef"
+    description: "Enhancement to existing feature"
+  - name: "type: documentation"
+    color: "0075ca"
+    description: "Improvements or additions to documentation"
+  - name: "type: refactor"
+    color: "5319e7"
+    description: "Code refactoring"
+
+  # Status
+  - name: "status: ready"
+    color: "0e8a16"
+    description: "Ready for development"
+  - name: "status: in-progress"
+    color: "fbca04"
+    description: "Currently being worked on"
+  - name: "status: blocked"
+    color: "d73a4a"
+    description: "Blocked by other work"
+  - name: "status: needs-review"
+    color: "0052cc"
+    description: "Needs code review"
+
+  # Areas
+  - name: "area: frontend"
+    color: "7057ff"
+    description: "Frontend/UI related"
+  - name: "area: backend"
+    color: "008672"
+    description: "Backend/API related"
+  - name: "area: database"
+    color: "1d76db"
+    description: "Database related"
+  - name: "area: auth"
+    color: "f9d0c4"
+    description: "Authentication related"
+  - name: "area: security"
+    color: "b60205"
+    description: "Security related"
+  - name: "area: testing"
+    color: "0e8a16"
+    description: "Testing related"
+  - name: "area: ci/cd"
+    color: "0052cc"
+    description: "CI/CD pipeline related"
+
+  # Special
+  - name: "good first issue"
+    color: "7057ff"
+    description: "Good for newcomers"
+  - name: "help wanted"
+    color: "008672"
+    description: "Extra attention is needed"
+  - name: "dependencies"
+    color: "0366d6"
+    description: "Pull requests that update a dependency file"
+  - name: "wontfix"
+    color: "ffffff"
+    description: "This will not be worked on"
+  - name: "duplicate"
+    color: "cfd3d7"
+    description: "This issue or pull request already exists"

@@ -35,6 +35,8 @@
 
 # WorkloadWizard
 
+[![CI](https://github.com/sammcnab/workload-wizard/actions/workflows/ci.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/ci.yml)
+
 A comprehensive workload management application for educational institutions, built with Next.js, Convex, and Clerk.
 
 > **Private Repository** — access is by invitation only. If you need access, contact the maintainer.

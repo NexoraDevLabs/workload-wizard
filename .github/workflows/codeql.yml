@@ -1,0 +1,85 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      pull-requests: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ✅ CodeQL analysis completed"
+            echo ""
+            echo "- Workflow: **${{ github.workflow }}**"
+            echo "- Ref: **${{ github.ref_name }}** (${GITHUB_SHA:0:7})"
+            echo "- Runner: **${{ runner.os }}**"
+            echo ""
+            echo "### Analysis Details"
+            echo "- Languages: **javascript-typescript**"
+            echo "- Queries: **security-extended, security-and-quality**"
+            echo "- Status: **${{ job.status }}**"
+            echo ""
+            echo "### Results"
+            echo "Results available in **Security → Code scanning alerts**"
+          } >> "$GITHUB_STEP_SUMMARY"
