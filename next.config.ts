@@ -3,11 +3,15 @@ import type { NextConfig } from 'next';
 
 // Load environment variables on startup
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
   const { loadEnvironment } = require('./lib/env-loader');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   loadEnvironment();
-} catch (error) {
-  console.warn('Environment loader not found, continuing with default env loading');
+} catch {
+  // Environment loader not found, continuing with default env loading
+  console.warn(
+    'Environment loader not found, continuing with default env loading'
+  );
 }
 
 // Bundle analyzer configuration
