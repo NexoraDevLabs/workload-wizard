@@ -139,7 +139,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-};
+},
 
 const config = withBundleAnalyzer(
   withSentryConfig(nextConfig, {
