@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "pnpm exec next dev",
     "dev:clean": "rimraf .next && pnpm exec next dev",
-    "build": "pnpm exec next build",
+    "build": "NODE_ENV=production pnpm exec next build",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
