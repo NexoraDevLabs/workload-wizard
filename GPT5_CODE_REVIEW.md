@@ -7,14 +7,14 @@
 
 **Letter grades**
 
-* **Security:** B-
-* **Architecture:** B
-* **Code Quality:** B
-* **Reliability:** B-
-* **Performance:** B
-* **Data (DB/GDPR):** B-
-* **CI/CD:** C
-* **Testing:** D
+- **Security:** B-
+- **Architecture:** B
+- **Code Quality:** B
+- **Reliability:** B-
+- **Performance:** B
+- **Data (DB/GDPR):** B-
+- **CI/CD:** C
+- **Testing:** D
 
 **Top 10 Risks (short bullets)**
 
@@ -58,23 +58,23 @@
 
 **Context & Evidence**
 
-* Workflows are stored under `.github/new.but.disabled.workflows/*` (e.g., `auto-label-prs.yml`, `semgrep.yml`, `quality.yml`) rather than `.github/workflows/*`, so GitHub Actions does not execute them.
-* Root files like `.github/repo-health.yml` also **won’t run** unless placed under `.github/workflows/`.
+- Workflows are stored under `.github/new.but.disabled.workflows/*` (e.g., `auto-label-prs.yml`, `semgrep.yml`, `quality.yml`) rather than `.github/workflows/*`, so GitHub Actions does not execute them.
+- Root files like `.github/repo-health.yml` also **won’t run** unless placed under `.github/workflows/`.
 
 **Why it’s a problem**
 Quality/security gates are bypassed; regressions and vulnerabilities may land in `main`.
 
 **Remediation (specific)**
 
-* Create `.github/workflows/` and move a minimal gate set: `quality.yml`, `semgrep.yml`, `codeql.yml`, `secret-scan.yml`, `typecheck.yml`, `lint.yml`, `test.yml`.
-* Use a fine-scoped GitHub App token (your Nexoroid app) for any write backs.
+- Create `.github/workflows/` and move a minimal gate set: `quality.yml`, `semgrep.yml`, `codeql.yml`, `secret-scan.yml`, `typecheck.yml`, `lint.yml`, `test.yml`.
+- Use a fine-scoped GitHub App token (your Nexoroid app) for any write backs.
 
 **Effort:** S (0.5–1 pd) • **Priority:** P0 • **Confidence:** 3
 **Acceptance Criteria**
 
-* Workflows visible under Actions and run on PRs.
-* Required checks enforced in branch protection.
-* Failing lint/type/test blocks merge.
+- Workflows visible under Actions and run on PRs.
+- Required checks enforced in branch protection.
+- Failing lint/type/test blocks merge.
 
 ---
 
@@ -82,7 +82,7 @@ Quality/security gates are bypassed; regressions and vulnerabilities may land in
 
 **Context & Evidence**
 
-* `eslint.config.mjs` contains literal `...` at L13 (`...tseslint.configs.recommended,`) which breaks parsing.
+- `eslint.config.mjs` contains literal `...` at L13 (`...tseslint.configs.recommended,`) which breaks parsing.
 
 **Why it’s a problem**
 Lint never executes; unsafe patterns slip in undetected.
@@ -98,13 +98,13 @@ diff --git a/eslint.config.mjs b/eslint.config.mjs
 +  // (Remove stray ellipses; ensure full rule objects are present)
 ```
 
-*And ensure the full file contains proper arrays/objects (see E) for a recommended ruleset).*
+_And ensure the full file contains proper arrays/objects (see E) for a recommended ruleset)._
 
 **Effort:** S (0.5 pd) • **Priority:** P0 • **Confidence:** 3
 **Acceptance Criteria**
 
-* `pnpm lint:strict` passes locally; fails on any warnings in CI.
-* ESLint step runs in PR checks.
+- `pnpm lint:strict` passes locally; fails on any warnings in CI.
+- ESLint step runs in PR checks.
 
 ---
 
@@ -112,7 +112,7 @@ diff --git a/eslint.config.mjs b/eslint.config.mjs
 
 **Context & Evidence**
 
-* `src/middleware.ts` uses a process-local map: `const RATE_LIMITS: Record<string, RateLimitBucket> = {};` (L16) with `RATE_LIMIT_WINDOW_MS = 60_000` (L17).
+- `src/middleware.ts` uses a process-local map: `const RATE_LIMITS: Record<string, RateLimitBucket> = {};` (L16) with `RATE_LIMIT_WINDOW_MS = 60_000` (L17).
 
 **Why it’s a problem**
 Edge/serverless instances don’t share memory; limits are easily bypassed or reset, offering little abuse protection.
@@ -149,9 +149,9 @@ diff --git a/src/middleware.ts b/src/middleware.ts
 **Effort:** M (1–2 pd) • **Priority:** P0 • **Confidence:** 3
 **Acceptance Criteria**
 
-* 429s issued under sustained load across multiple regions.
-* Standard rate-limit headers present.
-* Load test demonstrates consistent limiting across cold starts.
+- 429s issued under sustained load across multiple regions.
+- Standard rate-limit headers present.
+- Load test demonstrates consistent limiting across cold starts.
 
 ---
 
@@ -159,17 +159,17 @@ diff --git a/src/middleware.ts b/src/middleware.ts
 
 **Context & Evidence**
 
-* `next.config.ts`: `ignoreDuringBuilds: true` (L27).
+- `next.config.ts`: `ignoreDuringBuilds: true` (L27).
 
 **Why it’s a problem**
 Allows merging builds with lint violations.
 
 **Remediation**
 
-* Set `ignoreDuringBuilds: process.env.CI ? false : true` or simply `false` and fix violations.
+- Set `ignoreDuringBuilds: process.env.CI ? false : true` or simply `false` and fix violations.
   **Effort:** S (0.25 pd) • **Priority:** P1 • **Confidence:** 3
   **Acceptance Criteria**
-* CI rejects PRs with lint errors.
+- CI rejects PRs with lint errors.
 
 ---
 
@@ -177,14 +177,14 @@ Allows merging builds with lint violations.
 
 **Context & Evidence**
 
-* `sentry.server.config.ts`: `enableLogs: true` (L11), `tracesSampleRate: 1.0` (L14), env defaults to development (L17).
+- `sentry.server.config.ts`: `enableLogs: true` (L11), `tracesSampleRate: 1.0` (L14), env defaults to development (L17).
 
 **Why it’s a problem**
 High volume data capture raises privacy and cost risk.
 
 **Remediation**
 
-* Use lower sample in prod (e.g., `0.1`) and `beforeSend` to scrub PII.
+- Use lower sample in prod (e.g., `0.1`) and `beforeSend` to scrub PII.
   **Minimal patch:**
 
 ```diff
@@ -212,7 +212,7 @@ diff --git a/sentry.server.config.ts b/sentry.server.config.ts
 **Effort:** S (0.5 pd) • **Priority:** P1 • **Confidence:** 3
 **Acceptance Criteria**
 
-* Lower event volume in prod; PII not present in Sentry payloads.
+- Lower event volume in prod; PII not present in Sentry payloads.
 
 ---
 
@@ -220,14 +220,14 @@ diff --git a/sentry.server.config.ts b/sentry.server.config.ts
 
 **Context & Evidence**
 
-* `src/lib/env.ts` marks critical vars optional (e.g., `CLERK_SECRET_KEY: z.string().optional()`, L14; `CONVEX_DEPLOY_KEY: z.string().optional()`, L17).
+- `src/lib/env.ts` marks critical vars optional (e.g., `CLERK_SECRET_KEY: z.string().optional()`, L14; `CONVEX_DEPLOY_KEY: z.string().optional()`, L17).
 
 **Why it’s a problem**
 Production can deploy with missing secrets, causing runtime failures or silent misbehaviour.
 
 **Remediation**
 
-* Require secrets in prod and fail fast.
+- Require secrets in prod and fail fast.
   **Minimal patch:**
 
 ```diff
@@ -250,7 +250,7 @@ diff --git a/src/lib/env.ts b/src/lib/env.ts
 **Effort:** S (0.5 pd) • **Priority:** P0 • **Confidence:** 3
 **Acceptance Criteria**
 
-* Missing secrets break startup in prod; clear error message.
+- Missing secrets break startup in prod; clear error message.
 
 ---
 
@@ -258,7 +258,7 @@ diff --git a/src/lib/env.ts b/src/lib/env.ts
 
 **Context & Evidence**
 
-* `src/app/api/complete-onboarding/route.ts` reads body and **casts**: `const body = (await request.json()) as { onboardingData: OnboardingData };` (L39), no `zod` import.
+- `src/app/api/complete-onboarding/route.ts` reads body and **casts**: `const body = (await request.json()) as { onboardingData: OnboardingData };` (L39), no `zod` import.
 
 **Why it’s a problem**
 Malformed/hostile payloads can pass unchecked.
@@ -282,7 +282,7 @@ diff --git a/src/app/api/complete-onboarding/route.ts b/src/app/api/complete-onb
 **Effort:** S (0.5 pd) • **Priority:** P0 • **Confidence:** 3
 **Acceptance Criteria**
 
-* Invalid body returns 400; valid path updates Clerk + Convex.
+- Invalid body returns 400; valid path updates Clerk + Convex.
 
 ---
 
@@ -290,21 +290,21 @@ diff --git a/src/app/api/complete-onboarding/route.ts b/src/app/api/complete-onb
 
 **Context & Evidence**
 
-* Endpoint at `src/app/api/reset-password/route.ts`. Middleware lists reset routes as public (`isPublicRoute` includes `/reset-password`).
-* Code checks current user/admin in route, but public surface increases risk if authorisation checks change.
+- Endpoint at `src/app/api/reset-password/route.ts`. Middleware lists reset routes as public (`isPublicRoute` includes `/reset-password`).
+- Code checks current user/admin in route, but public surface increases risk if authorisation checks change.
 
 **Why it’s a problem**
 Privilege escalation if checks drift.
 
 **Remediation**
 
-* Require explicit permission (`requirePermission('users.admin')`) in handler.
-* Rate-limit endpoint and add complete audit entries on invocation, success, failure.
+- Require explicit permission (`requirePermission('users.admin')`) in handler.
+- Rate-limit endpoint and add complete audit entries on invocation, success, failure.
 
 **Effort:** S (0.5–1 pd) • **Priority:** P0 • **Confidence:** 2
 **Acceptance Criteria**
 
-* Non-admins get 403 with audit trail; admins succeed; rate-limit headers present.
+- Non-admins get 403 with audit trail; admins succeed; rate-limit headers present.
 
 ---
 
@@ -312,7 +312,7 @@ Privilege escalation if checks drift.
 
 **Context & Evidence**
 
-* No `headers()` export in `next.config.ts`, no CSP middleware.
+- No `headers()` export in `next.config.ts`, no CSP middleware.
 
 **Why it’s a problem**
 XSS/clickjacking/over-permissive browser features.
@@ -336,12 +336,12 @@ diff --git a/next.config.ts b/next.config.ts
 +  },
 ```
 
-*Tune CSP for your third-party domains (Clerk, Sentry, PostHog, Sanity).*
+_Tune CSP for your third-party domains (Clerk, Sentry, PostHog, Sanity)._
 
 **Effort:** M (1–2 pd) • **Priority:** P1 • **Confidence:** 3
 **Acceptance Criteria**
 
-* Headers present on all pages; no broken resources after allow-listing.
+- Headers present on all pages; no broken resources after allow-listing.
 
 ---
 
@@ -349,17 +349,17 @@ diff --git a/next.config.ts b/next.config.ts
 
 **Context & Evidence**
 
-* 0 `*.test.*` found; Vitest is configured.
+- 0 `*.test.*` found; Vitest is configured.
 
 **Why it’s a problem**
 Low defect detection; refactors risky.
 
 **Remediation**
 
-* Add unit tests for `src/lib/env.ts`, `src/lib/authz.ts`, API route handlers (schema tests), Convex permissions (query/mutation level).
+- Add unit tests for `src/lib/env.ts`, `src/lib/authz.ts`, API route handlers (schema tests), Convex permissions (query/mutation level).
   **Effort:** M (2–4 pd to seed) • **Priority:** P1 • **Confidence:** 3
   **Acceptance Criteria**
-* CI runs tests; coverage baseline ≥ 40% lines for core modules.
+- CI runs tests; coverage baseline ≥ 40% lines for core modules.
 
 ---
 
@@ -367,17 +367,17 @@ Low defect detection; refactors risky.
 
 **Context & Evidence**
 
-* PII in Convex schema (`users`, fields like `phone`, `department`, `pictureUrl`…), audit logs include `ipAddress` (`convex/audit.ts`).
+- PII in Convex schema (`users`, fields like `phone`, `department`, `pictureUrl`…), audit logs include `ipAddress` (`convex/audit.ts`).
 
 **Why it’s a problem**
 GDPR requires purpose limitation, minimisation, retention, SAR export.
 
 **Remediation**
 
-* Document DPIA; add retention policies (e.g., audit log 365 days), SAR export, and PII redaction in logs.
+- Document DPIA; add retention policies (e.g., audit log 365 days), SAR export, and PII redaction in logs.
   **Effort:** M (2–3 pd policy + 1–2 pd code) • **Priority:** P2 • **Confidence:** 2
   **Acceptance Criteria**
-* Retention job purges expired items; DPIA doc added to `/docs/compliance`.
+- Retention job purges expired items; DPIA doc added to `/docs/compliance`.
 
 ---
 
@@ -401,24 +401,24 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
 
 **tsconfig highlights**
 
-* `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true` ✅
-* **Risk:** `allowJs: true` ⇒ admit JS files; recommend `false` (or scope to specific paths).
-* Recommend enabling: `noImplicitReturns`, `noPropertyAccessFromIndexSignature`, `useUnknownInCatchVariables` (if not already inferred), `noErrorTruncation: true` for better DX.
+- `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true` ✅
+- **Risk:** `allowJs: true` ⇒ admit JS files; recommend `false` (or scope to specific paths).
+- Recommend enabling: `noImplicitReturns`, `noPropertyAccessFromIndexSignature`, `useUnknownInCatchVariables` (if not already inferred), `noErrorTruncation: true` for better DX.
 
 **Proposed ESLint (flat) rules to add**
 
-* `no-console: ["error", { allow: ["warn","error"] }]` (already warn; make error in CI).
-* `@typescript-eslint/no-floating-promises: "error"`; `@typescript-eslint/explicit-function-return-type: "warn"`
-* `security/detect-object-injection`, `security/detect-non-literal-fs-filename` (via `eslint-plugin-security`)
-* `import/no-default-export: "warn"` in app code to encourage named exports.
-* `@next/next/no-html-link-for-pages`, Core Web Vitals plugin for Next.
+- `no-console: ["error", { allow: ["warn","error"] }]` (already warn; make error in CI).
+- `@typescript-eslint/no-floating-promises: "error"`; `@typescript-eslint/explicit-function-return-type: "warn"`
+- `security/detect-object-injection`, `security/detect-non-literal-fs-filename` (via `eslint-plugin-security`)
+- `import/no-default-export: "warn"` in app code to encourage named exports.
+- `@next/next/no-html-link-for-pages`, Core Web Vitals plugin for Next.
 
 **Tech-debt “hot” files by size/complexity (indicative)**
 
-* `src/app/onboarding/page.tsx` (\~50 KB)
-* `src/lib/actions/userActions.ts` (\~35 KB)
-* `convex/users.ts` (\~24 KB)
-* `src/app/account/profile/page.tsx` (\~21 KB)
+- `src/app/onboarding/page.tsx` (\~50 KB)
+- `src/lib/actions/userActions.ts` (\~35 KB)
+- `convex/users.ts` (\~24 KB)
+- `src/app/account/profile/page.tsx` (\~21 KB)
   → Likely candidates for decomposition and focused tests.
 
 ---
@@ -427,34 +427,34 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
 
 **General**
 
-* Rich schema with multiple indexes (≈ 41 index refs noted). Good foundation.
+- Rich schema with multiple indexes (≈ 41 index refs noted). Good foundation.
 
 **Recommendations**
 
-* Ensure **unique** index on user subject (`users.by_subject`) and organisation code (if applicable). Evidence: `convex/users.ts` uses `withIndex('by_subject', ...)`.
-* Add **retention** for audit logs (scheduled function to purge older than N days).
-* Verify transaction boundaries for multi-step writes (Convex mutations): ensure idempotency keys for webhook-driven writes (Clerk).
+- Ensure **unique** index on user subject (`users.by_subject`) and organisation code (if applicable). Evidence: `convex/users.ts` uses `withIndex('by_subject', ...)`.
+- Add **retention** for audit logs (scheduled function to purge older than N days).
+- Verify transaction boundaries for multi-step writes (Convex mutations): ensure idempotency keys for webhook-driven writes (Clerk).
 
 ---
 
 # G) Performance Notes
 
-* Enable durable **rate limiting** (see SEC-003) to protect CPU/edge cold-starts.
-* Add **bundle budgets** and an analyser PR artifact.
-* Ensure `next/image` is used with explicit `sizes`/`priority` for above-the-fold (found in a few pages).
-* Consider caching headers for static routes (landing/blog) via `headers()`.
+- Enable durable **rate limiting** (see SEC-003) to protect CPU/edge cold-starts.
+- Add **bundle budgets** and an analyser PR artifact.
+- Ensure `next/image` is used with explicit `sizes`/`priority` for above-the-fold (found in a few pages).
+- Consider caching headers for static routes (landing/blog) via `headers()`.
 
 ---
 
 # H) CI/CD & Policy
 
-* **Enable** baseline workflows under `.github/workflows/`:
+- **Enable** baseline workflows under `.github/workflows/`:
+  - `typecheck.yml`, `lint.yml`, `test.yml`, `codeql.yml`, `semgrep.yml`, `secret-scan.yml`, `dependency-review.yml`, `release-please.yml` (if used).
 
-  * `typecheck.yml`, `lint.yml`, `test.yml`, `codeql.yml`, `semgrep.yml`, `secret-scan.yml`, `dependency-review.yml`, `release-please.yml` (if used).
-* **Branch protections:** require all checks, linear history, CODEOWNERS review.
-* **Token scopes:** use Nexoroid App installation token for writes; Actions `GITHUB_TOKEN` for read-only.
-* **Artifacts:** set retention to ≤ 7 days; avoid secrets in artifacts.
-* **Commit signing:** enforce DCO or GPG/Sigstore at repo level.
+- **Branch protections:** require all checks, linear history, CODEOWNERS review.
+- **Token scopes:** use Nexoroid App installation token for writes; Actions `GITHUB_TOKEN` for read-only.
+- **Artifacts:** set retention to ≤ 7 days; avoid secrets in artifacts.
+- **Commit signing:** enforce DCO or GPG/Sigstore at repo level.
 
 ---
 
@@ -464,34 +464,34 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
 
 **Phase 0 — Critical security & stability (P0)**
 
-* SEC-001: Move/enable CI workflows (DevOps, 1 pd).
-* SEC-002: Fix ESLint config; enforce lint in CI (Tech Lead, 0.5 pd).
-* SEC-006: Make secrets required in prod; fail fast (Backend, 0.5 pd).
-* SEC-007: Add Zod validation to `/api/complete-onboarding` (Backend, 0.5 pd).
-* SEC-003: Durable rate limiting (Backend, 1–2 pd).
-* SEC-008: Tighten `/api/reset-password` permissions + audit (Backend, 0.5–1 pd).
+- SEC-001: Move/enable CI workflows (DevOps, 1 pd).
+- SEC-002: Fix ESLint config; enforce lint in CI (Tech Lead, 0.5 pd).
+- SEC-006: Make secrets required in prod; fail fast (Backend, 0.5 pd).
+- SEC-007: Add Zod validation to `/api/complete-onboarding` (Backend, 0.5 pd).
+- SEC-003: Durable rate limiting (Backend, 1–2 pd).
+- SEC-008: Tighten `/api/reset-password` permissions + audit (Backend, 0.5–1 pd).
 
 **Phase 1 — Type-safety & lint baseline**
 
-* Disable `allowJs` or scope it; add missing TS compiler flags.
-* Introduce `@typescript-eslint/no-floating-promises` and security plugin.
-* Decompose oversized files (onboarding page, user actions) with clear boundaries.
+- Disable `allowJs` or scope it; add missing TS compiler flags.
+- Introduce `@typescript-eslint/no-floating-promises` and security plugin.
+- Decompose oversized files (onboarding page, user actions) with clear boundaries.
 
 **Phase 2 — Deprecations & DB fixes**
 
-* Confirm unique indexes (`users.subject`, `organisations.code`).
-* Add audit log retention job.
+- Confirm unique indexes (`users.subject`, `organisations.code`).
+- Add audit log retention job.
 
 **Phase 3 — Observability & tests**
 
-* Sentry sampling & PII scrubbing; add `beforeSend`.
-* Seed Vitest suites for env/authz/API; add minimal E2E for critical flows.
+- Sentry sampling & PII scrubbing; add `beforeSend`.
+- Seed Vitest suites for env/authz/API; add minimal E2E for critical flows.
 
 **Phase 4 — Performance & polish**
 
-* Bundle budgets + PR analyser.
-* CSP + hard security headers tuned for 3P domains.
-* Caching headers for static content.
+- Bundle budgets + PR analyser.
+- CSP + hard security headers tuned for 3P domains.
+- Caching headers for static content.
 
 ---
 
@@ -502,11 +502,11 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-001",
     "title": "Enable baseline CI workflows",
-    "labels": ["security","ci","P0"],
+    "labels": ["security", "ci", "P0"],
     "priority": "P0",
     "severity": "High",
     "area": "CI/CD",
-    "paths": [".github/new.but.disabled.workflows/*",".github/workflows/*"],
+    "paths": [".github/new.but.disabled.workflows/*", ".github/workflows/*"],
     "estimate_person_days": 1,
     "dependencies": [],
     "acceptance_criteria": [
@@ -517,11 +517,11 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-002",
     "title": "Fix ESLint flat config and fail on lint in CI",
-    "labels": ["code-quality","lint","P0"],
+    "labels": ["code-quality", "lint", "P0"],
     "priority": "P0",
     "severity": "High",
     "area": "Lint",
-    "paths": ["eslint.config.mjs",".github/workflows/lint.yml"],
+    "paths": ["eslint.config.mjs", ".github/workflows/lint.yml"],
     "estimate_person_days": 0.5,
     "dependencies": ["SEC-001"],
     "acceptance_criteria": [
@@ -532,7 +532,7 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-003",
     "title": "Replace in-memory rate limit with Redis-backed",
-    "labels": ["security","api","P0"],
+    "labels": ["security", "api", "P0"],
     "priority": "P0",
     "severity": "High",
     "area": "API",
@@ -548,7 +548,7 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-004",
     "title": "Disallow lint ignoreDuringBuilds in CI",
-    "labels": ["ci","lint","P1"],
+    "labels": ["ci", "lint", "P1"],
     "priority": "P1",
     "severity": "Medium",
     "area": "Build",
@@ -563,7 +563,7 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-005",
     "title": "Reduce Sentry sampling and scrub PII",
-    "labels": ["privacy","observability","P1"],
+    "labels": ["privacy", "observability", "P1"],
     "priority": "P1",
     "severity": "Medium",
     "area": "Observability",
@@ -578,7 +578,7 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-006",
     "title": "Require secrets in prod via env schema",
-    "labels": ["security","config","P0"],
+    "labels": ["security", "config", "P0"],
     "priority": "P0",
     "severity": "High",
     "area": "Config",
@@ -593,7 +593,7 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-007",
     "title": "Add Zod validation to complete-onboarding",
-    "labels": ["security","api","P0"],
+    "labels": ["security", "api", "P0"],
     "priority": "P0",
     "severity": "High",
     "area": "API",
@@ -608,11 +608,11 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "SEC-008",
     "title": "Harden reset-password endpoint",
-    "labels": ["security","auth","P0"],
+    "labels": ["security", "auth", "P0"],
     "priority": "P0",
     "severity": "High",
     "area": "Auth",
-    "paths": ["src/app/api/reset-password/route.ts","src/middleware.ts"],
+    "paths": ["src/app/api/reset-password/route.ts", "src/middleware.ts"],
     "estimate_person_days": 1,
     "dependencies": ["SEC-003"],
     "acceptance_criteria": [
@@ -624,7 +624,7 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "ARCH-009",
     "title": "Add CSP and security headers",
-    "labels": ["security","headers","P1"],
+    "labels": ["security", "headers", "P1"],
     "priority": "P1",
     "severity": "Medium",
     "area": "Web",
@@ -639,11 +639,11 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "TEST-010",
     "title": "Seed unit tests (env/authz/API)",
-    "labels": ["testing","quality","P1"],
+    "labels": ["testing", "quality", "P1"],
     "priority": "P1",
     "severity": "Medium",
     "area": "Testing",
-    "paths": ["src/lib/env.ts","src/lib/authz.ts","src/app/api/*/route.ts"],
+    "paths": ["src/lib/env.ts", "src/lib/authz.ts", "src/app/api/*/route.ts"],
     "estimate_person_days": 3,
     "dependencies": ["SEC-002"],
     "acceptance_criteria": [
@@ -654,11 +654,11 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
   {
     "id": "DATA-011",
     "title": "Implement audit retention and DPIA docs",
-    "labels": ["gdpr","data","P2"],
+    "labels": ["gdpr", "data", "P2"],
     "priority": "P2",
     "severity": "Medium",
     "area": "Data",
-    "paths": ["convex/audit.ts","docs/compliance/*"],
+    "paths": ["convex/audit.ts", "docs/compliance/*"],
     "estimate_person_days": 3,
     "dependencies": [],
     "acceptance_criteria": [
@@ -677,44 +677,44 @@ GDPR requires purpose limitation, minimisation, retention, SAR export.
 
 Top entries by size:
 
-* `.git/` \~12.8 MB
-* `src/` \~1.68 MB
-* `tsconfig.tsbuildinfo` \~0.80 MB
-* `pnpm-lock.yaml` \~0.70 MB
-* `convex/` \~0.27 MB
-* `.github/` \~0.19 MB
-* `doc-toreview/` \~0.14 MB
-* `docs/` \~0.02 MB
+- `.git/` \~12.8 MB
+- `src/` \~1.68 MB
+- `tsconfig.tsbuildinfo` \~0.80 MB
+- `pnpm-lock.yaml` \~0.70 MB
+- `convex/` \~0.27 MB
+- `.github/` \~0.19 MB
+- `doc-toreview/` \~0.14 MB
+- `docs/` \~0.02 MB
 
 Key directories:
 
-* `src/app/*` (pages & API routes; e.g., `onboarding/page.tsx`, `api/update-user-email/route.ts`, `api/reset-password/route.ts`)
-* `src/lib/*` (env, permissions, actions, services)
-* `convex/*` (schema, users, audit, roles; many indexes)
-* `.github/*` (issue templates, actions configs—**most in disabled folder**)
+- `src/app/*` (pages & API routes; e.g., `onboarding/page.tsx`, `api/update-user-email/route.ts`, `api/reset-password/route.ts`)
+- `src/lib/*` (env, permissions, actions, services)
+- `convex/*` (schema, users, audit, roles; many indexes)
+- `.github/*` (issue templates, actions configs—**most in disabled folder**)
 
 ## J2. SBOM-style (selected dependencies)
 
-* **next\@15.5.2**, **react\@19.1.1**, **typescript@^5.9.2**
-* **convex@^1.26.2**, **@clerk/nextjs@^6.31.6**
-* **@sentry/nextjs@^10.7.0** (reduce prod sampling; scrub PII)
-* **zod@^4.1.5** (use consistently on all API inputs)
-* **posthog-js@^1.261.0**, **@flags-sdk/statsig@^0.2.2** (document analytics; configure EU endpoints if available)
-* **tailwindcss@^4.1.12** (verify v4 conventions)
+- **next\@15.5.2**, **react\@19.1.1**, **typescript@^5.9.2**
+- **convex@^1.26.2**, **@clerk/nextjs@^6.31.6**
+- **@sentry/nextjs@^10.7.0** (reduce prod sampling; scrub PII)
+- **zod@^4.1.5** (use consistently on all API inputs)
+- **posthog-js@^1.261.0**, **@flags-sdk/statsig@^0.2.2** (document analytics; configure EU endpoints if available)
+- **tailwindcss@^4.1.12** (verify v4 conventions)
 
 ## J3. Lint/TS error inventory
 
-* **Not computed** because ESLint is syntactically broken and CI is disabled.
+- **Not computed** because ESLint is syntactically broken and CI is disabled.
   **Needed artefacts:** run `pnpm typecheck` and `pnpm lint:strict` after fixing `eslint.config.mjs`; export machine-readable reports for baseline.
 
 ## J4. Glossary
 
-* **Convex:** Backend/database runtime used here for queries/mutations and schema.
-* **Clerk:** Auth & identity provider (OIDC/JWT).
-* **CSP:** Content Security Policy headers to mitigate XSS and resource loading risks.
-* **PII:** Personally Identifiable Information (names, phone, IP, etc.).
-* **DPIA:** Data Protection Impact Assessment (GDPR).
-* **Upstash:** Serverless Redis used here as a durable rate-limit store example.
+- **Convex:** Backend/database runtime used here for queries/mutations and schema.
+- **Clerk:** Auth & identity provider (OIDC/JWT).
+- **CSP:** Content Security Policy headers to mitigate XSS and resource loading risks.
+- **PII:** Personally Identifiable Information (names, phone, IP, etc.).
+- **DPIA:** Data Protection Impact Assessment (GDPR).
+- **Upstash:** Serverless Redis used here as a durable rate-limit store example.
 
 ---
 
