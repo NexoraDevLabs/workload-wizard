@@ -1,6 +1,15 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
+// Load environment variables on startup
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { loadEnvironment } = require('./lib/env-loader');
+  loadEnvironment();
+} catch (error) {
+  console.warn('Environment loader not found, continuing with default env loading');
+}
+
 // Bundle analyzer configuration
 let withBundleAnalyzer = (config: NextConfig) => config;
 
@@ -22,6 +31,8 @@ if (process.env.ANALYZE === 'true') {
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Environment variables are handled by lib/env-loader.js
+  // NODE_ENV is automatically available in Next.js
   eslint: {
     // Don't block production builds on ESLint errors
     ignoreDuringBuilds: true,
@@ -82,6 +93,10 @@ const nextConfig: NextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
+  experimental: {
+    // Disable optimizeCss to avoid critters dependency issue
+    optimizeCss: false,
+  },
 };
 
 const config = withBundleAnalyzer(
