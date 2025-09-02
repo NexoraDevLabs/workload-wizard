@@ -35,7 +35,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           # use 10.x (compatible with lockfile v9) – pin to a specific if you prefer
-          version: 10.2.0
+          version: 10.15.0
           run_install: false
 
       # Now Node + cache can safely use "cache: pnpm"
