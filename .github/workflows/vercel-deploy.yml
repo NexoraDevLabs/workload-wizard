@@ -45,16 +45,16 @@ jobs:
           git config --global user.name "Nexoroid"
           git config --global user.email "nexoroid[bot]@users.noreply.github.com"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Install deps (cached)
         run: pnpm install --frozen-lockfile
