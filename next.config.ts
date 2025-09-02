@@ -46,7 +46,16 @@ const nextConfig: NextConfig = {
     // Don't block production builds on ESLint errors
     ignoreDuringBuilds: true,
   },
-  webpack: (config): NextConfig => {
+  typescript: {
+    // Don't type-check during builds (CI does this separately)
+    ignoreBuildErrors: process.env.CI === 'true',
+  },
+  experimental: {
+    // Enable build optimizations
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  },
+  webpack: (config) => {
     // Reduce noisy infrastructure logs in CI
     if (
       config &&
@@ -61,7 +70,7 @@ const nextConfig: NextConfig = {
         webpackConfig.infrastructureLogging.level = 'error';
       }
     }
-    return config as NextConfig;
+    return config;
   },
   images: {
     remotePatterns: [

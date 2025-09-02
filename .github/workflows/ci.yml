@@ -20,6 +20,11 @@ env:
   SENTRY_SOURCEMAPS: 'false'
   SENTRY_SILENT: '1'
   SENTRY_TELEMETRY: 'false'
+  # Build optimizations
+  SKIP_ENV_VALIDATION: '1'
+  CI: 'true'
+  # pnpm optimizations
+  PNPM_CACHE_FOLDER: '.pnpm-cache'
   # Dummy envs so server code doesn't crash in CI
   NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
   CONVEX_DEPLOYMENT: 'https://example.invalid'
@@ -32,7 +37,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,8 +51,20 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Build
         run: pnpm build
@@ -70,7 +87,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    needs: build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,8 +102,20 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Run tests
         run: pnpm test -- --ci
@@ -109,7 +139,8 @@ jobs:
 
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    needs: build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -123,8 +154,20 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prefer-offline
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high || npm audit --audit-level=high
