@@ -9,7 +9,7 @@ inputs:
     description: GitHub App private key (use secrets.NEXOROID_APP_PRIVATE_KEY)
     required: true
   owner:
-    description: Repository owner or org (usually ${{ github.repository_owner }})
+    description: Repository owner or org (usually github.repository_owner)
     required: false
   git_user_name:
     description: Git author name
