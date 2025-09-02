@@ -5,7 +5,8 @@ import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { useAuth } from '@clerk/nextjs';
 import { getEnv } from '@/lib/env';
 
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || 'https://fallback.convex.cloud';
+const convexUrl =
+  process.env.NEXT_PUBLIC_CONVEX_URL || 'https://fallback.convex.cloud';
 const convex = new ConvexReactClient(convexUrl);
 
 function ConvexClientProviderInternal({

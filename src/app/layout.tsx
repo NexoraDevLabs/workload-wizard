@@ -67,8 +67,11 @@ export default async function RootLayout({
   }
 
   // During build time or when environment variables are invalid, provide safe defaults
-  let datafile: { user: Record<string, unknown>; [key: string]: unknown } | null = null;
-  
+  let datafile: {
+    user: Record<string, unknown>;
+    [key: string]: unknown;
+  } | null = null;
+
   try {
     const { statsigAdapter, identify } = await import('@/flags');
     const user = await identify({ headers: headersStore });
