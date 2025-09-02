@@ -58,7 +58,6 @@ export default defineSchema({
     onboardingData: v.optional(
       v.object({
         jobRole: v.optional(v.string()),
-        customRole: v.optional(v.string()), // For "other" role selection
         department: v.optional(v.string()),
         phone: v.optional(v.string()),
         preferences: v.optional(

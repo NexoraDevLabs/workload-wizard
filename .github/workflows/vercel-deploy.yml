@@ -1,7 +1,7 @@
 name: Vercel Deploy (Dev & Prod)
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [dev, main]
   push:
     branches: [dev, main]
@@ -21,9 +21,6 @@ env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  # Convex deploy keys (will be used conditionally)
-  CONVEX_DEPLOY_KEY_DEV: ${{ secrets.CONVEX_DEPLOY_KEY_DEV }}
-  CONVEX_DEPLOY_KEY_PROD: ${{ secrets.CONVEX_DEPLOY_KEY_PROD }}
 
 jobs:
   deploy:
@@ -91,21 +88,20 @@ jobs:
       - name: Pull Vercel env
         run: vercel pull --yes --environment=${{ steps.env.outputs.env }} --token "$VERCEL_TOKEN"
 
-      - name: Deploy with Convex
+      - name: Build (Vercel prebuilt)
+        env:
+          NODE_ENV: production
+        run: vercel build --token "$VERCEL_TOKEN"
+
+      - name: Deploy
         id: deploy
         shell: bash
         run: |
           if [[ "${{ steps.env.outputs.is_prod }}" == "true" ]]; then
-            echo "🚀 Deploying to PRODUCTION with Convex..."
-            # Use production Convex deploy key
-            CONVEX_DEPLOY_KEY="${{ secrets.CONVEX_DEPLOY_KEY_PROD }}" npx convex deploy --cmd 'pnpm build' --prod
-            url=$(vercel deploy --prod --token "$VERCEL_TOKEN" | tail -n1 | tr -d '\n')
+            url=$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" | tail -n1 | tr -d '\n')
             echo "environment=production" >> $GITHUB_OUTPUT
           else
-            echo "🔧 Deploying to PREVIEW with Convex..."
-            # Use dev/preview Convex deploy key
-            CONVEX_DEPLOY_KEY="${{ secrets.CONVEX_DEPLOY_KEY_DEV }}" npx convex deploy --cmd 'pnpm build'
-            url=$(vercel deploy --token "$VERCEL_TOKEN" | tail -n1 | tr -d '\n')
+            url=$(vercel deploy --prebuilt --token "$VERCEL_TOKEN" | tail -n1 | tr -d '\n')
             echo "environment=preview" >> $GITHUB_OUTPUT
           fi
           echo "url=$url" >> $GITHUB_OUTPUT
