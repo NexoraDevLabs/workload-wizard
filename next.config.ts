@@ -3,18 +3,7 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
-// Load environment variables on startup
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-  const { loadEnvironment } = require('./lib/env-loader');
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  loadEnvironment();
-} catch {
-  // Environment loader not found, continuing with default env loading
-  console.warn(
-    'Environment loader not found, continuing with default env loading'
-  );
-}
+// Environment variables are loaded automatically by Next.js from .env files
 
 // Bundle analyzer configuration
 let withBundleAnalyzer: (config: NextConfig) => NextConfig = (config) => config;
