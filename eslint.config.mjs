@@ -6,7 +6,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   // Base
-  { ignores: ['node_modules/**', '.next/**', 'dist/**'] },
+  { ignores: ['node_modules/**', '.next/**', 'dist/**', 'next-env.d.ts'] },
   js.configs.recommended,
 
   // TypeScript (basic rules for all files)
