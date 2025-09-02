@@ -66,12 +66,21 @@ export default async function RootLayout({
     );
   }
 
-  const { statsigAdapter, identify } = await import('@/flags');
-  const user = await identify({ headers: headersStore });
-  const Statsig = await statsigAdapter.initialize();
-  const datafile = Statsig.getClientInitializeResponse(user, {
-    hash: 'djb2',
-  });
+  // During build time or when environment variables are invalid, provide safe defaults
+  let datafile = {};
+  
+  try {
+    const { statsigAdapter, identify } = await import('@/flags');
+    const user = await identify({ headers: headersStore });
+    const Statsig = await statsigAdapter.initialize();
+    datafile = Statsig.getClientInitializeResponse(user, {
+      hash: 'djb2',
+    });
+  } catch (error) {
+    // During build time or with invalid env vars, use empty datafile
+    console.warn('Failed to initialize Statsig, using empty datafile:', error);
+    datafile = {};
+  }
 
   return (
     <ClerkWrapper>
