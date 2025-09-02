@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  id-token: write
 
 concurrency:
   group: vercel-${{ github.ref }}
@@ -20,69 +18,24 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
   # Reduce noise and flaky telemetry in CI
-  NEXT_TELEMETRY_DISABLED: '1'
-  TURBO_TELEMETRY_DISABLED: '1'
-  SENTRY_SKIP_AUTO_RELEASE: '1'
-  SENTRY_SOURCEMAPS: 'false'
-  SENTRY_SILENT: '1'
-  SENTRY_TELEMETRY: 'false'
+  NEXT_TELEMETRY_DISABLED: 1
+  TURBO_TELEMETRY_DISABLED: 1
   # Give Next build more memory to avoid V8 OOM/core dumps
-  NODE_OPTIONS: '--max_old_space_size=6144'
-  # Dummy envs so server code doesn't crash in CI
-  NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
-  CONVEX_DEPLOYMENT: 'https://example.invalid'
-  FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
-  STATSIG_SERVER_SECRET_KEY: 'test_server_key'
-  STATSIG_SERVER_API_KEY: 'test_server_key'
-  CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
-  WEBHOOK_SECRET: 'test_webhook_secret'
+  NODE_OPTIONS: --max_old_space_size=6144
 
 jobs:
-  setup:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      is_preview: ${{ steps.environment.outputs.is_preview }}
-      is_production: ${{ steps.environment.outputs.is_production }}
-      environment_name: ${{ steps.environment.outputs.environment_name }}
-    steps:
-      - name: Determine environment
-        id: environment
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" != "pull_request" ]]; then
-            echo "is_preview=false" >> "$GITHUB_OUTPUT"
-            echo "is_production=true" >> "$GITHUB_OUTPUT"
-            echo "environment_name=production" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_preview=true" >> "$GITHUB_OUTPUT"
-            echo "is_production=false" >> "$GITHUB_OUTPUT"
-            echo "environment_name=preview" >> "$GITHUB_OUTPUT"
-          fi
-
-  build-and-deploy:
-    needs: setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # Setup Nexoroid bot for PR comments
-      - name: Setup Nexoroid App
-        if: github.event_name == 'pull_request'
-        id: nexoroid
-        uses: ./.github/use-nexoroid
-        with:
-          app_id: ${{ secrets.NEXOROID_APP_ID }}
-          private_key: ${{ secrets.NEXOROID_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
 
       # Use pnpm action instead of Corepack (avoids npm 403)
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          # Pin to specific version from package.json
-          version: '10.15.0'
+          # use 10.x (compatible with lockfile v9) – pin to a specific if you prefer
+          version: 10.2.0
           run_install: false
 
       # Now Node + cache can safely use "cache: pnpm"
@@ -106,158 +59,71 @@ jobs:
 
       # ---------- PREVIEW / PR ----------
       - name: Vercel pull (preview)
-        if: needs.setup.outputs.is_preview == 'true'
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'pull_request'
         run: pnpm dlx vercel@latest pull --yes --environment=preview --token "$VERCEL_TOKEN"
 
       - name: Build (Preview/PR)
-        if: needs.setup.outputs.is_preview == 'true'
-        # IMPORTANT: do NOT expose Sentry token on previews (prevents "sent as deployed")
-        # Most secrets are pulled from Vercel environment variables automatically
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'pull_request'
+        # IMPORTANT: do NOT expose Sentry token on previews (prevents “sent as deployed”)
         env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_ISSUER_URL: ${{ secrets.CLERK_ISSUER_URL }}
+          CLERK_JWT_ISSUER_DOMAIN: ${{ secrets.CLERK_JWT_ISSUER_DOMAIN }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
-          # Explicitly unset Sentry token for preview builds
-          SENTRY_AUTH_TOKEN: ''
-        run: |
-          echo "Building preview deployment..."
-          echo "Current directory: $(pwd)"
-          echo "Environment variables:"
-          echo "  NEXT_PUBLIC_APP_VERSION: $NEXT_PUBLIC_APP_VERSION"
-          echo "  NODE_ENV: $NODE_ENV"
-          echo "Building with Vercel..."
-          pnpm dlx vercel@latest build --token "$VERCEL_TOKEN"
-          echo "Build completed. Checking output..."
-          ls -la .vercel/output/ || echo "No .vercel/output directory found"
-          ls -la .next/ || echo "No .next directory found"
+          # Unset Sentry token for preview builds
+          SENTRY_AUTH_TOKEN: ""
+        run: pnpm dlx vercel@latest build --token "$VERCEL_TOKEN"
 
       - name: Deploy Preview (dev/PR)
         id: deploy_preview
-        if: needs.setup.outputs.is_preview == 'true'
+        if: github.ref == 'refs/heads/dev' || github.event_name == 'pull_request'
         run: |
-          echo "Deploying preview..."
-          echo "Checking build artifacts before deployment:"
-          ls -la .vercel/output/ || echo "No .vercel/output directory found"
-          ls -la .next/ || echo "No .next directory found"
-          echo "Deploying with Vercel..."
-          # Deploy as preview deployment (not production)
           url=$(pnpm -s dlx vercel@latest deploy --prebuilt --token "$VERCEL_TOKEN" | tail -n1)
-          echo "Deployment completed. URL: $url"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       # ---------- PRODUCTION (main) ----------
       - name: Vercel pull (production)
-        if: needs.setup.outputs.is_production == 'true'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: pnpm dlx vercel@latest pull --yes --environment=production --token "$VERCEL_TOKEN"
 
       - name: Build (Production with Convex deploy)
-        if: needs.setup.outputs.is_production == 'true'
-        # Most secrets are pulled from Vercel environment variables automatically
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        # Only expose Sentry token for production builds
         env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
           NEXT_PUBLIC_DISABLE_FEATURE_FLAGS: 1
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_ISSUER_URL: ${{ secrets.CLERK_ISSUER_URL }}
+          CLERK_JWT_ISSUER_DOMAIN: ${{ secrets.CLERK_JWT_ISSUER_DOMAIN }}
+          NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           NEXT_PUBLIC_APP_VERSION: ${{ github.sha }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           SENTRY_ENVIRONMENT: production
         run: npx convex deploy --cmd "pnpm dlx vercel@latest build --prod --token \"$VERCEL_TOKEN\""
 
       - name: Deploy Production (main)
         id: deploy_prod
-        if: needs.setup.outputs.is_production == 'true'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           url=$(pnpm -s dlx vercel@latest deploy --prebuilt --prod --token "$VERCEL_TOKEN" | tail -n1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
-      # ---------- PR COMMENTS ----------
-      - name: Comment on PR (Preview deployment)
-        if: github.event_name == 'pull_request' && steps.deploy_preview.outputs.url
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ steps.nexoroid.outputs.token }}
-          script: |
-            const deployUrl = '${{ steps.deploy_preview.outputs.url }}';
-            const shortSha = '${{ github.sha }}'.substring(0, 7);
-            const prNumber = context.issue.number;
-
-            // Find existing deployment comment
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-            });
-
-            const botComment = comments.find(comment => 
-              comment.user.login.includes('nexoroid') && 
-              comment.body.includes('<!-- vercel-deployment -->')
-            );
-
-            const commentBody = `<!-- vercel-deployment -->
-            ## 🚀 Preview Deployment
-
-            **Deploy URL:** ${deployUrl}
-            **Branch:** \`${{ github.head_ref || github.ref_name }}\`
-            **Commit:** [\`${shortSha}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-            **Environment:** Preview
-
-            ---
-
-            ✅ **Deployment completed successfully!**
-
-            _This comment was automatically generated by Nexoroid._`;
-
-            if (botComment) {
-              // Update existing comment
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: commentBody
-              });
-            } else {
-              // Create new comment
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: commentBody
-              });
-            }
-
-      - name: Comment on PR (Deployment failure)
-        if: github.event_name == 'pull_request' && failure()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ steps.nexoroid.outputs.token }}
-          script: |
-            const shortSha = '${{ github.sha }}'.substring(0, 7);
-            const prNumber = context.issue.number;
-            const workflowUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-
-            const commentBody = `<!-- vercel-deployment -->
-            ## ❌ Deployment Failed
-
-            **Branch:** \`${{ github.head_ref || github.ref_name }}\`
-            **Commit:** [\`${shortSha}\`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-            **Environment:** Preview
-
-            ---
-
-            🔍 **Please check the [workflow logs](${workflowUrl}) for details.**
-
-            _This comment was automatically generated by Nexoroid._`;
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: commentBody
-            });
-
       # ---------- JOB SUMMARY (success) ----------
       - name: Job Summary — success
-        if: success()
+        if: ${{ success() }}
         shell: bash
         run: |
-          ENV_NAME="${{ needs.setup.outputs.environment_name }}"
+          ENV_NAME="preview"
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" != "pull_request" ]]; then
+            ENV_NAME="production"
+          fi
           DEPLOY_URL="${{ steps.deploy_prod.outputs.url || steps.deploy_preview.outputs.url }}"
           SHORT_SHA="${GITHUB_SHA::7}"
-
           {
             echo "## ✅ Vercel deployment summary"
             echo
@@ -268,23 +134,18 @@ jobs:
             echo "| Commit | [${SHORT_SHA}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) |"
             echo "| Deploy URL | ${DEPLOY_URL} |"
             echo "| Workflow Run | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"
-            echo "| Duration | ${{ steps.build-and-deploy.conclusion == 'success' && 'Completed' || 'Failed' }} |"
-            echo
-            echo "### 🛠️ Build Details"
-            echo "- **Node.js:** $(node -v)"
-            echo "- **pnpm:** $(pnpm -v)"
-            echo "- **Next.js:** ${{ env.NEXT_PUBLIC_APP_VERSION }}"
-            echo "- **Convex:** ${{ needs.setup.outputs.is_production == 'true' && 'Deployed' || 'Skipped (Preview)' }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # ---------- JOB SUMMARY (failure) ----------
       - name: Job Summary — failure
-        if: failure()
+        if: ${{ failure() }}
         shell: bash
         run: |
-          ENV_NAME="${{ needs.setup.outputs.environment_name }}"
+          ENV_NAME="preview"
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" != "pull_request" ]]; then
+            ENV_NAME="production"
+          fi
           SHORT_SHA="${GITHUB_SHA::7}"
-
           {
             echo "## ❌ Deployment failed"
             echo
@@ -293,13 +154,6 @@ jobs:
             echo "**Commit:** [${SHORT_SHA}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})  "
             echo "**Environment:** ${ENV_NAME}  "
             echo
-            echo "### 🔍 Troubleshooting"
             echo "- [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-            echo "- Check Vercel dashboard for deployment logs"
-            echo "- Verify all required secrets are configured"
-            echo
-            echo "### 🛠️ Environment Details"
-            echo "- **Node.js:** $(node -v)"
-            echo "- **pnpm:** $(pnpm -v)"
-            echo "- **Build Target:** ${ENV_NAME}"
           } >> "$GITHUB_STEP_SUMMARY"
+
