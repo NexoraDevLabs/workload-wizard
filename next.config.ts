@@ -33,6 +33,26 @@ if (process.env.ANALYZE === 'true') {
   });
 }
 
+// Security headers applied to all routes
+const securityHeaders = [
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=63072000; includeSubDomains; preload',
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+];
+
 const nextConfig: NextConfig = {
   /* config options here */
   // Environment variables are handled by lib/env-loader.js
@@ -41,7 +61,16 @@ const nextConfig: NextConfig = {
     // Don't block production builds on ESLint errors
     ignoreDuringBuilds: true,
   },
-  webpack: (config): NextConfig => {
+  typescript: {
+    // Don't type-check during builds (CI does this separately)
+    ignoreBuildErrors: process.env.CI === 'true',
+  },
+  experimental: {
+    // Disable optimizeCss to avoid critters dependency issue
+    optimizeCss: false,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  },
+  webpack: (config) => {
     // Reduce noisy infrastructure logs in CI
     if (
       config &&
@@ -56,7 +85,8 @@ const nextConfig: NextConfig = {
         webpackConfig.infrastructureLogging.level = 'error';
       }
     }
-    return config as NextConfig;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return config;
   },
   images: {
     remotePatterns: [
@@ -100,6 +130,14 @@ const nextConfig: NextConfig = {
   experimental: {
     // Disable optimizeCss to avoid critters dependency issue
     optimizeCss: false,
+  // Security headers for all routes
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: securityHeaders,
+      },
+    ];
   },
 };
 
