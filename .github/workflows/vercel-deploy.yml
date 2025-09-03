@@ -88,6 +88,9 @@ jobs:
       - name: Pull Vercel env
         run: vercel pull --yes --environment=${{ steps.env.outputs.env }} --token "$VERCEL_TOKEN"
 
+      - name: Clean build output
+        run: rm -rf .vercel/output
+
       - name: Build (Vercel prebuilt)
         env:
           NODE_ENV: production
