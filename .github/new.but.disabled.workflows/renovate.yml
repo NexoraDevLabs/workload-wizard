@@ -1,0 +1,134 @@
+name: Renovate (Nexoroid)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 05:00 UTC ≈ 06:00 London during BST
+    - cron: '0 5 * * 1-5'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+
+      - name: Mint Nexoroid installation token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.NEXOROID_APP_ID }}
+          private-key: ${{ secrets.NEXOROID_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Run Renovate as Nexoroid
+        id: renovate
+        uses: renovatebot/github-action@a447f09147d00e00ae2a82ad5ef51ca89352da80 # v43.0.9
+        with:
+          configurationFile: .github/renovate.json
+          token: ${{ steps.app-token.outputs.token }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_GIT_AUTHOR: 'Nexoroid <nexoroid[bot]@users.noreply.github.com>'
+          LOG_LEVEL: info
+
+      # --- Collect metadata for a richer summary ---
+      - name: Collect metadata for summary
+        id: meta
+        env:
+          CONFIG_PATH: .github/renovate.json
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          CONFIG_PRESENT=$([ -f "$CONFIG_PATH" ] && echo "yes" || echo "no")
+          MANAGERS=$(jq -r '.enabledManagers | join(", ")' "$CONFIG_PATH" 2>/dev/null || echo "auto")
+          BRANCH_PREFIX=$(jq -r '.branchPrefix // "(default)"' "$CONFIG_PATH" 2>/dev/null || echo "(default)")
+          CRON="0 5 * * 1-5"
+          IMAGE="ghcr.io/renovatebot/renovate:41"
+          # Try to read version label from the pulled image; fall back to "41.x"
+          VERSION=$(docker image inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.version"}}' 2>/dev/null || echo "41.x")
+
+          REPO="${{ github.repository }}"
+          OWNER="${{ github.repository_owner }}"
+          SINCE=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+
+          # Counts of PRs by your GitHub App, labelled 'dependencies'
+          OPEN_TOTAL=$(gh pr list -R "$REPO" --search "author:app/$OWNER label:dependencies" --json number --jq 'length' 2>/dev/null || echo 0)
+          UPDATED_24H=$(gh pr list -R "$REPO" --search "author:app/$OWNER label:dependencies updated:>=$SINCE" --json number --jq 'length' 2>/dev/null || echo 0)
+
+          # Top 10 recently updated PRs (last 24h) as markdown list
+          gh pr list -R "$REPO" \
+            --search "author:app/$OWNER label:dependencies updated:>=$SINCE" \
+            --limit 10 \
+            --json number,title,url \
+            --jq '.[] | "- [#\(.number)](\(.url)) \(.title)"' \
+            > pr_links.txt || true
+
+          {
+            echo "config_present=$CONFIG_PRESENT"
+            echo "managers=$MANAGERS"
+            echo "branch_prefix=$BRANCH_PREFIX"
+            echo "cron=$CRON"
+            echo "image=$IMAGE"
+            echo "version=$VERSION"
+            echo "open_total=$OPEN_TOTAL"
+            echo "updated_24h=$UPDATED_24H"
+          } >> "$GITHUB_OUTPUT"
+
+      # --- Rich Job Summary ---
+      - name: Job summary
+        if: always()
+        env:
+          REPO: ${{ github.repository }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CONFIG_PATH: .github/renovate.json
+          CONFIG_PRESENT: ${{ steps.meta.outputs.config_present }}
+          MANAGERS: ${{ steps.meta.outputs.managers }}
+          BRANCH_PREFIX: ${{ steps.meta.outputs.branch_prefix }}
+          CRON: ${{ steps.meta.outputs.cron }}
+          IMAGE: ${{ steps.meta.outputs.image }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          OPEN_TOTAL: ${{ steps.meta.outputs.open_total }}
+          UPDATED_24H: ${{ steps.meta.outputs.updated_24h }}
+        run: |
+          {
+            echo "## Renovate summary"
+            echo ""
+            echo "- **Repo:** \`${REPO}\`"
+            echo "- **Config:** \`${CONFIG_PATH}\` (local file: ${CONFIG_PRESENT})"
+            echo "- **Managers:** ${MANAGERS}"
+            echo "- **Branch prefix:** \`${BRANCH_PREFIX}\`"
+            echo "- **Schedule (cron):** \`${CRON}\`"
+            echo "- **Image:** \`${IMAGE}\`  ·  **Version:** \`${VERSION}\`"
+            echo ""
+            echo "### Activity"
+            echo "- **Open dependency PRs (by App):** ${OPEN_TOTAL}"
+            echo "- **Updated in last 24h:** ${UPDATED_24H}"
+            echo ""
+            echo "<details><summary>Recently updated PRs (last 24h)</summary>"
+            echo ""
+            if [ -s pr_links.txt ]; then
+              cat pr_links.txt
+            else
+              echo "_None in the last 24 hours._"
+            fi
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "### Quick links"
+            echo "- Dependency Dashboard: https://github.com/${REPO}/issues?q=is%3Aissue+label%3Adependencies+%22Dependency+Dashboard%22"
+            echo "- Renovate PRs: https://github.com/${REPO}/pulls?q=is%3Apr+label%3Adependencies+author%3Aapp%2F${{ github.repository_owner }}"
+            echo "- This run: ${RUN_URL}"
+            echo ""
+            echo "### Result"
+            echo "- **Status:** ${{ job.status }}"
+          } >> "$GITHUB_STEP_SUMMARY"

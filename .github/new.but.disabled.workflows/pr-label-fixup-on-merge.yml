@@ -1,0 +1,98 @@
+# .github/workflows/pr-label-fixup-on-merge.yml
+name: PR label fix-up on merge
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  label-fixup:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels from PR title are present on merge
+        id: fix
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const title = (pr.title || '').trim();
+
+            // Detect conventional type
+            const type = (title.match(/^(?:revert:\s*)?(\w+)/i) || [])[1]?.toLowerCase();
+
+            // Map type -> expected labels
+            const map = {
+              feat:      ['enhancement'],
+              fix:       ['bug'],
+              docs:      ['docs'],
+              chore:     ['chore'],
+              refactor:  ['refactor','chore'],
+              build:     ['build','chore'],
+              ci:        ['ci','chore'],
+              test:      ['test'],
+              perf:      ['enhancement'],
+              security:  ['security','bug'],
+              revert:    ['chore']
+            };
+            const need = map[type] || [];
+
+            // Current labels on the PR
+            const current = (await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number
+            })).data.map(l => l.name);
+
+            // Add any missing labels; ignore if a label doesn't exist
+            const toAdd = need.filter(l => !current.includes(l));
+            if (toAdd.length) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: toAdd
+              }).catch(err => {
+                core.warning(`Failed to add some labels: ${err.message}`);
+              });
+            }
+
+            // Outputs for summary
+            core.setOutput('pr_number', String(pr.number));
+            core.setOutput('pr_url', pr.html_url || '');
+            core.setOutput('merge_sha', pr.merge_commit_sha || '');
+            core.setOutput('title', title);
+            core.setOutput('type', type || '');
+            core.setOutput('need', need.join(','));
+            core.setOutput('current', current.join(','));
+            core.setOutput('added', toAdd.join(','));
+
+      - name: Write job summary
+        if: ${{ always() }}
+        env:
+          PR_NUMBER: ${{ steps.fix.outputs.pr_number }}
+          PR_URL: ${{ steps.fix.outputs.pr_url }}
+          MERGE_SHA: ${{ steps.fix.outputs.merge_sha }}
+          TITLE: ${{ steps.fix.outputs.title }}
+          TYPE: ${{ steps.fix.outputs.type }}
+          NEED: ${{ steps.fix.outputs.need }}
+          CURRENT: ${{ steps.fix.outputs.current }}
+          ADDED: ${{ steps.fix.outputs.added }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "## 🏷️ PR label fix-up on merge"
+            echo ""
+            echo "- **PR:** [#${PR_NUMBER}](${PR_URL})"
+            echo "- **Merge commit:** \`${MERGE_SHA:-unknown}\`"
+            echo "- **Status:** \`${JOB_STATUS:-unknown}\`"
+            echo "- **Title:** ${TITLE:-'(none)'}"
+            echo "- **Detected type:** \`${TYPE:-unknown}\`"
+            echo "- **Expected labels (by type):** \`${NEED:-none}\`"
+            echo "- **Existing labels before fix-up:** \`${CURRENT:-none}\`"
+            echo "- **Labels added**

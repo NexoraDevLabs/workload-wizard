@@ -1,0 +1,11 @@
+{
+  "timeout": "10s",
+  "retryOn429": true,
+  "httpHeaders": [
+    {
+      "urls": ["https://vercel.com/*"],
+      "headers": { "User-Agent": "GitHubAction-MLC" }
+    }
+  ],
+  "ignorePatterns": [{ "pattern": "^mailto:" }, { "pattern": "localhost" }]
+}

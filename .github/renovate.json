@@ -1,0 +1,122 @@
+{
+  "extends": [
+    "config:recommended",
+    ":automergeDisabled",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    "helpers:pinGitHubActionDigests",
+    ":timezone(Europe/London)"
+  ],
+
+  "enabledManagers": ["npm", "github-actions"],
+  "rangeStrategy": "bump",
+  "branchPrefix": "nexoroid/deps-",
+  "labels": ["dependencies", "automated"],
+  "prConcurrentLimit": 8,
+  "prHourlyLimit": 6,
+
+  "gitAuthor": "Nexoroid <nexoroid[bot]@users.noreply.github.com>",
+
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on Monday"],
+    "automerge": true,
+    "automergeType": "squash"
+  },
+
+  "postUpdateOptions": ["pnpmDedupe"],
+
+  "automerge": false,
+  "separateMultipleMajor": true,
+
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "squash",
+      "groupName": "npm: minors & patches",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "matchPackagePatterns": [
+        "^eslint",
+        "^@typescript-eslint",
+        "^prettier",
+        "^eslint-"
+      ],
+      "groupName": "Linting & Formatting",
+      "schedule": ["before 6am on Monday"],
+      "semanticCommitScope": "lint"
+    },
+    {
+      "matchPackagePatterns": [
+        "^next$",
+        "^react$",
+        "^react-dom$",
+        "^@next/",
+        "^@vercel/"
+      ],
+      "groupName": "Next.js & React core",
+      "semanticCommitScope": "next"
+    },
+    {
+      "matchPackagePatterns": ["^turbo$", "^@turbo/"],
+      "groupName": "Turborepo / Turbo",
+      "semanticCommitScope": "turbo"
+    },
+    {
+      "matchPackagePatterns": [
+        "^vitest$",
+        "^jest$",
+        "^@types/jest$",
+        "^@vitest/"
+      ],
+      "groupName": "Testing",
+      "semanticCommitScope": "test-deps"
+    },
+    {
+      "matchPackagePatterns": ["^typescript$", "^ts-node$"],
+      "groupName": "TypeScript toolchain",
+      "semanticCommitScope": "ts"
+    },
+    {
+      "matchPackagePatterns": [
+        "^@radix-ui/",
+        "^class-variance-authority$",
+        "^tailwindcss$",
+        "^postcss$",
+        "^autoprefixer$"
+      ],
+      "groupName": "UI & Tailwind toolchain",
+      "semanticCommitScope": "ui"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "GitHub Actions (minor & patch)",
+      "schedule": ["before 6am on Monday"],
+      "semanticCommitScope": "actions"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "3 days",
+      "semanticCommitScope": "deps",
+      "labels": ["dependencies", "automated", "major"]
+    },
+    {
+      "matchPackagePatterns": ["^next$", "^react$", "^react-dom$", "^@next/"],
+      "reviewers": ["team:@NexoraDevLabs/core"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "reviewers": ["team:NexoraDevLabs/infrastructure-ops"]
+    }
+  ],
+
+  "ignorePaths": ["**/dist/**", "**/.next/**", "**/coverage/**"]
+}

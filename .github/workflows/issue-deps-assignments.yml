@@ -9,8 +9,8 @@ permissions:
   issues: write
 
 env:
-  DEFAULT_ASSIGNEE: "smcnab1"
-  COMMENT_MARK: "<!-- nexoroid:deps -->"
+  DEFAULT_ASSIGNEE: 'smcnab1'
+  COMMENT_MARK: '<!-- nexoroid:deps -->'
 
 jobs:
   issue-deps:
@@ -186,7 +186,7 @@ jobs:
           done < /tmp/reblocked.json
 
       # ── C) Edited → if now blocked, unassign itself & add 'blocked' ────────────
-      - name: "Edited → enforce blocked state on this issue"
+      - name: 'Edited → enforce blocked state on this issue'
         if: ${{ github.event.action == 'edited' }}
         env:
           GH_TOKEN: ${{ env.GH_TOKEN }}
