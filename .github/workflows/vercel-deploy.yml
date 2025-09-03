@@ -91,7 +91,7 @@ jobs:
       - name: Build (Vercel prebuilt)
         env:
           NODE_ENV: production
-        run: vercel build --token "$VERCEL_TOKEN"
+        run: vercel build --environment=${{ steps.env.outputs.env }} --token "$VERCEL_TOKEN"
 
       - name: Deploy
         id: deploy
