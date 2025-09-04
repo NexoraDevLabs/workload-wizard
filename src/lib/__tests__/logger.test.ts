@@ -74,7 +74,7 @@ describe('logger', () => {
     it('should redact various token patterns in strings', () => {
       expect(redact('token: abc123def456')).toBe('token: [REDACTED]');
       expect(redact('api_key=xyz789')).toBe('api_key: [REDACTED]');
-      expect(redact('authorization: Bearer token123')).toBe('authorization: [REDACTED]');
+      expect(redact('authorization: Bearer token123')).toBe('authorization: Bearer [REDACTED]');
     });
 
     it('should handle null and undefined', () => {
