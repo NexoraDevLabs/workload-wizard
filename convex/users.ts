@@ -5,6 +5,7 @@ import { requirePermission } from './permissions';
 import { writeAudit } from './audit';
 import type { Id, Doc } from './_generated/dataModel';
 import { requireOrgPermission } from './permissions';
+import { makeLoaders } from '../src/lib/convex/loaders';
 
 export const create = mutation({
   args: {
@@ -327,6 +328,7 @@ export const list = query({
     organisationId: v.optional(v.id('organisations')),
   },
   handler: async (ctx, args) => {
+    const loaders = makeLoaders();
     let users: Doc<'users'>[] = [];
     if (args.organisationId) {
       // Prefer memberships table when present; fall back to legacy field for now
@@ -361,10 +363,10 @@ export const list = query({
       users = await ctx.db.query('users').collect();
     }
 
-    // Get organisation details for each user
+    // Get organisation details for each user using bulk batching
     const usersWithOrganisations = await Promise.all(
       users.map(async (user) => {
-        const organisation = await ctx.db.get(user.organisationId);
+        const organisation = await loaders.organisationsById.load(ctx, user.organisationId);
 
         // Get all current organisational role assignments for this user in their org (support multiple)
         const assignments = await ctx.db
@@ -377,19 +379,26 @@ export const list = query({
           .filter((q) => q.eq(q.field('isActive'), true))
           .collect();
 
+        // Use bulk batching for role lookups instead of N+1 queries
         const organisationalRoles: Array<{
           id: Id<'user_roles'>;
           name: string;
           description: string;
         } | null> = [];
-        for (const a of assignments) {
-          const role = await ctx.db.get(a.roleId);
-          if (role && role.isActive) {
-            organisationalRoles.push({
-              id: role._id,
-              name: role.name,
-              description: role.description,
-            });
+        
+        if (assignments.length > 0) {
+          const roleIds = assignments.map(a => a.roleId);
+          const roles = await loaders.userRolesById.loadMany(ctx, roleIds);
+          
+          for (const a of assignments) {
+            const role = roles.get(a.roleId as unknown as string);
+            if (role && role.isActive) {
+              organisationalRoles.push({
+                id: role._id,
+                name: role.name,
+                description: role.description,
+              });
+            }
           }
         }
 
