@@ -18,7 +18,7 @@ const originalLogLevel = process.env.LOG_LEVEL;
 describe('logger', () => {
   beforeEach(() => {
     // Mock console
-    global.console = mockConsole as Console;
+    global.console = mockConsole as unknown as Console;
     
     // Reset all mocks
     vi.clearAllMocks();
