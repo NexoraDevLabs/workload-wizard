@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
+import { makeLoaders } from '../src/lib/convex/loaders';
 
 // Get all roles for an organisation
 export const listByOrganisation = query({
@@ -396,16 +397,18 @@ export const getUserRole = query({
 export const getUserRoles = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
+    const loaders = makeLoaders();
     const assignments = await ctx.db
       .query('user_role_assignments')
       .filter((q) => q.eq(q.field('userId'), args.userId))
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
 
+    // Use bulk batching instead of N+1 queries
     const roles = await Promise.all(
       assignments.map(async (assignment) => {
-        const role = await ctx.db.get(assignment.roleId);
-        const organisation = await ctx.db.get(assignment.organisationId);
+        const role = await loaders.userRolesById.load(ctx, assignment.roleId);
+        const organisation = await loaders.organisationsById.load(ctx, assignment.organisationId);
         return {
           assignment,
           role,
