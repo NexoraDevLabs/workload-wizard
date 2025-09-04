@@ -227,6 +227,9 @@ export const create = mutation({
       });
     } catch (error) {
       // Audit logging failed, but don't fail the operation
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return id;
@@ -302,6 +305,9 @@ export const update = mutation({
       });
     } catch (error) {
       // Audit logging failed, but don't fail the operation
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return args.id;
@@ -352,6 +358,9 @@ export const setStatus = mutation({
       });
     } catch (error) {
       // Audit logging failed, but don't fail the operation
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return args.id;
@@ -422,6 +431,9 @@ export const clone = mutation({
       });
     } catch (error) {
       // Audit logging failed, but don't fail the operation
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
 
@@ -482,6 +494,9 @@ export const bulkSetStatus = mutation({
       });
     } catch (error) {
       // Audit logging failed, but don't fail the operation
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return args.ids.length;

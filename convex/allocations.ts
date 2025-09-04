@@ -74,6 +74,9 @@ export const assignLecturer = mutation({
         type: 'org',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
 
@@ -133,6 +136,9 @@ export const update = mutation({
         type: 'org',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
 
@@ -270,7 +276,10 @@ export const removeAllocationsForGroups = mutation({
           type: 'org',
         });
       } catch (error) {
-        console.error('Audit logging failed:', error);
+        // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
+      console.error('Audit logging failed:', error);
       }
     }
     return filtered.map((a) => a._id);
@@ -338,6 +347,9 @@ export const remove = mutation({
         type: 'org',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
 
@@ -515,7 +527,10 @@ export const upsertAdminCategory = mutation({
           type: 'sys',
         });
       } catch (error) {
-        console.error('Audit logging failed:', error);
+        // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
+      console.error('Audit logging failed:', error);
       }
       return args.id;
     }
@@ -539,6 +554,9 @@ export const upsertAdminCategory = mutation({
         type: 'sys',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return id;
@@ -563,6 +581,9 @@ export const removeAdminCategory = mutation({
         type: 'sys',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return args.id;
@@ -658,7 +679,10 @@ export const upsertAdminAllocation = mutation({
           type: 'org',
         });
       } catch (error) {
-        console.error('Audit logging failed:', error);
+        // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
+      console.error('Audit logging failed:', error);
       }
       return args.allocationId;
     }
@@ -684,6 +708,9 @@ export const upsertAdminAllocation = mutation({
         type: 'org',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return id;
@@ -722,6 +749,9 @@ export const removeAdminAllocation = mutation({
         type: 'sys',
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return args.allocationId;
@@ -807,7 +837,10 @@ export const upsertOrganisationAdminCategory = mutation({
           organisationId: actor.organisationId,
         });
       } catch (error) {
-        console.error('Audit logging failed:', error);
+        // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
+      console.error('Audit logging failed:', error);
       }
       return args.id;
     }
@@ -832,6 +865,9 @@ export const upsertOrganisationAdminCategory = mutation({
         organisationId: actor.organisationId,
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return id;
@@ -871,6 +907,9 @@ export const removeOrganisationAdminCategory = mutation({
         organisationId: actor.organisationId,
       });
     } catch (error) {
+      // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Audit logging failed:', error);
     }
     return args.id;
@@ -1016,7 +1055,10 @@ export const pushAdminCategoriesToOrganisations = mutation({
           organisationId: org._id,
         });
       } catch (error) {
-        console.error('Audit logging failed:', error);
+        // Audit logging failed, but don't fail the operation
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
+      console.error('Audit logging failed:', error);
       }
     }
 

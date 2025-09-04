@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
     if (webpackConfig.infrastructureLogging) {
       webpackConfig.infrastructureLogging.level = 'error';
     }
-    return config;
+    return config as NextConfig;
   },
 
   images: {

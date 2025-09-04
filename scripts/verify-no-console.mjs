@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+/* eslint-disable no-console, no-undef */
 
 import { execSync } from 'node:child_process';
 import { globby } from 'globby';
 import fs from 'node:fs';
-import path from 'node:path';
 
 const buildCmd = process.env.BUILD_CMD || 'pnpm build';
 console.log('Building application...');

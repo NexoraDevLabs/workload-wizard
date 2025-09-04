@@ -76,6 +76,8 @@ export const create = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for group creation:', e);
     }
 
@@ -135,6 +137,8 @@ export const createAutoForIteration = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for auto group creation:', e);
     }
 
@@ -171,6 +175,8 @@ export const remove = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for group deletion:', e);
     }
     return args.id;
