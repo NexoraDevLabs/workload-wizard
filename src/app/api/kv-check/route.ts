@@ -4,9 +4,9 @@ import { getKv } from '../../../lib/kv';
 
 export async function GET() {
   try {
-    const kv = getKv();
+    const kv = await getKv();
     // Test basic connectivity
-    const result = await kv.ping();
+    const result = await (kv as { ping: () => Promise<string> }).ping();
     return NextResponse.json({
       ok: true,
       message: 'KV connection successful',

@@ -40,13 +40,13 @@ export function getRouteConfig(pathname: string): LimitConfig {
   return base;
 }
 
-export function createLimiterFor(pathname: string) {
+export async function createLimiterFor(pathname: string) {
   const cfg = getRouteConfig(pathname);
-  const kv = getKv();
+  const kv = await getKv();
 
   return new Ratelimit({
     // @upstash/ratelimit accepts both @vercel/kv client and @upstash/redis client
-    redis: kv as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    redis: kv as Parameters<typeof Ratelimit>[0]['redis'],
     limiter: Ratelimit.slidingWindow(cfg.max, `${cfg.windowSec} s`),
     analytics: true,
     prefix: 'rl',

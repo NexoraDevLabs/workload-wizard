@@ -58,7 +58,7 @@ async function rateLimitMiddleware(req: NextRequest) {
   }
 
   const id = `${path}:${clientId(req)}`;
-  const limiter = createLimiterFor(path);
+  const limiter = await createLimiterFor(path);
   const result = await limiter.limit(id);
 
   const resetSec = Math.max(0, Math.ceil((result.reset - Date.now()) / 1000));
