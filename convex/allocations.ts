@@ -5,6 +5,7 @@ import { writeAudit } from './audit';
 import { computeHoursFromCredits, computeTotals } from './allocationsMath';
 import { requireOrgPermission } from './permissions';
 import { requirePermission } from './permissions';
+import { makeLoaders } from '../src/lib/convex/loaders';
 
 // Assign a lecturer to a group
 export const assignLecturer = mutation({
@@ -195,15 +196,20 @@ export const computeLecturerTotals = query({
 export const listForGroup = query({
   args: { groupId: v.id('module_groups') },
   handler: async (ctx, args) => {
+    const loaders = makeLoaders();
     const rows = await ctx.db
       .query('group_allocations')
       .withIndex('by_group', (q) => q.eq('groupId', args.groupId))
       .collect();
 
-    const lecturers = await Promise.all(
-      rows.map((r) => ctx.db.get(r.lecturerId))
+    // Use bulk batching instead of N+1 queries
+    const enriched = await Promise.all(
+      rows.map(async (r) => ({
+        allocation: r,
+        lecturer: await loaders.lecturerProfilesById.load(ctx, r.lecturerId),
+      }))
     );
-    return rows.map((r, i) => ({ allocation: r, lecturer: lecturers[i] }));
+    return enriched;
   },
 });
 
@@ -214,24 +220,29 @@ export const listForLecturerDetailed = query({
     academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
+    const loaders = makeLoaders();
     const rows = await ctx.db
       .query('group_allocations')
       .withIndex('by_lecturer', (q) => q.eq('lecturerId', args.lecturerId))
       .filter((q) => q.eq(q.field('academicYearId'), args.academicYearId))
       .collect();
-    const groups = await Promise.all(rows.map((r) => ctx.db.get(r.groupId)));
-    const iterations = await Promise.all(
-      groups.map((g) => (g ? ctx.db.get(g.moduleIterationId) : null))
+
+    // Use bulk batching instead of N+1 queries
+    const enriched = await Promise.all(
+      rows.map(async (r) => {
+        const group = await loaders.moduleGroupsById.load(ctx, r.groupId);
+        const iteration = group ? await loaders.moduleIterationsById.load(ctx, group.moduleIterationId) : null;
+        const module = iteration ? await loaders.modulesById.load(ctx, iteration.moduleId) : null;
+        
+        return {
+          allocation: r,
+          group,
+          iteration,
+          module,
+        };
+      })
     );
-    const modules = await Promise.all(
-      iterations.map((it) => (it ? ctx.db.get(it.moduleId) : null))
-    );
-    return rows.map((allocation, i) => ({
-      allocation,
-      group: groups[i],
-      iteration: iterations[i],
-      module: modules[i],
-    }));
+    return enriched;
   },
 });
 

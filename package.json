@@ -25,6 +25,7 @@
     "test": "pnpm exec vitest run --passWithNoTests",
     "test:watch": "pnpm exec vitest --passWithNoTests",
     "verify:no-console": "node scripts/verify-no-console.mjs",
+    "bench:listing": "node scripts/bench/convex-listing-bench.mjs",
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "commitlint": "commitlint --edit $1",
