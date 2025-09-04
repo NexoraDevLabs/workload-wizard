@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { Id, Doc, TableNames } from '@/convex/_generated/dataModel';
 import type { DatabaseReader } from '@/convex/_generated/server';
-import { wrapDbWithCounter } from '@/src/test/utils/convexDbCounter';
-import { createIdLoader } from '@/lib/convex/createIdLoader';
+import { wrapDbWithCounter } from '../../../src/test/utils/convexDbCounter';
+import { createIdLoader } from '../../lib/convex/createIdLoader';
 
 type MockUser = Doc<'users'>;
 type MockCtx = { db: DatabaseReader };
