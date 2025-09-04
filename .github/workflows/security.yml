@@ -1,0 +1,187 @@
+name: Security
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write   # needed for SARIF upload
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  CI: 'true'
+  SECURITY_SEVERITY_THRESHOLD: 'high'   # high|critical
+  GITLEAKS_EXIT_CODE: '1'               # set to 0 to not fail builds temporarily
+  OSV_FAIL_SEVERITY: 'HIGH'             # HIGH|CRITICAL
+  ARTIFACT_RETENTION_DAYS: '7'
+
+jobs:
+  dependency-review:
+    name: Dependency Review (PR-only)
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Block PR if new vulnerabilities at/above threshold are introduced
+          fail-on-severity: ${{ env.SECURITY_SEVERITY_THRESHOLD }}
+          allow-licenses: ''         # optional allowlist
+          deny-licenses: ''          # optional denylist
+          comment-summary-in-pr: true
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## 🔒 Dependency Review"
+            echo "- Threshold: **${{ env.SECURITY_SEVERITY_THRESHOLD }}**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  osv-scan:
+    name: OSV Scanner (deps & repo)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Setup Node (for pnpm lock generation if needed)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install OSV-Scanner
+        run: |
+          curl -L https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
+          chmod +x osv-scanner
+          sudo mv osv-scanner /usr/local/bin/
+
+      # Scan lockfile for precise dependency vulns
+      - name: OSV scan lockfile
+        run: |
+          mkdir -p security-reports
+          osv-scanner --lockfile=pnpm-lock.yaml \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format sarif \
+                      > security-reports/osv-lockfile.sarif || true
+          # produce JSON too
+          osv-scanner --lockfile=pnpm-lock.yaml \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format json \
+                      > security-reports/osv-lockfile.json || true
+
+      # Scan workspace for manifests (fallback)
+      - name: OSV scan workspace
+        run: |
+          osv-scanner --recursive . \
+                      --skip-git \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format sarif \
+                      > security-reports/osv-workspace.sarif || true
+          osv-scanner --recursive . \
+                      --skip-git \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format json \
+                      > security-reports/osv-workspace.json || true
+
+      - name: Upload SARIF to Code Scanning
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: security-reports/osv-workspace.sarif
+
+      - name: Upload artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scanner-reports
+          path: security-reports/*
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      # Fail the job if any HIGH/CRITICAL finding exists in OSV outputs
+      - name: Fail on high severity (OSV)
+        run: |
+          set -euo pipefail
+          jq '([.results[]?.packages[]?.vulnerabilities[]? // []] // [])
+              | map(select((.severity // "") == "HIGH" or (.severity // "") == "CRITICAL"))
+              | length' security-reports/osv-workspace.json > count.txt || echo 0 > count.txt
+          COUNT=$(cat count.txt)
+          echo "High/Critical vulnerabilities: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::OSV found $COUNT HIGH/CRITICAL vulnerabilities"
+            exit 1
+          fi
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## 🧪 OSV Scanner"
+            echo "- Fail severity: **${{ env.OSV_FAIL_SEVERITY }}**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  gitleaks:
+    name: Gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }} # optional
+        with:
+          args: detect --report-path=gitleaks.sarif --report-format=sarif
+      - name: Upload SARIF
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks.sarif
+
+      - name: Upload artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks.sarif
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      # Enforce failure on any findings unless overridden
+      - name: Enforce failure on secrets
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          COUNT=$(jq '[.runs[].results[]] | length' gitleaks.sarif 2>/dev/null || echo 0)
+          echo "Secrets found: $COUNT"
+          if [ "$COUNT" -gt 0 ] && [ "${GITLEAKS_EXIT_CODE}" = "1" ]; then
+            echo "::error::Gitleaks detected ${COUNT} potential secrets"
+            exit 1
+          fi
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## 🗝️ Gitleaks"
+            echo "- Enforce failure: **${{ env.GITLEAKS_EXIT_CODE == '1' && 'Yes' || 'No' }}**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
