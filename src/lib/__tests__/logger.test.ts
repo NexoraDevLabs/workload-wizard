@@ -16,10 +16,10 @@ describe('logger', () => {
   beforeEach(() => {
     // Mock console
     global.console = mockConsole as unknown as Console;
-    
+
     // Reset all mocks
     vi.clearAllMocks();
-    
+
     // Clear module cache to ensure fresh imports
     vi.resetModules();
   });
@@ -39,9 +39,9 @@ describe('logger', () => {
         token: 'abc123',
         normalField: 'value',
       };
-      
+
       const result = redact(input);
-      
+
       expect(result).toEqual({
         username: 'john',
         password: '[REDACTED]',
@@ -56,9 +56,9 @@ describe('logger', () => {
         { name: 'user1', password: 'pass1' },
         { name: 'user2', secret: 'secret2' },
       ];
-      
+
       const result = redact(input);
-      
+
       expect(result).toEqual([
         { name: 'user1', password: '[REDACTED]' },
         { name: 'user2', secret: '[REDACTED]' },
@@ -74,7 +74,9 @@ describe('logger', () => {
     it('should redact various token patterns in strings', () => {
       expect(redact('token: abc123def456')).toBe('token: [REDACTED]');
       expect(redact('api_key=xyz789')).toBe('api_key: [REDACTED]');
-      expect(redact('authorization: Bearer token123')).toBe('authorization: Bearer [REDACTED]');
+      expect(redact('authorization: Bearer token123')).toBe(
+        'authorization: Bearer [REDACTED]'
+      );
     });
 
     it('should handle null and undefined', () => {
@@ -103,11 +105,11 @@ describe('logger', () => {
     it('should respect LOG_LEVEL environment variable', async () => {
       vi.stubEnv('LOG_LEVEL', 'error');
       const { logger } = await import('../logger');
-      
+
       logger.error('error message');
       logger.warn('warn message');
       logger.info('info message');
-      
+
       expect(mockConsole.error).toHaveBeenCalledWith('error message');
       expect(mockConsole.warn).not.toHaveBeenCalled();
       expect(mockConsole.info).not.toHaveBeenCalled();
@@ -116,7 +118,7 @@ describe('logger', () => {
     it('should redact sensitive data in logged messages', async () => {
       const { logger } = await import('../logger');
       logger.info('User data:', { username: 'john', password: 'secret' });
-      
+
       expect(mockConsole.info).toHaveBeenCalledWith('User data:', {
         username: 'john',
         password: '[REDACTED]',
@@ -126,12 +128,12 @@ describe('logger', () => {
     it('should support all log levels', async () => {
       vi.stubEnv('LOG_LEVEL', 'debug');
       const { logger } = await import('../logger');
-      
+
       logger.debug('debug message');
       logger.info('info message');
       logger.warn('warn message');
       logger.error('error message');
-      
+
       expect(mockConsole.debug).toHaveBeenCalledWith('debug message');
       expect(mockConsole.info).toHaveBeenCalledWith('info message');
       expect(mockConsole.warn).toHaveBeenCalledWith('warn message');
@@ -141,7 +143,7 @@ describe('logger', () => {
     it('should create child loggers', async () => {
       const { logger } = await import('../logger');
       const childLogger = logger.child();
-      
+
       childLogger.info('child message');
       expect(mockConsole.info).toHaveBeenCalledWith('child message');
     });
@@ -155,12 +157,12 @@ describe('logger', () => {
     it('should not log anything in production', async () => {
       // Re-import logger to pick up production NODE_ENV
       const { logger: prodLogger } = await import('../logger');
-      
+
       prodLogger.debug('debug message');
       prodLogger.info('info message');
       prodLogger.warn('warn message');
       prodLogger.error('error message');
-      
+
       expect(mockConsole.debug).not.toHaveBeenCalled();
       expect(mockConsole.info).not.toHaveBeenCalled();
       expect(mockConsole.warn).not.toHaveBeenCalled();
@@ -176,12 +178,12 @@ describe('logger', () => {
 
     it('should not log anything when LOG_LEVEL is silent', async () => {
       const { logger } = await import('../logger');
-      
+
       logger.debug('debug message');
       logger.info('info message');
       logger.warn('warn message');
       logger.error('error message');
-      
+
       expect(mockConsole.debug).not.toHaveBeenCalled();
       expect(mockConsole.info).not.toHaveBeenCalled();
       expect(mockConsole.warn).not.toHaveBeenCalled();

@@ -10,7 +10,7 @@ console.log('Building application...');
 execSync(buildCmd, { stdio: 'inherit' });
 
 // Adjust these to your build output directories
-const dirs = ['.next', 'dist', 'build'].filter(d => fs.existsSync(d));
+const dirs = ['.next', 'dist', 'build'].filter((d) => fs.existsSync(d));
 if (dirs.length === 0) {
   console.log('No build directories found; skipping check.');
   process.exit(0);
@@ -18,9 +18,12 @@ if (dirs.length === 0) {
 
 console.log(`Checking for console calls in: ${dirs.join(', ')}`);
 
-const files = await globby(dirs.map(d => `${d}/**/*.{js,jsx,ts,tsx}`), {
-  ignore: ['**/*.map', '**/node_modules/**'],
-});
+const files = await globby(
+  dirs.map((d) => `${d}/**/*.{js,jsx,ts,tsx}`),
+  {
+    ignore: ['**/*.map', '**/node_modules/**'],
+  }
+);
 
 const pattern = /\bconsole\.(log|info|warn|error)\s*\(/;
 const offenders = [];
@@ -46,10 +49,10 @@ const excludePatterns = [
 
 for (const f of files) {
   // Skip files that are likely third-party or framework code
-  if (excludePatterns.some(pattern => pattern.test(f))) {
+  if (excludePatterns.some((pattern) => pattern.test(f))) {
     continue;
   }
-  
+
   try {
     const text = fs.readFileSync(f, 'utf8');
     if (pattern.test(text)) {
