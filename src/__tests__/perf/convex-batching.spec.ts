@@ -9,12 +9,12 @@ const mockUsers = [
   { _id: "user3" as any, organisationId: "org2" as any, subject: "subj3" },
 ];
 
-const mockOrganisations = {
+const mockOrganisations: Record<string, any> = {
   org1: { _id: "org1" as any, name: "Org 1", code: "ORG1" },
   org2: { _id: "org2" as any, name: "Org 2", code: "ORG2" },
 };
 
-const mockRoles = {
+const mockRoles: Record<string, any> = {
   role1: { _id: "role1" as any, name: "Admin", description: "Admin role", isActive: true },
   role2: { _id: "role2" as any, name: "User", description: "User role", isActive: true },
 };

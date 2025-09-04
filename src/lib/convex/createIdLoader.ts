@@ -1,6 +1,6 @@
-import type { Id, DocumentByName } from "convex/server";
+import type { GenericQueryCtx } from "convex/server";
 
-type AnyCtx = { db: { get: (id: string) => Promise<any>; getMany?: (ids: string[]) => Promise<any[]> } };
+type AnyCtx = GenericQueryCtx<any>;
 
 function uniq<T>(arr: T[]): T[] {
   return Array.from(new Set(arr));
@@ -8,12 +8,12 @@ function uniq<T>(arr: T[]): T[] {
 
 export function createIdLoader<TableName extends string>(_table: TableName) {
   // Per-request cache
-  const cache = new Map<string, Promise<DocumentByName<TableName> | null>>();
+  const cache = new Map<string, Promise<any | null>>();
 
   // Micro-batch queue
   let queue: {
     ids: string[];
-    resolvers: Array<(map: Map<string, DocumentByName<TableName> | null>) => void>;
+    resolvers: Array<(map: Map<string, any | null>) => void>;
   } | null = null;
 
   async function flush(ctx: AnyCtx) {
@@ -24,19 +24,19 @@ export function createIdLoader<TableName extends string>(_table: TableName) {
 
     // Prefer Convex db.getMany if present
     const supportsGetMany = typeof ctx.db.getMany === "function";
-    let map = new Map<string, DocumentByName<TableName> | null>();
+    let map = new Map<string, any | null>();
 
     if (supportsGetMany) {
-      const convexIds = ids as unknown as Id<TableName>[];
+      const convexIds = ids as any[];
       const docs = await ctx.db.getMany(convexIds);
       ids.forEach((id, i) => {
-        map.set(id, (docs[i] as DocumentByName<TableName> | null) ?? null);
+        map.set(id, docs[i] ?? null);
       });
     } else {
       // Fallback: parallel db.get (still deduped)
-      const docs = await Promise.all(ids.map((id) => ctx.db.get(id as unknown as Id<TableName>)));
+      const docs = await Promise.all(ids.map((id) => ctx.db.get(id as any)));
       ids.forEach((id, i) => {
-        map.set(id, (docs[i] as DocumentByName<TableName> | null) ?? null);
+        map.set(id, docs[i] ?? null);
       });
     }
 
@@ -47,9 +47,9 @@ export function createIdLoader<TableName extends string>(_table: TableName) {
     resolvers.forEach((r) => r(map));
   }
 
-  async function load(ctx: AnyCtx, id: Id<TableName> | null | undefined) {
+  async function load(ctx: AnyCtx, id: any) {
     if (!id) return null;
-    const key = id as unknown as string;
+    const key = String(id);
     const cached = cache.get(key);
     if (cached) return cached;
 
@@ -57,7 +57,7 @@ export function createIdLoader<TableName extends string>(_table: TableName) {
     if (!queue) queue = { ids: [], resolvers: [] };
     queue.ids.push(key);
 
-    const p = new Promise<DocumentByName<TableName> | null>((resolve) => {
+    const p = new Promise<any | null>((resolve) => {
       queue!.resolvers.push((m) => resolve(m.get(key) ?? null));
     });
 
@@ -70,11 +70,11 @@ export function createIdLoader<TableName extends string>(_table: TableName) {
     return p;
   }
 
-  async function loadMany(ctx: AnyCtx, ids: (Id<TableName> | null | undefined)[]) {
-    const valid = uniq(ids.filter(Boolean) as Id<TableName>[]);
+  async function loadMany(ctx: AnyCtx, ids: any[]) {
+    const valid = uniq(ids.filter(Boolean));
     const results = await Promise.all(valid.map((id) => load(ctx, id)));
-    const map = new Map<string, DocumentByName<TableName> | null>();
-    valid.forEach((id, i) => map.set(id as unknown as string, results[i] ?? null));
+    const map = new Map<string, any | null>();
+    valid.forEach((id, i) => map.set(String(id), results[i] ?? null));
     return map;
   }
 

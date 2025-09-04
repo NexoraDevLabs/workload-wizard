@@ -17,7 +17,7 @@ export function wrapDbWithCounter<T extends DbLike>(db: T) {
     ...(db.getMany && {
       async getMany(ids: string[]) {
         getManys += 1;
-        return db.getMany(ids);
+        return db.getMany!(ids);
       }
     }),
     query: db.query,
