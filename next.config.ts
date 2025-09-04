@@ -62,7 +62,33 @@ const nextConfig: NextConfig = {
     if (webpackConfig.infrastructureLogging) {
       webpackConfig.infrastructureLogging.level = 'error';
     }
-    return config as NextConfig;
+    
+    // Optimize for memory usage during build
+    const optimization = config.optimization as {
+      splitChunks?: {
+        chunks?: string;
+        cacheGroups?: Record<string, unknown>;
+      };
+    };
+    
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        ...optimization?.splitChunks,
+        chunks: 'all',
+        cacheGroups: {
+          ...optimization?.splitChunks?.cacheGroups,
+          redis: {
+            test: /[\\/]node_modules[\\/](@upstash|@vercel)[\\/]/,
+            name: 'redis',
+            chunks: 'all',
+            priority: 10,
+          },
+        },
+      },
+    };
+    
+    return config;
   },
 
   images: {
