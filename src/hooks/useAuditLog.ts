@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { logAuditEvent } from '@/lib/actions/auditActions';
+import { logger } from '@/lib/logger';
 
 export interface UseAuditLogOptions {
   entityType: string;
@@ -30,7 +31,7 @@ export function useAuditLog(options: UseAuditLogOptions) {
           ...(severity ? { severity } : {}),
         });
       } catch (_error) {
-        console.error('Failed to fetch audit logs:', _error);
+        logger.error('Failed to fetch audit logs:', _error);
       }
     },
     [entityType, entityId, entityName]

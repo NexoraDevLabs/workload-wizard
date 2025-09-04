@@ -1,5 +1,6 @@
 // Feature flag authentication integration
 import { statsigAdapter, type StatsigUser } from '@flags-sdk/statsig';
+import { logger } from '@/lib/logger';
 import { FeatureFlags } from './types';
 
 // Define proper user type
@@ -30,7 +31,7 @@ export async function identifyUserForFeatureFlags(
     // The user will be identified when checking gates
   } catch (error) {
     // Log error but don't fail the application
-    console.warn('Failed to identify user in Statsig:', error);
+    logger.warn('Failed to identify user in Statsig:', error);
   }
 }
 
@@ -63,6 +64,6 @@ export async function bootstrapFeatureFlags(
     ]);
   } catch (error) {
     // Log error but don't fail the application
-    console.warn('Failed to bootstrap feature flags:', error);
+    logger.warn('Failed to bootstrap feature flags:', error);
   }
 }

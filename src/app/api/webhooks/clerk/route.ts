@@ -4,6 +4,7 @@ import type { WebhookEvent } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { logger } from '@/lib/logger';
 
 // Define proper types for Statsig adapter
 interface StatsigAdapter {
@@ -275,7 +276,7 @@ async function handleUserCreated(userData: ClerkUserData) {
     }
   } catch {
     // Log error but don't fail the webhook
-    console.error('Failed to create user in Statsig: Unknown error');
+    logger.error('Failed to create user in Statsig: Unknown error');
   }
 }
 
@@ -358,7 +359,7 @@ async function handleUserUpdated(userData: ClerkUserData) {
       }
     } catch {
       // Log error but don't fail the webhook
-      console.error('Failed to update Statsig: Unknown error');
+      logger.error('Failed to update Statsig: Unknown error');
     }
   }
 }
