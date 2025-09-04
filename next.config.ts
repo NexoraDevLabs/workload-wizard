@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
     if (webpackConfig.infrastructureLogging) {
       webpackConfig.infrastructureLogging.level = 'error';
     }
-    
+
     // Optimize for memory usage during build
     const optimization = config.optimization as {
       splitChunks?: {
@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
         cacheGroups?: Record<string, unknown>;
       };
     };
-    
+
     config.optimization = {
       ...config.optimization,
       splitChunks: {
@@ -87,7 +87,7 @@ const nextConfig: NextConfig = {
         },
       },
     };
-    
+
     return config;
   },
 

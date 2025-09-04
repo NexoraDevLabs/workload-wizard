@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  security-events: write   # needed for SARIF upload
+  security-events: write # needed for SARIF upload
   actions: read
 
 concurrency:
@@ -18,9 +18,9 @@ concurrency:
 env:
   NEXT_TELEMETRY_DISABLED: '1'
   CI: 'true'
-  SECURITY_SEVERITY_THRESHOLD: 'high'   # high|critical
-  GITLEAKS_EXIT_CODE: '1'               # set to 0 to not fail builds temporarily
-  OSV_FAIL_SEVERITY: 'HIGH'             # HIGH|CRITICAL
+  SECURITY_SEVERITY_THRESHOLD: 'high' # high|critical
+  GITLEAKS_EXIT_CODE: '1' # set to 0 to not fail builds temporarily
+  OSV_FAIL_SEVERITY: 'HIGH' # HIGH|CRITICAL
   ARTIFACT_RETENTION_DAYS: '7'
 
 jobs:
@@ -38,8 +38,8 @@ jobs:
         with:
           # Block PR if new vulnerabilities at/above threshold are introduced
           fail-on-severity: ${{ env.SECURITY_SEVERITY_THRESHOLD }}
-          allow-licenses: ''         # optional allowlist
-          deny-licenses: ''          # optional denylist
+          allow-licenses: '' # optional allowlist
+          deny-licenses: '' # optional denylist
           comment-summary-in-pr: true
 
       - name: Job Summary
