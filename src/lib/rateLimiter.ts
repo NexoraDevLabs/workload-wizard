@@ -1,12 +1,15 @@
 // src/lib/rateLimiter.ts
-import { Ratelimit } from "@upstash/ratelimit";
-import { getKv } from "./kv";
+import { Ratelimit } from '@upstash/ratelimit';
+import { getKv } from './kv';
 
 export type LimitConfig = { windowSec: number; max: number };
 
 function parseOverrides(): Record<string, Partial<LimitConfig>> {
   try {
-    return JSON.parse(process.env.RATE_LIMIT_ROUTE_OVERRIDES || "{}") as Record<string, Partial<LimitConfig>>;
+    return JSON.parse(process.env.RATE_LIMIT_ROUTE_OVERRIDES || '{}') as Record<
+      string,
+      Partial<LimitConfig>
+    >;
   } catch {
     return {};
   }
@@ -24,7 +27,11 @@ export function getRouteConfig(pathname: string): LimitConfig {
       const o = ov[pat];
       if (o) {
         return {
-          windowSec: Number(o.windowSec ?? (o as Record<string, unknown>).window ?? base.windowSec),
+          windowSec: Number(
+            o.windowSec ??
+              (o as Record<string, unknown>).window ??
+              base.windowSec
+          ),
           max: Number(o.max ?? base.max),
         };
       }
@@ -42,6 +49,6 @@ export function createLimiterFor(pathname: string) {
     redis: kv as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     limiter: Ratelimit.slidingWindow(cfg.max, `${cfg.windowSec} s`),
     analytics: true,
-    prefix: "rl",
+    prefix: 'rl',
   });
 }

@@ -1,9 +1,15 @@
 // src/lib/kv.ts
 // Returns a Redis-compatible client for @upstash/ratelimit.
-import { createClient as createVercelKv, kv as vercelKvDefault } from "@vercel/kv";
-import { Redis } from "@upstash/redis";
+import {
+  createClient as createVercelKv,
+  kv as vercelKvDefault,
+} from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
-export type KvLike = ReturnType<typeof Redis.fromEnv> | ReturnType<typeof createVercelKv> | typeof vercelKvDefault;
+export type KvLike =
+  | ReturnType<typeof Redis.fromEnv>
+  | ReturnType<typeof createVercelKv>
+  | typeof vercelKvDefault;
 
 export function getKv(): KvLike {
   // 1) Namespaced Vercel KV

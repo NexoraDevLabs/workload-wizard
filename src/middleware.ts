@@ -11,9 +11,9 @@ import { trackRateLimitEvent } from './lib/metrics';
 
 function clientId(req: NextRequest) {
   // Prefer a user id header/cookie if your app sets one; fallback to IP.
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || "unknown";
-  return req.headers.get("x-user-id") || `ip:${ip}`;
+  const forwarded = req.headers.get('x-forwarded-for');
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+  return req.headers.get('x-user-id') || `ip:${ip}`;
 }
 
 const isPublicRoute = createRouteMatcher([
@@ -51,7 +51,7 @@ function getConvex(): ConvexHttpClient | null {
 async function rateLimitMiddleware(req: NextRequest) {
   const url = new URL(req.url);
   const path = url.pathname;
-  
+
   // Only apply rate limiting to API routes
   if (!path.startsWith('/api/')) {
     return NextResponse.next();
@@ -63,9 +63,9 @@ async function rateLimitMiddleware(req: NextRequest) {
 
   const resetSec = Math.max(0, Math.ceil((result.reset - Date.now()) / 1000));
   const headers = new Headers({
-    "RateLimit-Limit": String(result.limit),
-    "RateLimit-Remaining": String(result.remaining),
-    "RateLimit-Reset": String(resetSec),
+    'RateLimit-Limit': String(result.limit),
+    'RateLimit-Remaining': String(result.remaining),
+    'RateLimit-Reset': String(resetSec),
   });
 
   // Try to flush analytics without blocking response (Edge-safe)
@@ -73,15 +73,25 @@ async function rateLimitMiddleware(req: NextRequest) {
   req.waitUntil?.(result.pending);
 
   if (!result.success) {
-    headers.set("Retry-After", String(resetSec || 60));
-    trackRateLimitEvent("block", { path, id, remaining: result.remaining, limit: result.limit });
-    return new NextResponse(JSON.stringify({ error: "Too Many Requests" }), {
+    headers.set('Retry-After', String(resetSec || 60));
+    trackRateLimitEvent('block', {
+      path,
+      id,
+      remaining: result.remaining,
+      limit: result.limit,
+    });
+    return new NextResponse(JSON.stringify({ error: 'Too Many Requests' }), {
       status: 429,
       headers,
     });
   }
 
-  trackRateLimitEvent("hit", { path, id, remaining: result.remaining, limit: result.limit });
+  trackRateLimitEvent('hit', {
+    path,
+    id,
+    remaining: result.remaining,
+    limit: result.limit,
+  });
   return NextResponse.next({ headers });
 }
 
