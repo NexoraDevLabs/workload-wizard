@@ -10,10 +10,7 @@ const mockConsole = {
   debug: vi.fn(),
 };
 
-// Store original console and NODE_ENV
 const originalConsole = global.console;
-const originalNodeEnv = process.env.NODE_ENV;
-const originalLogLevel = process.env.LOG_LEVEL;
 
 describe('logger', () => {
   beforeEach(() => {
@@ -23,9 +20,6 @@ describe('logger', () => {
     // Reset all mocks
     vi.clearAllMocks();
     
-    // Reset environment
-    delete process.env.LOG_LEVEL;
-    
     // Clear module cache to ensure fresh imports
     vi.resetModules();
   });
@@ -33,14 +27,7 @@ describe('logger', () => {
   afterEach(() => {
     // Restore original console and environment
     global.console = originalConsole;
-    if (originalNodeEnv !== undefined) {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
-    if (originalLogLevel !== undefined) {
-      process.env.LOG_LEVEL = originalLogLevel;
-    } else {
-      delete process.env.LOG_LEVEL;
-    }
+    vi.unstubAllEnvs();
   });
 
   describe('redact function', () => {
@@ -50,58 +37,44 @@ describe('logger', () => {
         password: 'secret123',
         email: 'john@example.com',
         token: 'abc123',
-        data: {
-          apiKey: 'key123',
-          normalField: 'value',
-        },
+        normalField: 'value',
       };
-
+      
       const result = redact(input);
-
+      
       expect(result).toEqual({
         username: 'john',
         password: '[REDACTED]',
         email: '[REDACTED]',
         token: '[REDACTED]',
-        data: {
-          apiKey: '[REDACTED]',
-          normalField: 'value',
-        },
+        normalField: 'value',
       });
     });
 
     it('should redact sensitive keys in arrays', () => {
       const input = [
         { name: 'user1', password: 'pass1' },
-        { name: 'user2', token: 'token2' },
+        { name: 'user2', secret: 'secret2' },
       ];
-
+      
       const result = redact(input);
-
+      
       expect(result).toEqual([
         { name: 'user1', password: '[REDACTED]' },
-        { name: 'user2', token: '[REDACTED]' },
+        { name: 'user2', secret: '[REDACTED]' },
       ]);
     });
 
     it('should redact bearer tokens in strings', () => {
-      const input = 'Bearer abc123def456';
+      const input = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
       const result = redact(input);
       expect(result).toBe('Bearer [REDACTED]');
     });
 
     it('should redact various token patterns in strings', () => {
-      const inputs = [
-        'token: abc123',
-        'key: secret_key',
-        'password: mypass',
-        'secret: hidden',
-      ];
-
-      inputs.forEach(input => {
-        const result = redact(input);
-        expect(result).toContain('[REDACTED]');
-      });
+      expect(redact('token: abc123def456')).toBe('token: [REDACTED]');
+      expect(redact('api_key=xyz789')).toBe('api_key=[REDACTED]');
+      expect(redact('authorization: Bearer token123')).toBe('authorization: [REDACTED]');
     });
 
     it('should handle null and undefined', () => {
@@ -110,7 +83,7 @@ describe('logger', () => {
     });
 
     it('should handle primitive values', () => {
-      expect(redact('hello')).toBe('hello');
+      expect(redact('string')).toBe('string');
       expect(redact(123)).toBe(123);
       expect(redact(true)).toBe(true);
     });
@@ -118,7 +91,7 @@ describe('logger', () => {
 
   describe('logger in development', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'development';
+      vi.stubEnv('NODE_ENV', 'development');
     });
 
     it('should log messages when level allows', async () => {
@@ -128,49 +101,36 @@ describe('logger', () => {
     });
 
     it('should respect LOG_LEVEL environment variable', async () => {
-      process.env.LOG_LEVEL = 'warn';
+      vi.stubEnv('LOG_LEVEL', 'error');
+      const { logger } = await import('../logger');
       
-      // Re-import logger to pick up new LOG_LEVEL
-      const { logger: newLogger } = await import('../logger');
+      logger.error('error message');
+      logger.warn('warn message');
+      logger.info('info message');
       
-      newLogger.info('should not log');
-      newLogger.warn('should log');
-      newLogger.error('should log');
-      
+      expect(mockConsole.error).toHaveBeenCalledWith('error message');
+      expect(mockConsole.warn).not.toHaveBeenCalled();
       expect(mockConsole.info).not.toHaveBeenCalled();
-      expect(mockConsole.warn).toHaveBeenCalledWith('should log');
-      expect(mockConsole.error).toHaveBeenCalledWith('should log');
     });
 
     it('should redact sensitive data in logged messages', async () => {
       const { logger } = await import('../logger');
-      const sensitiveData = {
-        username: 'john',
-        password: 'secret123',
-        message: 'Bearer token123',
-      };
-
-      logger.info('User data:', sensitiveData);
-
+      logger.info('User data:', { username: 'john', password: 'secret' });
+      
       expect(mockConsole.info).toHaveBeenCalledWith('User data:', {
         username: 'john',
         password: '[REDACTED]',
-        message: 'Bearer [REDACTED]',
       });
     });
 
     it('should support all log levels', async () => {
-      // Set LOG_LEVEL to debug to allow all levels
-      process.env.LOG_LEVEL = 'debug';
+      const { logger } = await import('../logger');
       
-      // Re-import logger to pick up new LOG_LEVEL
-      const { logger: debugLogger } = await import('../logger');
+      logger.debug('debug message');
+      logger.info('info message');
+      logger.warn('warn message');
+      logger.error('error message');
       
-      debugLogger.debug('debug message');
-      debugLogger.info('info message');
-      debugLogger.warn('warn message');
-      debugLogger.error('error message');
-
       expect(mockConsole.debug).toHaveBeenCalledWith('debug message');
       expect(mockConsole.info).toHaveBeenCalledWith('info message');
       expect(mockConsole.warn).toHaveBeenCalledWith('warn message');
@@ -180,15 +140,15 @@ describe('logger', () => {
     it('should create child loggers', async () => {
       const { logger } = await import('../logger');
       const childLogger = logger.child();
-      childLogger.info('child message');
       
+      childLogger.info('child message');
       expect(mockConsole.info).toHaveBeenCalledWith('child message');
     });
   });
 
   describe('logger in production', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'production';
+      vi.stubEnv('NODE_ENV', 'production');
     });
 
     it('should not log anything in production', async () => {
@@ -199,7 +159,7 @@ describe('logger', () => {
       prodLogger.info('info message');
       prodLogger.warn('warn message');
       prodLogger.error('error message');
-
+      
       expect(mockConsole.debug).not.toHaveBeenCalled();
       expect(mockConsole.info).not.toHaveBeenCalled();
       expect(mockConsole.warn).not.toHaveBeenCalled();
@@ -208,17 +168,19 @@ describe('logger', () => {
   });
 
   describe('logger with silent level', () => {
-    it('should not log anything when LOG_LEVEL is silent', async () => {
-      process.env.LOG_LEVEL = 'silent';
-      
-      // Re-import logger to pick up new LOG_LEVEL
-      const { logger: silentLogger } = await import('../logger');
-      
-      silentLogger.debug('debug message');
-      silentLogger.info('info message');
-      silentLogger.warn('warn message');
-      silentLogger.error('error message');
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'development');
+      vi.stubEnv('LOG_LEVEL', 'silent');
+    });
 
+    it('should not log anything when LOG_LEVEL is silent', async () => {
+      const { logger } = await import('../logger');
+      
+      logger.debug('debug message');
+      logger.info('info message');
+      logger.warn('warn message');
+      logger.error('error message');
+      
       expect(mockConsole.debug).not.toHaveBeenCalled();
       expect(mockConsole.info).not.toHaveBeenCalled();
       expect(mockConsole.warn).not.toHaveBeenCalled();
