@@ -227,7 +227,7 @@ describe("Convex batching", () => {
   });
 
   it("caches results within the same request", async () => {
-    const ctx = { db: dbCounter.db, auth: {}, storage: {}, runQuery: () => {} };
+    const ctx = { db: dbCounter.db } as any;
     
     dbCounter.reset();
     const loaders = makeLoaders();
