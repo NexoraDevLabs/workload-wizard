@@ -72,21 +72,37 @@ jobs:
       - name: Determine environment
         id: env
         run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.ref }}" == "refs/heads/dev" ]]; then
             echo "env=preview" >> $GITHUB_OUTPUT
             echo "is_prod=false" >> $GITHUB_OUTPUT
+            echo "Setting environment to: preview"
           elif [[ "${{ github.ref }}" == "refs/heads/main" || "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
             echo "env=production" >> $GITHUB_OUTPUT
             echo "is_prod=true" >> $GITHUB_OUTPUT
+            echo "Setting environment to: production"
           else
             echo "env=preview" >> $GITHUB_OUTPUT
             echo "is_prod=false" >> $GITHUB_OUTPUT
+            echo "Setting environment to: preview (default)"
           fi
           echo "ref=${{ github.ref }}" >> $GITHUB_OUTPUT
           echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Pull Vercel env
-        run: vercel pull --yes --environment=${{ steps.env.outputs.env }} --token "$VERCEL_TOKEN"
+        run: |
+          echo "Pulling environment: ${{ steps.env.outputs.env }}"
+          vercel pull --yes --environment=${{ steps.env.outputs.env }} --token "$VERCEL_TOKEN"
+
+      - name: Clean build output
+        run: |
+          rm -rf .vercel/output
+          rm -rf .next
+          rm -rf node_modules/.cache
+
+      - name: Clean build output
+        run: rm -rf .vercel/output
 
       - name: Clean build output
         run: rm -rf .vercel/output
@@ -94,7 +110,16 @@ jobs:
       - name: Build (Vercel prebuilt)
         env:
           NODE_ENV: production
-        run: vercel build --token "$VERCEL_TOKEN"
+        run: |
+          echo "Building for environment: ${{ steps.env.outputs.env }}"
+          echo "Is production: ${{ steps.env.outputs.is_prod }}"
+          if [[ "${{ steps.env.outputs.is_prod }}" == "true" ]]; then
+            echo "Building for production environment"
+            vercel build --prod --token "$VERCEL_TOKEN"
+          else
+            echo "Building for preview environment"
+            vercel build --token "$VERCEL_TOKEN"
+          fi
 
       - name: Deploy
         id: deploy
