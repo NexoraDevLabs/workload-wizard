@@ -33,15 +33,11 @@ describe('logger', () => {
   afterEach(() => {
     // Restore original console and environment
     global.console = originalConsole;
-    Object.defineProperty(process.env, 'NODE_ENV', {
-      value: originalNodeEnv,
-      writable: true,
-    });
-    if (originalLogLevel) {
-      Object.defineProperty(process.env, 'LOG_LEVEL', {
-        value: originalLogLevel,
-        writable: true,
-      });
+    if (originalNodeEnv !== undefined) {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+    if (originalLogLevel !== undefined) {
+      process.env.LOG_LEVEL = originalLogLevel;
     } else {
       delete process.env.LOG_LEVEL;
     }
@@ -122,10 +118,7 @@ describe('logger', () => {
 
   describe('logger in development', () => {
     beforeEach(() => {
-      Object.defineProperty(process.env, 'NODE_ENV', {
-        value: 'development',
-        writable: true,
-      });
+      process.env.NODE_ENV = 'development';
     });
 
     it('should log messages when level allows', async () => {
@@ -195,10 +188,7 @@ describe('logger', () => {
 
   describe('logger in production', () => {
     beforeEach(() => {
-      Object.defineProperty(process.env, 'NODE_ENV', {
-        value: 'production',
-        writable: true,
-      });
+      process.env.NODE_ENV = 'production';
     });
 
     it('should not log anything in production', async () => {

@@ -51,7 +51,7 @@ const SENSITIVE_KEYS = [
 // Redact helper (exported for tests)
 export function redact<T>(value: T): T {
   if (value == null) return value;
-  if (Array.isArray(value)) return value.map(v => redact(v)) as unknown as T;
+  if (Array.isArray(value)) return value.map(v => redact(v)) as T;
   if (typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
