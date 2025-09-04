@@ -69,7 +69,9 @@ async function rateLimitMiddleware(req: NextRequest) {
   });
 
   // Try to flush analytics without blocking response (Edge-safe)
-  const waitUntil = (req as unknown as { waitUntil?: (promise: Promise<unknown>) => void }).waitUntil;
+  const waitUntil = (
+    req as unknown as { waitUntil?: (promise: Promise<unknown>) => void }
+  ).waitUntil;
   if (waitUntil) {
     waitUntil(result.pending);
   }

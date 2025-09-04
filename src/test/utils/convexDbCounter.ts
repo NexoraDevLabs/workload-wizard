@@ -11,25 +11,28 @@ export function wrapDbWithCounter<T extends DbLike>(db: T) {
 
   const proxy: T = {
     ...db,
-    async get(id: Id<TableNames>) { 
-      gets += 1; 
-       
-      return db.get(id); 
+    async get(id: Id<TableNames>) {
+      gets += 1;
+
+      return db.get(id);
     },
     ...(db.getMany && {
-      async getMany(ids: Id<TableNames>[]) { 
+      async getMany(ids: Id<TableNames>[]) {
         getManys += 1;
         // Type assertion needed for generic passthrough
         return db.getMany!(ids);
-      }
+      },
     }),
-     
+
     query: db.query.bind(db),
   };
 
   return {
     db: proxy,
-    reset: () => { gets = 0; getManys = 0; },
+    reset: () => {
+      gets = 0;
+      getManys = 0;
+    },
     counts: () => ({ gets, getManys, total: gets + getManys }),
   };
 }

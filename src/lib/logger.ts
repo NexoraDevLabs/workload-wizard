@@ -72,10 +72,7 @@ export function redact<T>(value: T): T {
       .replace(/token\s*[:=]\s*[a-z0-9._-]+/gi, 'token: [REDACTED]')
       .replace(/key\s*[:=]\s*[a-z0-9._-]+/gi, 'key: [REDACTED]')
       .replace(/password\s*[:=]\s*[^\s]+/gi, 'password: [REDACTED]')
-      .replace(
-        /secret\s*[:=]\s*[a-z0-9._-]+/gi,
-        'secret: [REDACTED]'
-      ) as T;
+      .replace(/secret\s*[:=]\s*[a-z0-9._-]+/gi, 'secret: [REDACTED]') as T;
   }
   return value;
 }

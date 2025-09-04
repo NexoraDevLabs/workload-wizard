@@ -73,11 +73,10 @@ export async function canEditYear(
 ) {
   const user = await getActor(ctx, userId);
   if (isSystemUser(user)) return true;
-  const organisationId = (
+  const organisationId =
     typeof yearOrOrgId === 'string'
       ? (yearOrOrgId as unknown as Id<'organisations'>)
-      : yearOrOrgId.organisationId
-  );
+      : yearOrOrgId.organisationId;
   if (String(user.organisationId) !== String(organisationId)) return false;
   return hasOrgPermission(ctx, userId, 'year.edit', organisationId);
 }

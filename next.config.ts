@@ -57,31 +57,26 @@ const nextConfig: NextConfig = {
 
   webpack: (config: WebpackConfig) => {
     // Type assertion to ensure proper typing for webpack config mutation
-     
+
     const webpackConfig = config;
-    
+
     // Reduce noisy infrastructure logs in CI
-     
+
     if (webpackConfig.infrastructureLogging) {
-       
       webpackConfig.infrastructureLogging.level = 'error';
     }
 
     // Optimize for memory usage during build
-     
+
     if (webpackConfig.optimization?.splitChunks) {
-       
       const currentSplitChunks = webpackConfig.optimization.splitChunks;
-       
+
       const newOptimization = {
-         
         ...webpackConfig.optimization,
         splitChunks: {
-           
           ...currentSplitChunks,
           chunks: 'all' as const,
           cacheGroups: {
-             
             ...currentSplitChunks.cacheGroups,
             redis: {
               test: /[\\/]node_modules[\\/](@upstash|@vercel)[\\/]/,
@@ -92,13 +87,12 @@ const nextConfig: NextConfig = {
           },
         },
       } as WebpackConfig['optimization'];
-       
+
       if (newOptimization) {
         webpackConfig.optimization = newOptimization;
       }
     }
 
-     
     return webpackConfig;
   },
 
