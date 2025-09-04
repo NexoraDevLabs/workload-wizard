@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import {
   Select,
   SelectContent,
@@ -168,7 +169,7 @@ export default function CreateLecturerProfilePage() {
 
       window.location.href = '/staff';
     } catch (_error) {
-      console.error('Failed to create lecturer profile:', _error);
+      logger.error('Failed to create lecturer profile:', _error);
     } finally {
       setIsLoading(false);
     }

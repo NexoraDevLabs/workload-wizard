@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const EnvSchema = z.object({
   NEXT_PUBLIC_CONVEX_URL: z.string().url(),
@@ -52,6 +53,6 @@ try {
   void getEnv();
 } catch (error) {
   if (process.env.NODE_ENV === 'production') {
-    console.warn('Environment validation failed during build:', error);
+    logger.warn('Environment validation failed during build:', error);
   }
 }

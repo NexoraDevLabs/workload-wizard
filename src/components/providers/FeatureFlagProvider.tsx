@@ -7,6 +7,7 @@ import {
   bootstrapFeatureFlags,
 } from '@/lib/feature-flags/auth-integration';
 import { getEnv } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 interface FeatureFlagProviderProps {
   children: React.ReactNode;
@@ -38,7 +39,7 @@ function FeatureFlagProviderInternal({ children }: FeatureFlagProviderProps) {
           emailAddresses: user.emailAddresses,
         };
         identifyUserForFeatureFlags(featureFlagUser).catch((error) => {
-          console.error('Failed to identify user for feature flags:', error);
+          logger.error('Failed to identify user for feature flags:', error);
         });
       }
 
@@ -50,7 +51,7 @@ function FeatureFlagProviderInternal({ children }: FeatureFlagProviderProps) {
           emailAddresses: user.emailAddresses,
         };
         bootstrapFeatureFlags(featureFlagUser).catch((error) => {
-          console.error('Failed to bootstrap feature flags:', error);
+          logger.error('Failed to bootstrap feature flags:', error);
         });
       }
 

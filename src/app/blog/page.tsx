@@ -14,6 +14,7 @@ import DynamicIslandHeader from '@/components/dynamic-header-island';
 import Footer from '@/components/Footer';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 // Helper function to extract slug value
 function getSlugValue(slug: string | { current: string }): string {
@@ -81,7 +82,7 @@ export default function BlogIndexPage() {
         setPosts(fetchedPosts);
       } catch {
         // Failed to fetch posts
-        console.error('Failed to fetch posts');
+        logger.error('Failed to fetch posts');
       } finally {
         setLoading(false);
       }
