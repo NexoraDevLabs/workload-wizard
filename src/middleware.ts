@@ -69,8 +69,10 @@ async function rateLimitMiddleware(req: NextRequest) {
   });
 
   // Try to flush analytics without blocking response (Edge-safe)
-  // @ts-expect-error - waitUntil is a Vercel Edge Runtime feature
-  req.waitUntil?.(result.pending);
+  const waitUntil = (req as unknown as { waitUntil?: (promise: Promise<unknown>) => void }).waitUntil;
+  if (waitUntil) {
+    waitUntil(result.pending);
+  }
 
   if (!result.success) {
     headers.set('Retry-After', String(resetSec || 60));

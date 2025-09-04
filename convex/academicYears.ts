@@ -77,7 +77,7 @@ export async function canEditYear(
     typeof yearOrOrgId === 'string'
       ? (yearOrOrgId as unknown as Id<'organisations'>)
       : yearOrOrgId.organisationId
-  ) as Id<'organisations'>;
+  );
   if (String(user.organisationId) !== String(organisationId)) return false;
   return hasOrgPermission(ctx, userId, 'year.edit', organisationId);
 }

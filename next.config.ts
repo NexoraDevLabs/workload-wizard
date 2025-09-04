@@ -2,6 +2,7 @@
 
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
+import type { Configuration as WebpackConfig } from 'webpack';
 
 // Environment variables are loaded automatically by Next.js from .env files
 
@@ -54,41 +55,51 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
 
-  webpack: (config) => {
+  webpack: (config: WebpackConfig) => {
+    // Type assertion to ensure proper typing for webpack config mutation
+     
+    const webpackConfig = config;
+    
     // Reduce noisy infrastructure logs in CI
-    const webpackConfig = config as {
-      infrastructureLogging?: { level?: string };
-    };
+     
     if (webpackConfig.infrastructureLogging) {
+       
       webpackConfig.infrastructureLogging.level = 'error';
     }
 
     // Optimize for memory usage during build
-    const optimization = config.optimization as {
-      splitChunks?: {
-        chunks?: string;
-        cacheGroups?: Record<string, unknown>;
-      };
-    };
-
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        ...optimization?.splitChunks,
-        chunks: 'all',
-        cacheGroups: {
-          ...optimization?.splitChunks?.cacheGroups,
-          redis: {
-            test: /[\\/]node_modules[\\/](@upstash|@vercel)[\\/]/,
-            name: 'redis',
-            chunks: 'all',
-            priority: 10,
+     
+    if (webpackConfig.optimization?.splitChunks) {
+       
+      const currentSplitChunks = webpackConfig.optimization.splitChunks;
+       
+      const newOptimization = {
+         
+        ...webpackConfig.optimization,
+        splitChunks: {
+           
+          ...currentSplitChunks,
+          chunks: 'all' as const,
+          cacheGroups: {
+             
+            ...currentSplitChunks.cacheGroups,
+            redis: {
+              test: /[\\/]node_modules[\\/](@upstash|@vercel)[\\/]/,
+              name: 'redis',
+              chunks: 'all' as const,
+              priority: 10,
+            },
           },
         },
-      },
-    };
+      } as WebpackConfig['optimization'];
+       
+      if (newOptimization) {
+        webpackConfig.optimization = newOptimization;
+      }
+    }
 
-    return config;
+     
+    return webpackConfig;
   },
 
   images: {

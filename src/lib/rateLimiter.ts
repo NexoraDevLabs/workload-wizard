@@ -46,8 +46,7 @@ export async function createLimiterFor(pathname: string) {
 
   return new Ratelimit({
     // @upstash/ratelimit accepts both @vercel/kv client and @upstash/redis client
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    redis: kv as any,
+    redis: kv as Parameters<typeof Ratelimit>[0]['redis'],
     limiter: Ratelimit.slidingWindow(cfg.max, `${cfg.windowSec} s`),
     analytics: true,
     prefix: 'rl',
