@@ -1,0 +1,37 @@
+# Gitleaks configuration for Workload Wizard
+# This is a basic configuration that can be customized as needed
+
+[gitleaks]
+  # Scan all files
+  scan-path = "."
+  
+  # Exclude common directories that don't contain secrets
+  exclude-dirs = [
+    "node_modules",
+    ".git",
+    ".next",
+    "dist",
+    "build",
+    "coverage",
+    ".vercel",
+    "convex/_generated"
+  ]
+  
+  # Exclude common file types that don't contain secrets
+  exclude-file-types = [
+    ".lock",
+    ".log",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".ico",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".eot"
+  ]
+
+# Custom rules can be added here if needed
+# For now, we'll use the default rules which are comprehensive
