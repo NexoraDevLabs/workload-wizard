@@ -18,7 +18,7 @@ const originalLogLevel = process.env.LOG_LEVEL;
 describe('logger', () => {
   beforeEach(() => {
     // Mock console
-    global.console = mockConsole as Record<string, unknown>;
+    global.console = mockConsole as Console;
     
     // Reset all mocks
     vi.clearAllMocks();
@@ -33,9 +33,15 @@ describe('logger', () => {
   afterEach(() => {
     // Restore original console and environment
     global.console = originalConsole;
-    process.env.NODE_ENV = originalNodeEnv;
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalNodeEnv,
+      writable: true,
+    });
     if (originalLogLevel) {
-      process.env.LOG_LEVEL = originalLogLevel;
+      Object.defineProperty(process.env, 'LOG_LEVEL', {
+        value: originalLogLevel,
+        writable: true,
+      });
     } else {
       delete process.env.LOG_LEVEL;
     }
@@ -116,7 +122,10 @@ describe('logger', () => {
 
   describe('logger in development', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'development';
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+      });
     });
 
     it('should log messages when level allows', async () => {
@@ -186,7 +195,10 @@ describe('logger', () => {
 
   describe('logger in production', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'production';
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+      });
     });
 
     it('should not log anything in production', async () => {

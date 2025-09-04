@@ -100,7 +100,8 @@ function makeLogger(level: LogLevel = DEFAULT_LEVEL): {
       const idx = levelIndex(kind);
       if (idx > currentIdx) return;
                      
-              (console as Record<string, (...args: unknown[]) => void>)[kind](...args.map(redact));
+               
+              (console as unknown as Record<string, (...args: unknown[]) => void>)[kind]?.(...args.map(redact));
     };
 
   return {
