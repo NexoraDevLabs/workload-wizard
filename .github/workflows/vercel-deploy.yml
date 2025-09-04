@@ -104,6 +104,9 @@ jobs:
       - name: Clean build output
         run: rm -rf .vercel/output
 
+      - name: Clean build output
+        run: rm -rf .vercel/output
+
       - name: Build (Vercel prebuilt)
         env:
           NODE_ENV: production
