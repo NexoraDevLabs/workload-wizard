@@ -58,7 +58,7 @@ function createMockDb() {
 }
 
 // Baseline implementation (N+1 pattern)
-async function listUsersBaseline(ctx: { db: any }) {
+async function listUsersBaseline(ctx: any) {
   const users = await ctx.db.query("users").collect();
   
   const usersWithOrganisations = await Promise.all(
@@ -102,7 +102,7 @@ async function listUsersBaseline(ctx: { db: any }) {
 }
 
 // Optimised implementation (bulk batching)
-async function listUsersOptimised(ctx: { db: any }) {
+async function listUsersOptimised(ctx: any) {
   const loaders = makeLoaders();
   const users = await ctx.db.query("users").collect();
   
@@ -227,7 +227,7 @@ describe("Convex batching", () => {
   });
 
   it("caches results within the same request", async () => {
-    const ctx = { db: dbCounter.db };
+    const ctx = { db: dbCounter.db, auth: {}, storage: {}, runQuery: () => {} };
     
     dbCounter.reset();
     const loaders = makeLoaders();

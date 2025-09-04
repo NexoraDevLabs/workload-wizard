@@ -23,12 +23,12 @@ export function createIdLoader<TableName extends string>(_table: TableName) {
     queue = null;
 
     // Prefer Convex db.getMany if present
-    const supportsGetMany = typeof ctx.db.getMany === "function";
+    const supportsGetMany = 'getMany' in ctx.db && typeof (ctx.db as any).getMany === "function";
     let map = new Map<string, any | null>();
 
     if (supportsGetMany) {
       const convexIds = ids as any[];
-      const docs = await ctx.db.getMany(convexIds);
+      const docs = await (ctx.db as any).getMany(convexIds);
       ids.forEach((id, i) => {
         map.set(id, docs[i] ?? null);
       });
