@@ -4,7 +4,7 @@ This document defines how our organisation triages and resolves security finding
 
 ## Scanners in CI
 
-- **Dependency Review (PR only):** Blocks PRs that introduce dependencies with vulnerabilities at **high** or above.
+- **Dependency Check (PR only):** Runs `pnpm audit` to check for vulnerabilities at **high** or above severity.
 - **OSV Scanner:** Scans `pnpm-lock.yaml` and the workspace on PRs and `main`. Fails on **HIGH/CRITICAL** results.
 - **Gitleaks:** Scans for secrets on PRs and `main`. Fails on any finding (configurable via `GITLEAKS_EXIT_CODE`).
 
