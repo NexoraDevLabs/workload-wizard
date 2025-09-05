@@ -19,7 +19,7 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
           page=0
           limit=500
           all_users="[]"
-          
+
           while true; do
             offset=$((page * limit))
             echo "Fetching page $page (offset $offset)..."
@@ -92,19 +92,19 @@ jobs:
               break
             fi
           done
-          
+
           echo "$all_users" | jq -c '.' > backup/clerk/users.min.json
           echo "Fetched $(echo "$all_users" | jq 'length') users"
 
       - name: Create backup manifest
         run: |
           timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          
+
           # Calculate file sizes
           convex_size=$(stat -c%s backup/convex_snapshot.zip 2>/dev/null || echo 0)
           vercel_size=$(stat -c%s backup/vercel/env.json 2>/dev/null || echo 0)
           clerk_size=$(stat -c%s backup/clerk/users.min.json 2>/dev/null || echo 0)
-          
+
           cat > backup/manifest.json << EOF
           {
             "timestamp": "$timestamp",
@@ -120,7 +120,7 @@ jobs:
       - name: Package backup with compression
         run: |
           timestamp=$(date -u +"%Y%m%dT%H%M%SZ")
-          
+
           # Try zstd first, fallback to gzip
           if command -v zstd >/dev/null 2>&1; then
             echo "Using zstd compression"
@@ -133,7 +133,7 @@ jobs:
             ARCHIVE="backup_${timestamp}.tar.gz"
             COMPRESSION="gzip"
           fi
-          
+
           echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
           echo "COMPRESSION=$COMPRESSION" >> $GITHUB_ENV
 
@@ -148,7 +148,7 @@ jobs:
         run: |
           # Download latest.json from R2 to check for deduplication
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}" || echo "No previous backup found"
-          
+
           if [ -f latest.json ]; then
             existing_hash=$(jq -r '.content_sha256' latest.json)
             if [ "$existing_hash" = "$ARCHIVE_SHA256" ]; then
@@ -168,11 +168,11 @@ jobs:
         run: |
           echo "Uploading archive to R2..."
           aws s3 cp "$ARCHIVE" "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
-          
+
           # Create/update latest.json
           timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           archive_size=$(stat -c%s "$ARCHIVE")
-          
+
           cat > latest.json << EOF
           {
             "timestamp": "$timestamp",
@@ -183,14 +183,14 @@ jobs:
             "compression": "$COMPRESSION"
           }
           EOF
-          
+
           aws s3 cp latest.json "s3://${{ secrets.R2_BUCKET }}/latest.json" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
           echo "Uploaded $ARCHIVE ($archive_size bytes) to R2"
 
       - name: Create run manifest
         run: |
           timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          
+
           if [ "$SKIP_UPLOAD" = "true" ]; then
             status="unchanged"
             archive_key=""
@@ -198,7 +198,7 @@ jobs:
             status="uploaded"
             archive_key="$ARCHIVE"
           fi
-          
+
           cat > run.json << EOF
           {
             "timestamp": "$timestamp",

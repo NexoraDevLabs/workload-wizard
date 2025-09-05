@@ -1,6 +1,4 @@
-import {
-  query,
-} from '../_generated/server';
+import { query } from '../_generated/server';
 import { v } from 'convex/values';
 import { type Doc } from '../_generated/dataModel';
 

@@ -97,24 +97,31 @@ async function createDashboard() {
       ],
     };
 
-    const response = await fetch(`https://sentry.io/api/0/organizations/${org}/dashboards/`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(dashboardData),
-    });
+    const response = await fetch(
+      `https://sentry.io/api/0/organizations/${org}/dashboards/`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dashboardData),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to create dashboard: ${response.status} ${errorText}`);
+      throw new Error(
+        `Failed to create dashboard: ${response.status} ${errorText}`
+      );
     }
 
-    const result = await response.json() as { id: string };
+    const result = (await response.json()) as { id: string };
     console.log('✅ Dashboard created successfully!');
     console.log(`Dashboard ID: ${result.id}`);
-    console.log(`Dashboard URL: https://sentry.io/organizations/${org}/dashboards/${result.id}/`);
+    console.log(
+      `Dashboard URL: https://sentry.io/organizations/${org}/dashboards/${result.id}/`
+    );
   } catch (error) {
     console.error('❌ Failed to create dashboard:', error);
     process.exit(1);

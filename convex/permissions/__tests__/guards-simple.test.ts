@@ -35,7 +35,9 @@ describe('guards', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      expect(() => assertHasPermission(context, 'module.view', [role], systemPermission)).not.toThrow();
+      expect(() =>
+        assertHasPermission(context, 'module.view', [role], systemPermission)
+      ).not.toThrow();
     });
 
     it('should throw for invalid permission', () => {
@@ -63,7 +65,9 @@ describe('guards', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      expect(() => assertHasPermission(context, 'module.view', [role], systemPermission)).toThrow();
+      expect(() =>
+        assertHasPermission(context, 'module.view', [role], systemPermission)
+      ).toThrow();
     });
   });
 
@@ -73,7 +77,9 @@ describe('guards', () => {
         actor: { id: 'user1', role: 'SYSTEM', systemRoles: ['admin'] },
         resource: { id: 'res1', type: 'Module' },
       };
-      expect(() => assertCanPerformAction(context, 'Module', 'READ')).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'READ')
+      ).not.toThrow();
     });
 
     it('should throw for insufficient permissions', () => {
@@ -81,7 +87,9 @@ describe('guards', () => {
         actor: { id: 'user1', role: 'STUDENT' },
         resource: { id: 'res1', type: 'Module' },
       };
-      expect(() => assertCanPerformAction(context, 'Module', 'DELETE')).toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'DELETE')
+      ).toThrow();
     });
   });
 

@@ -1,11 +1,11 @@
-import type { 
-  Role, 
-  SystemRole, 
-  PermissionContext, 
-  UserRole, 
+import type {
+  Role,
+  SystemRole,
+  PermissionContext,
+  UserRole,
   SystemPermission,
   OrganisationId,
-  PermissionId
+  PermissionId,
 } from './types';
 import { ROLE_HIERARCHY, SYSTEM_ROLES } from './constants';
 
@@ -21,7 +21,7 @@ export function isSystemUser(systemRoles?: SystemRole[]): boolean {
   if (!systemRoles || systemRoles.length === 0) {
     return false;
   }
-  return systemRoles.some(role => SYSTEM_ROLES.includes(role));
+  return systemRoles.some((role) => SYSTEM_ROLES.includes(role));
 }
 
 /**
@@ -30,18 +30,21 @@ export function isSystemUser(systemRoles?: SystemRole[]): boolean {
 export function hasRoleAtLeast(role: Role, minimumRole: Role): boolean {
   const roleIndex = ROLE_HIERARCHY.indexOf(role);
   const minimumIndex = ROLE_HIERARCHY.indexOf(minimumRole);
-  
+
   if (roleIndex === -1 || minimumIndex === -1) {
     return false;
   }
-  
+
   return roleIndex >= minimumIndex;
 }
 
 /**
  * Check if two organisation IDs are the same
  */
-export function isSameOrganisation(orgId1?: OrganisationId, orgId2?: OrganisationId): boolean {
+export function isSameOrganisation(
+  orgId1?: OrganisationId,
+  orgId2?: OrganisationId
+): boolean {
   if (!orgId1 || !orgId2) {
     return false;
   }
@@ -71,7 +74,9 @@ export function isWithinOwnOrganisation(context: PermissionContext): boolean {
 /**
  * Check if a user is operating on a resource within their organisation
  */
-export function isResourceWithinOrganisation(context: PermissionContext): boolean {
+export function isResourceWithinOrganisation(
+  context: PermissionContext
+): boolean {
   if (!context.resource?.orgId || !context.actor.orgId) {
     return false;
   }
@@ -81,7 +86,10 @@ export function isResourceWithinOrganisation(context: PermissionContext): boolea
 /**
  * Check if a role has explicit permission
  */
-export function hasExplicitPermission(role: UserRole, permissionId: PermissionId): boolean {
+export function hasExplicitPermission(
+  role: UserRole,
+  permissionId: PermissionId
+): boolean {
   if (!role.isActive || !Array.isArray(role.permissions)) {
     return false;
   }
@@ -92,7 +100,7 @@ export function hasExplicitPermission(role: UserRole, permissionId: PermissionId
  * Check if a role has permission via system defaults
  */
 export function hasSystemDefaultPermission(
-  role: UserRole, 
+  role: UserRole,
   systemPermission: SystemPermission
 ): boolean {
   if (!role.isActive || !systemPermission.isActive) {
@@ -111,7 +119,9 @@ export function isValidPermissionId(permissionId: string): boolean {
 /**
  * Check if a user can perform cross-organisation operations
  */
-export function canPerformCrossOrgOperations(context: PermissionContext): boolean {
+export function canPerformCrossOrgOperations(
+  context: PermissionContext
+): boolean {
   return isSystemUser(context.actor.systemRoles);
 }
 
@@ -119,14 +129,14 @@ export function canPerformCrossOrgOperations(context: PermissionContext): boolea
  * Check if a user can modify roles in an organisation
  */
 export function canModifyRolesInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: OrganisationId
 ): boolean {
   // System users can modify any organisation's roles
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Regular users can only modify roles in their own organisation
   return isSameOrganisation(context.actor.orgId, targetOrgId);
 }
@@ -134,17 +144,20 @@ export function canModifyRolesInOrganisation(
 /**
  * Check if a user can delete a role
  */
-export function canDeleteRole(role: UserRole, context: PermissionContext): boolean {
+export function canDeleteRole(
+  role: UserRole,
+  context: PermissionContext
+): boolean {
   // Cannot delete default roles
   if (role.isDefault) {
     return false;
   }
-  
+
   // System users can delete any non-default role
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Regular users can only delete roles in their own organisation
   return isSameOrganisation(context.actor.orgId, role.organisationId);
 }
@@ -153,14 +166,14 @@ export function canDeleteRole(role: UserRole, context: PermissionContext): boole
  * Check if a user can create roles in an organisation
  */
 export function canCreateRolesInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: OrganisationId
 ): boolean {
   // System users can create roles in any organisation
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Regular users can only create roles in their own organisation
   return isSameOrganisation(context.actor.orgId, targetOrgId);
 }
@@ -169,14 +182,14 @@ export function canCreateRolesInOrganisation(
  * Check if a user can view permissions for an organisation
  */
 export function canViewOrganisationPermissions(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: OrganisationId
 ): boolean {
   // System users can view any organisation's permissions
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Regular users can only view permissions in their own organisation
   return isSameOrganisation(context.actor.orgId, targetOrgId);
 }
@@ -184,28 +197,36 @@ export function canViewOrganisationPermissions(
 /**
  * Check if a user can manage system permissions
  */
-export function canManageSystemPermissions(context: PermissionContext): boolean {
+export function canManageSystemPermissions(
+  context: PermissionContext
+): boolean {
   return isSystemUser(context.actor.systemRoles);
 }
 
 /**
  * Check if a user can push permissions to organisations
  */
-export function canPushPermissionsToOrganisations(context: PermissionContext): boolean {
+export function canPushPermissionsToOrganisations(
+  context: PermissionContext
+): boolean {
   return isSystemUser(context.actor.systemRoles);
 }
 
 /**
  * Check if a user can import system permissions
  */
-export function canImportSystemPermissions(context: PermissionContext): boolean {
+export function canImportSystemPermissions(
+  context: PermissionContext
+): boolean {
   return isSystemUser(context.actor.systemRoles);
 }
 
 /**
  * Check if a user can manage system role templates
  */
-export function canManageSystemRoleTemplates(context: PermissionContext): boolean {
+export function canManageSystemRoleTemplates(
+  context: PermissionContext
+): boolean {
   return isSystemUser(context.actor.systemRoles);
 }
 
@@ -222,17 +243,17 @@ export function canPerformActionPredicate(
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Check if user is within their own organisation
   if (!isWithinOwnOrganisation(context)) {
     return false;
   }
-  
+
   // Check if resource is within the same organisation
   if (context.resource && !isResourceWithinOrganisation(context)) {
     return false;
   }
-  
+
   // Additional checks would be implemented based on specific business rules
   return true;
 }
@@ -240,15 +261,21 @@ export function canPerformActionPredicate(
 /**
  * Check if a user has any of the specified roles
  */
-export function hasAnyRole(userRoles: string[], targetRoles: string[]): boolean {
-  return userRoles.some(role => targetRoles.includes(role));
+export function hasAnyRole(
+  userRoles: string[],
+  targetRoles: string[]
+): boolean {
+  return userRoles.some((role) => targetRoles.includes(role));
 }
 
 /**
  * Check if a user has all of the specified roles
  */
-export function hasAllRoles(userRoles: string[], targetRoles: string[]): boolean {
-  return targetRoles.every(role => userRoles.includes(role));
+export function hasAllRoles(
+  userRoles: string[],
+  targetRoles: string[]
+): boolean {
+  return targetRoles.every((role) => userRoles.includes(role));
 }
 
 /**

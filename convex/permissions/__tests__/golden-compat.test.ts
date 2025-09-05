@@ -10,7 +10,8 @@ import type {
   OrganisationId,
   UserId,
   AuditAction,
-  PermissionGroup} from '../index';
+  PermissionGroup,
+} from '../index';
 import {
   // Constants
   SYSTEM_ROLES,
@@ -156,7 +157,9 @@ describe('golden compatibility test', () => {
     it('should work with basic predicate functions', () => {
       expect(isSystemUser(['admin'])).toBe(true);
       expect(hasRoleAtLeast('ORG_ADMIN', 'STAFF')).toBe(true);
-      expect(isSameOrganisation('org1' as OrganisationId, 'org1' as OrganisationId)).toBe(true);
+      expect(
+        isSameOrganisation('org1' as OrganisationId, 'org1' as OrganisationId)
+      ).toBe(true);
       expect(isValidPermissionId('module.view')).toBe(true);
       expect(hasAnyRole(['admin', 'user'], ['admin'])).toBe(true);
       expect(hasAllRoles(['admin', 'user'], ['admin', 'user'])).toBe(true);
@@ -200,15 +203,25 @@ describe('golden compatibility test', () => {
         actor: { id: 'user1', role: 'SYSTEM', systemRoles: ['admin'] },
         resource: { id: 'res1', type: 'Module' },
       };
-      expect(() => assertCanPerformAction(context, 'Module', 'READ')).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'READ')
+      ).not.toThrow();
     });
   });
 
   describe('integration', () => {
     it('should work with complete permission flow', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' as OrganisationId },
-        resource: { id: 'res1', type: 'Module', orgId: 'org1' as OrganisationId },
+        actor: {
+          id: 'user1',
+          role: 'ORG_ADMIN',
+          orgId: 'org1' as OrganisationId,
+        },
+        resource: {
+          id: 'res1',
+          type: 'Module',
+          orgId: 'org1' as OrganisationId,
+        },
         organisationId: 'org1' as OrganisationId,
       };
 
@@ -222,7 +235,9 @@ describe('golden compatibility test', () => {
       expect(canModifyResource(context)).toBe(true);
 
       // Test guards
-      expect(() => assertCanPerformAction(context, 'Module', 'READ')).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'READ')
+      ).not.toThrow();
     });
 
     it('should work with system user flow', () => {
@@ -242,10 +257,18 @@ describe('golden compatibility test', () => {
       expect(canPerformAction(context, 'Module', 'DELETE')).toBe(true);
 
       // Test guards
-      expect(() => assertCanPerformAction(context, 'Module', 'READ')).not.toThrow();
-      expect(() => assertCanPerformAction(context, 'Module', 'CREATE')).not.toThrow();
-      expect(() => assertCanPerformAction(context, 'Module', 'UPDATE')).not.toThrow();
-      expect(() => assertCanPerformAction(context, 'Module', 'DELETE')).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'READ')
+      ).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'CREATE')
+      ).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'UPDATE')
+      ).not.toThrow();
+      expect(() =>
+        assertCanPerformAction(context, 'Module', 'DELETE')
+      ).not.toThrow();
     });
   });
 });

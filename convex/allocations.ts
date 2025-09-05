@@ -206,7 +206,7 @@ export const listForGroup = query({
     const enriched = await Promise.all(
       rows.map(async (r) => ({
         allocation: r,
-        lecturer: await loaders.lecturerProfilesById.load(ctx, r.lecturerId),
+        lecturer: await loaders.lecturersById.load(ctx, r.lecturerId),
       }))
     );
     return enriched;
@@ -230,10 +230,14 @@ export const listForLecturerDetailed = query({
     // Use bulk batching instead of N+1 queries
     const enriched = await Promise.all(
       rows.map(async (r) => {
-        const group = await loaders.moduleGroupsById.load(ctx, r.groupId);
-        const iteration = group ? await loaders.moduleIterationsById.load(ctx, group.moduleIterationId) : null;
-        const module = iteration ? await loaders.modulesById.load(ctx, iteration.moduleId) : null;
-        
+        const group = await loaders.groupsById.load(ctx, r.groupId);
+        const iteration = group
+          ? await loaders.iterationsById.load(ctx, group.moduleIterationId)
+          : null;
+        const module = iteration
+          ? await loaders.modulesById.load(ctx, iteration.moduleId)
+          : null;
+
         return {
           allocation: r,
           group,

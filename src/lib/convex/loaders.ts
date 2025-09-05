@@ -8,6 +8,7 @@ export const makeLoaders = () => ({
   lecturersById: createIdLoader('lecturer_profiles'),
   allocationsById: createIdLoader('group_allocations'),
   rolesById: createIdLoader('user_roles'),
+  iterationsById: createIdLoader('module_iterations'),
   // add other tables here as needed
 });
 

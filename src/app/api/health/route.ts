@@ -13,7 +13,7 @@ interface HealthResponse {
 
 export async function GET() {
   const timestamp = new Date().toISOString();
-  
+
   try {
     // Basic health check - app is running
     const health: HealthResponse = {
@@ -28,34 +28,37 @@ export async function GET() {
     if (process.env.CONVEX_DEPLOYMENT) {
       health.convex = {
         deployment: process.env.CONVEX_DEPLOYMENT,
-        status: 'connected'
+        status: 'connected',
       };
     }
 
-    return NextResponse.json(health, { 
+    return NextResponse.json(health, {
       status: 200,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
     });
   } catch {
     // Log error for debugging (in production, this would go to monitoring system)
     // console.error('Health check failed:', error);
-    
-    return NextResponse.json({
-      ok: false,
-      timestamp,
-      service: 'workload-wizard',
-      error: 'Health check failed'
-    }, { 
-      status: 500,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+
+    return NextResponse.json(
+      {
+        ok: false,
+        timestamp,
+        service: 'workload-wizard',
+        error: 'Health check failed',
+      },
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
       }
-    });
+    );
   }
 }

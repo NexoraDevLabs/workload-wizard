@@ -29,7 +29,7 @@ describe('withApiTracing', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockRequest = {
       method: 'POST',
       url: 'https://example.com/api/test',

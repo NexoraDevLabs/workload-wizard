@@ -47,7 +47,7 @@ describe('ErrorBoundary', () => {
         <ThrowingComponent shouldThrow={false} />
       </ErrorBoundary>
     );
-    
+
     expect(() => {
       // This would normally be rendered by React
       const element = React.createElement(TestComponent);
@@ -62,7 +62,7 @@ describe('ErrorBoundary', () => {
         <ThrowingComponent shouldThrow={true} />
       </ErrorBoundary>
     );
-    
+
     expect(() => {
       const element = React.createElement(TestComponent);
       expect(element).toBeDefined();
@@ -71,13 +71,13 @@ describe('ErrorBoundary', () => {
 
   it('calls onErrorCaptured when error occurs', () => {
     const onErrorCaptured = vi.fn();
-    
+
     const TestComponent = () => (
       <ErrorBoundary onErrorCaptured={onErrorCaptured}>
         <ThrowingComponent shouldThrow={true} />
       </ErrorBoundary>
     );
-    
+
     expect(() => {
       const element = React.createElement(TestComponent);
       expect(element).toBeDefined();
@@ -94,7 +94,7 @@ describe('ErrorBoundary', () => {
         <UnknownErrorComponent />
       </ErrorBoundary>
     );
-    
+
     expect(() => {
       const element = React.createElement(TestComponent);
       expect(element).toBeDefined();
@@ -109,7 +109,7 @@ describe('ErrorBoundary', () => {
         <ThrowingComponent shouldThrow={true} />
       </ErrorBoundary>
     );
-    
+
     expect(() => {
       const element = React.createElement(TestComponent);
       expect(element).toBeDefined();
@@ -132,9 +132,9 @@ describe('DefaultErrorFallback', () => {
     const stringError = 'String error' as unknown as Error;
     const reset = vi.fn();
 
-    const element = React.createElement(DefaultErrorFallback, { 
-      error: stringError, 
-      reset 
+    const element = React.createElement(DefaultErrorFallback, {
+      error: stringError,
+      reset,
     });
     expect(element).toBeDefined();
   });
@@ -143,7 +143,7 @@ describe('DefaultErrorFallback', () => {
 describe('ErrorBoundary Integration', () => {
   it('monitoring integration works', async () => {
     const { captureUIException } = await import('../../../lib/monitoring');
-    
+
     // Test that the monitoring function is callable
     expect(() => {
       captureUIException(new Error('Test'), { contextTag: 'Test' });

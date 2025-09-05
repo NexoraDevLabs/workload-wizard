@@ -45,10 +45,7 @@ export * from './rules';
 export * from './guards';
 
 // Re-export utility functions (excluding duplicates)
-export {
-  requirePermission,
-  requireOrgPermission,
-} from './utils';
+export { requirePermission, requireOrgPermission } from './utils';
 
 // Re-export all queries
 export * from './queries';

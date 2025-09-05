@@ -86,41 +86,41 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
 export function buildCsp(config: CSPConfig): string {
   const env = getEnv();
   const allowlist = buildAllowlist(env);
-  
+
   const directives: string[] = [
     // Core security directives
     "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    
+
     // Script sources with nonce and strict-dynamic
     `script-src 'self' 'strict-dynamic' 'nonce-${config.nonce}' ${allowlist.scriptSrc.join(' ')}`,
-    
+
     // Style sources with nonce
     `style-src 'self' 'nonce-${config.nonce}' ${allowlist.styleSrc.join(' ')}`,
-    
+
     // Image sources
     `img-src ${allowlist.imgSrc.join(' ')}`,
-    
+
     // Font sources
     `font-src ${allowlist.fontSrc.join(' ')}`,
-    
+
     // Connect sources (XHR, fetch, WebSocket)
     `connect-src ${allowlist.connectSrc.join(' ')} wss:`,
-    
+
     // Frame sources
     `frame-src ${allowlist.frameSrc.join(' ')}`,
-    
+
     // Media sources
     `media-src ${allowlist.mediaSrc.join(' ')}`,
-    
+
     // Worker sources
     `worker-src ${allowlist.workerSrc.join(' ')}`,
-    
+
     // Manifest sources
     `manifest-src ${allowlist.manifestSrc.join(' ')}`,
-    
+
     // Upgrade insecure requests
     'upgrade-insecure-requests',
   ];
@@ -159,7 +159,10 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
   // Always include Sentry (commonly used for error monitoring)
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
 
-  if (env.NEXT_PUBLIC_STATSIG_CLIENT_KEY || env.FEATFLAG_STATSIG_SERVER_API_KEY) {
+  if (
+    env.NEXT_PUBLIC_STATSIG_CLIENT_KEY ||
+    env.FEATFLAG_STATSIG_SERVER_API_KEY
+  ) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.statsig);
   }
 
@@ -201,7 +204,7 @@ function mergeAllowlist(
   source: Partial<CSPAllowlist> | undefined
 ): void {
   if (!source) return;
-  
+
   Object.entries(source).forEach(([key, sources]) => {
     if (sources) {
       const targetKey = key as keyof CSPAllowlist;
@@ -217,11 +220,13 @@ export function generateNonce(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  
+
   // Fallback for environments without crypto.randomUUID
   const array = new Uint8Array(16);
   crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join(
+    ''
+  );
 }
 
 /**

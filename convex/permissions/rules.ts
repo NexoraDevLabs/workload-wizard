@@ -1,12 +1,12 @@
-import type { 
-  PermissionContext, 
-  UserRole, 
-  SystemPermission, 
+import type {
+  PermissionContext,
+  UserRole,
+  SystemPermission,
   PermissionCheckResult,
   PermissionId,
   Resource,
   Action,
-  OrganisationId
+  OrganisationId,
 } from './types';
 import { ROLE_CAPABILITIES } from './constants';
 import {
@@ -20,7 +20,7 @@ import {
   canManageSystemPermissions as canManageSystemPermissionsPredicate,
   canPushPermissionsToOrganisations as canPushPermissionsToOrganisationsPredicate,
   canImportSystemPermissions as canImportSystemPermissionsPredicate,
-  canManageSystemRoleTemplates as canManageSystemRoleTemplatesPredicate
+  canManageSystemRoleTemplates as canManageSystemRoleTemplatesPredicate,
 } from './predicates';
 
 /**
@@ -96,7 +96,7 @@ export function canPerformAction(
   // Check if user has the required capability
   const userRole = context.actor.role;
   const capabilities = ROLE_CAPABILITIES[userRole];
-  
+
   if (!capabilities || !capabilities[resource]) {
     return false;
   }
@@ -107,35 +107,50 @@ export function canPerformAction(
 /**
  * Check if a user can read a resource
  */
-export function canReadResource(context: PermissionContext, resource: Resource): boolean {
+export function canReadResource(
+  context: PermissionContext,
+  resource: Resource
+): boolean {
   return canPerformAction(context, resource, 'READ');
 }
 
 /**
  * Check if a user can create a resource
  */
-export function canCreateResource(context: PermissionContext, resource: Resource): boolean {
+export function canCreateResource(
+  context: PermissionContext,
+  resource: Resource
+): boolean {
   return canPerformAction(context, resource, 'CREATE');
 }
 
 /**
  * Check if a user can update a resource
  */
-export function canUpdateResource(context: PermissionContext, resource: Resource): boolean {
+export function canUpdateResource(
+  context: PermissionContext,
+  resource: Resource
+): boolean {
   return canPerformAction(context, resource, 'UPDATE');
 }
 
 /**
  * Check if a user can delete a resource
  */
-export function canDeleteResource(context: PermissionContext, resource: Resource): boolean {
+export function canDeleteResource(
+  context: PermissionContext,
+  resource: Resource
+): boolean {
   return canPerformAction(context, resource, 'DELETE');
 }
 
 /**
  * Check if a user can manage a resource
  */
-export function canManageResource(context: PermissionContext, resource: Resource): boolean {
+export function canManageResource(
+  context: PermissionContext,
+  resource: Resource
+): boolean {
   return canPerformAction(context, resource, 'MANAGE');
 }
 
@@ -381,7 +396,7 @@ export function canDeleteOrganisation(context: PermissionContext): boolean {
  * Check if a user can manage roles in an organisation
  */
 export function canManageRolesInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: string
 ): boolean {
   return canModifyRolesInOrganisation(context, targetOrgId as OrganisationId);
@@ -391,17 +406,20 @@ export function canManageRolesInOrganisation(
  * Check if a user can create roles in an organisation
  */
 export function canCreateRolesInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: string
 ): boolean {
-  return canCreateRolesInOrganisationPredicate(context, targetOrgId as OrganisationId);
+  return canCreateRolesInOrganisationPredicate(
+    context,
+    targetOrgId as OrganisationId
+  );
 }
 
 /**
  * Check if a user can delete a role
  */
 export function canDeleteRoleInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   role: UserRole
 ): boolean {
   return canDeleteRole(role, context);
@@ -411,37 +429,48 @@ export function canDeleteRoleInOrganisation(
  * Check if a user can view permissions for an organisation
  */
 export function canViewOrganisationPermissions(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: string
 ): boolean {
-  return canViewOrganisationPermissionsPredicate(context, targetOrgId as OrganisationId);
+  return canViewOrganisationPermissionsPredicate(
+    context,
+    targetOrgId as OrganisationId
+  );
 }
 
 /**
  * Check if a user can push permissions to organisations
  */
-export function canPushPermissionsToOrganisations(context: PermissionContext): boolean {
+export function canPushPermissionsToOrganisations(
+  context: PermissionContext
+): boolean {
   return canPushPermissionsToOrganisationsPredicate(context);
 }
 
 /**
  * Check if a user can import system permissions
  */
-export function canImportSystemPermissions(context: PermissionContext): boolean {
+export function canImportSystemPermissions(
+  context: PermissionContext
+): boolean {
   return canImportSystemPermissionsPredicate(context);
 }
 
 /**
  * Check if a user can manage system role templates
  */
-export function canManageSystemRoleTemplates(context: PermissionContext): boolean {
+export function canManageSystemRoleTemplates(
+  context: PermissionContext
+): boolean {
   return canManageSystemRoleTemplatesPredicate(context);
 }
 
 /**
  * Check if a user can manage system permissions
  */
-export function canManageSystemPermissions(context: PermissionContext): boolean {
+export function canManageSystemPermissions(
+  context: PermissionContext
+): boolean {
   return canManageSystemPermissionsPredicate(context);
 }
 
@@ -453,17 +482,25 @@ export function canAccessResource(context: PermissionContext): boolean {
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Check if user is within their own organisation
-  if (context.actor.orgId && context.organisationId && String(context.actor.orgId) !== String(context.organisationId)) {
+  if (
+    context.actor.orgId &&
+    context.organisationId &&
+    String(context.actor.orgId) !== String(context.organisationId)
+  ) {
     return false;
   }
-  
+
   // Check if resource is within the same organisation
-  if (context.resource?.orgId && context.actor.orgId && String(context.resource.orgId) !== String(context.actor.orgId)) {
+  if (
+    context.resource?.orgId &&
+    context.actor.orgId &&
+    String(context.resource.orgId) !== String(context.actor.orgId)
+  ) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -475,12 +512,12 @@ export function canModifyResource(context: PermissionContext): boolean {
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Check basic access first
   if (!canAccessResource(context)) {
     return false;
   }
-  
+
   // Additional modification-specific checks would go here
   return true;
 }
@@ -491,14 +528,14 @@ export function canModifyResource(context: PermissionContext): boolean {
  * Check if a user can create resources in an organisation
  */
 export function canCreateResourcesInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: string
 ): boolean {
   // System users can create resources in any organisation
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Regular users can only create resources in their own organisation
   return String(context.actor.orgId) === String(targetOrgId);
 }
@@ -507,14 +544,14 @@ export function canCreateResourcesInOrganisation(
  * Check if a user can view resources in an organisation
  */
 export function canViewResourcesInOrganisation(
-  context: PermissionContext, 
+  context: PermissionContext,
   targetOrgId: string
 ): boolean {
   // System users can view resources in any organisation
   if (isSystemUser(context.actor.systemRoles)) {
     return true;
   }
-  
+
   // Regular users can only view resources in their own organisation
   return String(context.actor.orgId) === String(targetOrgId);
 }

@@ -18,7 +18,10 @@ const EnvSchema = z.object({
   CONVEX_DEPLOY_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   // CSP Configuration
-  CSP_MODE: z.enum(['report-only', 'enforce']).optional().default('report-only'),
+  CSP_MODE: z
+    .enum(['report-only', 'enforce'])
+    .optional()
+    .default('report-only'),
 });
 
 type Env = z.infer<typeof EnvSchema>;

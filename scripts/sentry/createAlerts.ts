@@ -127,20 +127,25 @@ async function createAlerts() {
 
     for (const alert of alerts) {
       try {
-        const response = await fetch(`https://sentry.io/api/0/projects/${org}/${project}/rules/`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(alert.data),
-        });
+        const response = await fetch(
+          `https://sentry.io/api/0/projects/${org}/${project}/rules/`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(alert.data),
+          }
+        );
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.warn(`⚠️  Failed to create ${alert.name} alert: ${response.status} ${errorText}`);
+          console.warn(
+            `⚠️  Failed to create ${alert.name} alert: ${response.status} ${errorText}`
+          );
         } else {
-          const result = await response.json() as { id: string };
+          const result = (await response.json()) as { id: string };
           console.log(`✅ ${alert.name} alert created successfully!`);
           console.log(`   Alert ID: ${result.id}`);
         }
@@ -150,7 +155,9 @@ async function createAlerts() {
     }
 
     console.log('\n📊 Alert configuration complete!');
-    console.log('Note: You may need to configure Slack integration in Sentry settings.');
+    console.log(
+      'Note: You may need to configure Slack integration in Sentry settings.'
+    );
   } catch (error) {
     console.error('❌ Failed to create alerts:', error);
     process.exit(1);

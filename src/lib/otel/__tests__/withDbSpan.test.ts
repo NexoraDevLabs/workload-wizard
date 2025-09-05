@@ -30,7 +30,7 @@ describe('withDbSpan', () => {
   it('should wrap function and set span attributes on success', async () => {
     const mockResult = { id: '123', name: 'test' };
     const mockFn = vi.fn().mockResolvedValue(mockResult);
-    
+
     const result = await withDbSpan('convex:getUser', mockFn);
 
     expect(result).toBe(mockResult);
@@ -40,8 +40,10 @@ describe('withDbSpan', () => {
   it('should set error attributes when function throws', async () => {
     const error = new Error('Database error');
     const mockFn = vi.fn().mockRejectedValue(error);
-    
-    await expect(withDbSpan('convex:getUser', mockFn)).rejects.toThrow('Database error');
+
+    await expect(withDbSpan('convex:getUser', mockFn)).rejects.toThrow(
+      'Database error'
+    );
     expect(mockFn).toHaveBeenCalledOnce();
   });
 
@@ -51,9 +53,9 @@ describe('withDbSpan', () => {
     const customAttributes = {
       'db.table': 'users',
       'db.operation_type': 'read',
-      'user_id': 'user-123',
+      user_id: 'user-123',
     };
-    
+
     const result = await withDbSpan('convex:getUser', mockFn, customAttributes);
 
     expect(result).toBe(mockResult);
@@ -63,10 +65,10 @@ describe('withDbSpan', () => {
   it('should handle async operations', async () => {
     const mockResult = { count: 42 };
     const mockFn = vi.fn().mockImplementation(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       return mockResult;
     });
-    
+
     const result = await withDbSpan('convex:countUsers', mockFn);
 
     expect(result).toBe(mockResult);
@@ -76,7 +78,7 @@ describe('withDbSpan', () => {
   it('should handle synchronous operations', async () => {
     const mockResult = { success: true };
     const mockFn = vi.fn().mockReturnValue(mockResult);
-    
+
     const result = await withDbSpan('convex:validateData', mockFn);
 
     expect(result).toBe(mockResult);

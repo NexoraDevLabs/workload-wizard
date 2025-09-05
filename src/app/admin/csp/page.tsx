@@ -9,7 +9,14 @@ import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Shield, Globe } from 'lucide-react';
 import { useState } from 'react';
@@ -18,7 +25,10 @@ export default function CSPDashboard() {
   const [timeRange, setTimeRange] = useState(24);
 
   const summary = useQuery(api.csp.getSummary, { hours: timeRange }) as any;
-  const recentReports = useQuery(api.csp.getRecentReports, { limit: 20, hours: timeRange }) as any;
+  const recentReports = useQuery(api.csp.getRecentReports, {
+    limit: 20,
+    hours: timeRange,
+  }) as any;
 
   if (!summary || !recentReports) {
     return (
@@ -42,7 +52,10 @@ export default function CSPDashboard() {
       <h1 className="text-3xl font-bold mb-6">CSP Violation Dashboard</h1>
 
       <div className="mb-6">
-        <Tabs value={String(timeRange)} onValueChange={(value) => setTimeRange(Number(value))}>
+        <Tabs
+          value={String(timeRange)}
+          onValueChange={(value) => setTimeRange(Number(value))}
+        >
           <TabsList>
             <TabsTrigger value="1">Last Hour</TabsTrigger>
             <TabsTrigger value="24">Last 24 Hours</TabsTrigger>
@@ -54,7 +67,9 @@ export default function CSPDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Violations</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Violations
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -67,42 +82,60 @@ export default function CSPDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Directives</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Top Directives
+            </CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {summary.byDirective && summary.byDirective.length > 0 ? (
               <ul className="text-sm">
-                {summary.byDirective.slice(0, 5).map((item: any, index: number) => (
-                  <li key={index} className="flex justify-between items-center">
-                    <span>{item.directive}</span>
-                    <Badge variant="secondary">{item.count}</Badge>
-                  </li>
-                ))}
+                {summary.byDirective
+                  .slice(0, 5)
+                  .map((item: any, index: number) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center"
+                    >
+                      <span>{item.directive}</span>
+                      <Badge variant="secondary">{item.count}</Badge>
+                    </li>
+                  ))}
               </ul>
             ) : (
-              <p className="text-xs text-muted-foreground">No violations for this period.</p>
+              <p className="text-xs text-muted-foreground">
+                No violations for this period.
+              </p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Blocked URIs</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Top Blocked URIs
+            </CardTitle>
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {summary.byBlockedURI && summary.byBlockedURI.length > 0 ? (
               <ul className="text-sm">
-                {summary.byBlockedURI.slice(0, 5).map((item: any, index: number) => (
-                  <li key={index} className="flex justify-between items-center truncate">
-                    <span className="truncate">{item.uri}</span>
-                    <Badge variant="secondary">{item.count}</Badge>
-                  </li>
-                ))}
+                {summary.byBlockedURI
+                  .slice(0, 5)
+                  .map((item: any, index: number) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center truncate"
+                    >
+                      <span className="truncate">{item.uri}</span>
+                      <Badge variant="secondary">{item.count}</Badge>
+                    </li>
+                  ))}
               </ul>
             ) : (
-              <p className="text-xs text-muted-foreground">No blocked URIs for this period.</p>
+              <p className="text-xs text-muted-foreground">
+                No blocked URIs for this period.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -125,9 +158,15 @@ export default function CSPDashboard() {
               <TableRow key={report._id}>
                 <TableCell>{formatTimestamp(report.timestamp)}</TableCell>
                 <TableCell>{report.effectiveDirective}</TableCell>
-                <TableCell className="max-w-xs truncate">{report.blockedURI || 'N/A'}</TableCell>
-                <TableCell className="max-w-xs truncate">{report.sourceFile || 'N/A'}</TableCell>
-                <TableCell className="max-w-xs truncate">{report.userAgent || 'N/A'}</TableCell>
+                <TableCell className="max-w-xs truncate">
+                  {report.blockedURI || 'N/A'}
+                </TableCell>
+                <TableCell className="max-w-xs truncate">
+                  {report.sourceFile || 'N/A'}
+                </TableCell>
+                <TableCell className="max-w-xs truncate">
+                  {report.userAgent || 'N/A'}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -44,7 +44,7 @@ export function createIdLoader<TableName extends string>(table: TableName) {
 
   async function load(ctx: AnyCtx, id: Id<TableName> | null | undefined) {
     if (!id) return null;
-    
+
     // Check cache first
     const cached = cache.get(key);
     if (cached) return cached;
@@ -52,10 +52,10 @@ export function createIdLoader<TableName extends string>(table: TableName) {
     // Enqueue for batching
     if (!queue) queue = { ids: [], resolvers: [] };
     queue.ids.push(key);
-    
+
     // Schedule microtask flush
     queueMicrotask(() => flush(ctx));
-    
+
     return new Promise(resolve => {
       queue!.resolvers.push(map => resolve(map.get(key) ?? null));
     });
@@ -67,9 +67,9 @@ export function createIdLoader<TableName extends string>(table: TableName) {
 
 ```typescript
 export const makeLoaders = () => ({
-  usersById: createIdLoader("users"),
-  organisationsById: createIdLoader("organisations"),
-  lecturerProfilesById: createIdLoader("lecturer_profiles"),
+  usersById: createIdLoader('users'),
+  organisationsById: createIdLoader('organisations'),
+  lecturerProfilesById: createIdLoader('lecturer_profiles'),
   // ... more tables
 });
 ```
@@ -93,17 +93,17 @@ const enriched = await Promise.all(
 
 ### Query Count Reduction
 
-| Scenario | Before (N+1) | After (Batched) | Reduction |
-|----------|--------------|-----------------|-----------|
-| Typical (100 users, 20 orgs) | 121 queries | 3 queries | 97.5% |
-| Worst-case (1000 users, 100 orgs) | 1101 queries | 4 queries | 99.6% |
+| Scenario                          | Before (N+1) | After (Batched) | Reduction |
+| --------------------------------- | ------------ | --------------- | --------- |
+| Typical (100 users, 20 orgs)      | 121 queries  | 3 queries       | 97.5%     |
+| Worst-case (1000 users, 100 orgs) | 1101 queries | 4 queries       | 99.6%     |
 
 ### Latency Improvements
 
-| Scenario | Before (P95) | After (P95) | Improvement |
-|----------|--------------|-------------|-------------|
-| Typical | 45.2ms | 12.8ms | 71.7% |
-| Worst-case | 234.7ms | 18.3ms | 92.2% |
+| Scenario   | Before (P95) | After (P95) | Improvement |
+| ---------- | ------------ | ----------- | ----------- |
+| Typical    | 45.2ms       | 12.8ms      | 71.7%       |
+| Worst-case | 234.7ms      | 18.3ms      | 92.2%       |
 
 ## Usage Guidelines
 
@@ -139,7 +139,7 @@ Run performance benchmarks:
 # Run benchmark (after phase)
 BENCH_PHASE=after pnpm bench:listing
 
-# Run benchmark (before phase) 
+# Run benchmark (before phase)
 BENCH_PHASE=before pnpm bench:listing
 ```
 

@@ -239,9 +239,11 @@ export default function FeaturebaseMessenger() {
   }
 
   return (
-    <ErrorBoundary 
-      contextTag="FeaturebaseMessenger" 
-      fallback={({ error, reset }) => <DefaultErrorFallback error={error} reset={reset} />}
+    <ErrorBoundary
+      contextTag="FeaturebaseMessenger"
+      fallback={({ error, reset }) => (
+        <DefaultErrorFallback error={error} reset={reset} />
+      )}
     >
       <FeaturebaseMessengerInternal />
     </ErrorBoundary>

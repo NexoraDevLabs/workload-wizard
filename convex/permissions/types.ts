@@ -8,7 +8,15 @@ export type Role = 'SYSTEM' | 'ORG_ADMIN' | 'STAFF' | 'STUDENT';
 
 export type Action = 'READ' | 'CREATE' | 'UPDATE' | 'DELETE' | 'MANAGE';
 
-export type Resource = 'Organisation' | 'Module' | 'Allocation' | 'User' | 'Report' | 'Course' | 'Group' | 'AcademicYear';
+export type Resource =
+  | 'Organisation'
+  | 'Module'
+  | 'Allocation'
+  | 'User'
+  | 'Report'
+  | 'Course'
+  | 'Group'
+  | 'AcademicYear';
 
 export type SystemRole = 'admin' | 'sysadmin' | 'developer';
 
@@ -144,21 +152,31 @@ export interface PermissionMapEntry {
 
 // These constants are now defined in constants.ts to avoid duplication
 
-export type PermissionGroup = 'courses' | 'modules' | 'iterations' | 'groups' | 'allocations' | 'academic_years' | 'users' | 'permissions' | 'roles' | 'organisations';
+export type PermissionGroup =
+  | 'courses'
+  | 'modules'
+  | 'iterations'
+  | 'groups'
+  | 'allocations'
+  | 'academic_years'
+  | 'users'
+  | 'permissions'
+  | 'roles'
+  | 'organisations';
 
 /**
  * Audit action types
  */
-export type AuditAction = 
-  | 'create' 
-  | 'update' 
-  | 'delete' 
-  | 'permission.assigned' 
-  | 'permission.revoked' 
-  | 'permission.pushed' 
+export type AuditAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'permission.assigned'
+  | 'permission.revoked'
+  | 'permission.pushed'
   | 'permission.staged'
   | 'role.created'
-  | 'role.updated' 
+  | 'role.updated'
   | 'role.deleted';
 
 /**

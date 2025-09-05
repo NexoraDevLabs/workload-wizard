@@ -28,7 +28,7 @@ describe('API Route Tracing Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockRequest = {
       method: 'GET',
       url: 'https://example.com/api/health',
@@ -43,17 +43,20 @@ describe('API Route Tracing Integration', () => {
 
   it('should trace a health check endpoint', async () => {
     const healthHandler = async (_req: NextRequest) => {
-      return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     };
 
     const tracedHandler = withApiTracing('api:/api/health', healthHandler);
     const response = await tracedHandler(mockRequest);
 
     expect(response.status).toBe(200);
-    const body = await response.json() as { status: string };
+    const body = (await response.json()) as { status: string };
     expect(body.status).toBe('ok');
   });
 
@@ -69,7 +72,7 @@ describe('API Route Tracing Integration', () => {
     const response = await tracedHandler(mockRequest);
 
     expect(response.status).toBe(404);
-    const body = await response.json() as { error: string };
+    const body = (await response.json()) as { error: string };
     expect(body.error).toBe('Not found');
   });
 
@@ -80,6 +83,8 @@ describe('API Route Tracing Integration', () => {
 
     const tracedHandler = withApiTracing('api:/api/error', throwingHandler);
 
-    await expect(tracedHandler(mockRequest)).rejects.toThrow('Internal server error');
+    await expect(tracedHandler(mockRequest)).rejects.toThrow(
+      'Internal server error'
+    );
   });
 });

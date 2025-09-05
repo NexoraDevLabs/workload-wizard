@@ -15,7 +15,12 @@ import {
   isActiveRole,
   isActivePermission,
 } from '../predicates';
-import type { PermissionContext, UserRole, SystemPermission, SystemRole } from '../types';
+import type {
+  PermissionContext,
+  UserRole,
+  SystemPermission,
+  SystemRole,
+} from '../types';
 import { mockOrganisationId, mockRoleId } from './test-utils';
 
 describe('predicates', () => {
@@ -54,16 +59,30 @@ describe('predicates', () => {
 
   describe('isSameOrganisation', () => {
     it('should return true for same organisation IDs', () => {
-      expect(isSameOrganisation(mockOrganisationId('org1'), mockOrganisationId('org1'))).toBe(true);
+      expect(
+        isSameOrganisation(
+          mockOrganisationId('org1'),
+          mockOrganisationId('org1')
+        )
+      ).toBe(true);
     });
 
     it('should return false for different organisation IDs', () => {
-      expect(isSameOrganisation(mockOrganisationId('org1'), mockOrganisationId('org2'))).toBe(false);
+      expect(
+        isSameOrganisation(
+          mockOrganisationId('org1'),
+          mockOrganisationId('org2')
+        )
+      ).toBe(false);
     });
 
     it('should return false for undefined IDs', () => {
-      expect(isSameOrganisation(undefined, mockOrganisationId('org1'))).toBe(false);
-      expect(isSameOrganisation(mockOrganisationId('org1'), undefined)).toBe(false);
+      expect(isSameOrganisation(undefined, mockOrganisationId('org1'))).toBe(
+        false
+      );
+      expect(isSameOrganisation(mockOrganisationId('org1'), undefined)).toBe(
+        false
+      );
     });
   });
 
@@ -96,7 +115,11 @@ describe('predicates', () => {
   describe('isWithinOwnOrganisation', () => {
     it('should return true when user is within their own organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
+        actor: {
+          id: 'user1',
+          role: 'STAFF',
+          orgId: mockOrganisationId('org1'),
+        },
         organisationId: mockOrganisationId('org1'),
       };
       expect(isWithinOwnOrganisation(context)).toBe(true);
@@ -104,7 +127,11 @@ describe('predicates', () => {
 
     it('should return false when user is in different organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
+        actor: {
+          id: 'user1',
+          role: 'STAFF',
+          orgId: mockOrganisationId('org1'),
+        },
         organisationId: mockOrganisationId('org2'),
       };
       expect(isWithinOwnOrganisation(context)).toBe(false);
@@ -256,7 +283,9 @@ describe('predicates', () => {
 
   describe('hasAllRoles', () => {
     it('should return true when user has all target roles', () => {
-      expect(hasAllRoles(['admin', 'user', 'manager'], ['admin', 'user'])).toBe(true);
+      expect(hasAllRoles(['admin', 'user', 'manager'], ['admin', 'user'])).toBe(
+        true
+      );
     });
 
     it('should return false when user is missing any target role', () => {

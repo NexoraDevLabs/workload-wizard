@@ -8,7 +8,12 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../convex/_generated/api';
 import { createLimiterFor } from './lib/rateLimiter';
 import { trackRateLimitEvent } from './lib/metrics';
-import { generateNonce, buildCsp, getCSPMode, buildReportToHeader } from './lib/security/csp';
+import {
+  generateNonce,
+  buildCsp,
+  getCSPMode,
+  buildReportToHeader,
+} from './lib/security/csp';
 
 function clientId(req: NextRequest) {
   // Prefer a user id header/cookie if your app sets one; fallback to IP.
@@ -109,7 +114,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Generate nonce for CSP
   const nonce = generateNonce();
-  
+
   // Build CSP policy
   const cspMode = getCSPMode();
   const cspPolicy = buildCsp({
@@ -121,17 +126,17 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Create response with CSP headers
   const response = NextResponse.next();
-  
+
   // Set CSP header based on mode
   if (cspMode === 'enforce') {
     response.headers.set('Content-Security-Policy', cspPolicy);
   } else {
     response.headers.set('Content-Security-Policy-Report-Only', cspPolicy);
   }
-  
+
   // Set Report-To header for violation reporting
   response.headers.set('Report-To', buildReportToHeader('/api/csp-report'));
-  
+
   // Pass nonce to the request for use in components
   response.headers.set('x-csp-nonce', nonce);
 

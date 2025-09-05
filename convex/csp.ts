@@ -25,7 +25,7 @@ export const addReport = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    
+
     return await ctx.db.insert('csp_reports', {
       ...args,
       timestamp: args.timestamp,
@@ -43,49 +43,61 @@ export const getSummary = query({
   },
   handler: async (ctx, args) => {
     const hours = args.hours || 24;
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
     const reports = await ctx.db
       .query('csp_reports')
       .withIndex('by_timestamp', (q) => q.gte('timestamp', cutoff))
       .collect();
-    
+
     // Group by directive
-    const byDirective = reports.reduce((acc, report) => {
-      const directive = report.effectiveDirective;
-      if (!acc[directive]) {
-        acc[directive] = {
-          count: 0,
-          blockedURIs: new Set<string>(),
-          reports: [] as typeof reports,
-        };
-      }
-      acc[directive].count++;
-      if (report.blockedURI) {
-        acc[directive].blockedURIs.add(report.blockedURI);
-      }
-      acc[directive].reports.push(report);
-      return acc;
-    }, {} as Record<string, { count: number; blockedURIs: Set<string>; reports: typeof reports }>);
-    
-    // Group by blocked URI
-    const byBlockedURI = reports.reduce((acc, report) => {
-      if (report.blockedURI) {
-        const uri = report.blockedURI;
-        if (!acc[uri]) {
-          acc[uri] = {
+    const byDirective = reports.reduce(
+      (acc, report) => {
+        const directive = report.effectiveDirective;
+        if (!acc[directive]) {
+          acc[directive] = {
             count: 0,
-            directives: new Set<string>(),
+            blockedURIs: new Set<string>(),
             reports: [] as typeof reports,
           };
         }
-        acc[uri].count++;
-        acc[uri].directives.add(report.effectiveDirective);
-        acc[uri].reports.push(report);
-      }
-      return acc;
-    }, {} as Record<string, { count: number; directives: Set<string>; reports: typeof reports }>);
-    
+        acc[directive].count++;
+        if (report.blockedURI) {
+          acc[directive].blockedURIs.add(report.blockedURI);
+        }
+        acc[directive].reports.push(report);
+        return acc;
+      },
+      {} as Record<
+        string,
+        { count: number; blockedURIs: Set<string>; reports: typeof reports }
+      >
+    );
+
+    // Group by blocked URI
+    const byBlockedURI = reports.reduce(
+      (acc, report) => {
+        if (report.blockedURI) {
+          const uri = report.blockedURI;
+          if (!acc[uri]) {
+            acc[uri] = {
+              count: 0,
+              directives: new Set<string>(),
+              reports: [] as typeof reports,
+            };
+          }
+          acc[uri].count++;
+          acc[uri].directives.add(report.effectiveDirective);
+          acc[uri].reports.push(report);
+        }
+        return acc;
+      },
+      {} as Record<
+        string,
+        { count: number; directives: Set<string>; reports: typeof reports }
+      >
+    );
+
     return {
       totalReports: reports.length,
       timeRange: { hours, cutoff, now: Date.now() },
@@ -123,8 +135,8 @@ export const getRecentReports = query({
   handler: async (ctx, args) => {
     const limit = args.limit || 50;
     const hours = args.hours || 24;
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
     return await ctx.db
       .query('csp_reports')
       .withIndex('by_timestamp', (q) => q.gte('timestamp', cutoff))
@@ -145,11 +157,13 @@ export const getReportsByDirective = query({
   handler: async (ctx, args) => {
     const limit = args.limit || 50;
     const hours = args.hours || 24;
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
     return await ctx.db
       .query('csp_reports')
-      .withIndex('by_directive', (q) => q.eq('effectiveDirective', args.directive))
+      .withIndex('by_directive', (q) =>
+        q.eq('effectiveDirective', args.directive)
+      )
       .filter((q) => q.gte(q.field('timestamp'), cutoff))
       .order('desc')
       .take(limit);
@@ -168,8 +182,8 @@ export const getReportsByBlockedURI = query({
   handler: async (ctx, args) => {
     const limit = args.limit || 50;
     const hours = args.hours || 24;
-    const cutoff = Date.now() - (hours * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
     return await ctx.db
       .query('csp_reports')
       .withIndex('by_blocked_uri', (q) => q.eq('blockedURI', args.blockedURI))
@@ -188,19 +202,19 @@ export const cleanupOldReports = mutation({
   },
   handler: async (ctx, args) => {
     const daysToKeep = args.daysToKeep || 30;
-    const cutoff = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
-    
+    const cutoff = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
+
     const oldReports = await ctx.db
       .query('csp_reports')
       .withIndex('by_timestamp', (q) => q.lt('timestamp', cutoff))
       .collect();
-    
+
     let deletedCount = 0;
     for (const report of oldReports) {
       await ctx.db.delete(report._id);
       deletedCount++;
     }
-    
+
     return { deletedCount };
   },
 });

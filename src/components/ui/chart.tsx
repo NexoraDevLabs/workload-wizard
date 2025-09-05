@@ -52,9 +52,11 @@ function ChartContainer({
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
 
   return (
-    <ErrorBoundary 
-      contextTag="ChartContainer" 
-      fallback={({ error, reset }) => <DefaultErrorFallback error={error} reset={reset} />}
+    <ErrorBoundary
+      contextTag="ChartContainer"
+      fallback={({ error, reset }) => (
+        <DefaultErrorFallback error={error} reset={reset} />
+      )}
     >
       <ChartContext.Provider value={{ config }}>
         <div

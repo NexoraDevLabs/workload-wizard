@@ -407,8 +407,11 @@ export const getUserRoles = query({
     // Use bulk batching instead of N+1 queries
     const roles = await Promise.all(
       assignments.map(async (assignment) => {
-        const role = await loaders.userRolesById.load(ctx, assignment.roleId);
-        const organisation = await loaders.organisationsById.load(ctx, assignment.organisationId);
+        const role = await loaders.rolesById.load(ctx, assignment.roleId);
+        const organisation = await loaders.orgsById.load(
+          ctx,
+          assignment.organisationId
+        );
         return {
           assignment,
           role,

@@ -1,11 +1,11 @@
-import {
-  mutation,
-  type MutationCtx,
-} from '../_generated/server';
+import { mutation, type MutationCtx } from '../_generated/server';
 import { v } from 'convex/values';
 import type { Id } from '../_generated/dataModel';
 import { writeAudit } from '../audit';
-import { PLANNING_MVP_PERMISSIONS, ACADEMIC_YEAR_PERMISSIONS } from './constants';
+import {
+  PLANNING_MVP_PERMISSIONS,
+  ACADEMIC_YEAR_PERMISSIONS,
+} from './constants';
 
 /**
  * Seed default roles and permissions for a new organisation
@@ -423,7 +423,12 @@ export const seedPlanningMvpPermissions = mutation({
       }
     }
 
-    return { total: PLANNING_MVP_PERMISSIONS.length, created, updated, skipped };
+    return {
+      total: PLANNING_MVP_PERMISSIONS.length,
+      created,
+      updated,
+      skipped,
+    };
   },
 });
 
@@ -840,7 +845,12 @@ export const seedAcademicYearPermissions = mutation({
       }
     }
 
-    return { total: ACADEMIC_YEAR_PERMISSIONS.length, created, updated, skipped };
+    return {
+      total: ACADEMIC_YEAR_PERMISSIONS.length,
+      created,
+      updated,
+      skipped,
+    };
   },
 });
 

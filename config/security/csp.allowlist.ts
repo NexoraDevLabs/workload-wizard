@@ -1,6 +1,6 @@
 /**
  * CSP Allowlist Configuration
- * 
+ *
  * This file allows environment-specific overrides for CSP allowlists.
  * Add domains here that need to be whitelisted for specific environments.
  */
@@ -22,7 +22,7 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
       // Add production-specific script sources here
     ],
   },
-  
+
   // Additional style sources
   styleSrc: {
     development: [
@@ -32,7 +32,7 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
       // Add production-specific style sources here
     ],
   },
-  
+
   // Additional image sources
   imgSrc: {
     development: [
@@ -42,7 +42,7 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
       // Add production-specific image sources here
     ],
   },
-  
+
   // Additional connect sources
   connectSrc: {
     development: [
@@ -53,7 +53,7 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
       // Add production-specific connect sources here
     ],
   },
-  
+
   // Additional frame sources
   frameSrc: {
     development: [
@@ -68,15 +68,20 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
 /**
  * Get environment-specific allowlist overrides
  */
-export function getAllowlistOverrides(environment: string): Record<string, string[]> {
+export function getAllowlistOverrides(
+  environment: string
+): Record<string, string[]> {
   const overrides: Record<string, string[]> = {};
-  
-  Object.entries(CSP_ALLOWLIST_OVERRIDES).forEach(([directive, envOverrides]) => {
-    const envOverride = envOverrides[environment as keyof CSPAllowlistOverride];
-    if (envOverride) {
-      overrides[directive] = envOverride;
+
+  Object.entries(CSP_ALLOWLIST_OVERRIDES).forEach(
+    ([directive, envOverrides]) => {
+      const envOverride =
+        envOverrides[environment as keyof CSPAllowlistOverride];
+      if (envOverride) {
+        overrides[directive] = envOverride;
+      }
     }
-  });
-  
+  );
+
   return overrides;
 }

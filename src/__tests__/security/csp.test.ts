@@ -49,7 +49,7 @@ describe('CSP Builder', () => {
         NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
         NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
       });
-      
+
       const mode = getCSPMode();
       expect(mode).toBe('enforce');
     });
@@ -69,7 +69,9 @@ describe('CSP Builder', () => {
       expect(policy).toContain("base-uri 'self'");
       expect(policy).toContain("object-src 'none'");
       expect(policy).toContain("frame-ancestors 'none'");
-      expect(policy).toContain(`script-src 'self' 'strict-dynamic' 'nonce-${nonce}'`);
+      expect(policy).toContain(
+        `script-src 'self' 'strict-dynamic' 'nonce-${nonce}'`
+      );
       expect(policy).toContain(`style-src 'self' 'nonce-${nonce}'`);
       expect(policy).toContain('upgrade-insecure-requests');
     });
@@ -192,21 +194,21 @@ describe('CSP Builder', () => {
         mode: 'report-only',
       });
 
-      const directives = policy.split(';').map(d => d.trim());
-      
+      const directives = policy.split(';').map((d) => d.trim());
+
       expect(directives).toContain("default-src 'self'");
       expect(directives).toContain("base-uri 'self'");
       expect(directives).toContain("object-src 'none'");
       expect(directives).toContain("frame-ancestors 'none'");
-      expect(directives.some(d => d.startsWith('script-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('style-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('img-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('font-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('connect-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('frame-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('media-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('worker-src'))).toBe(true);
-      expect(directives.some(d => d.startsWith('manifest-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('script-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('style-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('img-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('font-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('connect-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('frame-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('media-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('worker-src'))).toBe(true);
+      expect(directives.some((d) => d.startsWith('manifest-src'))).toBe(true);
       expect(directives).toContain('upgrade-insecure-requests');
     });
 
@@ -217,10 +219,10 @@ describe('CSP Builder', () => {
         mode: 'report-only',
       });
 
-      const directives = policy.split(';').map(d => d.trim());
-      
+      const directives = policy.split(';').map((d) => d.trim());
+
       // Each directive should have a value
-      directives.forEach(directive => {
+      directives.forEach((directive) => {
         if (directive && !directive.includes(' ')) {
           // Single word directives like 'upgrade-insecure-requests' are valid
           expect(['upgrade-insecure-requests'].includes(directive)).toBe(true);

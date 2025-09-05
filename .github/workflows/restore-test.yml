@@ -18,7 +18,7 @@ jobs:
   restore-test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
       - name: Get latest backup info
         run: |
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}"
-          
+
           if [ -f latest.json ]; then
             archive_key=$(jq -r '.archive_key' latest.json)
             echo "ARCHIVE_KEY=$archive_key" >> $GITHUB_ENV
@@ -65,14 +65,14 @@ jobs:
         run: |
           echo "Downloading $ARCHIVE_KEY from R2..."
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE_KEY" "$ARCHIVE_KEY" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
-          
+
           archive_size=$(stat -c%s "$ARCHIVE_KEY")
           echo "Downloaded $ARCHIVE_KEY ($archive_size bytes)"
 
       - name: Extract backup
         run: |
           mkdir -p restore
-          
+
           # Detect compression and extract accordingly
           if [[ "$ARCHIVE_KEY" == *.tar.zst ]]; then
             echo "Extracting zstd compressed archive..."
@@ -84,7 +84,7 @@ jobs:
             echo "Unknown compression format for $ARCHIVE_KEY"
             exit 1
           fi
-          
+
           echo "Extracted backup contents:"
           ls -la restore/
 
@@ -94,26 +94,26 @@ jobs:
             echo "Missing convex_snapshot.zip in backup"
             exit 1
           fi
-          
+
           if [ ! -f "restore/vercel/env.json" ]; then
             echo "Missing vercel/env.json in backup"
             exit 1
           fi
-          
+
           if [ ! -f "restore/clerk/users.min.json" ]; then
             echo "Missing clerk/users.min.json in backup"
             exit 1
           fi
-          
+
           echo "✅ All required backup files present"
 
       - name: Import to staging Convex
         run: |
           echo "Importing Convex data to staging..."
           start_time=$(date +%s)
-          
+
           npx convex import --replace restore/convex_snapshot.zip
-          
+
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "RESTORE_DURATION=$duration" >> $GITHUB_ENV
@@ -129,7 +129,7 @@ jobs:
       - name: Test health endpoint
         run: |
           echo "Testing health endpoint..."
-          
+
           # Try to get staging URL from environment or use a default pattern
           if [ -n "${{ secrets.STAGING_URL }}" ]; then
             health_url="${{ secrets.STAGING_URL }}/api/health"
@@ -137,9 +137,9 @@ jobs:
             # Fallback: construct staging URL from project name
             health_url="https://${{ secrets.VERCEL_PROJECT }}-staging.vercel.app/api/health"
           fi
-          
+
           echo "Health URL: $health_url"
-          
+
           # Test health endpoint with retries
           for i in {1..5}; do
             echo "Attempt $i/5..."
@@ -154,7 +154,7 @@ jobs:
               sleep 10
             fi
           done
-          
+
           if [ "$response" != "200" ]; then
             echo "❌ Health check failed after 5 attempts"
             exit 1
@@ -163,31 +163,31 @@ jobs:
       - name: Verify backup data integrity
         run: |
           echo "Verifying backup data integrity..."
-          
+
           # Check if we can read the backup files
           convex_size=$(stat -c%s "restore/convex_snapshot.zip")
           vercel_size=$(stat -c%s "restore/vercel/env.json")
           clerk_size=$(stat -c%s "restore/clerk/users.min.json")
-          
+
           echo "Convex snapshot: $convex_size bytes"
           echo "Vercel env: $vercel_size bytes"
           echo "Clerk users: $clerk_size bytes"
-          
+
           # Validate JSON files
           if ! jq empty restore/vercel/env.json 2>/dev/null; then
             echo "❌ Vercel env.json is not valid JSON"
             exit 1
           fi
-          
+
           if ! jq empty restore/clerk/users.min.json 2>/dev/null; then
             echo "❌ Clerk users.min.json is not valid JSON"
             exit 1
           fi
-          
+
           # Count Clerk users
           user_count=$(jq 'length' restore/clerk/users.min.json)
           echo "Clerk users count: $user_count"
-          
+
           echo "✅ Data integrity checks passed"
 
       - name: Job Summary

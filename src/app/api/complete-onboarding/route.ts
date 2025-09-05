@@ -48,7 +48,7 @@ async function handlePost(request: NextRequest) {
           subject: user.id,
         })
       );
-      
+
       if (existing) {
         await withDbSpan('convex:completeOnboarding', () =>
           getConvexClient().mutation(api.users.completeOnboarding, {

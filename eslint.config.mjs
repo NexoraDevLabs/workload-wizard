@@ -81,6 +81,13 @@ export default [
   // Override for test files and scripts where console is intentional
   {
     files: ['**/*.test.*', '**/tests/**', 'scripts/**', '**/test/**'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        queueMicrotask: 'readonly',
+      },
+    },
     rules: {
       'no-console': 'off',
     },

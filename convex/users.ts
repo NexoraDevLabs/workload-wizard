@@ -366,7 +366,10 @@ export const list = query({
     // Get organisation details for each user using bulk batching
     const usersWithOrganisations = await Promise.all(
       users.map(async (user) => {
-        const organisation = await loaders.organisationsById.load(ctx, user.organisationId);
+        const organisation = await loaders.orgsById.load(
+          ctx,
+          user.organisationId
+        );
 
         // Get all current organisational role assignments for this user in their org (support multiple)
         const assignments = await ctx.db
@@ -385,11 +388,11 @@ export const list = query({
           name: string;
           description: string;
         } | null> = [];
-        
+
         if (assignments.length > 0) {
-          const roleIds = assignments.map(a => a.roleId);
-          const roles = await loaders.userRolesById.loadMany(ctx, roleIds);
-          
+          const roleIds = assignments.map((a) => a.roleId);
+          const roles = await loaders.rolesById.loadMany(ctx, roleIds);
+
           for (const a of assignments) {
             const role = roles.get(a.roleId as unknown as string);
             if (role && role.isActive) {
