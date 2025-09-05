@@ -150,7 +150,7 @@ jobs:
 
           # Import the production backup to test it works
           echo "Step 2: Importing production backup to test compatibility..."
-          npx convex import --replace --clear --yes restore/convex_snapshot.zip
+          npx convex import --replace-all --yes restore/convex_snapshot.zip
 
           # Verify the import worked by checking some basic data
           echo "Step 3: Verifying imported data..."
@@ -159,7 +159,7 @@ jobs:
 
           # Restore original dev data
           echo "Step 4: Restoring original dev data..."
-          npx convex import --replace --clear --yes restore/dev_backup_before_test.zip
+          npx convex import --replace-all --yes restore/dev_backup_before_test.zip
 
           # Clean up temporary backup
           rm -f restore/dev_backup_before_test.zip
