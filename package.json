@@ -28,6 +28,8 @@
     "bench:listing": "node scripts/bench/convex-listing-bench.mjs",
     "dashboards:sentry": "tsx scripts/sentry/createDashboards.ts",
     "alerts:sentry": "tsx scripts/sentry/createAlerts.ts",
+    "csp:mode:report": "echo 'CSP_MODE=report-only' > .env.csp && echo 'CSP mode set to report-only'",
+    "csp:mode:enforce": "echo 'CSP_MODE=enforce' > .env.csp && echo 'CSP mode set to enforce'",
     "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "commitlint": "commitlint --edit $1",
