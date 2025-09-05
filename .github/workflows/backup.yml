@@ -53,7 +53,8 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y awscli jq zstd
+          sudo apt-get install -y jq zstd python3-pip
+          pip3 install awscli
 
       - name: Install Convex CLI
         run: npm install -g convex
