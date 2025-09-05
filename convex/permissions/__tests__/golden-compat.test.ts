@@ -59,7 +59,6 @@ import {
   requirePermission,
   requireOrgPermission,
 } from '../index';
-import type { PermissionContext } from '../types';
 
 describe('golden compatibility test', () => {
   describe('types', () => {
@@ -77,7 +76,7 @@ describe('golden compatibility test', () => {
       const orgId: OrganisationId = 'org123' as OrganisationId;
       const userId: UserId = 'user123' as UserId;
       const permissionGroup: PermissionGroup = 'modules';
-      const auditAction: AuditAction = 'CREATE';
+      const auditAction: AuditAction = 'create';
 
       expect(role).toBe('SYSTEM');
       expect(action).toBe('READ');
@@ -157,7 +156,7 @@ describe('golden compatibility test', () => {
     it('should work with basic predicate functions', () => {
       expect(isSystemUser(['admin'])).toBe(true);
       expect(hasRoleAtLeast('ORG_ADMIN', 'STAFF')).toBe(true);
-      expect(isSameOrganisation('org1', 'org1')).toBe(true);
+      expect(isSameOrganisation('org1' as OrganisationId, 'org1' as OrganisationId)).toBe(true);
       expect(isValidPermissionId('module.view')).toBe(true);
       expect(hasAnyRole(['admin', 'user'], ['admin'])).toBe(true);
       expect(hasAllRoles(['admin', 'user'], ['admin', 'user'])).toBe(true);
@@ -208,9 +207,9 @@ describe('golden compatibility test', () => {
   describe('integration', () => {
     it('should work with complete permission flow', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org1' },
-        organisationId: 'org1',
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' as OrganisationId },
+        resource: { id: 'res1', type: 'Module', orgId: 'org1' as OrganisationId },
+        organisationId: 'org1' as OrganisationId,
       };
 
       // Test predicates

@@ -9,6 +9,7 @@ import {
   policies,
 } from '../rules';
 import type { PermissionContext } from '../types';
+import { mockOrganisationId } from './test-utils';
 
 describe('rules', () => {
   describe('canPerformAction', () => {
@@ -25,8 +26,8 @@ describe('rules', () => {
 
     it('should allow org admins to perform actions within their organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org1' },
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org1') },
       };
       expect(canPerformAction(context, 'Module', 'READ')).toBe(true);
       expect(canPerformAction(context, 'Module', 'CREATE')).toBe(true);
@@ -36,8 +37,8 @@ describe('rules', () => {
 
     it('should allow org admins to perform actions on any resource', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org2' },
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org2') },
       };
       expect(canPerformAction(context, 'Module', 'READ')).toBe(true);
     });
@@ -46,16 +47,16 @@ describe('rules', () => {
   describe('canAccessResource', () => {
     it('should allow access to resources within organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org1' },
+        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org1') },
       };
       expect(canAccessResource(context)).toBe(true);
     });
 
     it('should deny access to resources outside organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org2' },
+        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org2') },
       };
       expect(canAccessResource(context)).toBe(false);
     });
@@ -72,16 +73,16 @@ describe('rules', () => {
 
     it('should allow modification by org admin', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org1' },
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org1') },
       };
       expect(canModifyResource(context)).toBe(true);
     });
 
     it('should deny modification by non-owner in different org', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org2' },
+        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org2') },
       };
       expect(canModifyResource(context)).toBe(false);
     });
@@ -98,8 +99,8 @@ describe('rules', () => {
 
     it('should allow deletion by org admin', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
-        resource: { id: 'res1', type: 'Module', orgId: 'org1' },
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: mockOrganisationId('org1') },
+        resource: { id: 'res1', type: 'Module', orgId: mockOrganisationId('org1') },
       };
       expect(canDeleteResource(context, 'Module')).toBe(true);
     });
@@ -116,14 +117,14 @@ describe('rules', () => {
   describe('canCreateResourcesInOrganisation', () => {
     it('should allow creation by org admin', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: mockOrganisationId('org1') },
       };
       expect(canCreateResourcesInOrganisation(context, 'org1')).toBe(true);
     });
 
     it('should deny creation in different organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: 'org1' },
+        actor: { id: 'user1', role: 'ORG_ADMIN', orgId: mockOrganisationId('org1') },
       };
       expect(canCreateResourcesInOrganisation(context, 'org2')).toBe(false);
     });
@@ -132,14 +133,14 @@ describe('rules', () => {
   describe('canViewResourcesInOrganisation', () => {
     it('should allow viewing by org members', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: 'org1' },
+        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
       };
       expect(canViewResourcesInOrganisation(context, 'org1')).toBe(true);
     });
 
     it('should deny viewing in different organisation', () => {
       const context: PermissionContext = {
-        actor: { id: 'user1', role: 'STAFF', orgId: 'org1' },
+        actor: { id: 'user1', role: 'STAFF', orgId: mockOrganisationId('org1') },
       };
       expect(canViewResourcesInOrganisation(context, 'org2')).toBe(false);
     });

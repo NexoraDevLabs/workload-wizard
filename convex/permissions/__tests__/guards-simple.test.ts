@@ -6,7 +6,7 @@ import {
   requireOrgPermission,
 } from '../guards';
 import type { PermissionContext, UserRole, SystemPermission } from '../types';
-import type { Id } from '../_generated/dataModel';
+import { mockRoleId, mockOrganisationId } from './test-utils';
 
 describe('guards', () => {
   describe('assertHasPermission', () => {
@@ -15,13 +15,13 @@ describe('guards', () => {
         actor: { id: 'user1', role: 'SYSTEM', systemRoles: ['admin'] },
       };
       const role: UserRole = {
-        _id: 'role1' as Id<'userRoles'>,
+        _id: mockRoleId('role1'),
         name: 'Test Role',
         description: 'Test',
         isDefault: false,
         isSystem: false,
         permissions: ['module.view'],
-        organisationId: 'org1' as Id<'organisations'>,
+        organisationId: mockOrganisationId('org1'),
         isActive: true,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -43,13 +43,13 @@ describe('guards', () => {
         actor: { id: 'user1', role: 'STUDENT' },
       };
       const role: UserRole = {
-        _id: 'role1' as Id<'userRoles'>,
+        _id: mockRoleId('role1'),
         name: 'Test Role',
         description: 'Test',
         isDefault: false,
         isSystem: false,
         permissions: [],
-        organisationId: 'org1' as Id<'organisations'>,
+        organisationId: mockOrganisationId('org1'),
         isActive: true,
         createdAt: Date.now(),
         updatedAt: Date.now(),
