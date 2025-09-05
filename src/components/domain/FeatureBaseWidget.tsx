@@ -6,6 +6,8 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { getEnv } from '@/lib/env';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { DefaultErrorFallback } from '@/components/ui/ErrorFallback';
 
 declare global {
   interface Window {
@@ -236,5 +238,12 @@ export default function FeaturebaseMessenger() {
     return null;
   }
 
-  return <FeaturebaseMessengerInternal />;
+  return (
+    <ErrorBoundary 
+      contextTag="FeaturebaseMessenger" 
+      fallback={({ error, reset }) => <DefaultErrorFallback error={error} reset={reset} />}
+    >
+      <FeaturebaseMessengerInternal />
+    </ErrorBoundary>
+  );
 }
