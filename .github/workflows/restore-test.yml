@@ -212,11 +212,13 @@ jobs:
           echo "✅ RTO target met (< 2 hours)" >> $GITHUB_STEP_SUMMARY
 
       - name: Slack notification (on failure)
-        if: failure() && secrets.SLACK_WEBHOOK_URL
+        if: failure()
         run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"🚨 DR Restore Test failed for workload-wizard: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"🚨 DR Restore Test failed for workload-wizard: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+          fi
 
       - name: Cleanup
         if: always()
