@@ -248,9 +248,11 @@ jobs:
 
       - name: Slack notification (on failure)
         if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+          if [ -n "$SLACK_WEBHOOK" ]; then
             curl -X POST -H 'Content-type: application/json' \
               --data "{\"text\":\"🚨 DR Backup failed for workload-wizard: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
-              ${{ secrets.SLACK_WEBHOOK_URL }}
+              "$SLACK_WEBHOOK"
           fi
