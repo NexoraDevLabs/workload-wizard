@@ -143,7 +143,7 @@ jobs:
 
           # Configure Convex for dev deployment
           export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
-          
+
           # Run dry run to validate backup without importing
           npx convex import --dry-run --yes restore/convex_snapshot.zip
 
