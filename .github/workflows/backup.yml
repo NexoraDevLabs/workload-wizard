@@ -165,6 +165,12 @@ jobs:
         if: github.event.inputs.force_upload != 'true'
         run: |
           # Download latest.json from R2 to check for deduplication
+          if [ -z "${{ secrets.R2_ENDPOINT }}" ]; then
+            echo "Warning: R2_ENDPOINT secret is not set, skipping deduplication check"
+            echo "SKIP_UPLOAD=false" >> $GITHUB_ENV
+            exit 0
+          fi
+          
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}" || echo "No previous backup found"
 
           if [ -f latest.json ]; then
@@ -185,6 +191,14 @@ jobs:
         if: env.SKIP_UPLOAD != 'true'
         run: |
           echo "Uploading archive to R2..."
+          echo "R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}"
+          echo "R2_BUCKET: ${{ secrets.R2_BUCKET }}"
+          
+          if [ -z "${{ secrets.R2_ENDPOINT }}" ]; then
+            echo "Error: R2_ENDPOINT secret is not set or empty"
+            exit 1
+          fi
+          
           aws s3 cp "$ARCHIVE" "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           # Create/update latest.json
