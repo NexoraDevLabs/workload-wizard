@@ -143,24 +143,24 @@ jobs:
 
           # Configure Convex for dev deployment
           export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
-          
+
           # Create temporary backup of current dev data
           echo "Step 1: Creating backup of current dev data..."
           npx convex export --path restore/dev_backup_before_test.zip
-          
+
           # Import the production backup to test it works
           echo "Step 2: Importing production backup to test compatibility..."
           npx convex import --replace --clear --yes restore/convex_snapshot.zip
-          
+
           # Verify the import worked by checking some basic data
           echo "Step 3: Verifying imported data..."
           npx convex run queries:getOrganisations --count 1 > /dev/null || echo "Warning: Could not verify organisations"
           npx convex run queries:getUsers --count 1 > /dev/null || echo "Warning: Could not verify users"
-          
+
           # Restore original dev data
           echo "Step 4: Restoring original dev data..."
           npx convex import --replace --clear --yes restore/dev_backup_before_test.zip
-          
+
           # Clean up temporary backup
           rm -f restore/dev_backup_before_test.zip
 
