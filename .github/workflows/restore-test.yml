@@ -143,7 +143,7 @@ jobs:
 
           # Configure Convex for staging deployment
           export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_STAGING }}"
-          
+
           npx convex import --replace restore/convex_snapshot.zip
 
           end_time=$(date +%s)
