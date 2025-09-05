@@ -144,7 +144,7 @@ jobs:
           # Configure Convex for dev deployment
           export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
 
-          npx convex import --replace restore/convex_snapshot.zip
+          npx convex import --replace --yes restore/convex_snapshot.zip
 
           end_time=$(date +%s)
           duration=$((end_time - start_time))
