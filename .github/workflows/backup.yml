@@ -9,7 +9,7 @@ on:
       force_upload:
         description: 'Force upload even if content hash matches'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:
