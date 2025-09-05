@@ -136,14 +136,14 @@ jobs:
 
           echo "✅ All required backup files present"
 
-      - name: Import to staging Convex
+      - name: Import to dev Convex
         run: |
-          echo "Importing Convex data to staging..."
+          echo "Importing Convex data to dev..."
           start_time=$(date +%s)
 
-          # Configure Convex for staging deployment
-          export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_STAGING }}"
-
+          # Configure Convex for dev deployment
+          export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
+          
           npx convex import --replace restore/convex_snapshot.zip
 
           end_time=$(date +%s)
@@ -151,8 +151,8 @@ jobs:
           echo "RESTORE_DURATION=$duration" >> $GITHUB_ENV
           echo "Import completed in ${duration}s"
         env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_STAGING }}
-          CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT_STAGING }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV }}
+          CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT_DEV }}
 
       - name: Wait for Convex to be ready
         run: |
@@ -163,12 +163,12 @@ jobs:
         run: |
           echo "Testing health endpoint..."
 
-          # Try to get staging URL from environment or use a default pattern
-          if [ -n "${{ secrets.STAGING_URL }}" ]; then
-            health_url="${{ secrets.STAGING_URL }}/api/health"
+          # Try to get dev URL from environment or use a default pattern
+          if [ -n "${{ secrets.DEV_URL }}" ]; then
+            health_url="${{ secrets.DEV_URL }}/api/health"
           else
-            # Fallback: construct staging URL from project name
-            health_url="https://${{ secrets.VERCEL_PROJECT }}-staging.vercel.app/api/health"
+            # Fallback: construct dev URL from project name
+            health_url="https://${{ secrets.VERCEL_PROJECT }}-dev.vercel.app/api/health"
           fi
 
           echo "Health URL: $health_url"
@@ -240,7 +240,7 @@ jobs:
           echo "| Clerk Users | $(stat -c%s "restore/clerk/users.min.json") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Health Check" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Staging environment health check passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Dev environment health check passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Data integrity verification passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ RTO target met (< 2 hours)" >> $GITHUB_STEP_SUMMARY
 
