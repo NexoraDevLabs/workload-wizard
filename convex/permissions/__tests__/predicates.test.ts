@@ -26,7 +26,7 @@ describe('predicates', () => {
     });
 
     it('should return false for non-system users', () => {
-      const systemRoles: SystemRole[] = ['admin', 'sysadmin'];
+      const systemRoles: SystemRole[] = [];
       expect(isSystemUser(systemRoles)).toBe(false);
     });
 

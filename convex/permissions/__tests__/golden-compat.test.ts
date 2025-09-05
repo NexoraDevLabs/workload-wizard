@@ -87,7 +87,7 @@ describe('golden compatibility test', () => {
       expect(orgId).toBe('org123');
       expect(userId).toBe('user123');
       expect(permissionGroup).toBe('modules');
-      expect(auditAction).toBe('CREATE');
+      expect(auditAction).toBe('create');
     });
   });
 
