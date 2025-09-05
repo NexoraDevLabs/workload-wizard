@@ -51,7 +51,9 @@ const SENSITIVE_KEYS = [
 // Redact helper (exported for tests)
 export function redact<T>(value: T): T {
   if (value == null) return value;
-  if (Array.isArray(value)) return value.map((v) => redact(v)) as T;
+  if (Array.isArray(value)) {
+    return value.map((v: unknown) => redact(v)) as T;
+  }
   if (typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
@@ -61,7 +63,7 @@ export function redact<T>(value: T): T {
         out[k] = redact(v);
       }
     }
-    return out as unknown as T;
+    return out as T;
   }
   if (typeof value === 'string') {
     // Mask bearer tokens and other common patterns
@@ -70,10 +72,7 @@ export function redact<T>(value: T): T {
       .replace(/token\s*[:=]\s*[a-z0-9._-]+/gi, 'token: [REDACTED]')
       .replace(/key\s*[:=]\s*[a-z0-9._-]+/gi, 'key: [REDACTED]')
       .replace(/password\s*[:=]\s*[^\s]+/gi, 'password: [REDACTED]')
-      .replace(
-        /secret\s*[:=]\s*[a-z0-9._-]+/gi,
-        'secret: [REDACTED]'
-      ) as unknown as T;
+      .replace(/secret\s*[:=]\s*[a-z0-9._-]+/gi, 'secret: [REDACTED]') as T;
   }
   return value;
 }
@@ -105,7 +104,7 @@ function makeLogger(level: LogLevel = DEFAULT_LEVEL): {
 
   const out =
     (kind: 'error' | 'warn' | 'info' | 'debug') =>
-    (...args: unknown[]) => {
+    (...args: unknown[]): void => {
       const idx = levelIndex(kind);
       if (idx > currentIdx) return;
 

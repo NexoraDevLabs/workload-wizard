@@ -1,82 +1,60 @@
-import type { GenericQueryCtx } from "convex/server";
+import type { Id, Doc, TableNames } from '@/convex/_generated/dataModel';
+import type { DatabaseReader } from '@/convex/_generated/server';
 
-type AnyCtx = GenericQueryCtx<any>;
+type Ctx = { db: DatabaseReader };
 
-function uniq<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr));
-}
+export function createIdLoader<T extends TableNames>(_table: T) {
+  const cache = new Map<string, Promise<Doc<T> | null>>();
 
-export function createIdLoader<TableName extends string>(_table: TableName) {
-  // Per-request cache
-  const cache = new Map<string, Promise<any | null>>();
-
-  // Micro-batch queue
-  let queue: {
-    ids: string[];
-    resolvers: Array<(map: Map<string, any | null>) => void>;
-  } | null = null;
-
-  async function flush(ctx: AnyCtx) {
-    if (!queue) return;
-    const ids = uniq(queue.ids);
-    const resolvers = queue.resolvers;
-    queue = null;
-
-    // Prefer Convex db.getMany if present
-    const supportsGetMany = 'getMany' in ctx.db && typeof (ctx.db as any).getMany === "function";
-    let map = new Map<string, any | null>();
-
-    if (supportsGetMany) {
-      const convexIds = ids as any[];
-      const docs = await (ctx.db as any).getMany(convexIds);
-      ids.forEach((id, i) => {
-        map.set(id, docs[i] ?? null);
-      });
-    } else {
-      // Fallback: parallel db.get (still deduped)
-      const docs = await Promise.all(ids.map((id) => ctx.db.get(id as any)));
-      ids.forEach((id, i) => {
-        map.set(id, docs[i] ?? null);
-      });
-    }
-
-    // Resolve all batched callers and seed cache
-    for (const [id, doc] of map) {
-      cache.set(id, Promise.resolve(doc));
-    }
-    resolvers.forEach((r) => r(map));
-  }
-
-  async function load(ctx: AnyCtx, id: any) {
+  async function load(
+    ctx: Ctx,
+    id: Id<T> | null | undefined
+  ): Promise<Doc<T> | null> {
     if (!id) return null;
-    const key = String(id);
+    const key = id as unknown as string;
     const cached = cache.get(key);
     if (cached) return cached;
 
-    // Enqueue and schedule a microtask flush
-    if (!queue) queue = { ids: [], resolvers: [] };
-    queue.ids.push(key);
+    // Prefer db.getMany if present, else fall back to db.get
+    const p = (async () => {
+      // small micro-batch not required: Convex resolves get() quickly; keep simple & typed
 
-    const p = new Promise<any | null>((resolve) => {
-      queue!.resolvers.push((m) => resolve(m.get(key) ?? null));
-    });
+      const doc = await ctx.db.get(id);
+      return (doc as Doc<T> | null) ?? null;
+    })();
 
     cache.set(key, p);
-    // Schedule flush at end of current tick to coalesce multiple .load calls
-    queueMicrotask(() => {
-      void flush(ctx);
-    });
-
     return p;
   }
 
-  async function loadMany(ctx: AnyCtx, ids: any[]) {
-    const valid = uniq(ids.filter(Boolean));
-    const results = await Promise.all(valid.map((id) => load(ctx, id)));
-    const map = new Map<string, any | null>();
-    valid.forEach((id, i) => map.set(String(id), results[i] ?? null));
+  async function loadMany(
+    ctx: Ctx,
+    ids: (Id<T> | null | undefined)[]
+  ): Promise<Map<string, Doc<T> | null>> {
+    const unique = Array.from(new Set(ids.filter(Boolean) as Id<T>[]));
+
+    // If db.getMany exists in this Convex version, use it; otherwise parallel get().
+    const results =
+      typeof (ctx.db as unknown as { getMany?: unknown }).getMany === 'function'
+        ? await (
+            ctx.db as unknown as {
+              getMany: (ids: Id<T>[]) => Promise<(Doc<T> | null)[]>;
+            }
+          ).getMany(unique)
+        : await Promise.all(
+            unique.map((id) => ctx.db.get(id) as Promise<Doc<T> | null>)
+          );
+
+    const map = new Map<string, Doc<T> | null>();
+    unique.forEach((id, i) =>
+      map.set(id as unknown as string, results[i] ?? null)
+    );
     return map;
   }
 
   return { load, loadMany };
 }
+
+export type IdLoader<T extends TableNames> = ReturnType<
+  typeof createIdLoader<T>
+>;

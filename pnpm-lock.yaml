@@ -240,6 +240,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.9
         version: 19.1.9(@types/react@19.1.12)
+      '@types/webpack':
+        specifier: ^5.28.5
+        version: 5.28.5(esbuild@0.25.9)
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.41.0
         version: 8.41.0(@typescript-eslint/parser@8.41.0(eslint@9.34.0(jiti@2.5.1))(typescript@5.9.2))(eslint@9.34.0(jiti@2.5.1))(typescript@5.9.2)
@@ -5559,6 +5562,12 @@ packages:
     resolution:
       {
         integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==,
+      }
+
+  '@types/webpack@5.28.5':
+    resolution:
+      {
+        integrity: sha512-wR87cgvxj3p6D0Crt1r5avwqffqPXUkNlnQ1mjU93G7gCuFjufZR4I6j8cz5g1F1tTYpfOOFvly+cmIQwL9wvw==,
       }
 
   '@types/which@3.0.4':
@@ -19283,6 +19292,17 @@ snapshots:
   '@types/use-sync-external-store@1.5.0': {}
 
   '@types/uuid@8.3.4': {}
+
+  '@types/webpack@5.28.5(esbuild@0.25.9)':
+    dependencies:
+      '@types/node': 24.3.0
+      tapable: 2.2.3
+      webpack: 5.101.3(esbuild@0.25.9)
+    transitivePeerDependencies:
+      - '@swc/core'
+      - esbuild
+      - uglify-js
+      - webpack-cli
 
   '@types/which@3.0.4': {}
 

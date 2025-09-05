@@ -1,17 +1,14 @@
-import { createIdLoader } from "./createIdLoader";
+import { createIdLoader } from './createIdLoader';
 
-// Create one loader factory per table you need to batch
 export const makeLoaders = () => ({
-  usersById: createIdLoader("users"),
-  organisationsById: createIdLoader("organisations"),
-  lecturerProfilesById: createIdLoader("lecturer_profiles"),
-  moduleGroupsById: createIdLoader("module_groups"),
-  moduleIterationsById: createIdLoader("module_iterations"),
-  modulesById: createIdLoader("modules"),
-  userRolesById: createIdLoader("user_roles"),
-  academicYearsById: createIdLoader("academic_years"),
-  coursesById: createIdLoader("courses"),
-  courseYearsById: createIdLoader("course_years"),
+  usersById: createIdLoader('users'),
+  orgsById: createIdLoader('organisations'),
+  modulesById: createIdLoader('modules'),
+  groupsById: createIdLoader('module_groups'),
+  lecturersById: createIdLoader('lecturer_profiles'),
+  allocationsById: createIdLoader('group_allocations'),
+  rolesById: createIdLoader('user_roles'),
+  // add other tables here as needed
 });
 
 export type Loaders = ReturnType<typeof makeLoaders>;
