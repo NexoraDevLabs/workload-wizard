@@ -64,7 +64,7 @@ jobs:
 
       - name: Export Convex data
         run: |
-          convex export --prod --output backup/convex_snapshot.zip
+          convex export --prod --path backup/convex_snapshot.zip
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD }}
 
