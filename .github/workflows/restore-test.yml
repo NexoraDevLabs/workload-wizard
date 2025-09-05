@@ -143,31 +143,24 @@ jobs:
 
           # Configure Convex for dev deployment
           export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
-
-          # First, run dry run to check structure
-          echo "Step 1: Validating backup structure..."
-          npx convex import --dry-run --yes restore/convex_snapshot.zip
-
-          # Then, do a temporary import to test actual data compatibility
-          echo "Step 2: Testing actual import compatibility..."
-          echo "Creating temporary backup of current dev data..."
-
-          # Backup current dev data
+          
+          # Create temporary backup of current dev data
+          echo "Step 1: Creating backup of current dev data..."
           npx convex export --path restore/dev_backup_before_test.zip
-
+          
           # Import the production backup to test it works
-          echo "Importing production backup to test compatibility..."
+          echo "Step 2: Importing production backup to test compatibility..."
           npx convex import --replace --clear --yes restore/convex_snapshot.zip
-
+          
           # Verify the import worked by checking some basic data
-          echo "Verifying imported data..."
+          echo "Step 3: Verifying imported data..."
           npx convex run queries:getOrganisations --count 1 > /dev/null || echo "Warning: Could not verify organisations"
           npx convex run queries:getUsers --count 1 > /dev/null || echo "Warning: Could not verify users"
-
+          
           # Restore original dev data
-          echo "Restoring original dev data..."
+          echo "Step 4: Restoring original dev data..."
           npx convex import --replace --clear --yes restore/dev_backup_before_test.zip
-
+          
           # Clean up temporary backup
           rm -f restore/dev_backup_before_test.zip
 
@@ -259,7 +252,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Validation Results" >> $GITHUB_STEP_SUMMARY
           echo "✅ Backup archive downloaded successfully" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Convex data structure validated (dry run)" >> $GITHUB_STEP_SUMMARY
           echo "✅ Production backup successfully imported and tested" >> $GITHUB_STEP_SUMMARY
           echo "✅ Data queries verified after import" >> $GITHUB_STEP_SUMMARY
           echo "✅ Original dev data restored after testing" >> $GITHUB_STEP_SUMMARY
