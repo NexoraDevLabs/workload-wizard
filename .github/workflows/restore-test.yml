@@ -141,6 +141,9 @@ jobs:
           echo "Importing Convex data to staging..."
           start_time=$(date +%s)
 
+          # Configure Convex for staging deployment
+          export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_STAGING }}"
+          
           npx convex import --replace restore/convex_snapshot.zip
 
           end_time=$(date +%s)
@@ -149,6 +152,7 @@ jobs:
           echo "Import completed in ${duration}s"
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_STAGING }}
+          CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT_STAGING }}
 
       - name: Wait for Convex to be ready
         run: |
