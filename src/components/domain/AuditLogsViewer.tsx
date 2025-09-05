@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { DefaultErrorFallback } from '@/components/ui/ErrorFallback';
 import {
   Card,
   CardContent,
@@ -431,7 +433,11 @@ export function AuditLogsViewer({
   }, [logs, filters.search]);
 
   return (
-    <div className="space-y-6">
+    <ErrorBoundary 
+      contextTag="AuditLogsViewer" 
+      fallback={({ error, reset }) => <DefaultErrorFallback error={error} reset={reset} />}
+    >
+      <div className="space-y-6">
       {/* Error Display */}
       {error && (
         <Card className="border-red-200 bg-red-50">
@@ -1352,6 +1358,7 @@ export function AuditLogsViewer({
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
