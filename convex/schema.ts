@@ -461,4 +461,30 @@ export default defineSchema({
     createdAt: v.float64(),
     updatedAt: v.float64(),
   }).index('by_email', ['email']),
+
+  // 🛡️ CSP Violation Reports
+  csp_reports: defineTable({
+    timestamp: v.float64(),
+    userAgent: v.optional(v.string()),
+    ipAddress: v.optional(v.string()),
+    effectiveDirective: v.string(), // The directive that was violated
+    violatedDirective: v.string(), // The specific directive that was violated
+    blockedURI: v.optional(v.string()), // The URI that was blocked
+    documentURI: v.optional(v.string()), // The document where the violation occurred
+    referrer: v.optional(v.string()),
+    sourceFile: v.optional(v.string()),
+    lineNumber: v.optional(v.number()),
+    columnNumber: v.optional(v.number()),
+    scriptSample: v.optional(v.string()),
+    disposition: v.optional(v.string()), // 'enforce' or 'report'
+    originalPolicy: v.optional(v.string()), // The original CSP policy
+    organisationId: v.optional(v.id('organisations')), // Organisation context if available
+    userId: v.optional(v.string()), // User ID if available
+    createdAt: v.float64(),
+  })
+    .index('by_timestamp', ['timestamp'])
+    .index('by_directive', ['effectiveDirective'])
+    .index('by_blocked_uri', ['blockedURI'])
+    .index('by_organisation', ['organisationId'])
+    .index('by_user', ['userId']),
 });

@@ -8,6 +8,7 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../convex/_generated/api';
 import { createLimiterFor } from './lib/rateLimiter';
 import { trackRateLimitEvent } from './lib/metrics';
+import { generateNonce, buildCsp, getCSPMode, buildReportToHeader } from './lib/security/csp';
 
 function clientId(req: NextRequest) {
   // Prefer a user id header/cookie if your app sets one; fallback to IP.
@@ -106,6 +107,34 @@ export default clerkMiddleware(async (auth, req) => {
     return rateLimitResponse;
   }
 
+  // Generate nonce for CSP
+  const nonce = generateNonce();
+  
+  // Build CSP policy
+  const cspMode = getCSPMode();
+  const cspPolicy = buildCsp({
+    nonce,
+    mode: cspMode,
+    reportUri: '/api/csp-report',
+    reportTo: 'csp-endpoint',
+  });
+
+  // Create response with CSP headers
+  const response = NextResponse.next();
+  
+  // Set CSP header based on mode
+  if (cspMode === 'enforce') {
+    response.headers.set('Content-Security-Policy', cspPolicy);
+  } else {
+    response.headers.set('Content-Security-Policy-Report-Only', cspPolicy);
+  }
+  
+  // Set Report-To header for violation reporting
+  response.headers.set('Report-To', buildReportToHeader('/api/csp-report'));
+  
+  // Pass nonce to the request for use in components
+  response.headers.set('x-csp-nonce', nonce);
+
   // HTTPS redirect - DISABLED for Vercel deployments (handled at platform level)
   // const proto = req.headers.get('x-forwarded-proto');
   // if (proto && proto !== 'https') {
@@ -118,25 +147,25 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Allow public routes without authentication
   if (isPublicRoute(req)) {
-    return NextResponse.next();
+    return response;
   }
 
   // Allow account routes for authenticated users (but don't check onboarding status)
   if (isAccountRoute(req)) {
     await auth.protect();
-    return NextResponse.next();
+    return response;
   }
 
   // Allow API routes for authenticated users (but don't check onboarding status)
   if (isApiRoute(req)) {
     await auth.protect();
-    return NextResponse.next();
+    return response;
   }
 
   // Allow onboarding route for authenticated users
   if (isOnboardingRoute(req)) {
     await auth.protect();
-    return NextResponse.next();
+    return response;
   }
 
   // Protect all other routes
@@ -203,7 +232,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  return NextResponse.next();
+  return response;
 });
 
 // Handle 403 responses by redirecting to unauthorized page
