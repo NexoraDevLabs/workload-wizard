@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { currentUser, auth } from '@clerk/nextjs/server';
+import { withApiTracing } from '@/lib/otel/withApiTracing';
 
-export async function GET() {
+async function handleGet() {
   // Use `auth()` to get the user's ID
   const { userId } = await auth();
 
@@ -17,3 +18,5 @@ export async function GET() {
 
   return NextResponse.json({ user: user }, { status: 200 });
 }
+
+export const GET = withApiTracing('api:/api/user', handleGet);

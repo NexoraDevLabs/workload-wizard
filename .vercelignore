@@ -1,0 +1,74 @@
+# Vercel ignore file to reduce upload size
+# Exclude development and build artifacts
+
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+tests/e2e/**/*-snapshots/
+
+# Documentation (keep essential docs)
+docs/assets/
+docs/diagrams/
+doc-toreview/
+
+# Scripts and benchmarks
+scripts/bench/
+scripts/verify-no-console.mjs
+
+# Development files
+.env*
+.local/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Caches
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Package manager
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
