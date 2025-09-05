@@ -64,7 +64,7 @@ jobs:
           export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
           export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
           export AWS_DEFAULT_REGION="auto"
-          
+
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           if [ -f latest.json ]; then
@@ -87,12 +87,12 @@ jobs:
       - name: Download backup archive
         run: |
           echo "Downloading $ARCHIVE_KEY from R2..."
-          
+
           # Configure AWS credentials for R2
           export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
           export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
           export AWS_DEFAULT_REGION="auto"
-          
+
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE_KEY" "$ARCHIVE_KEY" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           archive_size=$(stat -c%s "$ARCHIVE_KEY")
