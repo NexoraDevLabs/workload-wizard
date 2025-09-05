@@ -26,22 +26,45 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y awscli jq zstd
+          sudo apt-get install -y jq zstd python3-pip
+          pip3 install awscli
 
       - name: Install Convex CLI
         run: npm install -g convex
 
       - name: Get latest backup info
         run: |
+          # Configure AWS credentials for R2
+          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+          export AWS_DEFAULT_REGION="auto"
+          
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           if [ -f latest.json ]; then
@@ -64,6 +87,12 @@ jobs:
       - name: Download backup archive
         run: |
           echo "Downloading $ARCHIVE_KEY from R2..."
+          
+          # Configure AWS credentials for R2
+          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
+          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
+          export AWS_DEFAULT_REGION="auto"
+          
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE_KEY" "$ARCHIVE_KEY" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           archive_size=$(stat -c%s "$ARCHIVE_KEY")
