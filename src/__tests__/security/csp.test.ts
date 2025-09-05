@@ -4,9 +4,9 @@ import { buildCsp, generateNonce, getCSPMode } from '@/lib/security/csp';
 // Mock the environment
 vi.mock('@/lib/env', () => ({
   getEnv: vi.fn(() => ({
+    NODE_ENV: 'test',
     NEXT_PUBLIC_CONVEX_URL: 'https://test-convex.convex.cloud',
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-    NEXT_PUBLIC_SENTRY_DSN: 'https://test@sentry.io/123',
     NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
     NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
     CSP_MODE: 'report-only',
@@ -39,13 +39,13 @@ describe('CSP Builder', () => {
       expect(mode).toBe('report-only');
     });
 
-    it('should return enforce when configured', () => {
+    it('should return enforce when configured', async () => {
       const { getEnv } = vi.mocked(await import('@/lib/env'));
       getEnv.mockReturnValue({
         CSP_MODE: 'enforce',
+        NODE_ENV: 'test',
         NEXT_PUBLIC_CONVEX_URL: 'https://test-convex.convex.cloud',
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-        NEXT_PUBLIC_SENTRY_DSN: 'https://test@sentry.io/123',
         NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
         NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
       });

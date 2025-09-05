@@ -156,9 +156,8 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.clerk);
   }
 
-  if (env.NEXT_PUBLIC_SENTRY_DSN) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
-  }
+  // Always include Sentry (commonly used for error monitoring)
+  mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
 
   if (env.NEXT_PUBLIC_STATSIG_CLIENT_KEY || env.FEATFLAG_STATSIG_SERVER_API_KEY) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.statsig);
@@ -199,8 +198,10 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
  */
 function mergeAllowlist(
   target: CSPAllowlist,
-  source: Partial<CSPAllowlist>
+  source: Partial<CSPAllowlist> | undefined
 ): void {
+  if (!source) return;
+  
   Object.entries(source).forEach(([key, sources]) => {
     if (sources) {
       const targetKey = key as keyof CSPAllowlist;
