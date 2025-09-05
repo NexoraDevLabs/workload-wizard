@@ -136,32 +136,28 @@ jobs:
 
           echo "✅ All required backup files present"
 
-      - name: Import to dev Convex
+      - name: Validate Convex backup (dry run)
         run: |
-          echo "Importing Convex data to dev..."
+          echo "Validating Convex backup (dry run)..."
           start_time=$(date +%s)
 
           # Configure Convex for dev deployment
           export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
-
-          npx convex import --replace --clear --yes restore/convex_snapshot.zip
+          
+          # Run dry run to validate backup without importing
+          npx convex import --dry-run --yes restore/convex_snapshot.zip
 
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "RESTORE_DURATION=$duration" >> $GITHUB_ENV
-          echo "Import completed in ${duration}s"
+          echo "Backup validation completed in ${duration}s"
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV }}
           CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT_DEV }}
 
-      - name: Wait for Convex to be ready
+      - name: Test health endpoint (optional)
         run: |
-          echo "Waiting for Convex to be ready..."
-          sleep 30
-
-      - name: Test health endpoint
-        run: |
-          echo "Testing health endpoint..."
+          echo "Testing health endpoint (optional check for dry run)..."
 
           # Try to get dev URL from environment or use a default pattern
           if [ -n "${{ secrets.DEV_URL }}" ]; then
@@ -173,9 +169,9 @@ jobs:
 
           echo "Health URL: $health_url"
 
-          # Test health endpoint with retries
-          for i in {1..5}; do
-            echo "Attempt $i/5..."
+          # Test health endpoint with retries (non-blocking for dry run)
+          for i in {1..3}; do
+            echo "Attempt $i/3..."
             response=$(curl -s -w "%{http_code}" -o health_response.json "$health_url" || echo "000")
             
             if [ "$response" = "200" ]; then
@@ -183,15 +179,13 @@ jobs:
               cat health_response.json
               break
             else
-              echo "Health check failed (HTTP $response), retrying in 10s..."
-              sleep 10
+              echo "⚠️ Health check failed (HTTP $response) - continuing anyway since this is a dry run"
+              if [ $i -eq 3 ]; then
+                echo "Health check failed after 3 attempts, but continuing since this is a dry run"
+              fi
+              sleep 5
             fi
           done
-
-          if [ "$response" != "200" ]; then
-            echo "❌ Health check failed after 5 attempts"
-            exit 1
-          fi
 
       - name: Verify backup data integrity
         run: |
@@ -225,24 +219,28 @@ jobs:
 
       - name: Job Summary
         run: |
-          echo "## Weekly DR Restore Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Weekly DR Backup Validation Summary (Dry Run)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_STEP_SUMMARY
           echo "**Archive:** ${{ env.ARCHIVE_KEY }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Restore Duration:** ${{ env.RESTORE_DURATION }}s" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "**Validation Duration:** ${{ env.RESTORE_DURATION }}s" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Backup Validated Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Restored Data" >> $GITHUB_STEP_SUMMARY
+          echo "### Backup Contents Validated" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Size |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|------|" >> $GITHUB_STEP_SUMMARY
           echo "| Convex Export | $(stat -c%s "restore/convex_snapshot.zip") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "| Vercel Env | $(stat -c%s "restore/vercel/env.json") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "| Clerk Users | $(stat -c%s "restore/clerk/users.min.json") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Health Check" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Dev environment health check passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Data integrity verification passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ RTO target met (< 2 hours)" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Backup archive downloaded successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Convex data structure validated (dry run)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Vercel environment variables extracted" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Clerk users data extracted" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Note" >> $GITHUB_STEP_SUMMARY
+          echo "This is a dry run validation - no data was imported to preserve dev environment." >> $GITHUB_STEP_SUMMARY
 
       - name: Slack notification (on failure)
         if: failure()
