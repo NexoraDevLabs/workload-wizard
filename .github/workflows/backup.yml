@@ -60,7 +60,7 @@ jobs:
         run: npm install -g convex
 
       - name: Create backup directory
-        run: mkdir -p backup
+        run: mkdir -p backup/vercel backup/clerk
 
       - name: Export Convex data
         run: |
