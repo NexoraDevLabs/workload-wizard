@@ -4,6 +4,8 @@ import { currentUser } from '@clerk/nextjs/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
+import { withApiTracing } from '@/lib/otel/withApiTracing';
+import { withDbSpan } from '@/lib/otel/withDbSpan';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -27,7 +29,7 @@ interface OnboardingData {
   phone?: string;
 }
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const user = await currentUser();
 
@@ -41,14 +43,19 @@ export async function POST(request: NextRequest) {
 
     // Only call Convex if the user exists there; avoid 500s if webhook hasn't created it yet
     try {
-      const existing = await getConvexClient().query(api.users.getBySubject, {
-        subject: user.id,
-      });
-      if (existing) {
-        await getConvexClient().mutation(api.users.completeOnboarding, {
+      const existing = await withDbSpan('convex:getBySubject', () =>
+        getConvexClient().query(api.users.getBySubject, {
           subject: user.id,
-          onboardingData: onboardingData,
-        });
+        })
+      );
+      
+      if (existing) {
+        await withDbSpan('convex:completeOnboarding', () =>
+          getConvexClient().mutation(api.users.completeOnboarding, {
+            subject: user.id,
+            onboardingData: onboardingData,
+          })
+        );
       } else {
         // complete-onboarding: Convex user not found; skipping Convex update
       }
@@ -95,3 +102,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = withApiTracing('api:/api/complete-onboarding', handlePost);
