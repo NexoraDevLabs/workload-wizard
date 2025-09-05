@@ -145,6 +145,8 @@ export const create = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for course creation:', e);
     }
 
@@ -219,6 +221,8 @@ export const update = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for course update:', e);
     }
 
@@ -257,6 +261,8 @@ export const remove = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for course deletion:', e);
     }
 
@@ -365,6 +371,8 @@ export const addYear = mutation({
         type: 'org',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for course year creation:', e);
     }
 

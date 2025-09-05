@@ -3,6 +3,7 @@
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -233,7 +234,7 @@ export default function OnboardingPage() {
       localStorage.setItem(progressKey, JSON.stringify(progressData));
     } catch {
       // Failed to save onboarding progress
-      console.warn('Failed to save onboarding progress to localStorage');
+      logger.warn('Failed to save onboarding progress to localStorage');
     }
   }, [user?.id, formData, currentStep]);
 

@@ -1,0 +1,219 @@
+name: Security
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write # needed for SARIF upload
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+  CI: 'true'
+  SECURITY_SEVERITY_THRESHOLD: 'high' # high|critical
+  GITLEAKS_EXIT_CODE: '1' # set to 0 to not fail builds temporarily
+  OSV_FAIL_SEVERITY: 'HIGH' # HIGH|CRITICAL
+  ARTIFACT_RETENTION_DAYS: '7'
+
+jobs:
+  dependency-check:
+    name: Dependency Check (PR-only)
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run npm audit
+        run: |
+          pnpm audit --audit-level=${{ env.SECURITY_SEVERITY_THRESHOLD }} --json > audit-results.json || true
+
+          # Check for vulnerabilities at or above threshold
+          VULN_COUNT=$(jq '.vulnerabilities | length' audit-results.json 2>/dev/null || echo 0)
+          echo "Vulnerabilities found: $VULN_COUNT"
+
+          if [ "$VULN_COUNT" -gt 0 ]; then
+            echo "::error::Found $VULN_COUNT vulnerabilities at ${{ env.SECURITY_SEVERITY_THRESHOLD }} level or above"
+            echo "::group::Audit Results"
+            cat audit-results.json | jq '.vulnerabilities[] | {name: .name, severity: .severity, title: .title}'
+            echo "::endgroup::"
+            exit 1
+          fi
+
+      - name: Upload audit results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: audit-results.json
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## 🔒 Dependency Check"
+            echo "- Threshold: **${{ env.SECURITY_SEVERITY_THRESHOLD }}**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  osv-scan:
+    name: OSV Scanner (deps & repo)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Setup Node (for pnpm lock generation if needed)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install OSV-Scanner
+        run: |
+          curl -L https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
+          chmod +x osv-scanner
+          sudo mv osv-scanner /usr/local/bin/
+
+      # Scan lockfile for precise dependency vulns
+      - name: OSV scan lockfile
+        run: |
+          mkdir -p security-reports
+          osv-scanner --lockfile=pnpm-lock.yaml \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format sarif \
+                      > security-reports/osv-lockfile.sarif || true
+          # produce JSON too
+          osv-scanner --lockfile=pnpm-lock.yaml \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format json \
+                      > security-reports/osv-lockfile.json || true
+
+      # Scan workspace for manifests (fallback)
+      - name: OSV scan workspace
+        run: |
+          osv-scanner --recursive . \
+                      --skip-git \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format sarif \
+                      > security-reports/osv-workspace.sarif || true
+          osv-scanner --recursive . \
+                      --skip-git \
+                      --severity=$OSV_FAIL_SEVERITY \
+                      --format json \
+                      > security-reports/osv-workspace.json || true
+
+      - name: Upload SARIF to Code Scanning
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: security-reports/osv-workspace.sarif
+
+      - name: Upload artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scanner-reports
+          path: security-reports/*
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      # Fail the job if any HIGH/CRITICAL finding exists in OSV outputs
+      - name: Fail on high severity (OSV)
+        run: |
+          set -euo pipefail
+          jq '([.results[]?.packages[]?.vulnerabilities[]? // []] // [])
+              | map(select((.severity // "") == "HIGH" or (.severity // "") == "CRITICAL"))
+              | length' security-reports/osv-workspace.json > count.txt || echo 0 > count.txt
+          COUNT=$(cat count.txt)
+          echo "High/Critical vulnerabilities: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::OSV found $COUNT HIGH/CRITICAL vulnerabilities"
+            exit 1
+          fi
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## 🧪 OSV Scanner"
+            echo "- Fail severity: **${{ env.OSV_FAIL_SEVERITY }}**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  gitleaks:
+    name: Gitleaks (secret scan)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }} # optional
+      - name: Upload SARIF
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks-report.sarif
+
+      - name: Upload artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.sarif
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      # Enforce failure on any findings unless overridden
+      - name: Enforce failure on secrets
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          COUNT=$(jq '[.runs[].results[]] | length' gitleaks-report.sarif 2>/dev/null || echo 0)
+          echo "Secrets found: $COUNT"
+          if [ "$COUNT" -gt 0 ] && [ "${GITLEAKS_EXIT_CODE}" = "1" ]; then
+            echo "::error::Gitleaks detected ${COUNT} potential secrets"
+            exit 1
+          fi
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## 🗝️ Gitleaks"
+            echo "- Enforce failure: **${{ env.GITLEAKS_EXIT_CODE == '1' && 'Yes' || 'No' }}**"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"

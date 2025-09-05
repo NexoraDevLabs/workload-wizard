@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const EnvSchema = z.object({
   NEXT_PUBLIC_CONVEX_URL: z.string().url(),
@@ -16,6 +17,11 @@ const EnvSchema = z.object({
   CLERK_JWT_ISSUER_DOMAIN: z.string().optional(),
   CONVEX_DEPLOY_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  // CSP Configuration
+  CSP_MODE: z
+    .enum(['report-only', 'enforce'])
+    .optional()
+    .default('report-only'),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -41,6 +47,7 @@ export function getEnv(): Env {
       CLERK_JWT_ISSUER_DOMAIN: process.env.CLERK_JWT_ISSUER_DOMAIN,
       CONVEX_DEPLOY_KEY: process.env.CONVEX_DEPLOY_KEY,
       RESEND_API_KEY: process.env.RESEND_API_KEY,
+      CSP_MODE: process.env.CSP_MODE,
     });
   }
   return parsed;
@@ -52,6 +59,6 @@ try {
   void getEnv();
 } catch (error) {
   if (process.env.NODE_ENV === 'production') {
-    console.warn('Environment validation failed during build:', error);
+    logger.warn('Environment validation failed during build:', error);
   }
 }

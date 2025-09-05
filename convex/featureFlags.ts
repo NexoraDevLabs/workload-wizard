@@ -170,6 +170,8 @@ export const remove = mutation({
         type: 'sys',
       });
     } catch (e) {
+      // Note: Using console.error here as this is server-side Convex code
+      // eslint-disable-next-line no-console
       console.error('Error writing audit for feature flag deletion:', e);
     }
     return true;

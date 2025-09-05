@@ -1,0 +1,228 @@
+name: Weekly DR Restore Test
+
+on:
+  schedule:
+    # Sunday 03:00 Europe/London (02:00 UTC)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      archive_key:
+        description: 'Specific archive key to restore (optional)'
+        required: false
+        type: string
+
+env:
+  TZ: Europe/London
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli jq zstd
+
+      - name: Install Convex CLI
+        run: npm install -g convex
+
+      - name: Get latest backup info
+        run: |
+          aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}"
+
+          if [ -f latest.json ]; then
+            archive_key=$(jq -r '.archive_key' latest.json)
+            echo "ARCHIVE_KEY=$archive_key" >> $GITHUB_ENV
+            echo "Archive key: $archive_key"
+          else
+            echo "No latest.json found in R2"
+            exit 1
+          fi
+
+      - name: Use specific archive if provided
+        if: github.event.inputs.archive_key != ''
+        env:
+          INPUT_ARCHIVE_KEY: ${{ github.event.inputs.archive_key }}
+        run: |
+          echo "ARCHIVE_KEY=$INPUT_ARCHIVE_KEY" >> $GITHUB_ENV
+          echo "Using specified archive: $INPUT_ARCHIVE_KEY"
+
+      - name: Download backup archive
+        run: |
+          echo "Downloading $ARCHIVE_KEY from R2..."
+          aws s3 cp "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE_KEY" "$ARCHIVE_KEY" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
+
+          archive_size=$(stat -c%s "$ARCHIVE_KEY")
+          echo "Downloaded $ARCHIVE_KEY ($archive_size bytes)"
+
+      - name: Extract backup
+        run: |
+          mkdir -p restore
+
+          # Detect compression and extract accordingly
+          if [[ "$ARCHIVE_KEY" == *.tar.zst ]]; then
+            echo "Extracting zstd compressed archive..."
+            tar --zstd -xf "$ARCHIVE_KEY" -C restore
+          elif [[ "$ARCHIVE_KEY" == *.tar.gz ]]; then
+            echo "Extracting gzip compressed archive..."
+            tar -xzf "$ARCHIVE_KEY" -C restore
+          else
+            echo "Unknown compression format for $ARCHIVE_KEY"
+            exit 1
+          fi
+
+          echo "Extracted backup contents:"
+          ls -la restore/
+
+      - name: Verify backup contents
+        run: |
+          if [ ! -f "restore/convex_snapshot.zip" ]; then
+            echo "Missing convex_snapshot.zip in backup"
+            exit 1
+          fi
+
+          if [ ! -f "restore/vercel/env.json" ]; then
+            echo "Missing vercel/env.json in backup"
+            exit 1
+          fi
+
+          if [ ! -f "restore/clerk/users.min.json" ]; then
+            echo "Missing clerk/users.min.json in backup"
+            exit 1
+          fi
+
+          echo "✅ All required backup files present"
+
+      - name: Import to staging Convex
+        run: |
+          echo "Importing Convex data to staging..."
+          start_time=$(date +%s)
+
+          npx convex import --replace restore/convex_snapshot.zip
+
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          echo "RESTORE_DURATION=$duration" >> $GITHUB_ENV
+          echo "Import completed in ${duration}s"
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_STAGING }}
+
+      - name: Wait for Convex to be ready
+        run: |
+          echo "Waiting for Convex to be ready..."
+          sleep 30
+
+      - name: Test health endpoint
+        run: |
+          echo "Testing health endpoint..."
+
+          # Try to get staging URL from environment or use a default pattern
+          if [ -n "${{ secrets.STAGING_URL }}" ]; then
+            health_url="${{ secrets.STAGING_URL }}/api/health"
+          else
+            # Fallback: construct staging URL from project name
+            health_url="https://${{ secrets.VERCEL_PROJECT }}-staging.vercel.app/api/health"
+          fi
+
+          echo "Health URL: $health_url"
+
+          # Test health endpoint with retries
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
+            response=$(curl -s -w "%{http_code}" -o health_response.json "$health_url" || echo "000")
+            
+            if [ "$response" = "200" ]; then
+              echo "✅ Health check passed"
+              cat health_response.json
+              break
+            else
+              echo "Health check failed (HTTP $response), retrying in 10s..."
+              sleep 10
+            fi
+          done
+
+          if [ "$response" != "200" ]; then
+            echo "❌ Health check failed after 5 attempts"
+            exit 1
+          fi
+
+      - name: Verify backup data integrity
+        run: |
+          echo "Verifying backup data integrity..."
+
+          # Check if we can read the backup files
+          convex_size=$(stat -c%s "restore/convex_snapshot.zip")
+          vercel_size=$(stat -c%s "restore/vercel/env.json")
+          clerk_size=$(stat -c%s "restore/clerk/users.min.json")
+
+          echo "Convex snapshot: $convex_size bytes"
+          echo "Vercel env: $vercel_size bytes"
+          echo "Clerk users: $clerk_size bytes"
+
+          # Validate JSON files
+          if ! jq empty restore/vercel/env.json 2>/dev/null; then
+            echo "❌ Vercel env.json is not valid JSON"
+            exit 1
+          fi
+
+          if ! jq empty restore/clerk/users.min.json 2>/dev/null; then
+            echo "❌ Clerk users.min.json is not valid JSON"
+            exit 1
+          fi
+
+          # Count Clerk users
+          user_count=$(jq 'length' restore/clerk/users.min.json)
+          echo "Clerk users count: $user_count"
+
+          echo "✅ Data integrity checks passed"
+
+      - name: Job Summary
+        run: |
+          echo "## Weekly DR Restore Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_STEP_SUMMARY
+          echo "**Archive:** ${{ env.ARCHIVE_KEY }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Restore Duration:** ${{ env.RESTORE_DURATION }}s" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Restored Data" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Convex Export | $(stat -c%s "restore/convex_snapshot.zip") bytes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vercel Env | $(stat -c%s "restore/vercel/env.json") bytes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Clerk Users | $(stat -c%s "restore/clerk/users.min.json") bytes |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Staging environment health check passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Data integrity verification passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ RTO target met (< 2 hours)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Slack notification (on failure)
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"🚨 DR Restore Test failed for workload-wizard: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+              "$SLACK_WEBHOOK"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf restore/ "$ARCHIVE_KEY" latest.json health_response.json || true

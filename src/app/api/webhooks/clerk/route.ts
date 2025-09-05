@@ -4,6 +4,9 @@ import type { WebhookEvent } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { logger } from '@/lib/logger';
+import { withApiTracing } from '@/lib/otel/withApiTracing';
+import { withDbSpan } from '@/lib/otel/withDbSpan';
 
 // Define proper types for Statsig adapter
 interface StatsigAdapter {
@@ -57,7 +60,7 @@ function getConvexClient(): ConvexHttpClient {
   return convexClient;
 }
 
-export async function POST(req: Request) {
+async function handlePost(req: Request) {
   // Webhook received
 
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -145,6 +148,8 @@ export async function POST(req: Request) {
 
   return new Response('Webhook processed successfully', { status: 200 });
 }
+
+export const POST = withApiTracing('api:/api/webhooks/clerk', handlePost);
 
 interface ClerkUserData {
   id: string;
@@ -241,7 +246,9 @@ async function handleUserCreated(userData: ClerkUserData) {
     createPayload.organisationId = organisationId as Id<'organisations'>;
   }
 
-  await getConvexClient().mutation(api.users.create, createPayload);
+  await withDbSpan('convex:createUser', () =>
+    getConvexClient().mutation(api.users.create, createPayload)
+  );
 
   // User created in Convex
 
@@ -275,7 +282,7 @@ async function handleUserCreated(userData: ClerkUserData) {
     }
   } catch {
     // Log error but don't fail the webhook
-    console.error('Failed to create user in Statsig: Unknown error');
+    logger.error('Failed to create user in Statsig: Unknown error');
   }
 }
 
@@ -315,7 +322,9 @@ async function handleUserUpdated(userData: ClerkUserData) {
       publicMetadata.organisationId as Id<'organisations'>;
   }
 
-  await getConvexClient().mutation(api.users.updateByWebhook, updatePayload);
+  await withDbSpan('convex:updateUserByWebhook', () =>
+    getConvexClient().mutation(api.users.updateByWebhook, updatePayload)
+  );
 
   // User updated in Convex
 
@@ -358,7 +367,7 @@ async function handleUserUpdated(userData: ClerkUserData) {
       }
     } catch {
       // Log error but don't fail the webhook
-      console.error('Failed to update Statsig: Unknown error');
+      logger.error('Failed to update Statsig: Unknown error');
     }
   }
 }
@@ -368,9 +377,11 @@ async function handleUserDeleted(userData: DeletedUserData) {
 
   // Soft delete user in Convex
   if (userData.id) {
-    await getConvexClient().mutation(api.users.remove, {
-      userId: userData.id,
-    });
+    await withDbSpan('convex:removeUser', () =>
+      getConvexClient().mutation(api.users.remove, {
+        userId: userData.id as string,
+      })
+    );
   }
 
   // User deleted from Convex
@@ -386,9 +397,11 @@ async function handleSessionCreated(sessionData: unknown) {
   // Session data logged
 
   // Update last sign in time in Convex
-  await getConvexClient().mutation(api.users.updateLastSignIn, {
-    userId: s.user_id as string,
-  });
+  await withDbSpan('convex:updateLastSignIn', () =>
+    getConvexClient().mutation(api.users.updateLastSignIn, {
+      userId: s.user_id as string,
+    })
+  );
 
   // Last sign in time updated in Convex for user
 

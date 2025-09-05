@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { getFeatureFlag } from '@/lib/feature-flags/client';
 import { FeatureFlags } from '@/lib/feature-flags/types';
+import { logger } from '@/lib/logger';
 
 // Key for local storage overrides
 const LOCAL_FLAG_OVERRIDES_KEY = 'feature-flag-overrides';
@@ -33,7 +34,7 @@ export function usePinkMode() {
         document.documentElement.classList.remove('pink-mode');
       }
     } catch {
-      console.error('Failed to set pink mode');
+      logger.error('Failed to set pink mode');
     }
   }, []);
 

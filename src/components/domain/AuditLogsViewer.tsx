@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { DefaultErrorFallback } from '@/components/ui/ErrorFallback';
 import {
   Card,
   CardContent,
@@ -431,927 +433,943 @@ export function AuditLogsViewer({
   }, [logs, filters.search]);
 
   return (
-    <div className="space-y-6">
-      {/* Error Display */}
-      {error && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertTriangle className="h-5 w-5" />
-              <p className="font-medium">Error loading audit logs</p>
-            </div>
-            <p className="text-red-600 mt-1">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                setError(null);
-                await loadLogs();
-              }}
-              className="mt-2"
-            >
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
+    <ErrorBoundary
+      contextTag="AuditLogsViewer"
+      fallback={({ error, reset }) => (
+        <DefaultErrorFallback error={error} reset={reset} />
       )}
-
-      {/* Filters and Controls */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Audit Logs</CardTitle>
-              <CardDescription>
-                Monitor system activity and user actions
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setViewMode(viewMode === 'table' ? 'cards' : 'table')
-                }
-              >
-                {viewMode === 'table' ? (
-                  <Grid3X3 className="h-4 w-4" />
-                ) : (
-                  <List className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => await loadLogs(1)}
-                disabled={isLoading}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-                />
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search and Filters */}
-          <div className="space-y-4 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search logs..."
-                  value={filters.search}
-                  onChange={(e) =>
-                    setFilters((prev) => ({ ...prev, search: e.target.value }))
-                  }
-                  className="pl-10"
-                />
+    >
+      <div className="space-y-6">
+        {/* Error Display */}
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertTriangle className="h-5 w-5" />
+                <p className="font-medium">Error loading audit logs</p>
               </div>
-              <Select
-                value={filters.timeRange.toString()}
-                onValueChange={(value) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    timeRange: parseInt(value),
-                  }))
-                }
+              <p className="text-red-600 mt-1">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setError(null);
+                  await loadLogs();
+                }}
+                className="mt-2"
               >
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIME_RANGES.map((range) => (
-                    <SelectItem
-                      key={range.value}
-                      value={range.value.toString()}
-                    >
-                      {range.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-              {/* Filters Button */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="shrink-0">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-80 p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4" />
-                      <span className="font-medium">Filter Options</span>
-                    </div>
+        {/* Filters and Controls */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Audit Logs</CardTitle>
+                <CardDescription>
+                  Monitor system activity and user actions
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setViewMode(viewMode === 'table' ? 'cards' : 'table')
+                  }
+                >
+                  {viewMode === 'table' ? (
+                    <Grid3X3 className="h-4 w-4" />
+                  ) : (
+                    <List className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => await loadLogs(1)}
+                  disabled={isLoading}
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+                  />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Search and Filters */}
+            <div className="space-y-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search logs..."
+                    value={filters.search}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        search: e.target.value,
+                      }))
+                    }
+                    className="pl-10"
+                  />
+                </div>
+                <Select
+                  value={filters.timeRange.toString()}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      timeRange: parseInt(value),
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIME_RANGES.map((range) => (
+                      <SelectItem
+                        key={range.value}
+                        value={range.value.toString()}
+                      >
+                        {range.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Entity Type
-                        </label>
-                        <Select
-                          value={filters.entityType || 'all'}
-                          onValueChange={(value) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              entityType: value === 'all' ? '' : value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All types" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All types</SelectItem>
-                            {ENTITY_TYPES.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                {/* Filters Button */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="shrink-0">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filters
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-80 p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4" />
+                        <span className="font-medium">Filter Options</span>
                       </div>
 
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Action
-                        </label>
-                        <Select
-                          value={filters.action || 'all'}
-                          onValueChange={(value) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              action: value === 'all' ? '' : value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All actions" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All actions</SelectItem>
-                            {ACTIONS.map((action) => (
-                              <SelectItem key={action} value={action}>
-                                {action.charAt(0).toUpperCase() +
-                                  action.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Severity
-                        </label>
-                        <Select
-                          value={filters.severity || 'all'}
-                          onValueChange={(value) =>
-                            setFilters((prev) => ({
-                              ...prev,
-                              severity: value === 'all' ? '' : value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All severities" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All severities</SelectItem>
-                            {SEVERITIES.map((severity) => (
-                              <SelectItem key={severity} value={severity}>
-                                {severity.charAt(0).toUpperCase() +
-                                  severity.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {!forcedFilters?.type && (
+                      <div className="space-y-3">
                         <div>
                           <label className="text-sm font-medium mb-2 block">
-                            Scope
+                            Entity Type
                           </label>
                           <Select
-                            value={filters.type || 'all'}
+                            value={filters.entityType || 'all'}
                             onValueChange={(value) =>
                               setFilters((prev) => ({
                                 ...prev,
-                                type:
-                                  value === 'all'
-                                    ? ''
-                                    : (value as 'sys' | 'org'),
+                                entityType: value === 'all' ? '' : value,
                               }))
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="All scopes" />
+                              <SelectValue placeholder="All types" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All scopes</SelectItem>
-                              <SelectItem value="org">Org</SelectItem>
-                              <SelectItem value="sys">Sys</SelectItem>
+                              <SelectItem value="all">All types</SelectItem>
+                              {ENTITY_TYPES.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
-                      )}
-                    </div>
 
-                    <div className="flex justify-end pt-2 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setFilters((prev) => ({
-                            ...prev,
-                            entityType: '',
-                            action: '',
-                            severity: '',
-                            type: '',
-                            search: '',
-                          }));
-                        }}
-                      >
-                        Clear All
-                      </Button>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">
+                            Action
+                          </label>
+                          <Select
+                            value={filters.action || 'all'}
+                            onValueChange={(value) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                action: value === 'all' ? '' : value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All actions" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All actions</SelectItem>
+                              {ACTIONS.map((action) => (
+                                <SelectItem key={action} value={action}>
+                                  {action.charAt(0).toUpperCase() +
+                                    action.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="text-center py-12">
-              <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Loading audit logs...</p>
-            </div>
-          )}
+                        <div>
+                          <label className="text-sm font-medium mb-2 block">
+                            Severity
+                          </label>
+                          <Select
+                            value={filters.severity || 'all'}
+                            onValueChange={(value) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                severity: value === 'all' ? '' : value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="All severities" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">
+                                All severities
+                              </SelectItem>
+                              {SEVERITIES.map((severity) => (
+                                <SelectItem key={severity} value={severity}>
+                                  {severity.charAt(0).toUpperCase() +
+                                    severity.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-          {/* Logs Display */}
-          {!isLoading && (
-            <>
-              {viewMode === 'table' ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50 hover:bg-gray-50">
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Time
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Action
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Entity
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Performed By
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Details
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Scope
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          Severity
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900">
-                          IP
-                        </TableHead>
-                        <TableHead className="text-center font-bold text-gray-900"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLogs.map((log) => (
-                        <TableRow
-                          data-testid="audit-row"
-                          key={log._id}
-                          className="hover:bg-gray-50"
-                        >
-                          <TableCell className="font-mono text-sm">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3 text-gray-400" />
-                              {formatTimestamp(log.timestamp)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getActionColor(log.action)}>
-                              {formatActionLabel(log.action)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getEntityIcon(log.entityType)}
-                              <div>
-                                <div className="font-medium">
-                                  {(() => {
-                                    const label = formatEntityTypeLabel(
-                                      log.entityType
-                                    );
-                                    const href = (() => {
-                                      switch (log.entityType) {
-                                        case 'user':
-                                          return `/admin/users`;
-                                        case 'organisation':
-                                          return `/admin/organisations`;
-                                        case 'permission':
-                                          return `/admin/permissions`;
-                                        case 'role':
-                                          return `/admin/permissions`; // roles live under permissions UI
-                                        default:
-                                          return undefined;
-                                      }
-                                    })();
-                                    return href ? (
-                                      <a
-                                        className="underline underline-offset-2"
-                                        href={href}
-                                      >
-                                        {label}
-                                      </a>
-                                    ) : (
-                                      label
-                                    );
-                                  })()}
-                                </div>
-                                {log.entityName && (
-                                  <div className="text-sm text-gray-500">
-                                    {log.entityName}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">
-                                {log.performedByName || log.performedBy}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {log.performedBy}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="max-w-xs">
-                            <TooltipProvider>
-                              <UITooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="truncate cursor-help">
-                                    {log.details ? (
-                                      log.details.length > 50 ? (
-                                        `${log.details.substring(0, 50)}...`
-                                      ) : (
-                                        log.details
-                                      )
-                                    ) : (
-                                      <span className="text-gray-400 italic">
-                                        No details
-                                      </span>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                  side="top"
-                                  className="max-w-md p-4 bg-white border border-gray-200 shadow-lg"
-                                >
-                                  <div className="space-y-3">
-                                    <div className="font-semibold text-sm text-gray-900 border-b border-gray-200 pb-2">
-                                      Details
-                                    </div>
-                                    <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-                                      {log.details ||
-                                        'No additional details available'}
-                                    </div>
-                                    {log.metadata && (
-                                      <>
-                                        <div className="font-semibold text-sm text-gray-900 border-b border-gray-200 pb-2 pt-3">
-                                          Metadata
-                                        </div>
-                                        <pre className="text-xs bg-gray-50 p-3 rounded border overflow-auto max-h-32 text-gray-800 font-mono">
-                                          {JSON.stringify(
-                                            JSON.parse(log.metadata),
-                                            null,
-                                            2
-                                          )}
-                                        </pre>
-                                      </>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </UITooltip>
-                            </TooltipProvider>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={
-                                log.type === 'sys'
-                                  ? 'border-purple-300 text-purple-700 bg-purple-50'
-                                  : 'border-emerald-300 text-emerald-700 bg-emerald-50'
+                        {!forcedFilters?.type && (
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">
+                              Scope
+                            </label>
+                            <Select
+                              value={filters.type || 'all'}
+                              onValueChange={(value) =>
+                                setFilters((prev) => ({
+                                  ...prev,
+                                  type:
+                                    value === 'all'
+                                      ? ''
+                                      : (value as 'sys' | 'org'),
+                                }))
                               }
                             >
-                              {log.type === 'sys' ? 'Sys' : 'Org'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
+                              <SelectTrigger>
+                                <SelectValue placeholder="All scopes" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All scopes</SelectItem>
+                                <SelectItem value="org">Org</SelectItem>
+                                <SelectItem value="sys">Sys</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setFilters((prev) => ({
+                              ...prev,
+                              entityType: '',
+                              action: '',
+                              severity: '',
+                              type: '',
+                              search: '',
+                            }));
+                          }}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="text-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">Loading audit logs...</p>
+              </div>
+            )}
+
+            {/* Logs Display */}
+            {!isLoading && (
+              <>
+                {viewMode === 'table' ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50 hover:bg-gray-50">
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Time
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Action
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Entity
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Performed By
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Details
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Scope
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            Severity
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900">
+                            IP
+                          </TableHead>
+                          <TableHead className="text-center font-bold text-gray-900"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredLogs.map((log) => (
+                          <TableRow
+                            data-testid="audit-row"
+                            key={log._id}
+                            className="hover:bg-gray-50"
+                          >
+                            <TableCell className="font-mono text-sm">
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 text-gray-400" />
+                                {formatTimestamp(log.timestamp)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getActionColor(log.action)}>
+                                {formatActionLabel(log.action)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {getEntityIcon(log.entityType)}
+                                <div>
+                                  <div className="font-medium">
+                                    {(() => {
+                                      const label = formatEntityTypeLabel(
+                                        log.entityType
+                                      );
+                                      const href = (() => {
+                                        switch (log.entityType) {
+                                          case 'user':
+                                            return `/admin/users`;
+                                          case 'organisation':
+                                            return `/admin/organisations`;
+                                          case 'permission':
+                                            return `/admin/permissions`;
+                                          case 'role':
+                                            return `/admin/permissions`; // roles live under permissions UI
+                                          default:
+                                            return undefined;
+                                        }
+                                      })();
+                                      return href ? (
+                                        <a
+                                          className="underline underline-offset-2"
+                                          href={href}
+                                        >
+                                          {label}
+                                        </a>
+                                      ) : (
+                                        label
+                                      );
+                                    })()}
+                                  </div>
+                                  {log.entityName && (
+                                    <div className="text-sm text-gray-500">
+                                      {log.entityName}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">
+                                  {log.performedByName || log.performedBy}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {log.performedBy}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                              <TooltipProvider>
+                                <UITooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="truncate cursor-help">
+                                      {log.details ? (
+                                        log.details.length > 50 ? (
+                                          `${log.details.substring(0, 50)}...`
+                                        ) : (
+                                          log.details
+                                        )
+                                      ) : (
+                                        <span className="text-gray-400 italic">
+                                          No details
+                                        </span>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="top"
+                                    className="max-w-md p-4 bg-white border border-gray-200 shadow-lg"
+                                  >
+                                    <div className="space-y-3">
+                                      <div className="font-semibold text-sm text-gray-900 border-b border-gray-200 pb-2">
+                                        Details
+                                      </div>
+                                      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                                        {log.details ||
+                                          'No additional details available'}
+                                      </div>
+                                      {log.metadata && (
+                                        <>
+                                          <div className="font-semibold text-sm text-gray-900 border-b border-gray-200 pb-2 pt-3">
+                                            Metadata
+                                          </div>
+                                          <pre className="text-xs bg-gray-50 p-3 rounded border overflow-auto max-h-32 text-gray-800 font-mono">
+                                            {JSON.stringify(
+                                              JSON.parse(log.metadata),
+                                              null,
+                                              2
+                                            )}
+                                          </pre>
+                                        </>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </UITooltip>
+                              </TooltipProvider>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  log.type === 'sys'
+                                    ? 'border-purple-300 text-purple-700 bg-purple-50'
+                                    : 'border-emerald-300 text-emerald-700 bg-emerald-50'
+                                }
+                              >
+                                {log.type === 'sys' ? 'Sys' : 'Org'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {log.severity && (
+                                <Badge
+                                  className={getSeverityColor(log.severity)}
+                                >
+                                  {log.severity.charAt(0).toUpperCase() +
+                                    log.severity.slice(1)}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {log.ipAddress}
+                            </TableCell>
+                            <TableCell>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedLog(log)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Audit Log Details</DialogTitle>
+                                    <DialogDescription>
+                                      Detailed information about this audit log
+                                      entry
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="max-h-96 overflow-auto">
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label className="text-sm font-medium">
+                                          Timestamp
+                                        </Label>
+                                        <p className="text-sm text-gray-600">
+                                          {new Date(
+                                            log.timestamp
+                                          ).toLocaleString()}
+                                        </p>
+                                      </div>
+                                      <Separator />
+                                      <div>
+                                        <Label className="text-sm font-medium">
+                                          Action
+                                        </Label>
+                                        <Badge
+                                          className={getActionColor(log.action)}
+                                        >
+                                          {formatActionLabel(log.action)}
+                                        </Badge>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium">
+                                          Entity
+                                        </Label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          {getEntityIcon(log.entityType)}
+                                          <span className="text-sm">
+                                            {formatEntityTypeLabel(
+                                              log.entityType
+                                            )}
+                                          </span>
+                                          {log.entityName && (
+                                            <span className="text-sm text-gray-500">
+                                              - {log.entityName}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium">
+                                          Performed By
+                                        </Label>
+                                        <p className="text-sm">
+                                          {log.performedByName ||
+                                            log.performedBy}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {log.performedBy}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium">
+                                          Scope
+                                        </Label>
+                                        <p className="text-sm">
+                                          {log.type === 'sys'
+                                            ? 'System'
+                                            : 'Organisation'}
+                                        </p>
+                                      </div>
+                                      {log.details && (
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            Details
+                                          </Label>
+                                          <p className="text-sm text-gray-600">
+                                            {log.details}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {log.metadata && (
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            Metadata
+                                          </Label>
+                                          <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
+                                            {JSON.stringify(
+                                              JSON.parse(log.metadata),
+                                              null,
+                                              2
+                                            )}
+                                          </pre>
+                                        </div>
+                                      )}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            IP Address
+                                          </Label>
+                                          <p className="text-sm font-mono">
+                                            {log.ipAddress || 'N/A'}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            Severity
+                                          </Label>
+                                          {log.severity && (
+                                            <Badge
+                                              className={getSeverityColor(
+                                                log.severity
+                                              )}
+                                            >
+                                              {log.severity}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredLogs.map((log) => (
+                      <Card
+                        key={log._id}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {getEntityIcon(log.entityType)}
+                              <span className="text-sm font-medium">
+                                {formatEntityTypeLabel(log.entityType)}
+                              </span>
+                            </div>
                             {log.severity && (
                               <Badge className={getSeverityColor(log.severity)}>
                                 {log.severity.charAt(0).toUpperCase() +
                                   log.severity.slice(1)}
                               </Badge>
                             )}
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {log.ipAddress}
-                          </TableCell>
-                          <TableCell>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setSelectedLog(log)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Audit Log Details</DialogTitle>
-                                  <DialogDescription>
-                                    Detailed information about this audit log
-                                    entry
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="max-h-96 overflow-auto">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Timestamp
-                                      </Label>
-                                      <p className="text-sm text-gray-600">
-                                        {new Date(
-                                          log.timestamp
-                                        ).toLocaleString()}
-                                      </p>
-                                    </div>
-                                    <Separator />
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Action
-                                      </Label>
-                                      <Badge
-                                        className={getActionColor(log.action)}
-                                      >
-                                        {formatActionLabel(log.action)}
-                                      </Badge>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Entity
-                                      </Label>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        {getEntityIcon(log.entityType)}
-                                        <span className="text-sm">
-                                          {formatEntityTypeLabel(
-                                            log.entityType
-                                          )}
-                                        </span>
-                                        {log.entityName && (
-                                          <span className="text-sm text-gray-500">
-                                            - {log.entityName}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Performed By
-                                      </Label>
-                                      <p className="text-sm">
-                                        {log.performedByName || log.performedBy}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        {log.performedBy}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Scope
-                                      </Label>
-                                      <p className="text-sm">
-                                        {log.type === 'sys'
-                                          ? 'System'
-                                          : 'Organisation'}
-                                      </p>
-                                    </div>
-                                    {log.details && (
-                                      <div>
-                                        <Label className="text-sm font-medium">
-                                          Details
-                                        </Label>
-                                        <p className="text-sm text-gray-600">
-                                          {log.details}
-                                        </p>
-                                      </div>
-                                    )}
-                                    {log.metadata && (
-                                      <div>
-                                        <Label className="text-sm font-medium">
-                                          Metadata
-                                        </Label>
-                                        <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
-                                          {JSON.stringify(
-                                            JSON.parse(log.metadata),
-                                            null,
-                                            2
-                                          )}
-                                        </pre>
-                                      </div>
-                                    )}
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <Label className="text-sm font-medium">
-                                          IP Address
-                                        </Label>
-                                        <p className="text-sm font-mono">
-                                          {log.ipAddress || 'N/A'}
-                                        </p>
-                                      </div>
-                                      <div>
-                                        <Label className="text-sm font-medium">
-                                          Severity
-                                        </Label>
-                                        {log.severity && (
-                                          <Badge
-                                            className={getSeverityColor(
-                                              log.severity
-                                            )}
-                                          >
-                                            {log.severity}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredLogs.map((log) => (
-                    <Card
-                      key={log._id}
-                      className="hover:shadow-md transition-shadow"
-                    >
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
+                          </div>
                           <div className="flex items-center gap-2">
-                            {getEntityIcon(log.entityType)}
-                            <span className="text-sm font-medium">
-                              {formatEntityTypeLabel(log.entityType)}
+                            <Badge className={getActionColor(log.action)}>
+                              {formatActionLabel(log.action)}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {formatTimestamp(log.timestamp)}
                             </span>
                           </div>
-                          {log.severity && (
-                            <Badge className={getSeverityColor(log.severity)}>
-                              {log.severity.charAt(0).toUpperCase() +
-                                log.severity.slice(1)}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getActionColor(log.action)}>
-                            {formatActionLabel(log.action)}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            {formatTimestamp(log.timestamp)}
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className={
-                                log.type === 'sys'
-                                  ? 'border-purple-300 text-purple-700 bg-purple-50'
-                                  : 'border-emerald-300 text-emerald-700 bg-emerald-50'
-                              }
-                            >
-                              {log.type === 'sys' ? 'Sys' : 'Org'}
-                            </Badge>
-                          </div>
-                          <div>
-                            <Label className="text-xs font-medium">
-                              Performed By
-                            </Label>
-                            <p className="text-sm">
-                              {log.performedByName || log.performedBy}
-                            </p>
-                          </div>
-                          {log.details && (
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  log.type === 'sys'
+                                    ? 'border-purple-300 text-purple-700 bg-purple-50'
+                                    : 'border-emerald-300 text-emerald-700 bg-emerald-50'
+                                }
+                              >
+                                {log.type === 'sys' ? 'Sys' : 'Org'}
+                              </Badge>
+                            </div>
                             <div>
                               <Label className="text-xs font-medium">
-                                Details
+                                Performed By
                               </Label>
-                              <p className="text-sm text-gray-600 line-clamp-2">
-                                {log.details}
+                              <p className="text-sm">
+                                {log.performedByName || log.performedBy}
                               </p>
                             </div>
-                          )}
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>{log.ipAddress}</span>
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Eye className="h-3 w-3" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Audit Log Details</DialogTitle>
-                                </DialogHeader>
-                                <div className="max-h-96 overflow-auto">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Timestamp
-                                      </Label>
-                                      <p className="text-sm text-gray-600">
-                                        {new Date(
-                                          log.timestamp
-                                        ).toLocaleString()}
-                                      </p>
-                                    </div>
-                                    <Separator />
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Action
-                                      </Label>
-                                      <Badge
-                                        className={getActionColor(log.action)}
-                                      >
-                                        {log.action}
-                                      </Badge>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Entity
-                                      </Label>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        {getEntityIcon(log.entityType)}
-                                        <span className="text-sm">
-                                          {log.entityType}
-                                        </span>
-                                        {log.entityName && (
-                                          <span className="text-sm text-gray-500">
-                                            - {log.entityName}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Performed By
-                                      </Label>
-                                      <p className="text-sm">
-                                        {log.performedByName || log.performedBy}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        {log.performedBy}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Scope
-                                      </Label>
-                                      <p className="text-sm">
-                                        {log.type === 'sys'
-                                          ? 'System'
-                                          : 'Organisation'}
-                                      </p>
-                                    </div>
-                                    {log.details && (
+                            {log.details && (
+                              <div>
+                                <Label className="text-xs font-medium">
+                                  Details
+                                </Label>
+                                <p className="text-sm text-gray-600 line-clamp-2">
+                                  {log.details}
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>{log.ipAddress}</span>
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Audit Log Details</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="max-h-96 overflow-auto">
+                                    <div className="space-y-4">
                                       <div>
                                         <Label className="text-sm font-medium">
-                                          Details
+                                          Timestamp
                                         </Label>
                                         <p className="text-sm text-gray-600">
-                                          {log.details}
+                                          {new Date(
+                                            log.timestamp
+                                          ).toLocaleString()}
                                         </p>
                                       </div>
-                                    )}
-                                    {log.metadata && (
+                                      <Separator />
                                       <div>
                                         <Label className="text-sm font-medium">
-                                          Metadata
+                                          Action
                                         </Label>
-                                        <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
-                                          {JSON.stringify(
-                                            JSON.parse(log.metadata),
-                                            null,
-                                            2
+                                        <Badge
+                                          className={getActionColor(log.action)}
+                                        >
+                                          {log.action}
+                                        </Badge>
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium">
+                                          Entity
+                                        </Label>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          {getEntityIcon(log.entityType)}
+                                          <span className="text-sm">
+                                            {log.entityType}
+                                          </span>
+                                          {log.entityName && (
+                                            <span className="text-sm text-gray-500">
+                                              - {log.entityName}
+                                            </span>
                                           )}
-                                        </pre>
+                                        </div>
                                       </div>
-                                    )}
-                                    <div className="grid grid-cols-2 gap-4">
                                       <div>
                                         <Label className="text-sm font-medium">
-                                          IP Address
+                                          Performed By
                                         </Label>
-                                        <p className="text-sm font-mono">
-                                          {log.ipAddress || 'N/A'}
+                                        <p className="text-sm">
+                                          {log.performedByName ||
+                                            log.performedBy}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          {log.performedBy}
                                         </p>
                                       </div>
                                       <div>
                                         <Label className="text-sm font-medium">
-                                          Severity
+                                          Scope
                                         </Label>
-                                        {log.severity && (
-                                          <Badge
-                                            className={getSeverityColor(
-                                              log.severity
+                                        <p className="text-sm">
+                                          {log.type === 'sys'
+                                            ? 'System'
+                                            : 'Organisation'}
+                                        </p>
+                                      </div>
+                                      {log.details && (
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            Details
+                                          </Label>
+                                          <p className="text-sm text-gray-600">
+                                            {log.details}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {log.metadata && (
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            Metadata
+                                          </Label>
+                                          <pre className="text-xs bg-gray-100 p-2 rounded mt-1 overflow-auto">
+                                            {JSON.stringify(
+                                              JSON.parse(log.metadata),
+                                              null,
+                                              2
                                             )}
-                                          >
-                                            {log.severity}
-                                          </Badge>
-                                        )}
+                                          </pre>
+                                        </div>
+                                      )}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            IP Address
+                                          </Label>
+                                          <p className="text-sm font-mono">
+                                            {log.ipAddress || 'N/A'}
+                                          </p>
+                                        </div>
+                                        <div>
+                                          <Label className="text-sm font-medium">
+                                            Severity
+                                          </Label>
+                                          {log.severity && (
+                                            <Badge
+                                              className={getSeverityColor(
+                                                log.severity
+                                              )}
+                                            >
+                                              {log.severity}
+                                            </Badge>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
+                                </DialogContent>
+                              </Dialog>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
 
-              {/* Table Toolbar with Pagination */}
-              <div className="flex items-center justify-between border-t bg-gray-50 px-4 py-3 sm:px-6">
-                <div className="flex items-center gap-4">
-                  {/* Logs Count */}
-                  <div className="text-sm text-gray-700">
-                    <span className="font-medium">
-                      {totalLogs > 0
-                        ? (() => {
-                            const startItem =
-                              (currentPage - 1) * filters.limit + 1;
-                            const endItem = Math.min(
-                              currentPage * filters.limit,
-                              totalFilteredLogs
-                            );
-                            return `Showing ${startItem}-${endItem} of ${totalFilteredLogs} logs`;
-                          })()
-                        : 'No logs found'}
-                    </span>
-                    {hasMore && (
-                      <span className="text-gray-500"> (more available)</span>
+                {/* Table Toolbar with Pagination */}
+                <div className="flex items-center justify-between border-t bg-gray-50 px-4 py-3 sm:px-6">
+                  <div className="flex items-center gap-4">
+                    {/* Logs Count */}
+                    <div className="text-sm text-gray-700">
+                      <span className="font-medium">
+                        {totalLogs > 0
+                          ? (() => {
+                              const startItem =
+                                (currentPage - 1) * filters.limit + 1;
+                              const endItem = Math.min(
+                                currentPage * filters.limit,
+                                totalFilteredLogs
+                              );
+                              return `Showing ${startItem}-${endItem} of ${totalFilteredLogs} logs`;
+                            })()
+                          : 'No logs found'}
+                      </span>
+                      {hasMore && (
+                        <span className="text-gray-500"> (more available)</span>
+                      )}
+                    </div>
+
+                    {/* Search Filter Badge */}
+                    {filters.search && (
+                      <Badge variant="outline" className="text-xs">
+                        Filtered by: &quot;{filters.search}&quot;
+                      </Badge>
                     )}
                   </div>
 
-                  {/* Search Filter Badge */}
-                  {filters.search && (
-                    <Badge variant="outline" className="text-xs">
-                      Filtered by: &quot;{filters.search}&quot;
-                    </Badge>
-                  )}
-                </div>
+                  <div className="flex items-center gap-4">
+                    {/* Limit Dropdown */}
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="limit" className="text-sm text-gray-700">
+                        Show:
+                      </Label>
+                      <Select
+                        value={filters.limit.toString()}
+                        onValueChange={(value) => {
+                          const newLimit = parseInt(value);
+                          setFilters((prev) => ({ ...prev, limit: newLimit }));
+                          // Just update the limit without reloading - keep current position
+                        }}
+                      >
+                        <SelectTrigger className="w-20 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="25">25</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                          <SelectItem value="200">200</SelectItem>
+                          <SelectItem value="500">500</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div className="flex items-center gap-4">
-                  {/* Limit Dropdown */}
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="limit" className="text-sm text-gray-700">
-                      Show:
-                    </Label>
-                    <Select
-                      value={filters.limit.toString()}
-                      onValueChange={(value) => {
-                        const newLimit = parseInt(value);
-                        setFilters((prev) => ({ ...prev, limit: newLimit }));
-                        // Just update the limit without reloading - keep current position
-                      }}
-                    >
-                      <SelectTrigger className="w-20 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="25">25</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                        <SelectItem value="100">100</SelectItem>
-                        <SelectItem value="200">200</SelectItem>
-                        <SelectItem value="500">500</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    {/* Page Navigation */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(1)}
+                        disabled={currentPage === 1 || isLoading}
+                        className="h-8 px-3"
+                      >
+                        <ChevronsLeft className="h-4 w-4 mr-1" />
+                        First
+                      </Button>
 
-                  {/* Page Navigation */}
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goToPage(1)}
-                      disabled={currentPage === 1 || isLoading}
-                      className="h-8 px-3"
-                    >
-                      <ChevronsLeft className="h-4 w-4 mr-1" />
-                      First
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 1 || isLoading}
+                        className="h-8 px-3"
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => goToPage(currentPage - 1)}
-                      disabled={currentPage === 1 || isLoading}
-                      className="h-8 px-3"
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Button>
+                      <span className="px-3 py-1 text-sm text-gray-700 bg-white border rounded-md">
+                        Page {currentPage}
+                      </span>
 
-                    <span className="px-3 py-1 text-sm text-gray-700 bg-white border rounded-md">
-                      Page {currentPage}
-                    </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          loadMore();
+                        }}
+                        disabled={!hasMore || isLoading}
+                        className="h-8 px-3"
+                      >
+                        {isLoading ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <ChevronRight className="h-4 w-4" />
+                            Next
+                          </>
+                        )}
+                      </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        loadMore();
-                      }}
-                      disabled={!hasMore || isLoading}
-                      className="h-8 px-3"
-                    >
-                      {isLoading ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <ChevronRight className="h-4 w-4" />
-                          Next
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        // For cursor-based pagination, we can't jump to last page directly
-                        // This would load all remaining pages
-                      }}
-                      disabled={!hasMore || isLoading}
-                      className="h-8 px-3"
-                      title="Go to last page (not supported with cursor-based pagination)"
-                    >
-                      <ChevronsRight className="h-4 w-4 mr-1" />
-                      Last
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // For cursor-based pagination, we can't jump to last page directly
+                          // This would load all remaining pages
+                        }}
+                        disabled={!hasMore || isLoading}
+                        className="h-8 px-3"
+                        title="Go to last page (not supported with cursor-based pagination)"
+                      >
+                        <ChevronsRight className="h-4 w-4 mr-1" />
+                        Last
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {filteredLogs.length === 0 && !isLoading && (
-                <div className="text-center py-12">
-                  <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No audit logs found
-                  </h3>
-                  <p className="text-gray-500">
-                    {filters.search ||
-                    filters.entityType ||
-                    filters.action ||
-                    filters.severity ||
-                    filters.type
-                      ? 'Try adjusting your filters or search terms.'
-                      : 'No audit logs match the current criteria.'}
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                {filteredLogs.length === 0 && !isLoading && (
+                  <div className="text-center py-12">
+                    <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No audit logs found
+                    </h3>
+                    <p className="text-gray-500">
+                      {filters.search ||
+                      filters.entityType ||
+                      filters.action ||
+                      filters.severity ||
+                      filters.type
+                        ? 'Try adjusting your filters or search terms.'
+                        : 'No audit logs match the current criteria.'}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </ErrorBoundary>
   );
 }

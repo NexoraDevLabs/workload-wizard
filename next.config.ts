@@ -2,6 +2,7 @@
 
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
+import type { Configuration as WebpackConfig } from 'webpack';
 
 // Environment variables are loaded automatically by Next.js from .env files
 
@@ -54,15 +55,45 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
 
-  webpack: (config) => {
+  webpack: (config: WebpackConfig) => {
+    // Type assertion to ensure proper typing for webpack config mutation
+
+    const webpackConfig = config;
+
     // Reduce noisy infrastructure logs in CI
-    const webpackConfig = config as {
-      infrastructureLogging?: { level?: string };
-    };
+
     if (webpackConfig.infrastructureLogging) {
       webpackConfig.infrastructureLogging.level = 'error';
     }
-    return config;
+
+    // Optimize for memory usage during build
+
+    if (webpackConfig.optimization?.splitChunks) {
+      const currentSplitChunks = webpackConfig.optimization.splitChunks;
+
+      const newOptimization = {
+        ...webpackConfig.optimization,
+        splitChunks: {
+          ...currentSplitChunks,
+          chunks: 'all' as const,
+          cacheGroups: {
+            ...currentSplitChunks.cacheGroups,
+            redis: {
+              test: /[\\/]node_modules[\\/](@upstash|@vercel)[\\/]/,
+              name: 'redis',
+              chunks: 'all' as const,
+              priority: 10,
+            },
+          },
+        },
+      } as WebpackConfig['optimization'];
+
+      if (newOptimization) {
+        webpackConfig.optimization = newOptimization;
+      }
+    }
+
+    return webpackConfig;
   },
 
   images: {

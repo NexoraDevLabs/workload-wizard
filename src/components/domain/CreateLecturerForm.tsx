@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import {
   Select,
   SelectContent,
@@ -138,7 +139,7 @@ export function CreateLecturerForm({ onSuccess }: { onSuccess?: () => void }) {
       else window.location.href = '/staff';
     } catch (error) {
       // handled by withToast
-      console.error('Failed to create lecturer profile:', error);
+      logger.error('Failed to create lecturer profile:', error);
     } finally {
       setIsLoading(false);
     }

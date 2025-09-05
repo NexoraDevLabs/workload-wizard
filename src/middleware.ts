@@ -3,40 +3,23 @@ import {
   createRouteMatcher,
   clerkClient,
 } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../convex/_generated/api';
+import { createLimiterFor } from './lib/rateLimiter';
+import { trackRateLimitEvent } from './lib/metrics';
+import {
+  generateNonce,
+  buildCsp,
+  getCSPMode,
+  buildReportToHeader,
+} from './lib/security/csp';
 
-// Simple token bucket per-IP for a few sensitive routes
-interface RateLimitBucket {
-  tokens: number;
-  lastRefill: number;
-}
-
-const RATE_LIMITS: Record<string, RateLimitBucket> = {};
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_TOKENS = 20; // 20 requests/min per IP
-
-function shouldRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const bucket = RATE_LIMITS[ip] ?? {
-    tokens: RATE_LIMIT_TOKENS,
-    lastRefill: now,
-  };
-  // refill
-  const elapsed = now - bucket.lastRefill;
-  if (elapsed > RATE_LIMIT_WINDOW_MS) {
-    bucket.tokens = RATE_LIMIT_TOKENS;
-    bucket.lastRefill = now;
-  }
-  // spend
-  if (bucket.tokens <= 0) {
-    RATE_LIMITS[ip] = bucket;
-    return true;
-  }
-  bucket.tokens -= 1;
-  RATE_LIMITS[ip] = bucket;
-  return false;
+function clientId(req: NextRequest) {
+  // Prefer a user id header/cookie if your app sets one; fallback to IP.
+  const forwarded = req.headers.get('x-forwarded-for');
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+  return req.headers.get('x-user-id') || `ip:${ip}`;
 }
 
 const isPublicRoute = createRouteMatcher([
@@ -70,7 +53,93 @@ function getConvex(): ConvexHttpClient | null {
   return new ConvexHttpClient(url);
 }
 
+// Rate limiting middleware for API routes
+async function rateLimitMiddleware(req: NextRequest) {
+  const url = new URL(req.url);
+  const path = url.pathname;
+
+  // Only apply rate limiting to API routes
+  if (!path.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  const id = `${path}:${clientId(req)}`;
+  const limiter = await createLimiterFor(path);
+  const result = await limiter.limit(id);
+
+  const resetSec = Math.max(0, Math.ceil((result.reset - Date.now()) / 1000));
+  const headers = new Headers({
+    'RateLimit-Limit': String(result.limit),
+    'RateLimit-Remaining': String(result.remaining),
+    'RateLimit-Reset': String(resetSec),
+  });
+
+  // Try to flush analytics without blocking response (Edge-safe)
+  const waitUntil = (
+    req as unknown as { waitUntil?: (promise: Promise<unknown>) => void }
+  ).waitUntil;
+  if (waitUntil) {
+    waitUntil(result.pending);
+  }
+
+  if (!result.success) {
+    headers.set('Retry-After', String(resetSec || 60));
+    trackRateLimitEvent('block', {
+      path,
+      id,
+      remaining: result.remaining,
+      limit: result.limit,
+    });
+    return new NextResponse(JSON.stringify({ error: 'Too Many Requests' }), {
+      status: 429,
+      headers,
+    });
+  }
+
+  trackRateLimitEvent('hit', {
+    path,
+    id,
+    remaining: result.remaining,
+    limit: result.limit,
+  });
+  return NextResponse.next({ headers });
+}
+
 export default clerkMiddleware(async (auth, req) => {
+  // First apply rate limiting for API routes
+  const rateLimitResponse = await rateLimitMiddleware(req);
+  if (rateLimitResponse.status !== 200) {
+    return rateLimitResponse;
+  }
+
+  // Generate nonce for CSP
+  const nonce = generateNonce();
+
+  // Build CSP policy
+  const cspMode = getCSPMode();
+  const cspPolicy = buildCsp({
+    nonce,
+    mode: cspMode,
+    reportUri: '/api/csp-report',
+    reportTo: 'csp-endpoint',
+  });
+
+  // Create response with CSP headers
+  const response = NextResponse.next();
+
+  // Set CSP header based on mode
+  if (cspMode === 'enforce') {
+    response.headers.set('Content-Security-Policy', cspPolicy);
+  } else {
+    response.headers.set('Content-Security-Policy-Report-Only', cspPolicy);
+  }
+
+  // Set Report-To header for violation reporting
+  response.headers.set('Report-To', buildReportToHeader('/api/csp-report'));
+
+  // Pass nonce to the request for use in components
+  response.headers.set('x-csp-nonce', nonce);
+
   // HTTPS redirect - DISABLED for Vercel deployments (handled at platform level)
   // const proto = req.headers.get('x-forwarded-proto');
   // if (proto && proto !== 'https') {
@@ -83,46 +152,25 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Allow public routes without authentication
   if (isPublicRoute(req)) {
-    return NextResponse.next();
+    return response;
   }
 
   // Allow account routes for authenticated users (but don't check onboarding status)
   if (isAccountRoute(req)) {
     await auth.protect();
-    return NextResponse.next();
+    return response;
   }
 
   // Allow API routes for authenticated users (but don't check onboarding status)
   if (isApiRoute(req)) {
     await auth.protect();
-    // Basic rate limit for sensitive endpoints
-    const url = new URL(req.url);
-    const path = url.pathname;
-    const ip =
-      req.headers.get('x-forwarded-for') ||
-      req.headers.get('x-real-ip') ||
-      'unknown';
-    const isSensitive = [
-      '/api/analytics/track',
-      '/api/reset-password',
-      '/api/admin/reset-password',
-      '/api/update-user',
-      '/api/update-user-email',
-      '/api/update-user-username',
-    ].some((p) => path.startsWith(p));
-    if (isSensitive && shouldRateLimit(ip)) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded' },
-        { status: 429 }
-      );
-    }
-    return NextResponse.next();
+    return response;
   }
 
   // Allow onboarding route for authenticated users
   if (isOnboardingRoute(req)) {
     await auth.protect();
-    return NextResponse.next();
+    return response;
   }
 
   // Protect all other routes
@@ -189,7 +237,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  return NextResponse.next();
+  return response;
 });
 
 // Handle 403 responses by redirecting to unauthorized page

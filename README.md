@@ -36,6 +36,8 @@
 # WorkloadWizard
 
 [![CI](https://github.com/sammcnab/workload-wizard/actions/workflows/ci.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/ci.yml)
+[![DR Backup](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml)
+[![DR Restore Test](https://github.com/sammcnab/workload-wizard/actions/workflows/restore-test.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/restore-test.yml)
 
 A comprehensive workload management application for educational institutions, built with Next.js, Convex, and Clerk.
 
@@ -191,6 +193,27 @@ pnpm test:watch
 - **Permissions**: `./docs/PERMISSIONS.md` — Role-based access control
   _Removed: Feature Flags_
 - **Testing**: `./docs/TESTING_PROCEDURES.md` — Testing guidelines and procedures
+
+## 🔧 **Operations**
+
+### **Disaster Recovery (DR)**
+
+- **Policy**: RPO=24h, RTO=2h with automated nightly backups to Cloudflare R2
+- **Backups**: [Nightly DR Backup](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml) — Convex data, Vercel env vars, minimal Clerk extract
+- **Restore Tests**: [Weekly Restore Test](https://github.com/sammcnab/workload-wizard/actions/workflows/restore-test.yml) — Automated staging validation
+- **Documentation**:
+  - [DR Policy](docs/operations/dr/policy.md) — Recovery objectives and data scope
+  - [Backup Procedures](docs/operations/dr/backups.md) — Automated backup system details
+  - [Restore Runbook](docs/operations/dr/restore-runbook.md) — Manual and automated restore procedures
+  - [Communication Templates](docs/operations/dr/comms.md) — Incident response communication
+  - [Game-Day Checklist](docs/operations/dr/game-day-checklist.md) — DR drill and incident checklist
+
+### **Key Features**
+
+- **Optimized Transfers**: zstd compression with content-based deduplication
+- **Minimal Storage**: Archives stored in R2 only, manifests as GitHub artifacts
+- **Observability**: Clear job summaries, Slack alerts on failure
+- **Testing**: Weekly automated restore validation to staging environment
 
 ## 🔧 **Development**
 
