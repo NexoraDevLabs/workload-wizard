@@ -55,9 +55,11 @@ jobs:
 
       - name: Use specific archive if provided
         if: github.event.inputs.archive_key != ''
+        env:
+          INPUT_ARCHIVE_KEY: ${{ github.event.inputs.archive_key }}
         run: |
-          echo "ARCHIVE_KEY=${{ github.event.inputs.archive_key }}" >> $GITHUB_ENV
-          echo "Using specified archive: ${{ github.event.inputs.archive_key }}"
+          echo "ARCHIVE_KEY=$INPUT_ARCHIVE_KEY" >> $GITHUB_ENV
+          echo "Using specified archive: $INPUT_ARCHIVE_KEY"
 
       - name: Download backup archive
         run: |
