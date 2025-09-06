@@ -18,6 +18,7 @@
     - [E2E Tests](#e2e-tests)
     - [Unit Tests](#unit-tests)
   - [📚 **Documentation**](#-documentation)
+  - [🔒 **Security**](#-security)
   - [🔧 **Development**](#-development)
     - [Branching & CI](#branching--ci)
     - [Code Quality](#code-quality)
@@ -205,6 +206,15 @@ pnpm test:watch
 
 - **[Operations Handbook](docs/handbook/operations/README.md)** — Standard Operating Procedures for security, incidents, secret rotation, and CI failures
 - **[Observability Handbook](docs/handbook/observability/README.md)** — Comprehensive guides for monitoring, tracing, dashboards, and alerting
+
+## 🔒 **Security**
+
+- **[Security Overview](docs/engineering/security/_index.md)** — Core security topics and runbooks
+  - **Headers & HTTPS** — HSTS, TLS, referrer-policy, cookies, CORS
+  - **Content Security Policy (CSP)** — Report-only to enforce implementation
+  - **Runbooks** — Vulnerability intake, secret rotation, incident response, CI failure triage
+  - **Scanning** — ZAP nightly baseline, Dependabot/CodeQL alerts
+  - **Disaster Recovery** — DR plan, backups & restore tests
 
 ## 🔧 **Operations**
 
