@@ -50,15 +50,15 @@ jobs:
         run: |
           # Test CSP headers by building and checking the middleware directly
           echo "🔍 Testing CSP headers for mode: ${{ matrix.mode }}"
-          
+
           # Set environment variables
           export CSP_MODE="${{ matrix.mode }}"
           export NODE_ENV="production"
-          
+
           # Create a simple test script to check CSP headers using tsx
           cat > test-csp.ts << 'EOF'
           import { buildCsp, getCSPMode, generateNonce } from './src/lib/security/csp';
-          
+
           try {
             const nonce = generateNonce();
             const cspMode = getCSPMode();
@@ -101,7 +101,7 @@ jobs:
             process.exit(1);
           }
           EOF
-          
+
           # Run the test using tsx
           npx tsx test-csp.ts
         env:
@@ -121,7 +121,7 @@ jobs:
           echo "" >> csp-policy-${{ matrix.mode }}.txt
 
           # Re-run the test to capture policy output
-          node test-csp.mjs >> csp-policy-${{ matrix.mode }}.txt 2>&1
+          npx tsx test-csp.ts >> csp-policy-${{ matrix.mode }}.txt 2>&1
           echo "" >> csp-policy-${{ matrix.mode }}.txt
           echo "Generated at: $(date)" >> csp-policy-${{ matrix.mode }}.txt
 
