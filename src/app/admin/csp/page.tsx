@@ -45,7 +45,6 @@ export default function CSPDashboard() {
   const [showDetails, setShowDetails] = useState(false);
   const [sortBy, setSortBy] = useState('timestamp');
 
-  // @ts-expect-error - Type instantiation is excessively deep due to Convex type inference
   const summary = useQuery(api.csp.getSummary, { hours: timeRange }) as unknown;
   const recentReports = useQuery(api.csp.getRecentReports, {
     limit: 100, // Increased limit for better filtering
