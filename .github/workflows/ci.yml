@@ -85,10 +85,64 @@ jobs:
             echo "- Status: **${{ job.status }}**"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## ✅ lint completed"
+            echo ""
+            echo "- Workflow: **${{ github.workflow }}**"
+            echo "- Ref: **${{ github.ref_name }}** (${GITHUB_SHA:0:7})"
+            echo "- Runner: **${{ runner.os }}**"
+            echo ""
+            echo "### Key Outputs"
+            echo "- Node: \`$(node -v)\`"
+            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- TypeScript: \`$(pnpm exec tsc -v)\`"
+            echo "- Status: **${{ job.status }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: build
+    needs: [build, lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,7 +194,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: build
+    needs: [build, lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

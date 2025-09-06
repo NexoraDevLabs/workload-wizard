@@ -6,7 +6,21 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   // Base
-  { ignores: ['node_modules/**', '.next/**', 'dist/**', 'next-env.d.ts'] },
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'dist/**',
+      'next-env.d.ts',
+      'eslint.config.*',
+      'next.config.*',
+      'vite.config.*',
+      'tailwind.config.*',
+      'postcss.config.*',
+      'scripts/**',
+      'tests/**',
+    ],
+  },
   js.configs.recommended,
 
   // TypeScript (basic rules for all files)
@@ -36,20 +50,22 @@ export default [
       // Strict TS useful for this codebase
       '@typescript-eslint/consistent-type-imports': [
         'error',
-        { prefer: 'type-imports' },
+        { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
       ],
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': [
         'error',
         { checksVoidReturn: { attributes: false } },
       ],
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
+      // Elevate unsafe rules to error for app code
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/restrict-template-expressions': [
-        'warn',
+        'error',
         { allowNumber: true, allowBoolean: true },
       ],
       // Add type-checked rules manually
@@ -80,7 +96,17 @@ export default [
 
   // Override for test files and scripts where console is intentional
   {
-    files: ['**/*.test.*', '**/tests/**', 'scripts/**', '**/test/**'],
+    files: [
+      '**/*.test.*',
+      '**/tests/**',
+      'scripts/**',
+      '**/test/**',
+      '**/e2e/**',
+      '**/playwright/**',
+      '**/vite.config.*',
+      '**/next.config.*',
+      '**/eslint.config.*',
+    ],
     languageOptions: {
       globals: {
         console: 'readonly',
@@ -90,6 +116,12 @@ export default [
     },
     rules: {
       'no-console': 'off',
+      // Looser rules for tests/config to avoid churn; still warn
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
     },
   },
 ];

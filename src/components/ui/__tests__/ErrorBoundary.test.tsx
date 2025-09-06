@@ -145,8 +145,8 @@ describe('ErrorBoundary Integration', () => {
     const { captureUIException } = await import('../../../lib/monitoring');
 
     // Test that the monitoring function is callable
-    expect(() => {
-      captureUIException(new Error('Test'), { contextTag: 'Test' });
+    expect(async () => {
+      await captureUIException(new Error('Test'), { contextTag: 'Test' });
     }).not.toThrow();
   });
 

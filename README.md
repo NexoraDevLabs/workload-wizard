@@ -252,6 +252,15 @@ pnpm lint
 pnpm typecheck
 ```
 
+### Type Safety
+
+We maintain strict TypeScript safety with elevated linting rules and comprehensive type checking. See our [TypeScript Safety Guidelines](docs/handbook/engineering/ts-safety.md) for:
+
+- Suppression guidelines and best practices
+- Migration strategies for `verbatimModuleSyntax`
+- Preferred alternatives to `any` types
+- Runtime validation patterns
+
 ### Database
 
 ```bash

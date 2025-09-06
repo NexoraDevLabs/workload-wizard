@@ -55,8 +55,7 @@ export function withApiTracing(name: string, handler: Handler): Handler {
 
         // Best-effort Sentry capture (optional at runtime)
         try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const Sentry = require('@sentry/nextjs');
+          const Sentry = await import('@sentry/nextjs');
           Sentry.captureException(err);
         } catch {
           // Sentry not available or failed

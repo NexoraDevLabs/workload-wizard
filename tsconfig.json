@@ -18,6 +18,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "noUncheckedSideEffectImports": true,
+    "verbatimModuleSyntax": true,
     "plugins": [
       {
         "name": "next"
