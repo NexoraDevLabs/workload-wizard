@@ -21,7 +21,7 @@ import type {
   SystemPermission,
   SystemRole,
 } from '../types';
-import { mockOrganisationId, mockRoleId } from './test-utils';
+import { mockOrganisationId, mockRoleId } from './testUtils';
 
 describe('predicates', () => {
   describe('isSystemUser', () => {

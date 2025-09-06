@@ -27,6 +27,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/landing',
   '/api/webhooks/clerk',
+  '/api/csp-report', // CSP reports should be publicly accessible
   '/terms',
   '/privacy',
   '/reset-password',
@@ -74,13 +75,8 @@ async function rateLimitMiddleware(req: NextRequest) {
     'RateLimit-Reset': String(resetSec),
   });
 
-  // Try to flush analytics without blocking response (Edge-safe)
-  const waitUntil = (
-    req as unknown as { waitUntil?: (promise: Promise<unknown>) => void }
-  ).waitUntil;
-  if (waitUntil) {
-    waitUntil(result.pending);
-  }
+  // Analytics are handled asynchronously by the rate limiter
+  // No need to wait for analytics completion
 
   if (!result.success) {
     headers.set('Retry-After', String(resetSec || 60));
