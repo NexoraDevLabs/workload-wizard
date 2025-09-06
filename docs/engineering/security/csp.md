@@ -1,424 +1,309 @@
-# Content Security Policy (CSP) Implementation
+# Content Security Policy (CSP) Guide
 
-This document describes the Content Security Policy implementation for WorkloadWizard, providing comprehensive protection against XSS attacks while maintaining full application functionality.
+This guide covers the implementation, configuration, and management of Content Security Policy (CSP) in the WorkloadWizard application.
 
 ## Overview
 
-The CSP implementation uses a nonce-based approach with dynamic allowlists that automatically detect and configure external services used by the application. It supports both Report-Only and Enforce modes for safe rollout.
+Content Security Policy is a security feature that helps prevent Cross-Site Scripting (XSS) attacks by controlling which resources can be loaded and executed by the browser. Our implementation supports both report-only and enforce modes, allowing for safe rollout and monitoring.
 
 ## Architecture
 
-### Core Components
+### Components
 
-1. **CSP Builder** (`src/lib/security/csp.ts`) - Policy generation and allowlist management
-2. **Middleware Integration** (`src/middleware.ts`) - Nonce generation and header injection
-3. **Violation Collection** (`src/app/api/csp-report/route.ts`) - Report processing and storage
-4. **Admin Dashboard** (`src/app/admin/csp/page.tsx`) - Violation monitoring and analysis
-5. **Convex Schema** (`convex/csp.ts`) - Violation report storage and queries
+1. **CSP Builder** (`src/lib/security/csp.ts`) - Core CSP policy generation
+2. **Allowlist Configuration** (`config/security/csp.allowlist.ts`) - Environment-specific overrides
+3. **Middleware** (`src/middleware.ts`) - Header injection and nonce generation
+4. **Report Handler** (`src/app/api/csp-report/route.ts`) - Violation report collection
+5. **Admin Dashboard** (`src/app/admin/csp/page.tsx`) - Violation monitoring and analysis
 
-### Policy Structure
+### Data Flow
 
-The CSP policy is built dynamically based on detected services and includes:
-
-- **Core Security Directives**: `default-src`, `base-uri`, `object-src`, `frame-ancestors`
-- **Nonce-based Script/Style Execution**: Uses cryptographically strong nonces
-- **Service-specific Allowlists**: Automatically configured for detected integrations
-- **Reporting**: Comprehensive violation collection and analysis
+```
+Browser → CSP Policy → Violation → Report Handler → Convex DB → Admin Dashboard
+```
 
 ## Configuration
 
 ### Environment Variables
 
-```bash
-# CSP Mode (default: report-only)
-CSP_MODE=report-only  # or 'enforce'
+| Variable   | Description          | Default       | Values                   |
+| ---------- | -------------------- | ------------- | ------------------------ |
+| `CSP_MODE` | CSP enforcement mode | `report-only` | `report-only`, `enforce` |
 
-# Service-specific environment variables (auto-detected)
-NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_SENTRY_DSN=https://...
-NEXT_PUBLIC_STATSIG_CLIENT_KEY=...
-FEATFLAG_STATSIG_SERVER_API_KEY=...
-NEXT_PUBLIC_POSTHOG_KEY=...
+### Environment Matrix
+
+| Environment | CSP Mode      | Purpose                               |
+| ----------- | ------------- | ------------------------------------- |
+| Development | `report-only` | Safe testing with violation reporting |
+| Preview     | `report-only` | Pre-production validation             |
+| Staging     | `report-only` | Production-like testing               |
+| Production  | `enforce`     | Full security enforcement             |
+
+## Usage
+
+### Switching CSP Modes
+
+#### Development/Local
+
+```bash
+# Switch to report-only mode
+pnpm run csp:mode:report
+
+# Switch to enforce mode
+pnpm run csp:mode:enforce
+
+# Check current CSP configuration
+pnpm run csp:check
 ```
 
-### NPM Scripts
+#### Production (Vercel)
 
-```bash
-# Set CSP mode to report-only
-pnpm csp:mode:report
+1. Navigate to Vercel Dashboard
+2. Go to your project → Settings → Environment Variables
+3. Set `CSP_MODE` to `enforce` for Production environment
+4. Redeploy the application
 
-# Set CSP mode to enforce
-pnpm csp:mode:enforce
-```
+### Monitoring Violations
 
-## Service Detection and Allowlists
+1. **Admin Dashboard**: Navigate to `/admin/csp` (requires sysadmin/developer role)
+2. **Key Metrics**:
+   - Total violations by time period
+   - Top violated directives
+   - Most blocked URIs
+   - Recent violation details
 
-The CSP builder automatically detects and configures allowlists for:
+3. **Filtering Options**:
+   - Time range (1 hour, 24 hours, 7 days)
+   - Directive type
+   - Search by URI, source file, or user agent
+   - Export to CSV
 
-### Convex (Real-time Database)
+### Adjusting Allowlists
 
-- **Connect Sources**: `*.convex.cloud`, `*.convex.dev`
-- **Detection**: `NEXT_PUBLIC_CONVEX_URL` environment variable
+1. **Edit Configuration**: Modify `config/security/csp.allowlist.ts`
+2. **Add Sources**: Add domains to appropriate directives
+3. **Environment-Specific**: Use development/production/test overrides
+4. **Redeploy**: Changes take effect on next deployment
 
-### Clerk (Authentication)
-
-- **Script Sources**: `*.clerk.accounts.dev`, `*.clerk.com`
-- **Connect Sources**: `*.clerk.accounts.dev`, `*.clerk.com`
-- **Frame Sources**: `*.clerk.accounts.dev`, `*.clerk.com`
-- **Image Sources**: `img.clerk.com`, `images.clerk.com`
-- **Detection**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` or `CLERK_SECRET_KEY`
-
-### Sentry (Error Monitoring)
-
-- **Script Sources**: `*.sentry-cdn.com`, `*.sentry.io`
-- **Connect Sources**: `*.sentry.io`, `*.sentry-cdn.com`
-- **Image Sources**: `*.sentry.io`
-- **Detection**: `NEXT_PUBLIC_SENTRY_DSN` environment variable
-
-### Statsig (Feature Flags)
-
-- **Script Sources**: `*.statsig.com`, `*.statsigapi.net`
-- **Connect Sources**: `*.statsig.com`, `*.statsigapi.net`
-- **Detection**: `NEXT_PUBLIC_STATSIG_CLIENT_KEY` or `FEATFLAG_STATSIG_SERVER_API_KEY`
-
-### Vercel (Analytics & Speed Insights)
-
-- **Script Sources**: `vitals.vercel-insights.com`, `va.vercel-scripts.com`
-- **Connect Sources**: `vitals.vercel-insights.com`, `va.vercel-scripts.com`
-- **Image Sources**: `va.vercel-scripts.com`
-- **Detection**: Always enabled for Vercel deployments
-
-### PostHog (Analytics)
-
-- **Script Sources**: `eu-assets.i.posthog.com`, `eu.i.posthog.com`
-- **Connect Sources**: `eu.i.posthog.com`, `eu-assets.i.posthog.com`
-- **Image Sources**: `eu-assets.i.posthog.com`
-- **Detection**: `NEXT_PUBLIC_POSTHOG_KEY` environment variable
-
-### Sanity (CMS)
-
-- **Image Sources**: `cdn.sanity.io`
-- **Connect Sources**: `*.sanity.io`
-- **Detection**: Always enabled (used for images)
-
-### Google Fonts
-
-- **Style Sources**: `fonts.googleapis.com`
-- **Font Sources**: `fonts.gstatic.com`
-- **Connect Sources**: `fonts.googleapis.com`, `fonts.gstatic.com`
-- **Detection**: Always enabled (Geist fonts)
-
-### Featurebase (Support Widget)
-
-- **Script Sources**: `widget.featurebase.app`
-- **Connect Sources**: `widget.featurebase.app`
-- **Frame Sources**: `widget.featurebase.app`
-- **Detection**: Always enabled (support widget)
-
-## Nonce Implementation
-
-### Generation
-
-- **Method**: `crypto.randomUUID()` with fallback to `crypto.getRandomValues()`
-- **Location**: Generated per request in middleware
-- **Propagation**: Passed via `x-csp-nonce` header
-
-### Usage
-
-- **Scripts**: Use `nonce` prop on Next.js `<Script>` components
-- **Styles**: Add `nonce` attribute to inline `<style>` blocks
-- **Example**:
-  ```tsx
-  <Script nonce={nonce} strategy="afterInteractive">
-    {`console.log('This script has a nonce');`}
-  </Script>
-  ```
-
-## Violation Reporting
-
-### Report Collection
-
-- **Endpoint**: `/api/csp-report`
-- **Formats**: Supports both `application/csp-report` and `application/reports+json`
-- **Storage**: Convex database with privacy-focused sanitization
-
-### Report Data
+Example:
 
 ```typescript
-interface CSPReport {
-  timestamp: number;
-  userAgent?: string; // Sanitized
-  ipAddress?: string;
-  effectiveDirective: string;
-  violatedDirective: string;
-  blockedURI?: string;
-  documentURI?: string;
-  referrer?: string;
-  sourceFile?: string;
-  lineNumber?: number;
-  columnNumber?: number;
-  scriptSample?: string; // Limited to 1000 chars
-  disposition?: string;
-  originalPolicy?: string;
-  organisationId?: string;
-  userId?: string;
-}
-```
-
-### Privacy Considerations
-
-- **PII Stripping**: User agents sanitized, IP addresses optional
-- **Data Retention**: Configurable cleanup (default 30 days)
-- **Access Control**: Admin-only dashboard access
-
-## Monitoring and Analysis
-
-### Admin Dashboard
-
-- **Location**: `/admin/csp`
-- **Features**:
-  - Real-time violation counts
-  - Directive-based analysis
-  - Resource-based analysis
-  - Recent violation reports
-  - Time range filtering
-
-### Key Metrics
-
-- **Total Violations**: Count of all CSP violations
-- **Unique Directives**: Number of violated directives
-- **Blocked Resources**: Count of unique blocked URIs
-- **Status**: Clean vs. violations detected
-
-## Deployment Strategy
-
-### Phase 1: Report-Only Mode
-
-1. Deploy with `CSP_MODE=report-only`
-2. Monitor violations via admin dashboard
-3. Refine allowlists based on violation data
-4. Test all application functionality
-
-### Phase 2: Staging Enforcement
-
-1. Set `CSP_MODE=enforce` in staging environment
-2. Verify zero functional regressions
-3. Monitor for new violations
-4. Fine-tune allowlists if needed
-
-### Phase 3: Production Enforcement
-
-1. Set `CSP_MODE=enforce` in production
-2. Monitor closely for first 24-48 hours
-3. Have rollback plan ready
-4. Continue monitoring and refinement
-
-## Rollback Procedure
-
-### Immediate Rollback
-
-```bash
-# Set environment variable
-CSP_MODE=report-only
-
-# Redeploy application
-vercel deploy --prod
-```
-
-### Emergency Disable
-
-```bash
-# Remove CSP headers entirely (if needed)
-# Comment out CSP logic in middleware.ts
-# Redeploy application
-```
-
-## Adding New Services
-
-### 1. Update Service Allowlist
-
-Add new service configuration to `SERVICE_ALLOWLISTS` in `src/lib/security/csp.ts`:
-
-```typescript
-const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
-  // ... existing services
-  newService: {
-    scriptSrc: ['*.newservice.com'],
-    connectSrc: ['*.newservice.com'],
-    // ... other directives
+export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
+  scriptSrc: {
+    production: ['https://cdn.example.com', 'https://*.analytics.com'],
+  },
+  imgSrc: {
+    development: ['http://localhost:*'],
   },
 };
 ```
 
-### 2. Add Detection Logic
+## Policy Structure
 
-Update `buildAllowlist` function to detect the service:
+### Core Directives
 
-```typescript
-if (env.NEXT_PUBLIC_NEW_SERVICE_KEY) {
-  mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.newService);
-}
-```
+- `default-src 'self'` - Default source for all resource types
+- `script-src` - JavaScript sources (with nonce support)
+- `style-src` - CSS sources (with nonce support)
+- `img-src` - Image sources
+- `connect-src` - XHR, fetch, WebSocket sources
+- `font-src` - Font sources
+- `frame-src` - Frame/iframe sources
 
-### 3. Update Environment Schema
+### Security Features
 
-Add environment variable to `src/lib/env.ts`:
+- **Nonce-based Scripts**: All inline scripts require a nonce
+- **Strict Dynamic**: Allows nonce-based scripts to load additional scripts
+- **HTTPS Enforcement**: Upgrades insecure requests in production
+- **Frame Ancestors**: Prevents clickjacking attacks
 
-```typescript
-NEXT_PUBLIC_NEW_SERVICE_KEY: z.string().optional(),
-```
+### Service Integration
 
-### 4. Test and Validate
+The CSP policy automatically includes allowlists for:
 
-1. Test in report-only mode
-2. Verify no violations for new service
-3. Test in enforce mode
-4. Update documentation
+- **Convex**: Database and real-time subscriptions
+- **Clerk**: Authentication and user management
+- **Sentry**: Error monitoring and performance tracking
+- **Statsig**: Feature flags and experimentation
+- **Vercel**: Analytics and speed insights
+- **PostHog**: Product analytics
+- **Sanity**: Content management
+- **Google Fonts**: Typography
+- **Featurebase**: Customer feedback widget
 
-## Debugging Violations
+## Rollout Process
 
-### Common Violation Types
+### Phase 1: Report-Only Mode (1-2 weeks)
 
-#### Script Violations
+1. **Deploy with Report-Only**: Set `CSP_MODE=report-only`
+2. **Monitor Violations**: Check `/admin/csp` regularly
+3. **Analyze Patterns**: Identify common violation sources
+4. **Adjust Allowlists**: Add legitimate sources to configuration
+5. **Test Functionality**: Ensure all features work correctly
 
-- **Cause**: Inline scripts without nonce
-- **Solution**: Add nonce to `<Script>` components or move to external files
+### Phase 2: Enforcement Mode
 
-#### Style Violations
+1. **Final Review**: Verify no critical violations remain
+2. **Switch to Enforce**: Set `CSP_MODE=enforce`
+3. **Monitor Closely**: Watch for any functionality issues
+4. **Quick Rollback**: Be ready to switch back to report-only
 
-- **Cause**: Inline styles without nonce
-- **Solution**: Add nonce to `<style>` blocks or move to external CSS
+### Rollback Procedure
 
-#### Connect Violations
+If issues arise after switching to enforce mode:
 
-- **Cause**: Missing allowlist for external API
-- **Solution**: Add domain to `connectSrc` allowlist
+1. **Immediate**: Set `CSP_MODE=report-only` in Vercel
+2. **Redeploy**: Trigger a new deployment
+3. **Investigate**: Use admin dashboard to identify issues
+4. **Fix**: Update allowlist configuration
+5. **Retry**: Switch back to enforce mode when ready
 
-#### Image Violations
+## Common Violations & Fixes
 
-- **Cause**: Missing allowlist for external images
-- **Solution**: Add domain to `imgSrc` allowlist
+### Script Violations
 
-### Debugging Tools
+| Violation               | Cause                        | Fix                       |
+| ----------------------- | ---------------------------- | ------------------------- |
+| `'unsafe-inline'`       | Inline scripts without nonce | Add nonce to script tag   |
+| `'unsafe-eval'`         | Dynamic code evaluation      | Refactor to avoid eval()  |
+| External script blocked | Missing domain in allowlist  | Add domain to `scriptSrc` |
 
-#### Browser DevTools
+### Style Violations
 
-1. Open DevTools Console
-2. Look for CSP violation messages
-3. Check Network tab for blocked requests
-4. Use Security tab for policy analysis
+| Violation                   | Cause                   | Fix                      |
+| --------------------------- | ----------------------- | ------------------------ |
+| Inline styles blocked       | CSS-in-JS without nonce | Add nonce to style tag   |
+| External stylesheet blocked | Missing domain          | Add domain to `styleSrc` |
 
-#### Admin Dashboard
+### Image Violations
 
-1. Navigate to `/admin/csp`
-2. Review violation summary
-3. Analyze by directive or resource
-4. Check recent reports for patterns
+| Violation              | Cause           | Fix                     |
+| ---------------------- | --------------- | ----------------------- |
+| External image blocked | Missing domain  | Add domain to `imgSrc`  |
+| Data URI blocked       | Missing `data:` | Add `data:` to `imgSrc` |
 
-#### Manual Testing
+### Connect Violations
+
+| Violation         | Cause            | Fix                        |
+| ----------------- | ---------------- | -------------------------- |
+| API call blocked  | Missing domain   | Add domain to `connectSrc` |
+| WebSocket blocked | Missing protocol | Add `wss:` to `connectSrc` |
+
+## Testing
+
+### Local Testing
 
 ```bash
-# Test CSP headers
-curl -I https://your-app.vercel.app
+# Check CSP configuration
+pnpm run csp:check
 
-# Check for CSP headers
-# Content-Security-Policy-Report-Only: ...
-# or
-# Content-Security-Policy: ...
+# Test in report-only mode
+pnpm run csp:mode:report
+pnpm run dev
+
+# Test in enforce mode
+pnpm run csp:mode:enforce
+pnpm run dev
 ```
 
-## Best Practices
+### CI Testing
 
-### Development
+The CI pipeline automatically validates:
 
-1. **Always use nonces** for inline scripts and styles
-2. **Test in report-only mode** before enforcing
-3. **Monitor violations** regularly during development
-4. **Keep allowlists minimal** - only add what's necessary
+- Correct header presence based on mode
+- Policy structure and required directives
+- Nonce generation and inclusion
+- Reporting directives in report-only mode
 
-### Production
+### Manual Testing
 
-1. **Start with report-only** mode
-2. **Monitor violations** for at least one release cycle
-3. **Refine allowlists** based on violation data
-4. **Enforce gradually** - staging first, then production
-5. **Have rollback plan** ready
-
-### Maintenance
-
-1. **Regular cleanup** of old violation reports
-2. **Monitor for new services** that need allowlisting
-3. **Update documentation** when adding services
-4. **Review violations** monthly for security insights
-
-## Security Considerations
-
-### XSS Protection
-
-- **Nonce-based execution** prevents inline script injection
-- **Strict allowlists** limit resource loading
-- **No unsafe-inline** for scripts or styles
-
-### Data Privacy
-
-- **PII sanitization** in violation reports
-- **Limited data retention** for compliance
-- **Admin-only access** to violation data
-
-### Performance
-
-- **Minimal allowlists** reduce policy size
-- **Efficient nonce generation** per request
-- **Optimized violation processing** for scale
+1. **Browser DevTools**: Check Console for CSP violations
+2. **Network Tab**: Verify all resources load correctly
+3. **Admin Dashboard**: Confirm violations are being reported
+4. **Functionality**: Test all application features
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### CSP Not Applied
+1. **Scripts Not Loading**
+   - Check if nonce is properly applied
+   - Verify script source is in allowlist
+   - Ensure no `unsafe-inline` dependencies
 
-- Check middleware configuration
-- Verify environment variables
-- Check browser DevTools for errors
+2. **Styles Not Applying**
+   - Check if nonce is properly applied
+   - Verify style source is in allowlist
+   - Ensure CSS-in-JS is nonce-compatible
 
-#### Violations Not Reported
+3. **Images Not Loading**
+   - Check image source domains
+   - Verify `imgSrc` allowlist includes required domains
+   - Check for data URI requirements
 
-- Verify `/api/csp-report` endpoint
-- Check Convex connection
-- Review browser console for errors
+4. **API Calls Failing**
+   - Check `connectSrc` allowlist
+   - Verify API domain is included
+   - Check for WebSocket requirements
 
-#### False Positives
+### Debug Mode
 
-- Review allowlist configuration
-- Check for typos in domains
-- Verify service detection logic
+Enable detailed CSP logging in development:
 
-#### Performance Impact
+```typescript
+// In src/lib/security/csp.ts
+const isDevelopment = env.NODE_ENV === 'development';
+if (isDevelopment) {
+  console.log('CSP Policy:', cspPolicy);
+  console.log('CSP Mode:', cspMode);
+}
+```
 
-- Monitor nonce generation overhead
-- Check violation processing time
-- Review database query performance
+## Security Considerations
 
-### Support
+### Best Practices
 
-For issues or questions:
+1. **Principle of Least Privilege**: Only allow necessary sources
+2. **Regular Review**: Periodically audit allowlist entries
+3. **Time-Boxed Exceptions**: Add review dates for temporary allowances
+4. **Documentation**: Document why each allowlist entry exists
 
-1. Check this documentation
-2. Review admin dashboard
-3. Check browser DevTools
-4. Contact development team
+### Risk Assessment
 
-## Version History
+| Risk Level | Directive     | Impact                 |
+| ---------- | ------------- | ---------------------- |
+| High       | `script-src`  | XSS, code injection    |
+| High       | `connect-src` | Data exfiltration      |
+| Medium     | `style-src`   | CSS injection          |
+| Medium     | `img-src`     | Information disclosure |
+| Low        | `font-src`    | Resource loading       |
 
-### v1.0 (2024-12-19)
+### Monitoring
 
-- Initial CSP implementation
-- Report-Only mode with comprehensive allowlists
-- Nonce-based inline script/style execution
-- Service-specific allowlists for all detected integrations
-- Violation reporting and analysis dashboard
-- Admin dashboard for monitoring
-- Environment-based configuration
-- Comprehensive documentation
+- **Violation Trends**: Watch for sudden spikes in violations
+- **New Sources**: Monitor for unexpected domains
+- **Policy Changes**: Track allowlist modifications
+- **Performance**: Ensure CSP doesn't impact page load times
+
+## Maintenance
+
+### Regular Tasks
+
+1. **Weekly**: Review violation reports
+2. **Monthly**: Audit allowlist entries
+3. **Quarterly**: Review and update service integrations
+4. **Annually**: Full security review and policy update
+
+### Cleanup
+
+- Remove unused allowlist entries
+- Archive old violation reports
+- Update service integrations as needed
+- Review and update documentation
+
+## References
+
+- [MDN CSP Documentation](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
+- [CSP Evaluator](https://csp-evaluator.withgoogle.com/)
+- [CSP Test](https://csp-test.com/)
+- [OWASP CSP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)

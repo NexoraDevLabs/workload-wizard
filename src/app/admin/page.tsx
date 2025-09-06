@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Building2, Shield, FileText, RefreshCw } from 'lucide-react';
+import { Users, Building2, Shield, FileText, RefreshCw, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { listUsers } from '@/lib/actions/userActions';
 import { api } from '@/convex/_generated/api';
@@ -115,6 +115,13 @@ export default function AdminDashboardPage() {
       icon: FileText,
       href: '/admin/audit-logs',
       color: 'bg-orange-500',
+    },
+    {
+      title: 'CSP Violations',
+      description: 'Monitor Content Security Policy violations and reports',
+      icon: AlertTriangle,
+      href: '/admin/csp',
+      color: 'bg-red-500',
     },
   ];
 

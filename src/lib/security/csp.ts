@@ -1,4 +1,5 @@
 import { getEnv } from '@/lib/env';
+import { getAllowlistOverrides } from '@/config/security/csp.allowlist';
 
 export type CSPMode = 'report-only' | 'enforce';
 
@@ -156,6 +157,15 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
 
   // Add HTTPS fallback for all directives
   const addHttps = (sources: string[]) => [...sources, 'https:'];
+
+  // Apply environment-specific allowlist overrides
+  const overrides = getAllowlistOverrides(env.NODE_ENV);
+  Object.entries(overrides).forEach(([directive, sources]) => {
+    const targetKey = directive as keyof CSPAllowlist;
+    if (targetKey in allowlist && Array.isArray(sources)) {
+      allowlist[targetKey] = [...allowlist[targetKey], ...sources];
+    }
+  });
 
   // Detect and add service-specific allowlists
   if (env.NEXT_PUBLIC_CONVEX_URL) {
