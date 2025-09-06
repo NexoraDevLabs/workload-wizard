@@ -36,8 +36,7 @@ export async function withDbSpan<T>(
 
       // Best-effort Sentry capture
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const Sentry = require('@sentry/nextjs');
+        const Sentry = await import('@sentry/nextjs');
         Sentry.captureException(err);
       } catch {
         // Sentry not available or failed

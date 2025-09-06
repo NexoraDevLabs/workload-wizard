@@ -12,6 +12,7 @@ vi.mock('@opentelemetry/api', () => ({
           recordException: vi.fn(),
           end: vi.fn(),
         };
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return -- Mock span for testing
         return callback(span);
       }),
     })),

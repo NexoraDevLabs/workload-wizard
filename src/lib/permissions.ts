@@ -521,6 +521,7 @@ export function canViewAudit(
 export async function seedDefaultOrgRoles(organisationId: string) {
   // Idempotently ensure default roles for an org via Convex helper.
   const { ConvexHttpClient } = await import('convex/browser');
+  // @ts-expect-error - Deep type instantiation issue with circular imports
   const { api } = await import('../../convex/_generated/api');
   const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
   const res = await client.mutation(

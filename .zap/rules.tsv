@@ -1,0 +1,14 @@
+# ZAP Baseline Exclusions
+# Format: ruleId	ACTION	NOTE (justify + review-by)
+# 
+# Common exclusions for web applications:
+# - Cookie security flags on non-authenticated preview pages
+# - Cache-control headers on static assets served via CDN
+# - Content-Type sniffing on known safe file types
+#
+# Review these exclusions quarterly and remove when no longer applicable
+
+# ruleId	ACTION	NOTE (justify + review-by)
+10011	IGNORE	Cookie Without Secure Flag on non-auth preview; review-by=2025-12-31
+10015	IGNORE	Cache-control header on static assets via CDN; review-by=2025-12-31
+10021	IGNORE	Content-Type sniffing on known safe file types; review-by=2025-12-31

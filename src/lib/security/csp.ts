@@ -1,4 +1,5 @@
 import { getEnv } from '@/lib/env';
+import { getAllowlistOverrides } from '@/config/security/csp.allowlist';
 
 export type CSPMode = 'report-only' | 'enforce';
 
@@ -86,6 +87,7 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
 export function buildCsp(config: CSPConfig): string {
   const env = getEnv();
   const allowlist = buildAllowlist(env);
+  const isDevelopment = env.NODE_ENV === 'development';
 
   const directives: string[] = [
     // Core security directives
@@ -95,10 +97,16 @@ export function buildCsp(config: CSPConfig): string {
     "frame-ancestors 'none'",
 
     // Script sources with nonce and strict-dynamic
-    `script-src 'self' 'strict-dynamic' 'nonce-${config.nonce}' ${allowlist.scriptSrc.join(' ')}`,
+    // In development, allow 'unsafe-eval' for Next.js HMR and webpack
+    isDevelopment
+      ? `script-src 'self' 'unsafe-eval' 'strict-dynamic' 'nonce-${config.nonce}' ${allowlist.scriptSrc.join(' ')}`
+      : `script-src 'self' 'strict-dynamic' 'nonce-${config.nonce}' ${allowlist.scriptSrc.join(' ')}`,
 
     // Style sources with nonce
-    `style-src 'self' 'nonce-${config.nonce}' ${allowlist.styleSrc.join(' ')}`,
+    // In development, allow 'unsafe-inline' for Next.js CSS-in-JS
+    isDevelopment
+      ? `style-src 'self' 'unsafe-inline' 'nonce-${config.nonce}' ${allowlist.styleSrc.join(' ')}`
+      : `style-src 'self' 'nonce-${config.nonce}' ${allowlist.styleSrc.join(' ')}`,
 
     // Image sources
     `img-src ${allowlist.imgSrc.join(' ')}`,
@@ -107,7 +115,10 @@ export function buildCsp(config: CSPConfig): string {
     `font-src ${allowlist.fontSrc.join(' ')}`,
 
     // Connect sources (XHR, fetch, WebSocket)
-    `connect-src ${allowlist.connectSrc.join(' ')} wss:`,
+    // In development, allow localhost for Next.js dev server
+    isDevelopment
+      ? `connect-src ${allowlist.connectSrc.join(' ')} wss: ws://localhost:* http://localhost:*`
+      : `connect-src ${allowlist.connectSrc.join(' ')} wss:`,
 
     // Frame sources
     `frame-src ${allowlist.frameSrc.join(' ')}`,
@@ -121,8 +132,8 @@ export function buildCsp(config: CSPConfig): string {
     // Manifest sources
     `manifest-src ${allowlist.manifestSrc.join(' ')}`,
 
-    // Upgrade insecure requests
-    'upgrade-insecure-requests',
+    // Upgrade insecure requests (disabled in development)
+    ...(isDevelopment ? [] : ['upgrade-insecure-requests']),
   ];
 
   // Add reporting directives
@@ -146,6 +157,15 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
 
   // Add HTTPS fallback for all directives
   const addHttps = (sources: string[]) => [...sources, 'https:'];
+
+  // Apply environment-specific allowlist overrides
+  const overrides = getAllowlistOverrides(env.NODE_ENV);
+  Object.entries(overrides).forEach(([directive, sources]) => {
+    const targetKey = directive as keyof CSPAllowlist;
+    if (targetKey in allowlist && Array.isArray(sources)) {
+      allowlist[targetKey] = [...allowlist[targetKey], ...sources];
+    }
+  });
 
   // Detect and add service-specific allowlists
   if (env.NEXT_PUBLIC_CONVEX_URL) {
@@ -181,6 +201,16 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
 
   // Featurebase widget
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.featurebase);
+
+  // Add development-specific sources
+  if (env.NODE_ENV === 'development') {
+    // Allow localhost for Next.js development server
+    allowlist.connectSrc.push('http://localhost:*', 'ws://localhost:*');
+    allowlist.scriptSrc.push('http://localhost:*');
+    allowlist.styleSrc.push('http://localhost:*');
+    allowlist.imgSrc.push('http://localhost:*');
+    allowlist.fontSrc.push('http://localhost:*');
+  }
 
   // Add HTTPS fallback for all directives
   return {

@@ -60,6 +60,15 @@ export default defineSchema({
         jobRole: v.optional(v.string()),
         department: v.optional(v.string()),
         phone: v.optional(v.string()),
+        customRole: v.optional(v.string()), // Legacy field from old onboarding
+        email: v.optional(v.string()), // Legacy field from old onboarding
+        firstName: v.optional(v.string()), // Legacy field from old onboarding
+        lastName: v.optional(v.string()), // Legacy field from old onboarding
+        newsletter: v.optional(v.boolean()), // Legacy field from old onboarding
+        notifications: v.optional(v.boolean()), // Legacy field from old onboarding
+        organization: v.optional(v.string()), // Legacy field from old onboarding
+        role: v.optional(v.string()), // Legacy field from old onboarding
+        newPassword: v.optional(v.string()), // Legacy field from old onboarding
         preferences: v.optional(
           v.object({
             theme: v.optional(v.string()),

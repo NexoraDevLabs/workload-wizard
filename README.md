@@ -18,6 +18,7 @@
     - [E2E Tests](#e2e-tests)
     - [Unit Tests](#unit-tests)
   - [📚 **Documentation**](#-documentation)
+  - [🔒 **Security**](#-security)
   - [🔧 **Development**](#-development)
     - [Branching & CI](#branching--ci)
     - [Code Quality](#code-quality)
@@ -100,6 +101,17 @@ A comprehensive workload management application for educational institutions, bu
   - Local dev secrets in `.env.local` only (never commit).
 
 * Preview deploys are restricted to collaborators via Vercel previews.
+
+### **Security Scanning**
+
+- **ZAP Nightly Baseline**: [![ZAP Nightly](https://github.com/sammcnab/workload-wizard/actions/workflows/zap-nightly.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/zap-nightly.yml) — Automated OWASP ZAP security scans against staging
+  - Runs nightly at 01:00 UTC
+  - Results available in [Code Scanning alerts](https://github.com/sammcnab/workload-wizard/security/code-scanning)
+  - Triage process: [ZAP Triage SOP](docs/handbook/security/zap-triage.md)
+- **Content Security Policy (CSP)**: [![CSP Check](https://github.com/sammcnab/workload-wizard/actions/workflows/csp-check.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/csp-check.yml) — Automated CSP header validation
+  - Validates CSP headers in both report-only and enforce modes
+  - Monitors violations via admin dashboard at `/admin/csp`
+  - Configuration guide: [CSP Security Guide](docs/engineering/security/csp.md)
 
 ## 🚀 **Quick Start**
 
@@ -194,6 +206,20 @@ pnpm test:watch
   _Removed: Feature Flags_
 - **Testing**: `./docs/TESTING_PROCEDURES.md` — Testing guidelines and procedures
 
+## 📖 **Operations Handbook**
+
+- **[Operations Handbook](docs/handbook/operations/README.md)** — Standard Operating Procedures for security, incidents, secret rotation, and CI failures
+- **[Observability Handbook](docs/handbook/observability/README.md)** — Comprehensive guides for monitoring, tracing, dashboards, and alerting
+
+## 🔒 **Security**
+
+- **[Security Overview](docs/engineering/security/_index.md)** — Core security topics and runbooks
+  - **Headers & HTTPS** — HSTS, TLS, referrer-policy, cookies, CORS
+  - **Content Security Policy (CSP)** — Report-only to enforce implementation
+  - **Runbooks** — Vulnerability intake, secret rotation, incident response, CI failure triage
+  - **Scanning** — ZAP nightly baseline, Dependabot/CodeQL alerts
+  - **Disaster Recovery** — DR plan, backups & restore tests
+
 ## 🔧 **Operations**
 
 ### **Disaster Recovery (DR)**
@@ -247,6 +273,20 @@ pnpm lint
 # Type check
 pnpm typecheck
 ```
+
+### Type Safety
+
+We maintain strict TypeScript safety with elevated linting rules and comprehensive type checking. See our [TypeScript Safety Guidelines](docs/handbook/engineering/ts-safety.md) for:
+
+- Suppression guidelines and best practices
+- Migration strategies for `verbatimModuleSyntax`
+- Preferred alternatives to `any` types
+- Runtime validation patterns
+
+### Bundle Analysis
+
+We provide a CI job to generate static HTML bundle analysis. Run it via **Actions → Bundle Analysis** (or locally with `pnpm analyze`).  
+See **docs/handbook/engineering/bundle-analysis.md** for how to interpret the report.
 
 ### Database
 

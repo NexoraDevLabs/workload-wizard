@@ -1,0 +1,142 @@
+name: CSP Header Validation
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+jobs:
+  csp-validation:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        mode: [report-only, enforce]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set CSP mode
+        run: echo "CSP_MODE=${{ matrix.mode }}" >> $GITHUB_ENV
+
+      - name: Build application
+        run: pnpm build
+        env:
+          CSP_MODE: ${{ matrix.mode }}
+          NEXT_PUBLIC_CONVEX_URL: 'https://mock-convex-url.convex.cloud'
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_build_time_only'
+          CLERK_SECRET_KEY: 'sk_test_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+          NEXT_PUBLIC_POSTHOG_KEY: 'ph_mock'
+          NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client_mock'
+          FEATFLAG_STATSIG_SERVER_API_KEY: 'server_mock'
+
+      - name: Test CSP headers with static build
+        run: |
+          # Test CSP headers by building and checking the middleware directly
+          echo "🔍 Testing CSP headers for mode: ${{ matrix.mode }}"
+
+          # Set environment variables
+          export CSP_MODE="${{ matrix.mode }}"
+          export NODE_ENV="production"
+
+          # Create a simple test script to check CSP headers using tsx
+          cat > test-csp.ts << 'EOF'
+          import { buildCsp, getCSPMode, generateNonce } from './src/lib/security/csp';
+
+          try {
+            const nonce = generateNonce();
+            const cspMode = getCSPMode();
+            const cspPolicy = buildCsp({
+              nonce,
+              mode: cspMode,
+              reportUri: '/api/csp-report',
+              reportTo: '/api/csp-report'
+            });
+            
+            console.log('✅ CSP Policy generated successfully:');
+            console.log(`Mode: ${cspMode}`);
+            console.log(`Policy: ${cspPolicy}`);
+            console.log(`Nonce: ${nonce}`);
+            
+            // Validate policy structure
+            if (!cspPolicy.includes('default-src')) {
+              throw new Error('Missing default-src directive');
+            }
+            if (!cspPolicy.includes('script-src')) {
+              throw new Error('Missing script-src directive');
+            }
+            if (!cspPolicy.includes('style-src')) {
+              throw new Error('Missing style-src directive');
+            }
+            if (!cspPolicy.includes('nonce-')) {
+              throw new Error('Missing nonce in policy');
+            }
+            
+            if (process.env.CSP_MODE === 'report-only') {
+              if (!cspPolicy.includes('report-uri') && !cspPolicy.includes('report-to')) {
+                throw new Error('Missing reporting directives in report-only mode');
+              }
+            }
+            
+            console.log('🎉 CSP validation passed for', process.env.CSP_MODE, 'mode!');
+          } catch (error) {
+            console.error('❌ CSP validation failed:', error.message);
+            console.error('Stack:', error.stack);
+            process.exit(1);
+          }
+          EOF
+
+          # Run the test using tsx
+          npx tsx test-csp.ts
+        env:
+          CSP_MODE: ${{ matrix.mode }}
+          NEXT_PUBLIC_CONVEX_URL: 'https://mock-convex-url.convex.cloud'
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_build_time_only'
+          CLERK_SECRET_KEY: 'sk_test_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+          NEXT_PUBLIC_POSTHOG_KEY: 'ph_mock'
+          NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client_mock'
+          FEATFLAG_STATSIG_SERVER_API_KEY: 'server_mock'
+
+      - name: Generate CSP policy artifact
+        run: |
+          # Generate CSP policy for both modes and save as artifacts
+          echo "CSP Policy for ${{ matrix.mode }} mode:" > csp-policy-${{ matrix.mode }}.txt
+          echo "===========================================" >> csp-policy-${{ matrix.mode }}.txt
+          echo "" >> csp-policy-${{ matrix.mode }}.txt
+
+          # Re-run the test to capture policy output
+          npx tsx test-csp.ts >> csp-policy-${{ matrix.mode }}.txt 2>&1
+          echo "" >> csp-policy-${{ matrix.mode }}.txt
+          echo "Generated at: $(date)" >> csp-policy-${{ matrix.mode }}.txt
+        env:
+          CSP_MODE: ${{ matrix.mode }}
+          NODE_ENV: 'production'
+          NEXT_PUBLIC_CONVEX_URL: 'https://mock-convex-url.convex.cloud'
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_build_time_only'
+          CLERK_SECRET_KEY: 'sk_test_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+          NEXT_PUBLIC_POSTHOG_KEY: 'ph_mock'
+          NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client_mock'
+          FEATFLAG_STATSIG_SERVER_API_KEY: 'server_mock'
+
+      - name: Upload CSP policy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: csp-policy-${{ matrix.mode }}
+          path: csp-policy-${{ matrix.mode }}.txt
+          retention-days: 30

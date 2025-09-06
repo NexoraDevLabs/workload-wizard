@@ -2,8 +2,8 @@ name: Nightly DR Backup to R2
 
 on:
   schedule:
-    # 01:00 Europe/London (01:00 UTC) //TODO: CHANGE WHEN IN PROD TO DAILY
-    - cron: '0 1 * * 0'
+    # 02:00 Europe/London (01:00 UTC)
+    - cron: '0 1 * * *'
   workflow_dispatch:
     inputs:
       force_upload:
@@ -27,44 +27,26 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.15.0
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq zstd python3-pip
-          pip3 install awscli
+          sudo apt-get install -y awscli jq zstd
 
       - name: Install Convex CLI
         run: npm install -g convex
 
       - name: Create backup directory
-        run: mkdir -p backup/vercel backup/clerk
+        run: mkdir -p backup
 
       - name: Export Convex data
         run: |
-          convex export --prod --path backup/convex_snapshot.zip
+          convex export --prod --output backup/convex_snapshot.zip
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_PROD }}
 
@@ -165,23 +147,6 @@ jobs:
         if: github.event.inputs.force_upload != 'true'
         run: |
           # Download latest.json from R2 to check for deduplication
-          if [ -z "${{ secrets.R2_ENDPOINT }}" ]; then
-            echo "Warning: R2_ENDPOINT secret is not set, skipping deduplication check"
-            echo "SKIP_UPLOAD=false" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          if [ -z "${{ secrets.R2_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.R2_SECRET_ACCESS_KEY }}" ]; then
-            echo "Warning: R2 credentials not set, skipping deduplication check"
-            echo "SKIP_UPLOAD=false" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          # Configure AWS credentials for R2
-          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
-          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
-          export AWS_DEFAULT_REGION="auto"
-
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}" || echo "No previous backup found"
 
           if [ -f latest.json ]; then
@@ -202,24 +167,6 @@ jobs:
         if: env.SKIP_UPLOAD != 'true'
         run: |
           echo "Uploading archive to R2..."
-          echo "R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}"
-          echo "R2_BUCKET: ${{ secrets.R2_BUCKET }}"
-
-          if [ -z "${{ secrets.R2_ENDPOINT }}" ]; then
-            echo "Error: R2_ENDPOINT secret is not set or empty"
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.R2_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.R2_SECRET_ACCESS_KEY }}" ]; then
-            echo "Error: R2_ACCESS_KEY_ID or R2_SECRET_ACCESS_KEY secrets are not set"
-            exit 1
-          fi
-
-          # Configure AWS credentials for R2
-          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
-          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
-          export AWS_DEFAULT_REGION="auto"
-
           aws s3 cp "$ARCHIVE" "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           # Create/update latest.json

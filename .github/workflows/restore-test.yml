@@ -26,45 +26,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.15.0
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq zstd python3-pip
-          pip3 install awscli
+          sudo apt-get install -y awscli jq zstd
 
       - name: Install Convex CLI
         run: npm install -g convex
 
       - name: Get latest backup info
         run: |
-          # Configure AWS credentials for R2
-          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
-          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
-          export AWS_DEFAULT_REGION="auto"
-
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/latest.json" latest.json --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           if [ -f latest.json ]; then
@@ -87,12 +64,6 @@ jobs:
       - name: Download backup archive
         run: |
           echo "Downloading $ARCHIVE_KEY from R2..."
-
-          # Configure AWS credentials for R2
-          export AWS_ACCESS_KEY_ID="${{ secrets.R2_ACCESS_KEY_ID }}"
-          export AWS_SECRET_ACCESS_KEY="${{ secrets.R2_SECRET_ACCESS_KEY }}"
-          export AWS_DEFAULT_REGION="auto"
-
           aws s3 cp "s3://${{ secrets.R2_BUCKET }}/$ARCHIVE_KEY" "$ARCHIVE_KEY" --no-progress --endpoint-url "${{ secrets.R2_ENDPOINT }}"
 
           archive_size=$(stat -c%s "$ARCHIVE_KEY")
@@ -136,59 +107,42 @@ jobs:
 
           echo "✅ All required backup files present"
 
-      - name: Validate Convex backup (comprehensive test)
+      - name: Import to staging Convex
         run: |
-          echo "Validating Convex backup with comprehensive import test..."
+          echo "Importing Convex data to staging..."
           start_time=$(date +%s)
 
-          # Configure Convex for dev deployment
-          export CONVEX_DEPLOYMENT="${{ secrets.CONVEX_DEPLOYMENT_DEV }}"
-
-          # Create temporary backup of current dev data
-          echo "Step 1: Creating backup of current dev data..."
-          npx convex export --path restore/dev_backup_before_test.zip
-
-          # Import the production backup to test it works
-          echo "Step 2: Importing production backup to test compatibility..."
-          npx convex import --replace-all --yes restore/convex_snapshot.zip
-
-          # Verify the import worked by checking some basic data
-          echo "Step 3: Verifying imported data..."
-          npx convex run queries:getOrganisations --count 1 > /dev/null || echo "Warning: Could not verify organisations"
-          npx convex run queries:getUsers --count 1 > /dev/null || echo "Warning: Could not verify users"
-
-          # Restore original dev data
-          echo "Step 4: Restoring original dev data..."
-          npx convex import --replace-all --yes restore/dev_backup_before_test.zip
-
-          # Clean up temporary backup
-          rm -f restore/dev_backup_before_test.zip
+          npx convex import --replace restore/convex_snapshot.zip
 
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "RESTORE_DURATION=$duration" >> $GITHUB_ENV
-          echo "Comprehensive backup validation completed in ${duration}s"
+          echo "Import completed in ${duration}s"
         env:
-          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_DEV }}
-          CONVEX_DEPLOYMENT: ${{ secrets.CONVEX_DEPLOYMENT_DEV }}
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY_STAGING }}
 
-      - name: Test health endpoint (optional)
+      - name: Wait for Convex to be ready
         run: |
-          echo "Testing health endpoint (optional check for dry run)..."
+          echo "Waiting for Convex to be ready..."
+          sleep 30
 
-          # Try to get dev URL from environment or use a default pattern
-          if [ -n "${{ secrets.DEV_URL }}" ]; then
-            health_url="${{ secrets.DEV_URL }}/api/health"
+      - name: Test health endpoint
+        run: |
+          echo "Testing health endpoint..."
+
+          # Try to get staging URL from environment or use a default pattern
+          if [ -n "${{ secrets.STAGING_URL }}" ]; then
+            health_url="${{ secrets.STAGING_URL }}/api/health"
           else
-            # Fallback: construct dev URL from project name
-            health_url="https://${{ secrets.VERCEL_PROJECT }}-dev.vercel.app/api/health"
+            # Fallback: construct staging URL from project name
+            health_url="https://${{ secrets.VERCEL_PROJECT }}-staging.vercel.app/api/health"
           fi
 
           echo "Health URL: $health_url"
 
-          # Test health endpoint with retries (non-blocking for dry run)
-          for i in {1..3}; do
-            echo "Attempt $i/3..."
+          # Test health endpoint with retries
+          for i in {1..5}; do
+            echo "Attempt $i/5..."
             response=$(curl -s -w "%{http_code}" -o health_response.json "$health_url" || echo "000")
             
             if [ "$response" = "200" ]; then
@@ -196,13 +150,15 @@ jobs:
               cat health_response.json
               break
             else
-              echo "⚠️ Health check failed (HTTP $response) - continuing anyway since this is a dry run"
-              if [ $i -eq 3 ]; then
-                echo "Health check failed after 3 attempts, but continuing since this is a dry run"
-              fi
-              sleep 5
+              echo "Health check failed (HTTP $response), retrying in 10s..."
+              sleep 10
             fi
           done
+
+          if [ "$response" != "200" ]; then
+            echo "❌ Health check failed after 5 attempts"
+            exit 1
+          fi
 
       - name: Verify backup data integrity
         run: |
@@ -236,30 +192,24 @@ jobs:
 
       - name: Job Summary
         run: |
-          echo "## Weekly DR Backup Validation Summary (Dry Run)" >> $GITHUB_STEP_SUMMARY
+          echo "## Weekly DR Restore Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_STEP_SUMMARY
           echo "**Archive:** ${{ env.ARCHIVE_KEY }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Validation Duration:** ${{ env.RESTORE_DURATION }}s" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ✅ Backup Validated Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "**Restore Duration:** ${{ env.RESTORE_DURATION }}s" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Backup Contents Validated" >> $GITHUB_STEP_SUMMARY
+          echo "### Restored Data" >> $GITHUB_STEP_SUMMARY
           echo "| Component | Size |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|------|" >> $GITHUB_STEP_SUMMARY
           echo "| Convex Export | $(stat -c%s "restore/convex_snapshot.zip") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "| Vercel Env | $(stat -c%s "restore/vercel/env.json") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "| Clerk Users | $(stat -c%s "restore/clerk/users.min.json") bytes |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Validation Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Backup archive downloaded successfully" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Production backup successfully imported and tested" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Data queries verified after import" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Original dev data restored after testing" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Vercel environment variables extracted" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Clerk users data extracted" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Note" >> $GITHUB_STEP_SUMMARY
-          echo "This test temporarily imports production data to verify compatibility, then restores dev data." >> $GITHUB_STEP_SUMMARY
+          echo "### Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Staging environment health check passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Data integrity verification passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ RTO target met (< 2 hours)" >> $GITHUB_STEP_SUMMARY
 
       - name: Slack notification (on failure)
         if: failure()
