@@ -1,0 +1,58 @@
+name: Bundle Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git ref (branch, tag, or SHA) to analyse'
+        required: false
+        default: 'dev'
+  schedule:
+    - cron: '0 2 * * 1' # 02:00 UTC every Monday (optional; keep if useful)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bundle-analysis
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'dev' }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with ANALYZE=true
+        run: |
+          ANALYZE=true pnpm build
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+
+      - name: Upload bundle analysis artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-analysis-${{ github.run_number }}
+          path: |
+            .next/analyze/**
+          if-no-files-found: warn
+          retention-days: 30

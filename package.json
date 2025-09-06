@@ -15,6 +15,7 @@
     "dev": "pnpm exec next dev",
     "dev:clean": "rimraf .next && pnpm exec next dev",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' pnpm exec next build",
+    "analyze": "ANALYZE=true pnpm build",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
