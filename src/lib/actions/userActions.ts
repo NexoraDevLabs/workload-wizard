@@ -318,7 +318,9 @@ export async function listUsers() {
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData?.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
@@ -372,7 +374,9 @@ export async function deleteUser(userId: string) {
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData?.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
@@ -632,7 +636,9 @@ export async function getUsersByOrganisationId(organisationId: string) {
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
@@ -722,7 +728,9 @@ export async function deactivateUser(userId: string) {
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
@@ -808,7 +816,9 @@ export async function reactivateUser(userId: string) {
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
@@ -991,7 +1001,9 @@ export async function getAllUsersByOrganisationIdWithOverride(
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
@@ -1080,7 +1092,9 @@ export async function getAllOrganisations() {
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
     // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    const roles = currentUserData.publicMetadata.roles.filter(
+      (role): role is string => typeof role === 'string'
+    );
     currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);

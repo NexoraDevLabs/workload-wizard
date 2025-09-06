@@ -55,12 +55,16 @@ export default function CSPDashboard() {
   const availableDirectives = useMemo(() => {
     if (!recentReports || !Array.isArray(recentReports)) return [];
     const directives = new Set(
-      recentReports.map((r: unknown) => {
-        if (r && typeof r === 'object' && 'effectiveDirective' in r) {
-          return (r as { effectiveDirective: unknown }).effectiveDirective;
-        }
-        return null;
-      }).filter((directive): directive is string => typeof directive === 'string')
+      recentReports
+        .map((r: unknown) => {
+          if (r && typeof r === 'object' && 'effectiveDirective' in r) {
+            return (r as { effectiveDirective: unknown }).effectiveDirective;
+          }
+          return null;
+        })
+        .filter(
+          (directive): directive is string => typeof directive === 'string'
+        )
     );
     return Array.from(directives).sort();
   }, [recentReports]);
@@ -72,19 +76,22 @@ export default function CSPDashboard() {
     const filtered = recentReports.filter((report: unknown) => {
       if (!report || typeof report !== 'object') return false;
       const r = report as Record<string, unknown>;
-      
+
       const matchesSearch =
         !searchTerm ||
-        (typeof r.effectiveDirective === 'string' && r.effectiveDirective
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase())) ||
-        (typeof r.blockedURI === 'string' && r.blockedURI?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (typeof r.sourceFile === 'string' && r.sourceFile?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (typeof r.userAgent === 'string' && r.userAgent?.toLowerCase().includes(searchTerm.toLowerCase()));
+        (typeof r.effectiveDirective === 'string' &&
+          r.effectiveDirective
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase())) ||
+        (typeof r.blockedURI === 'string' &&
+          r.blockedURI?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (typeof r.sourceFile === 'string' &&
+          r.sourceFile?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (typeof r.userAgent === 'string' &&
+          r.userAgent?.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesDirective =
-        directiveFilter === 'all' ||
-        r.effectiveDirective === directiveFilter;
+        directiveFilter === 'all' || r.effectiveDirective === directiveFilter;
 
       return matchesSearch && matchesDirective;
     });
@@ -96,13 +103,17 @@ export default function CSPDashboard() {
       const reportB = b as Record<string, unknown>;
       switch (sortBy) {
         case 'timestamp':
-          return (Number(reportB.timestamp) || 0) - (Number(reportA.timestamp) || 0);
+          return (
+            (Number(reportB.timestamp) || 0) - (Number(reportA.timestamp) || 0)
+          );
         case 'directive':
           return String(reportA.effectiveDirective || '').localeCompare(
             String(reportB.effectiveDirective || '')
           );
         case 'uri':
-          return String(reportA.blockedURI || '').localeCompare(String(reportB.blockedURI || ''));
+          return String(reportA.blockedURI || '').localeCompare(
+            String(reportB.blockedURI || '')
+          );
         default:
           return 0;
       }
@@ -253,10 +264,11 @@ export default function CSPDashboard() {
           </Select>
         </div>
 
-        {filteredReports.length !== (Array.isArray(recentReports) ? recentReports.length : 0) && (
+        {filteredReports.length !==
+          (Array.isArray(recentReports) ? recentReports.length : 0) && (
           <div className="text-sm text-muted-foreground">
-            Showing {filteredReports.length} of {Array.isArray(recentReports) ? recentReports.length : 0}{' '}
-            violations
+            Showing {filteredReports.length} of{' '}
+            {Array.isArray(recentReports) ? recentReports.length : 0} violations
           </div>
         )}
       </div>
@@ -270,7 +282,9 @@ export default function CSPDashboard() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{String((summary as Record<string, unknown>)?.totalReports || 0)}</div>
+            <div className="text-2xl font-bold">
+              {String((summary as Record<string, unknown>)?.totalReports || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Last {timeRange} hours
             </p>
@@ -287,9 +301,16 @@ export default function CSPDashboard() {
           <CardContent>
             {(() => {
               const summaryData = summary as Record<string, unknown>;
-              const byDirective = summaryData?.byDirective as unknown[] | undefined;
-              if (!byDirective || !Array.isArray(byDirective) || byDirective.length === 0) return null;
-              
+              const byDirective = summaryData?.byDirective as
+                | unknown[]
+                | undefined;
+              if (
+                !byDirective ||
+                !Array.isArray(byDirective) ||
+                byDirective.length === 0
+              )
+                return null;
+
               return (
                 <ul className="text-sm space-y-1">
                   {byDirective
@@ -309,7 +330,9 @@ export default function CSPDashboard() {
                           <span className="truncate">
                             {String(i.directive || 'Unknown')}
                           </span>
-                          <Badge variant={getDirectiveColor(String(i.directive))}>
+                          <Badge
+                            variant={getDirectiveColor(String(i.directive))}
+                          >
                             {String(i.count || 0)}
                           </Badge>
                         </li>
@@ -335,9 +358,16 @@ export default function CSPDashboard() {
           <CardContent>
             {(() => {
               const summaryData = summary as Record<string, unknown>;
-              const byBlockedURI = summaryData?.byBlockedURI as unknown[] | undefined;
-              if (!byBlockedURI || !Array.isArray(byBlockedURI) || byBlockedURI.length === 0) return null;
-              
+              const byBlockedURI = summaryData?.byBlockedURI as
+                | unknown[]
+                | undefined;
+              if (
+                !byBlockedURI ||
+                !Array.isArray(byBlockedURI) ||
+                byBlockedURI.length === 0
+              )
+                return null;
+
               return (
                 <ul className="text-sm">
                   {byBlockedURI
@@ -349,8 +379,12 @@ export default function CSPDashboard() {
                           key={index}
                           className="flex justify-between items-center truncate"
                         >
-                          <span className="truncate">{String(i.uri || '')}</span>
-                          <Badge variant="secondary">{String(i.count || 0)}</Badge>
+                          <span className="truncate">
+                            {String(i.uri || '')}
+                          </span>
+                          <Badge variant="secondary">
+                            {String(i.count || 0)}
+                          </Badge>
                         </li>
                       );
                     })}
@@ -403,49 +437,54 @@ export default function CSPDashboard() {
               {filteredReports.map((report: unknown) => {
                 const r = report as Record<string, unknown>;
                 return (
-                <TableRow key={String(r._id || '')} className="hover:bg-muted/50">
-                  <TableCell className="font-mono text-sm">
-                    {formatTimestamp(Number(r.timestamp || 0))}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={getDirectiveColor(String(r.effectiveDirective || ''))}
-                    >
-                      {String(r.effectiveDirective || 'Unknown')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="max-w-xs">
-                    <div
-                      className="truncate"
-                      title={String(r.blockedURI || 'N/A')}
-                    >
-                      {String(r.blockedURI || 'N/A')}
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-xs">
-                    <div
-                      className="truncate"
-                      title={String(r.sourceFile || 'N/A')}
-                    >
-                      {String(r.sourceFile || 'N/A')}
-                    </div>
-                  </TableCell>
-                  {showDetails && (
+                  <TableRow
+                    key={String(r._id || '')}
+                    className="hover:bg-muted/50"
+                  >
+                    <TableCell className="font-mono text-sm">
+                      {formatTimestamp(Number(r.timestamp || 0))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={getDirectiveColor(
+                          String(r.effectiveDirective || '')
+                        )}
+                      >
+                        {String(r.effectiveDirective || 'Unknown')}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="max-w-xs">
                       <div
                         className="truncate"
-                        title={String(r.userAgent || 'N/A')}
+                        title={String(r.blockedURI || 'N/A')}
                       >
-                        {String(r.userAgent || 'N/A')}
+                        {String(r.blockedURI || 'N/A')}
                       </div>
                     </TableCell>
-                  )}
-                  {showDetails && (
-                    <TableCell className="font-mono text-sm">
-                      {String(r.ipAddress || 'N/A')}
+                    <TableCell className="max-w-xs">
+                      <div
+                        className="truncate"
+                        title={String(r.sourceFile || 'N/A')}
+                      >
+                        {String(r.sourceFile || 'N/A')}
+                      </div>
                     </TableCell>
-                  )}
-                </TableRow>
+                    {showDetails && (
+                      <TableCell className="max-w-xs">
+                        <div
+                          className="truncate"
+                          title={String(r.userAgent || 'N/A')}
+                        >
+                          {String(r.userAgent || 'N/A')}
+                        </div>
+                      </TableCell>
+                    )}
+                    {showDetails && (
+                      <TableCell className="font-mono text-sm">
+                        {String(r.ipAddress || 'N/A')}
+                      </TableCell>
+                    )}
+                  </TableRow>
                 );
               })}
             </TableBody>

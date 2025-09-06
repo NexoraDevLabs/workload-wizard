@@ -6,7 +6,21 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 export default [
   // Base
-  { ignores: ['node_modules/**', '.next/**', 'dist/**', 'next-env.d.ts', 'eslint.config.*', 'next.config.*', 'vite.config.*', 'tailwind.config.*', 'postcss.config.*', 'scripts/**', 'tests/**'] },
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'dist/**',
+      'next-env.d.ts',
+      'eslint.config.*',
+      'next.config.*',
+      'vite.config.*',
+      'tailwind.config.*',
+      'postcss.config.*',
+      'scripts/**',
+      'tests/**',
+    ],
+  },
   js.configs.recommended,
 
   // TypeScript (basic rules for all files)
@@ -82,7 +96,17 @@ export default [
 
   // Override for test files and scripts where console is intentional
   {
-    files: ['**/*.test.*', '**/tests/**', 'scripts/**', '**/test/**', '**/e2e/**', '**/playwright/**', '**/vite.config.*', '**/next.config.*', '**/eslint.config.*'],
+    files: [
+      '**/*.test.*',
+      '**/tests/**',
+      'scripts/**',
+      '**/test/**',
+      '**/e2e/**',
+      '**/playwright/**',
+      '**/vite.config.*',
+      '**/next.config.*',
+      '**/eslint.config.*',
+    ],
     languageOptions: {
       globals: {
         console: 'readonly',
