@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* eslint-disable no-undef */
+ 
 
 import { execSync } from 'node:child_process';
 import { globby } from 'globby';

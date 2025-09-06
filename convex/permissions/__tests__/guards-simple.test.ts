@@ -6,7 +6,7 @@ import {
   requireOrgPermission,
 } from '../guards';
 import type { PermissionContext, UserRole, SystemPermission } from '../types';
-import { mockRoleId, mockOrganisationId } from './test-utils';
+import { mockRoleId, mockOrganisationId } from './testUtils';
 
 describe('guards', () => {
   describe('assertHasPermission', () => {

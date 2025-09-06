@@ -9,7 +9,7 @@ import {
   policies,
 } from '../rules';
 import type { PermissionContext } from '../types';
-import { mockOrganisationId } from './test-utils';
+import { mockOrganisationId } from './testUtils';
 
 describe('rules', () => {
   describe('canPerformAction', () => {
