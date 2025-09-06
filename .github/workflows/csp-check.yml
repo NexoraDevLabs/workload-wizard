@@ -51,18 +51,13 @@ jobs:
           # Test CSP headers by building and checking the middleware directly
           echo "🔍 Testing CSP headers for mode: ${{ matrix.mode }}"
           
+          # Set environment variables
+          export CSP_MODE="${{ matrix.mode }}"
+          export NODE_ENV="production"
+          
           # Create a simple test script to check CSP headers using tsx
-          cat > test-csp.mjs << 'EOF'
-          import { execSync } from 'child_process';
-          import { writeFileSync, unlinkSync } from 'fs';
-          
-          // Create a TypeScript test file
-          const testScript = `
+          cat > test-csp.ts << 'EOF'
           import { buildCsp, getCSPMode, generateNonce } from './src/lib/security/csp';
-          
-          // Mock environment
-          process.env.CSP_MODE = '${{ matrix.mode }}';
-          process.env.NODE_ENV = 'production';
           
           try {
             const nonce = generateNonce();
@@ -75,9 +70,9 @@ jobs:
             });
             
             console.log('✅ CSP Policy generated successfully:');
-            console.log(\`Mode: \${cspMode}\`);
-            console.log(\`Policy: \${cspPolicy}\`);
-            console.log(\`Nonce: \${nonce}\`);
+            console.log(`Mode: ${cspMode}`);
+            console.log(`Policy: ${cspPolicy}`);
+            console.log(`Nonce: ${nonce}`);
             
             // Validate policy structure
             if (!cspPolicy.includes('default-src')) {
@@ -93,37 +88,22 @@ jobs:
               throw new Error('Missing nonce in policy');
             }
             
-            if ('${{ matrix.mode }}' === 'report-only') {
+            if (process.env.CSP_MODE === 'report-only') {
               if (!cspPolicy.includes('report-uri') && !cspPolicy.includes('report-to')) {
                 throw new Error('Missing reporting directives in report-only mode');
               }
             }
             
-            console.log('🎉 CSP validation passed for ${{ matrix.mode }} mode!');
+            console.log('🎉 CSP validation passed for', process.env.CSP_MODE, 'mode!');
           } catch (error) {
             console.error('❌ CSP validation failed:', error.message);
+            console.error('Stack:', error.stack);
             process.exit(1);
-          }
-          `;
-          
-          // Write the TypeScript test file
-          writeFileSync('test-csp.ts', testScript);
-          
-          try {
-            // Run the test using tsx
-            execSync('npx tsx test-csp.ts', { stdio: 'inherit' });
-          } finally {
-            // Clean up
-            try {
-              unlinkSync('test-csp.ts');
-            } catch (e) {
-              // Ignore cleanup errors
-            }
           }
           EOF
           
-          # Run the test
-          node test-csp.mjs
+          # Run the test using tsx
+          npx tsx test-csp.ts
         env:
           CSP_MODE: ${{ matrix.mode }}
           NEXT_PUBLIC_CONVEX_URL: 'https://mock-convex-url.convex.cloud'
