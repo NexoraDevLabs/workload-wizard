@@ -25,8 +25,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
   override componentDidCatch(error: Error, info: React.ErrorInfo) {
     // Lazy import to avoid client bundle cost when Sentry disabled
     void import('../../lib/monitoring')
-      .then(({ captureUIException }) => {
-        captureUIException(error, {
+      .then(async ({ captureUIException }) => {
+        await captureUIException(error, {
           componentStack: info.componentStack || undefined,
           contextTag: this.props.contextTag,
         });

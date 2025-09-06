@@ -6,17 +6,17 @@ type CaptureContext = {
   extras?: Record<string, unknown>;
 };
 
-export function captureUIException(
+export async function captureUIException(
   error: unknown,
   ctx: CaptureContext = {}
-): void {
+): Promise<void> {
   // Guard unknown → Error
   const err = error instanceof Error ? error : new Error(String(error));
   // Runtime feature detection — only load if available/configured
   // This file must not throw in non-Sentry environments.
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
-    const Sentry = require('@sentry/nextjs') as typeof import('@sentry/nextjs');
+    // Dynamic import for optional dependency
+    const Sentry = await import('@sentry/nextjs');
     if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return;
     Sentry.captureException(err, (scope) => {
       if (ctx.contextTag) scope.setTag('ui.context', ctx.contextTag);

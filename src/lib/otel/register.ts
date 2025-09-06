@@ -2,7 +2,7 @@ import { trace } from '@opentelemetry/api';
 
 let isInitialized = false;
 
-export function registerOTel() {
+export async function registerOTel() {
   // Safe to run multiple times; idempotent.
   if (process.env.NEXT_RUNTIME !== 'nodejs' || isInitialized) {
     return;
@@ -10,11 +10,10 @@ export function registerOTel() {
 
   try {
     // Initialize Sentry Performance if DSN is present
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Sentry = require('@sentry/nextjs');
+    const Sentry = await import('@sentry/nextjs');
 
     Sentry.init({
-      dsn: process.env.SENTRY_DSN,
+      dsn: process.env.SENTRY_DSN || '',
       tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE ?? '0.2'),
       profilesSampleRate: Number(
         process.env.SENTRY_PROFILES_SAMPLE_RATE ?? '0.0'
@@ -22,12 +21,14 @@ export function registerOTel() {
       enabled:
         Boolean(process.env.SENTRY_DSN) && process.env.NODE_ENV !== 'test',
       environment: process.env.NODE_ENV,
-      beforeSend(event: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return -- justified: Sentry callback types
+      beforeSend(event: any, _hint: any) {
         // Add custom attributes to all events
         if (event && typeof event === 'object' && 'tags' in event) {
           (event as { tags: Record<string, unknown> }).tags.runtime =
             process.env.NEXT_RUNTIME ?? 'node';
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- justified: Sentry callback return type
         return event;
       },
     });

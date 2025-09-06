@@ -183,8 +183,9 @@ export async function POST(request: NextRequest) {
     if (originalPolicy) reportData.originalPolicy = originalPolicy;
 
     // Store the report
+    // @ts-expect-error - Type instantiation is excessively deep due to Convex type inference
     if (convex && api.csp?.addReport) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- justified: Convex mutation type inference; tracked in #TODO
       await convex.mutation(api.csp.addReport as any, reportData);
     }
 

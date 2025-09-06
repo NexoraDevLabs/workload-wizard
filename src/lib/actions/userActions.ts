@@ -317,7 +317,9 @@ export async function listUsers() {
     currentUserData?.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData?.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
@@ -369,7 +371,9 @@ export async function deleteUser(userId: string) {
     currentUserData?.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData?.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
@@ -627,7 +631,9 @@ export async function getUsersByOrganisationId(organisationId: string) {
     currentUserData.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
@@ -715,7 +721,9 @@ export async function deactivateUser(userId: string) {
     currentUserData.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
@@ -799,7 +807,9 @@ export async function reactivateUser(userId: string) {
     currentUserData.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
@@ -980,7 +990,9 @@ export async function getAllUsersByOrganisationIdWithOverride(
     currentUserData.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
@@ -1067,7 +1079,9 @@ export async function getAllOrganisations() {
     currentUserData.publicMetadata?.roles &&
     Array.isArray(currentUserData.publicMetadata.roles)
   ) {
-    currentUserRoles.push(...currentUserData.publicMetadata.roles);
+    // Type guard to ensure all elements are strings
+    const roles = currentUserData.publicMetadata.roles.filter((role): role is string => typeof role === 'string');
+    currentUserRoles.push(...roles);
   } else if (currentUserData.publicMetadata?.role) {
     currentUserRoles.push(currentUserData.publicMetadata.role as string);
   }
