@@ -33,7 +33,7 @@ jobs:
           cmd_options: '-a'
 
       - name: Create SARIF from ZAP results
-        uses: SvanBoxel/zaproxy-to-ghas@v1
+        uses: SvanBoxel/zaproxy-to-ghas@main
 
       - name: Upload SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
