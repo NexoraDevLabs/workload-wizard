@@ -2,7 +2,7 @@ name: ZAP Nightly Baseline
 
 on:
   schedule:
-    - cron: "0 1 * * *"   # 01:00 UTC nightly
+    - cron: '0 1 * * *' # 01:00 UTC nightly
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
           rules_file_name: .zap/rules.tsv
           artifact_name: zap_scan
           allow_issue_writing: false
-          cmd_options: "-a"
+          cmd_options: '-a'
 
       - name: Create SARIF from ZAP results
         uses: SvanBoxel/zaproxy-to-ghas@v1
