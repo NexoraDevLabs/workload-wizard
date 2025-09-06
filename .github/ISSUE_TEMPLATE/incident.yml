@@ -1,0 +1,128 @@
+name: 🚨 Incident Report
+description: Report a production incident or service outage
+title: "[INCIDENT] "
+labels: ["type:incident", "priority:high"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Incident Report
+        
+        Use this template to report production incidents, service outages, or significant service degradation affecting WorkloadWizard.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity Level
+      description: What is the severity of this incident?
+      options:
+        - SEV-1 - Critical (complete service outage, data breach)
+        - SEV-2 - High (significant service degradation)
+        - SEV-3 - Medium (limited service impact)
+        - SEV-4 - Low (minimal user impact)
+    validations:
+      required: true
+
+  - type: input
+    id: start_time
+    attributes:
+      label: Incident Start Time
+      description: When did the incident begin? (UTC)
+      placeholder: "2024-01-15 14:30:00 UTC"
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact Description
+      description: Describe the impact on users and services
+      placeholder: |
+        - How many users are affected?
+        - What functionality is unavailable?
+        - What is the business impact?
+        - Any error messages users are seeing?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: systems_affected
+    attributes:
+      label: Systems Affected
+      description: Which systems are experiencing issues?
+      options:
+        - label: Vercel (frontend deployment)
+        - label: Convex (database/backend)
+        - label: Clerk (authentication)
+        - label: Upstash/Redis (caching)
+        - label: Statsig (feature flags)
+        - label: GitHub Actions (CI/CD)
+        - label: Other (specify in description)
+
+  - type: input
+    id: commander
+    attributes:
+      label: Incident Commander
+      description: Who is leading the incident response?
+      placeholder: "@username or name"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Incident Description
+      description: Detailed description of what happened
+      placeholder: |
+        - What was the first indication of the problem?
+        - What symptoms are you observing?
+        - Any error messages or logs?
+        - What was the last known good state?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actions_taken
+    attributes:
+      label: Actions Taken So Far
+      description: What steps have been taken to investigate or resolve the incident?
+      placeholder: |
+        - Investigation steps taken
+        - Mitigation attempts
+        - People contacted
+        - Tools used
+
+  - type: textarea
+    id: comms_log
+    attributes:
+      label: Communication Log
+      description: Record of communications with stakeholders
+      placeholder: |
+        - Internal team notifications
+        - External status page updates
+        - Stakeholder communications
+        - Timeline of communications
+
+  - type: textarea
+    id: next_steps
+    attributes:
+      label: Next Steps
+      description: What are the planned next steps?
+      placeholder: |
+        - Investigation priorities
+        - Mitigation strategies
+        - Communication plans
+        - Escalation if needed
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional Information
+      description: Any other relevant information
+      placeholder: |
+        - Links to monitoring dashboards
+        - Screenshots of errors
+        - Related issues or PRs
+        - Any other context

@@ -1,0 +1,151 @@
+name: 🔧 CI Failure
+description: Report a CI/CD pipeline failure that needs investigation
+title: "[CI] "
+labels: ["ci", "priority:medium"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## CI Failure Report
+        
+        Use this template to report CI/CD pipeline failures that need investigation and resolution.
+
+  - type: dropdown
+    id: failure_type
+    attributes:
+      label: Failure Type
+      description: What type of CI failure occurred?
+      options:
+        - Build failure (TypeScript, ESLint, formatting)
+        - Test failure (unit, integration, E2E)
+        - Deployment failure (Vercel, Convex)
+        - Security scan failure (CodeQL, Semgrep)
+        - Dependency check failure
+        - Lint failure
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this failure?
+      options:
+        - P1 - Blocking (prevents all development)
+        - P2 - Non-blocking (affects specific features)
+        - P3 - Cosmetic (minor issues)
+        - Flaky (intermittent failure)
+    validations:
+      required: true
+
+  - type: input
+    id: failing_job
+    attributes:
+      label: Failing Job/Workflow
+      description: Name of the failing GitHub Actions job or workflow
+      placeholder: "e.g., 'CI', 'E2E Tests', 'Deploy to Staging'"
+    validations:
+      required: true
+
+  - type: input
+    id: commit_hash
+    attributes:
+      label: Commit Hash
+      description: Git commit hash where the failure occurred
+      placeholder: "e.g., abc123def456"
+    validations:
+      required: true
+
+  - type: input
+    id: logs_link
+    attributes:
+      label: Logs Link
+      description: Link to the failing workflow run logs
+      placeholder: "https://github.com/owner/repo/actions/runs/1234567890"
+    validations:
+      required: true
+
+  - type: textarea
+    id: error_message
+    attributes:
+      label: Error Message
+      description: Copy the main error message from the logs
+      placeholder: |
+        ```
+        Error: TypeScript compilation failed
+        src/components/Button.tsx:15:5 - error TS2322: Type 'string' is not assignable to type 'number'
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: suspected_cause
+    attributes:
+      label: Suspected Cause
+      description: What do you think caused this failure?
+      placeholder: |
+        - Recent code changes
+        - Dependency updates
+        - Configuration changes
+        - Environment issues
+        - Flaky test
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: action_taken
+    attributes:
+      label: Action Taken
+      description: What steps have you taken to investigate or fix this?
+      placeholder: |
+        - Re-ran the job
+        - Checked recent changes
+        - Reviewed logs
+        - Attempted local fix
+        - Escalated to team member
+        - Other actions
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Reproduction Steps
+      description: How can this failure be reproduced?
+      placeholder: |
+        1. Checkout commit abc123def456
+        2. Run 'pnpm install'
+        3. Run 'pnpm test'
+        4. Observe failure in Button.test.tsx
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What is the impact of this failure?
+      placeholder: |
+        - Blocks merging to main/dev
+        - Affects specific feature development
+        - Prevents deployment
+        - Cosmetic issue only
+        - Other impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional Information
+      description: Any other relevant information
+      placeholder: |
+        - Related PRs or issues
+        - Screenshots of errors
+        - Local environment details
+        - Recent changes that might be related
+        - Any other context

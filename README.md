@@ -194,6 +194,10 @@ pnpm test:watch
   _Removed: Feature Flags_
 - **Testing**: `./docs/TESTING_PROCEDURES.md` — Testing guidelines and procedures
 
+## 📖 **Operations Handbook**
+
+- **[Operations Handbook](docs/handbook/operations/README.md)** — Standard Operating Procedures for security, incidents, secret rotation, and CI failures
+
 ## 🔧 **Operations**
 
 ### **Disaster Recovery (DR)**
