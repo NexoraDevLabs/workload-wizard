@@ -39,18 +39,66 @@ jobs:
         run: pnpm build
         env:
           CSP_MODE: ${{ matrix.mode }}
+          NEXT_PUBLIC_CONVEX_URL: "https://mock-convex-url.convex.cloud"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_mock"
+          CLERK_SECRET_KEY: "sk_test_mock"
+          NEXT_PUBLIC_POSTHOG_KEY: "ph_mock"
+          NEXT_PUBLIC_STATSIG_CLIENT_KEY: "client_mock"
+          FEATFLAG_STATSIG_SERVER_API_KEY: "server_mock"
 
       - name: Start application in background
         run: |
-          pnpm start &
-          sleep 10
+          # Set required environment variables
+          export NODE_ENV=production
+          export PORT=3000
+          export HOSTNAME=localhost
+          
+          # Start the server in background
+          nohup pnpm start > server.log 2>&1 &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          
+          # Give server time to start
+          sleep 15
+          
+          # Check if server is running
+          if ps -p $SERVER_PID > /dev/null; then
+            echo "✅ Server started with PID $SERVER_PID"
+          else
+            echo "❌ Server failed to start"
+            cat server.log
+            exit 1
+          fi
         env:
           CSP_MODE: ${{ matrix.mode }}
+          NEXT_PUBLIC_CONVEX_URL: "https://mock-convex-url.convex.cloud"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_mock"
+          CLERK_SECRET_KEY: "sk_test_mock"
+          NEXT_PUBLIC_POSTHOG_KEY: "ph_mock"
+          NEXT_PUBLIC_STATSIG_CLIENT_KEY: "client_mock"
+          FEATFLAG_STATSIG_SERVER_API_KEY: "server_mock"
 
       - name: Validate CSP headers
         run: |
-          # Wait for server to be ready
-          timeout 30 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 1; done'
+          # Wait for server to be ready with better error handling
+          echo "🔍 Waiting for server to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Server is ready after ${i} seconds"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Server failed to respond after 30 seconds"
+              echo "Server logs:"
+              cat server.log
+              echo "Checking if server process is running:"
+              ps aux | grep -E "(next|node)" | grep -v grep
+              echo "Checking port 3000:"
+              netstat -tlnp | grep 3000 || lsof -i :3000 || true
+              exit 1
+            fi
+            sleep 1
+          done
 
           # Check CSP headers
           echo "🔍 Checking CSP headers for mode: ${{ matrix.mode }}"
@@ -176,4 +224,16 @@ jobs:
           retention-days: 30
 
       - name: Stop application
-        run: pkill -f "next start" || true
+        run: |
+          if [ -n "$SERVER_PID" ]; then
+            echo "Stopping server with PID $SERVER_PID"
+            kill $SERVER_PID || true
+            sleep 2
+            if ps -p $SERVER_PID > /dev/null; then
+              echo "Force killing server"
+              kill -9 $SERVER_PID || true
+            fi
+          else
+            echo "No server PID found, using pkill"
+            pkill -f "next start" || true
+          fi
