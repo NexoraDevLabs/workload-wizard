@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     if (originalPolicy) reportData.originalPolicy = originalPolicy;
 
     // Store the report
-    if (convex && api.csp && api.csp.addReport) {
+    if (convex && api.csp?.addReport) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await convex.mutation(api.csp.addReport as any, reportData);
     }
