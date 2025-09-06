@@ -342,6 +342,7 @@ export async function listUsers() {
 
   try {
     // Get users from Convex
+    // @ts-expect-error - Type instantiation is excessively deep due to Convex type inference
     const convexUsers = await getConvexClient().query(api.users.list, {});
 
     // Transform to match the expected interface
