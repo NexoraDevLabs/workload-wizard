@@ -101,6 +101,13 @@ A comprehensive workload management application for educational institutions, bu
 
 * Preview deploys are restricted to collaborators via Vercel previews.
 
+### **Security Scanning**
+
+- **ZAP Nightly Baseline**: [![ZAP Nightly](https://github.com/sammcnab/workload-wizard/actions/workflows/zap-nightly.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/zap-nightly.yml) — Automated OWASP ZAP security scans against staging
+  - Runs nightly at 01:00 UTC
+  - Results available in [Code Scanning alerts](https://github.com/sammcnab/workload-wizard/security/code-scanning)
+  - Triage process: [ZAP Triage SOP](docs/handbook/security/zap-triage.md)
+
 ## 🚀 **Quick Start**
 
 ### Prerequisites
