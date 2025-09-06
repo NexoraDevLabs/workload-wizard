@@ -51,10 +51,14 @@ jobs:
           # Test CSP headers by building and checking the middleware directly
           echo "🔍 Testing CSP headers for mode: ${{ matrix.mode }}"
           
-          # Create a simple test script to check CSP headers
+          # Create a simple test script to check CSP headers using tsx
           cat > test-csp.mjs << 'EOF'
-          import { buildCsp, getCSPMode } from './src/lib/security/csp.js';
-          import { generateNonce } from './src/lib/security/csp.js';
+          import { execSync } from 'child_process';
+          import { writeFileSync, unlinkSync } from 'fs';
+          
+          // Create a TypeScript test file
+          const testScript = `
+          import { buildCsp, getCSPMode, generateNonce } from './src/lib/security/csp';
           
           // Mock environment
           process.env.CSP_MODE = '${{ matrix.mode }}';
@@ -71,9 +75,9 @@ jobs:
             });
             
             console.log('✅ CSP Policy generated successfully:');
-            console.log(`Mode: ${cspMode}`);
-            console.log(`Policy: ${cspPolicy}`);
-            console.log(`Nonce: ${nonce}`);
+            console.log(\`Mode: \${cspMode}\`);
+            console.log(\`Policy: \${cspPolicy}\`);
+            console.log(\`Nonce: \${nonce}\`);
             
             // Validate policy structure
             if (!cspPolicy.includes('default-src')) {
@@ -99,6 +103,22 @@ jobs:
           } catch (error) {
             console.error('❌ CSP validation failed:', error.message);
             process.exit(1);
+          }
+          `;
+          
+          // Write the TypeScript test file
+          writeFileSync('test-csp.ts', testScript);
+          
+          try {
+            // Run the test using tsx
+            execSync('npx tsx test-csp.ts', { stdio: 'inherit' });
+          } finally {
+            // Clean up
+            try {
+              unlinkSync('test-csp.ts');
+            } catch (e) {
+              // Ignore cleanup errors
+            }
           }
           EOF
           
