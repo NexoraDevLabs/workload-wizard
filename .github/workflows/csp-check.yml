@@ -9,57 +9,57 @@ on:
 jobs:
   csp-validation:
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         mode: [report-only, enforce]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'pnpm'
-          
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.15.0
-          
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        
+
       - name: Set CSP mode
         run: echo "CSP_MODE=${{ matrix.mode }}" >> $GITHUB_ENV
-        
+
       - name: Build application
         run: pnpm build
         env:
           CSP_MODE: ${{ matrix.mode }}
-          
+
       - name: Start application in background
         run: |
           pnpm start &
           sleep 10
         env:
           CSP_MODE: ${{ matrix.mode }}
-          
+
       - name: Validate CSP headers
         run: |
           # Wait for server to be ready
           timeout 30 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 1; done'
-          
+
           # Check CSP headers
           echo "🔍 Checking CSP headers for mode: ${{ matrix.mode }}"
-          
+
           # Get headers
           HEADERS=$(curl -s -I http://localhost:3000)
           echo "Response headers:"
           echo "$HEADERS"
-          
+
           # Check for correct CSP header based on mode
           if [ "${{ matrix.mode }}" = "enforce" ]; then
             if echo "$HEADERS" | grep -q "Content-Security-Policy:"; then
@@ -90,23 +90,23 @@ jobs:
               echo "✅ Content-Security-Policy header correctly absent (report-only mode)"
             fi
           fi
-          
+
           # Extract and validate CSP policy
           if [ "${{ matrix.mode }}" = "enforce" ]; then
             CSP_POLICY=$(echo "$HEADERS" | grep "Content-Security-Policy:" | cut -d: -f2- | xargs)
           else
             CSP_POLICY=$(echo "$HEADERS" | grep "Content-Security-Policy-Report-Only:" | cut -d: -f2- | xargs)
           fi
-          
+
           echo "📋 CSP Policy:"
           echo "$CSP_POLICY"
-          
+
           # Basic policy validation
           if [ -z "$CSP_POLICY" ]; then
             echo "❌ CSP policy is empty"
             exit 1
           fi
-          
+
           # Check for required directives
           if echo "$CSP_POLICY" | grep -q "default-src"; then
             echo "✅ default-src directive found"
@@ -114,21 +114,21 @@ jobs:
             echo "❌ default-src directive missing"
             exit 1
           fi
-          
+
           if echo "$CSP_POLICY" | grep -q "script-src"; then
             echo "✅ script-src directive found"
           else
             echo "❌ script-src directive missing"
             exit 1
           fi
-          
+
           if echo "$CSP_POLICY" | grep -q "style-src"; then
             echo "✅ style-src directive found"
           else
             echo "❌ style-src directive missing"
             exit 1
           fi
-          
+
           # Check for nonce in script-src and style-src
           if echo "$CSP_POLICY" | grep -q "nonce-"; then
             echo "✅ nonce found in policy"
@@ -136,7 +136,7 @@ jobs:
             echo "❌ nonce missing from policy"
             exit 1
           fi
-          
+
           # Check for reporting directives in report-only mode
           if [ "${{ matrix.mode }}" = "report-only" ]; then
             if echo "$CSP_POLICY" | grep -q "report-uri\|report-to"; then
@@ -146,16 +146,16 @@ jobs:
               exit 1
             fi
           fi
-          
+
           echo "🎉 CSP validation passed for ${{ matrix.mode }} mode!"
-          
+
       - name: Generate CSP policy artifact
         run: |
           # Generate CSP policy for both modes and save as artifacts
           echo "CSP Policy for ${{ matrix.mode }} mode:" > csp-policy-${{ matrix.mode }}.txt
           echo "===========================================" >> csp-policy-${{ matrix.mode }}.txt
           echo "" >> csp-policy-${{ matrix.mode }}.txt
-          
+
           # Get the actual policy from the running server
           HEADERS=$(curl -s -I http://localhost:3000)
           if [ "${{ matrix.mode }}" = "enforce" ]; then
@@ -163,17 +163,17 @@ jobs:
           else
             CSP_POLICY=$(echo "$HEADERS" | grep "Content-Security-Policy-Report-Only:" | cut -d: -f2- | xargs)
           fi
-          
+
           echo "$CSP_POLICY" >> csp-policy-${{ matrix.mode }}.txt
           echo "" >> csp-policy-${{ matrix.mode }}.txt
           echo "Generated at: $(date)" >> csp-policy-${{ matrix.mode }}.txt
-          
+
       - name: Upload CSP policy artifact
         uses: actions/upload-artifact@v4
         with:
           name: csp-policy-${{ matrix.mode }}
           path: csp-policy-${{ matrix.mode }}.txt
           retention-days: 30
-          
+
       - name: Stop application
         run: pkill -f "next start" || true

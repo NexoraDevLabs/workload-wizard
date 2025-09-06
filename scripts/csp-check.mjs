@@ -2,7 +2,7 @@
 
 /**
  * CSP Check Script
- * 
+ *
  * This script validates the CSP configuration and outputs the effective policy
  * for both report-only and enforce modes.
  */
@@ -21,7 +21,7 @@ function loadEnv() {
   try {
     const envContent = readFileSync(join(projectRoot, '.env.csp'), 'utf8');
     const envVars = {};
-    envContent.split('\n').forEach(line => {
+    envContent.split('\n').forEach((line) => {
       const [key, value] = line.split('=');
       if (key && value) {
         envVars[key.trim()] = value.trim();
@@ -36,14 +36,18 @@ function loadEnv() {
 // Mock environment for CSP functions
 const mockEnv = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL || 'https://mock.convex.cloud',
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_mock',
+  NEXT_PUBLIC_CONVEX_URL:
+    process.env.NEXT_PUBLIC_CONVEX_URL || 'https://mock.convex.cloud',
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_mock',
   CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || 'sk_test_mock',
   NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY || 'ph_mock',
-  NEXT_PUBLIC_STATSIG_CLIENT_KEY: process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY || 'client_mock',
-  FEATFLAG_STATSIG_SERVER_API_KEY: process.env.FEATFLAG_STATSIG_SERVER_API_KEY || 'server_mock',
+  NEXT_PUBLIC_STATSIG_CLIENT_KEY:
+    process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY || 'client_mock',
+  FEATFLAG_STATSIG_SERVER_API_KEY:
+    process.env.FEATFLAG_STATSIG_SERVER_API_KEY || 'server_mock',
   CSP_MODE: process.env.CSP_MODE || 'report-only',
-  ...loadEnv()
+  ...loadEnv(),
 };
 
 // Set environment variables for the CSP module
@@ -56,7 +60,7 @@ Object.entries(mockEnv).forEach(([key, value]) => {
 // Create a temporary TypeScript file to run the CSP check
 async function checkCSP() {
   const tempFile = join(projectRoot, 'temp-csp-check.ts');
-  
+
   try {
     const cspScript = `
 import { buildCsp, getCSPMode, generateNonce } from './src/lib/security/csp';
@@ -121,14 +125,13 @@ console.log('   4. Switch to enforce mode when ready');
 `;
 
     writeFileSync(tempFile, cspScript);
-    
+
     // Run the TypeScript file with tsx
     execSync(`npx tsx ${tempFile}`, {
       cwd: projectRoot,
       stdio: 'inherit',
-      env: { ...process.env, ...mockEnv }
+      env: { ...process.env, ...mockEnv },
     });
-    
   } catch (error) {
     console.error('❌ Error checking CSP configuration:', error.message);
     process.exit(1);
