@@ -204,6 +204,7 @@ pnpm test:watch
 ## 📖 **Operations Handbook**
 
 - **[Operations Handbook](docs/handbook/operations/README.md)** — Standard Operating Procedures for security, incidents, secret rotation, and CI failures
+- **[Observability Handbook](docs/handbook/observability/README.md)** — Comprehensive guides for monitoring, tracing, dashboards, and alerting
 
 ## 🔧 **Operations**
 
