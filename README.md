@@ -268,6 +268,11 @@ We maintain strict TypeScript safety with elevated linting rules and comprehensi
 - Preferred alternatives to `any` types
 - Runtime validation patterns
 
+### Bundle Analysis
+
+We provide a CI job to generate static HTML bundle analysis. Run it via **Actions → Bundle Analysis** (or locally with `pnpm analyze`).  
+See **docs/handbook/engineering/bundle-analysis.md** for how to interpret the report.
+
 ### Database
 
 ```bash

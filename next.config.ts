@@ -3,25 +3,15 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
+import bundleAnalyzer from '@next/bundle-analyzer';
 
 // Environment variables are loaded automatically by Next.js from .env files
 
 // Bundle analyzer configuration
-let withBundleAnalyzer: (config: NextConfig) => NextConfig = (config) => config;
-
-if (process.env.ANALYZE === 'true') {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-  const bundleAnalyzer = require('@next/bundle-analyzer');
-  const bundleAnalyzerFn = (
-    bundleAnalyzer as {
-      default: (options: {
-        enabled: boolean;
-      }) => (config: NextConfig) => NextConfig;
-    }
-  ).default;
-
-  withBundleAnalyzer = bundleAnalyzerFn({ enabled: true });
-}
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
+});
 
 // Security headers applied to all routes
 const securityHeaders: Array<{ key: string; value: string }> = [
