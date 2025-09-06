@@ -97,7 +97,7 @@ export function buildCsp(config: CSPConfig): string {
 
     // Script sources with nonce and strict-dynamic
     // In development, allow 'unsafe-eval' for Next.js HMR and webpack
-    isDevelopment 
+    isDevelopment
       ? `script-src 'self' 'unsafe-eval' 'strict-dynamic' 'nonce-${config.nonce}' ${allowlist.scriptSrc.join(' ')}`
       : `script-src 'self' 'strict-dynamic' 'nonce-${config.nonce}' ${allowlist.scriptSrc.join(' ')}`,
 

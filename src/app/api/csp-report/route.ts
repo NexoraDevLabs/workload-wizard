@@ -84,8 +84,10 @@ export async function POST(request: NextRequest) {
     const report = parseCSPReport(body);
 
     // Normalize field names (handle both camelCase and kebab-case)
-    const effectiveDirective = report.effectiveDirective || report['effective-directive'];
-    const violatedDirective = report.violatedDirective || report['violated-directive'];
+    const effectiveDirective =
+      report.effectiveDirective || report['effective-directive'];
+    const violatedDirective =
+      report.violatedDirective || report['violated-directive'];
 
     // Validate required fields
     if (!effectiveDirective || !violatedDirective) {
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
     // Extract and sanitize data
     const ipAddress = getClientIP(request);
     const userAgent = sanitizeUserAgent(request.headers.get('user-agent'));
-    
+
     // For now, we don't have context to extract these
     const _organisationId = undefined;
     const _userId = undefined;
@@ -117,40 +119,67 @@ export async function POST(request: NextRequest) {
     // Add optional fields only if they have values
     if (userAgent) reportData.userAgent = userAgent;
     if (ipAddress) reportData.ipAddress = ipAddress;
-    
-    const blockedURI = typeof report.blockedURI === 'string' ? report.blockedURI : 
-      typeof report['blocked-uri'] === 'string' ? report['blocked-uri'] : undefined;
+
+    const blockedURI =
+      typeof report.blockedURI === 'string'
+        ? report.blockedURI
+        : typeof report['blocked-uri'] === 'string'
+          ? report['blocked-uri']
+          : undefined;
     if (blockedURI) reportData.blockedURI = blockedURI;
-    
-    const documentURI = typeof report.documentURI === 'string' ? report.documentURI :
-      typeof report['document-uri'] === 'string' ? report['document-uri'] : undefined;
+
+    const documentURI =
+      typeof report.documentURI === 'string'
+        ? report.documentURI
+        : typeof report['document-uri'] === 'string'
+          ? report['document-uri']
+          : undefined;
     if (documentURI) reportData.documentURI = documentURI;
-    
-    if (typeof report.referrer === 'string') reportData.referrer = report.referrer;
-    
-    const sourceFile = typeof report.sourceFile === 'string' ? report.sourceFile :
-      typeof report['source-file'] === 'string' ? report['source-file'] : undefined;
+
+    if (typeof report.referrer === 'string')
+      reportData.referrer = report.referrer;
+
+    const sourceFile =
+      typeof report.sourceFile === 'string'
+        ? report.sourceFile
+        : typeof report['source-file'] === 'string'
+          ? report['source-file']
+          : undefined;
     if (sourceFile) reportData.sourceFile = sourceFile;
-    
-    const lineNumber = typeof report.lineNumber === 'number' ? report.lineNumber :
-      typeof report['line-number'] === 'number' ? report['line-number'] : undefined;
+
+    const lineNumber =
+      typeof report.lineNumber === 'number'
+        ? report.lineNumber
+        : typeof report['line-number'] === 'number'
+          ? report['line-number']
+          : undefined;
     if (lineNumber !== undefined) reportData.lineNumber = lineNumber;
-    
-    const columnNumber = typeof report.columnNumber === 'number' ? report.columnNumber :
-      typeof report['column-number'] === 'number' ? report['column-number'] : undefined;
+
+    const columnNumber =
+      typeof report.columnNumber === 'number'
+        ? report.columnNumber
+        : typeof report['column-number'] === 'number'
+          ? report['column-number']
+          : undefined;
     if (columnNumber !== undefined) reportData.columnNumber = columnNumber;
-    
-    const scriptSample = typeof report.scriptSample === 'string'
-      ? report.scriptSample.substring(0, 1000)
-      : typeof report['script-sample'] === 'string'
-      ? report['script-sample'].substring(0, 1000)
-      : undefined;
+
+    const scriptSample =
+      typeof report.scriptSample === 'string'
+        ? report.scriptSample.substring(0, 1000)
+        : typeof report['script-sample'] === 'string'
+          ? report['script-sample'].substring(0, 1000)
+          : undefined;
     if (scriptSample) reportData.scriptSample = scriptSample;
-    
-    if (typeof report.disposition === 'string') reportData.disposition = report.disposition;
-    
-    const originalPolicy = typeof report.originalPolicy === 'string' ? report.originalPolicy :
-      typeof report['original-policy'] === 'string' ? report['original-policy'] : undefined;
+
+    if (typeof report.disposition === 'string')
+      reportData.disposition = report.disposition;
+
+    const originalPolicy =
+      typeof report.originalPolicy === 'string'
+        ? report.originalPolicy
+        : typeof report['original-policy'] === 'string'
+          ? report['original-policy']
+          : undefined;
     if (originalPolicy) reportData.originalPolicy = originalPolicy;
 
     // Store the report

@@ -20,8 +20,22 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Shield, Globe, Search, Download, Eye, EyeOff } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertTriangle,
+  Shield,
+  Globe,
+  Search,
+  Download,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { useState, useMemo } from 'react';
 
 export default function CSPDashboard() {
@@ -40,23 +54,30 @@ export default function CSPDashboard() {
   // Get unique directives for filter dropdown
   const availableDirectives = useMemo(() => {
     if (!recentReports) return [];
-    const directives = new Set(recentReports.map((r: any) => r.effectiveDirective).filter(Boolean));
+    const directives = new Set(
+      recentReports.map((r: any) => r.effectiveDirective).filter(Boolean)
+    );
     return Array.from(directives).sort() as string[];
   }, [recentReports]);
 
   // Filter and sort reports
   const filteredReports = useMemo(() => {
     if (!recentReports) return [];
-    
+
     const filtered = recentReports.filter((report: any) => {
-      const matchesSearch = !searchTerm || 
-        report.effectiveDirective?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch =
+        !searchTerm ||
+        report.effectiveDirective
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         report.blockedURI?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         report.sourceFile?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         report.userAgent?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesDirective = directiveFilter === 'all' || report.effectiveDirective === directiveFilter;
-      
+
+      const matchesDirective =
+        directiveFilter === 'all' ||
+        report.effectiveDirective === directiveFilter;
+
       return matchesSearch && matchesDirective;
     });
 
@@ -66,7 +87,9 @@ export default function CSPDashboard() {
         case 'timestamp':
           return b.timestamp - a.timestamp;
         case 'directive':
-          return (a.effectiveDirective || '').localeCompare(b.effectiveDirective || '');
+          return (a.effectiveDirective || '').localeCompare(
+            b.effectiveDirective || ''
+          );
         case 'uri':
           return (a.blockedURI || '').localeCompare(b.blockedURI || '');
         default:
@@ -84,20 +107,29 @@ export default function CSPDashboard() {
   // Export functionality
   const exportToCSV = () => {
     if (!filteredReports.length) return;
-    
-    const headers = ['Timestamp', 'Directive', 'Blocked URI', 'Source File', 'User Agent', 'IP Address'];
+
+    const headers = [
+      'Timestamp',
+      'Directive',
+      'Blocked URI',
+      'Source File',
+      'User Agent',
+      'IP Address',
+    ];
     const csvContent = [
       headers.join(','),
-      ...filteredReports.map((report: any) => [
-        formatTimestamp(report.timestamp),
-        `"${report.effectiveDirective || 'N/A'}"`,
-        `"${report.blockedURI || 'N/A'}"`,
-        `"${report.sourceFile || 'N/A'}"`,
-        `"${report.userAgent || 'N/A'}"`,
-        `"${report.ipAddress || 'N/A'}"`
-      ].join(','))
+      ...filteredReports.map((report: any) =>
+        [
+          formatTimestamp(report.timestamp),
+          `"${report.effectiveDirective || 'N/A'}"`,
+          `"${report.blockedURI || 'N/A'}"`,
+          `"${report.sourceFile || 'N/A'}"`,
+          `"${report.userAgent || 'N/A'}"`,
+          `"${report.ipAddress || 'N/A'}"`,
+        ].join(',')
+      ),
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -111,7 +143,7 @@ export default function CSPDashboard() {
   const getDirectiveColor = (directive: string) => {
     const highRisk = ['script-src', 'connect-src', 'object-src'];
     const mediumRisk = ['style-src', 'img-src', 'font-src'];
-    
+
     if (highRisk.includes(directive)) return 'destructive';
     if (mediumRisk.includes(directive)) return 'secondary';
     return 'outline';
@@ -146,7 +178,7 @@ export default function CSPDashboard() {
               <TabsTrigger value="168">Last 7 Days</TabsTrigger>
             </TabsList>
           </Tabs>
-          
+
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -162,7 +194,11 @@ export default function CSPDashboard() {
               size="sm"
               onClick={() => setShowDetails(!showDetails)}
             >
-              {showDetails ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+              {showDetails ? (
+                <EyeOff className="h-4 w-4 mr-2" />
+              ) : (
+                <Eye className="h-4 w-4 mr-2" />
+              )}
               {showDetails ? 'Hide Details' : 'Show Details'}
             </Button>
           </div>
@@ -178,7 +214,7 @@ export default function CSPDashboard() {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={directiveFilter} onValueChange={setDirectiveFilter}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filter by directive" />
@@ -207,7 +243,8 @@ export default function CSPDashboard() {
 
         {filteredReports.length !== recentReports?.length && (
           <div className="text-sm text-muted-foreground">
-            Showing {filteredReports.length} of {recentReports?.length || 0} violations
+            Showing {filteredReports.length} of {recentReports?.length || 0}{' '}
+            violations
           </div>
         )}
       </div>
@@ -239,15 +276,22 @@ export default function CSPDashboard() {
             {summary.byDirective && summary.byDirective.length > 0 ? (
               <ul className="text-sm space-y-1">
                 {summary.byDirective
-                  .filter((item: any) => item.directive && item.directive !== 'undefined')
+                  .filter(
+                    (item: any) =>
+                      item.directive && item.directive !== 'undefined'
+                  )
                   .slice(0, 5)
                   .map((item: any, index: number) => (
                     <li
                       key={index}
                       className="flex justify-between items-center"
                     >
-                      <span className="truncate">{item.directive || 'Unknown'}</span>
-                      <Badge variant={getDirectiveColor(item.directive)}>{item.count}</Badge>
+                      <span className="truncate">
+                        {item.directive || 'Unknown'}
+                      </span>
+                      <Badge variant={getDirectiveColor(item.directive)}>
+                        {item.count}
+                      </Badge>
                     </li>
                   ))}
               </ul>
@@ -293,7 +337,8 @@ export default function CSPDashboard() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Recent Violations</h2>
         <div className="text-sm text-muted-foreground">
-          {filteredReports.length} violation{filteredReports.length !== 1 ? 's' : ''}
+          {filteredReports.length} violation
+          {filteredReports.length !== 1 ? 's' : ''}
         </div>
       </div>
 
@@ -301,13 +346,15 @@ export default function CSPDashboard() {
         <Alert className="mb-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Development Mode:</strong> You're seeing CSP violations from Next.js hot reloading and webpack. 
-            These are normal in development and won't occur in production. The CSP policy is automatically 
-            relaxed for development with <code>'unsafe-eval'</code> and localhost sources.
+            <strong>Development Mode:</strong> You're seeing CSP violations from
+            Next.js hot reloading and webpack. These are normal in development
+            and won't occur in production. The CSP policy is automatically
+            relaxed for development with <code>'unsafe-eval'</code> and
+            localhost sources.
           </AlertDescription>
         </Alert>
       )}
-      
+
       {filteredReports && filteredReports.length > 0 ? (
         <div className="border rounded-lg">
           <Table>
@@ -328,23 +375,34 @@ export default function CSPDashboard() {
                     {formatTimestamp(report.timestamp)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getDirectiveColor(report.effectiveDirective)}>
+                    <Badge
+                      variant={getDirectiveColor(report.effectiveDirective)}
+                    >
                       {report.effectiveDirective || 'Unknown'}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <div className="truncate" title={report.blockedURI || 'N/A'}>
+                    <div
+                      className="truncate"
+                      title={report.blockedURI || 'N/A'}
+                    >
                       {report.blockedURI || 'N/A'}
                     </div>
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <div className="truncate" title={report.sourceFile || 'N/A'}>
+                    <div
+                      className="truncate"
+                      title={report.sourceFile || 'N/A'}
+                    >
                       {report.sourceFile || 'N/A'}
                     </div>
                   </TableCell>
                   {showDetails && (
                     <TableCell className="max-w-xs">
-                      <div className="truncate" title={report.userAgent || 'N/A'}>
+                      <div
+                        className="truncate"
+                        title={report.userAgent || 'N/A'}
+                      >
                         {report.userAgent || 'N/A'}
                       </div>
                     </TableCell>
@@ -363,10 +421,9 @@ export default function CSPDashboard() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            {searchTerm || directiveFilter !== 'all' 
+            {searchTerm || directiveFilter !== 'all'
               ? 'No violations match your current filters.'
-              : `No CSP violations reported in the last ${timeRange} hours.`
-            }
+              : `No CSP violations reported in the last ${timeRange} hours.`}
           </AlertDescription>
         </Alert>
       )}

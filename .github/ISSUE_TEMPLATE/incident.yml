@@ -1,7 +1,7 @@
 name: 🚨 Incident Report
 description: Report a production incident or service outage
-title: "[INCIDENT] "
-labels: ["type:incident", "priority:high"]
+title: '[INCIDENT] '
+labels: ['type:incident', 'priority:high']
 assignees: []
 
 body:
@@ -9,7 +9,7 @@ body:
     attributes:
       value: |
         ## Incident Report
-        
+
         Use this template to report production incidents, service outages, or significant service degradation affecting WorkloadWizard.
 
   - type: dropdown
@@ -30,7 +30,7 @@ body:
     attributes:
       label: Incident Start Time
       description: When did the incident begin? (UTC)
-      placeholder: "2024-01-15 14:30:00 UTC"
+      placeholder: '2024-01-15 14:30:00 UTC'
     validations:
       required: true
 
@@ -66,7 +66,7 @@ body:
     attributes:
       label: Incident Commander
       description: Who is leading the incident response?
-      placeholder: "@username or name"
+      placeholder: '@username or name'
     validations:
       required: true
 

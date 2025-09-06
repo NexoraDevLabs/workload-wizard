@@ -1,7 +1,7 @@
 name: 🔧 CI Failure
 description: Report a CI/CD pipeline failure that needs investigation
-title: "[CI] "
-labels: ["ci", "priority:medium"]
+title: '[CI] '
+labels: ['ci', 'priority:medium']
 assignees: []
 
 body:
@@ -9,7 +9,7 @@ body:
     attributes:
       value: |
         ## CI Failure Report
-        
+
         Use this template to report CI/CD pipeline failures that need investigation and resolution.
 
   - type: dropdown
@@ -55,7 +55,7 @@ body:
     attributes:
       label: Commit Hash
       description: Git commit hash where the failure occurred
-      placeholder: "e.g., abc123def456"
+      placeholder: 'e.g., abc123def456'
     validations:
       required: true
 
@@ -64,7 +64,7 @@ body:
     attributes:
       label: Logs Link
       description: Link to the failing workflow run logs
-      placeholder: "https://github.com/owner/repo/actions/runs/1234567890"
+      placeholder: 'https://github.com/owner/repo/actions/runs/1234567890'
     validations:
       required: true
 
