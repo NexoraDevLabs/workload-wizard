@@ -108,6 +108,10 @@ A comprehensive workload management application for educational institutions, bu
   - Runs nightly at 01:00 UTC
   - Results available in [Code Scanning alerts](https://github.com/sammcnab/workload-wizard/security/code-scanning)
   - Triage process: [ZAP Triage SOP](docs/handbook/security/zap-triage.md)
+- **Content Security Policy (CSP)**: [![CSP Check](https://github.com/sammcnab/workload-wizard/actions/workflows/csp-check.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/csp-check.yml) — Automated CSP header validation
+  - Validates CSP headers in both report-only and enforce modes
+  - Monitors violations via admin dashboard at `/admin/csp`
+  - Configuration guide: [CSP Security Guide](docs/engineering/security/csp.md)
 
 ## 🚀 **Quick Start**
 
