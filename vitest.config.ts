@@ -8,8 +8,27 @@ export default defineConfig({
     globals: true,
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
+    alias: [
+      {
+        find: '@/lib',
+        replacement: path.resolve(__dirname, './src/lib'),
+      },
+      {
+        find: '@/components',
+        replacement: path.resolve(__dirname, './src/components'),
+      },
+      {
+        find: '@/server',
+        replacement: path.resolve(__dirname, './src/server'),
+      },
+      {
+        find: '@/config',
+        replacement: path.resolve(__dirname, './config'),
+      },
+      {
+        find: '@',
+        replacement: path.resolve(__dirname, './src'),
+      },
+    ],
   },
 });
