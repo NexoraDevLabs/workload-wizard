@@ -21,7 +21,10 @@ import type {
   SystemPermission,
   SystemRole,
 } from '../types';
-import { mockOrganisationId, mockRoleId } from './testUtils';
+import {
+  mockOrganisationId,
+  mockRoleId,
+} from '../../../src/test/utils/convexPermissionTestUtils';
 
 describe('predicates', () => {
   describe('isSystemUser', () => {

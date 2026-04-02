@@ -1,8 +1,7 @@
 /**
- * Test utilities for permissions module
+ * Test utilities for permissions module.
  */
 
-// Mock types for testing
 export type MockId<T extends string> = T & { __tableName: T };
 
 export const createMockId = <T extends string>(value: string): MockId<T> =>

@@ -5,7 +5,7 @@ import {
   type MutationCtx,
 } from './_generated/server';
 import { v } from 'convex/values';
-import { type Id, type Doc } from './_generated/dataModel';
+import type { Id, Doc } from './_generated/dataModel';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
 

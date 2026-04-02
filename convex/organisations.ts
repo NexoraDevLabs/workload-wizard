@@ -31,7 +31,6 @@ export const reseedDefaultsForOrg = mutation({
     await ensureDefaultsForOrg(ctx, args.organisationId);
 
     // Admin allocation categories from system defaults
-    // @ts-expect-error - Type instantiation is excessively deep due to circular imports
     await ctx.runMutation(api.allocations.seedOrgAdminCategories, {
       organisationId: args.organisationId,
     });
