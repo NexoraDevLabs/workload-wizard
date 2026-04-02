@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -88,20 +88,22 @@ export default function AccountPage() {
     }
   };
 
-  const getRoleBadgeClass = (role: string) => {
+  const getRoleBadgeClass = (
+    role: string
+  ): NonNullable<BadgeProps['variant']> => {
     switch (role) {
       case 'orgadmin':
-        return 'bg-red-100 text-red-800';
+        return 'danger';
       case 'sysadmin':
-        return 'bg-purple-100 text-purple-800';
+        return 'info';
       case 'developer':
-        return 'bg-blue-100 text-blue-800';
+        return 'info';
       case 'user':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       case 'trial':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'warning';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'neutral';
     }
   };
 
@@ -112,9 +114,6 @@ export default function AccountPage() {
         'Update your personal information, profile picture, and contact details',
       icon: User,
       href: '/account/profile',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
     },
     {
       title: 'Security & Privacy',
@@ -122,27 +121,18 @@ export default function AccountPage() {
         'Manage your password, two-factor authentication, and privacy settings',
       icon: Shield,
       href: '/account/security',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
     },
     {
       title: 'Early Access Features',
       description: 'Manage your opt-in preferences for experimental features',
       icon: Sparkles,
       href: '/account/features',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200',
     },
     {
       title: 'Notifications',
       description: 'Configure email notifications and alert preferences',
       icon: Bell,
       href: '/account/notifications',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-200',
       comingSoon: true,
     },
     {
@@ -150,9 +140,6 @@ export default function AccountPage() {
       description: 'Manage your API keys and access tokens',
       icon: Key,
       href: '/account/api-keys',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200',
       comingSoon: true,
     },
   ];
@@ -165,7 +152,7 @@ export default function AccountPage() {
       title="Account Settings"
       subtitle="Manage your account preferences and settings"
     >
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 xl:grid-cols-[minmax(20rem,24rem)_1fr]">
         {/* Account Overview Card */}
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -187,22 +174,15 @@ export default function AccountPage() {
                 <h3 className="font-semibold">{userName}</h3>
                 <p className="text-sm text-muted-foreground">{userEmail}</p>
                 {userRoles && userRoles.length > 0 ? (
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {userRoles.map((role, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className={getRoleBadgeClass(role)}
-                      >
+                      <Badge key={index} variant={getRoleBadgeClass(role)}>
                         {getRoleLabel(role)}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <Badge
-                    variant="secondary"
-                    className="mt-1 bg-gray-100 text-gray-800"
-                  >
+                  <Badge variant="neutral" className="mt-1">
                     No roles assigned
                   </Badge>
                 )}
@@ -282,33 +262,31 @@ export default function AccountPage() {
                 return (
                   <Card
                     key={section.title}
-                    className={`border-2 hover:border-gray-300 transition-colors ${section.borderColor}`}
+                    className="border-border/80 py-0 transition-transform hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${section.bgColor}`}>
-                            <IconComponent
-                              className={`h-5 w-5 ${section.color}`}
-                            />
+                      <div className="flex h-full items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <div className="rounded-2xl border border-border/70 bg-white/85 p-3 shadow-xs">
+                            <IconComponent className="h-5 w-5 text-primary" />
                           </div>
-                          <div>
+                          <div className="space-y-1">
                             <h3 className="font-semibold">{section.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-muted-foreground">
                               {section.description}
                             </p>
                           </div>
                         </div>
                         {section.comingSoon ? (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="neutral" className="text-xs">
                             Coming Soon
                           </Badge>
                         ) : (
                           <Link href={section.href}>
                             <Button
-                              variant="ghost"
+                              variant="soft"
                               size="sm"
-                              className="h-8 w-8 p-0"
+                              className="h-9 w-9 p-0"
                             >
                               <ArrowRight className="h-4 w-4" />
                             </Button>

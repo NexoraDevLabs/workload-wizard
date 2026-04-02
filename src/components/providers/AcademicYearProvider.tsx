@@ -43,6 +43,18 @@ const AcademicYearContext = createContext<AcademicYearContextValue | undefined>(
   undefined
 );
 
+const fallbackAcademicYearContext: AcademicYearContextValue = {
+  years: [],
+  currentYearId: null,
+  currentYear: null,
+  setCurrentYearId: () => {},
+  includeDrafts: false,
+  setIncludeDrafts: () => {},
+  isManagement: false,
+  setAsDefaultForOrg: async () => {},
+  refresh: () => {},
+};
+
 function AcademicYearProviderInternal({
   children,
 }: {
@@ -298,7 +310,11 @@ export function AcademicYearProvider({
 }) {
   // Avoid running Clerk-dependent hooks during SSR/prerender
   if (typeof window === 'undefined') {
-    return <>{children}</>;
+    return (
+      <AcademicYearContext.Provider value={fallbackAcademicYearContext}>
+        {children}
+      </AcademicYearContext.Provider>
+    );
   }
 
   const env = getEnv();
@@ -309,7 +325,11 @@ export function AcademicYearProvider({
 
   // If in build time, render children without context
   if (isBuildTime) {
-    return <>{children}</>;
+    return (
+      <AcademicYearContext.Provider value={fallbackAcademicYearContext}>
+        {children}
+      </AcademicYearContext.Provider>
+    );
   }
 
   return (

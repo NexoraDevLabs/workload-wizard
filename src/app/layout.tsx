@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { DM_Sans, JetBrains_Mono } from 'next/font/google';
 import '@/styles/index.css';
 import { ConvexClientProvider } from '@/components/providers/ConvexProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
@@ -19,14 +19,16 @@ import { LoadingOverlayServer } from '@/components/loading-overlay-server';
 import { Suspense } from 'react';
 import { RouteLoadingOverlay } from '@/components/RouteLoadingOverlay';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const dmSans = DM_Sans({
+  variable: '--font-sans',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const jetBrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -58,7 +60,7 @@ export default async function RootLayout({
     return (
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${dmSans.variable} ${jetBrainsMono.variable} app-shell antialiased`}
         >
           {children}
         </body>
@@ -78,7 +80,7 @@ export default async function RootLayout({
       <ConvexClientProvider>
         <html lang="en" suppressHydrationWarning>
           <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+            className={`${dmSans.variable} ${jetBrainsMono.variable} app-shell antialiased`}
           >
             <DynamicStatsigProvider datafile={datafile}>
               <ClerkStatsigSync />
