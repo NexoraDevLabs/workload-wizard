@@ -2,5 +2,5 @@
   "buildCommand": "pnpm build",
   "devCommand": "pnpm dev",
   "framework": "nextjs",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.15.0 --activate && pnpm install --frozen-lockfile"
+  "installCommand": "corepack enable && corepack prepare pnpm@10.15.0 --activate && corepack pnpm install --frozen-lockfile"
 }
