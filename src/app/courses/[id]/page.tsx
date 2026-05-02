@@ -1475,19 +1475,20 @@ function ModuleIterationAndGroupsAndAllocations({
                           )
                         );
                         let campusGroups: Array<{
-                          campus?: string | undefined;
+                          campus?: string;
                           groups: number;
                         }> = [];
                         if (inputs.length > 0) {
-                          campusGroups = inputs.map((inp, idx) => ({
-                            campus: recList[idx]?.campus,
-                            groups: Math.max(
+                          campusGroups = inputs.map((inp, idx) => {
+                            const campus = recList[idx]?.campus;
+                            const groups = Math.max(
                               0,
                               Math.floor(
                                 Number((inp as HTMLInputElement).value || '0')
                               )
-                            ),
-                          }));
+                            );
+                            return campus ? { campus, groups } : { groups };
+                          });
                         } else {
                           const single = root.querySelector(
                             'input[data-testid="auto-groups-single"]'
@@ -1496,7 +1497,7 @@ function ModuleIterationAndGroupsAndAllocations({
                             0,
                             Math.floor(Number(single?.value || '0'))
                           );
-                          campusGroups = [{ campus: undefined, groups: n }];
+                          campusGroups = [{ groups: n }];
                         }
                         await withToast(
                           () =>

@@ -26,6 +26,7 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/landing',
+  '/api/health',
   '/api/webhooks/clerk',
   '/api/csp-report', // CSP reports should be publicly accessible
   '/terms',
