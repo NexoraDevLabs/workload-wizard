@@ -197,6 +197,7 @@
       "path-to-regexp": "8.4.0",
       "undici": "6.24.0",
       "@tootallnate/once": "3.0.1",
+      "@vercel/static-config>ajv": "8.20.0",
       "webpack": "5.106.2"
     },
     "onlyBuiltDependencies": [
