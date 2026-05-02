@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -69,6 +70,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface User {
   _id: string;
@@ -202,20 +204,22 @@ export default function OrganisationUsersPage() {
     }
   };
 
-  const getRoleBadgeClass = (role: string) => {
+  const getRoleBadgeClass = (
+    role: string
+  ): NonNullable<BadgeProps['variant']> => {
     switch (role) {
       case 'orgadmin':
-        return 'bg-red-100 text-red-800';
+        return 'danger';
       case 'sysadmin':
-        return 'bg-purple-100 text-purple-800';
+        return 'info';
       case 'developer':
-        return 'bg-blue-100 text-blue-800';
+        return 'info';
       case 'user':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       case 'trial':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'warning';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'neutral';
     }
   };
 
@@ -529,7 +533,7 @@ export default function OrganisationUsersPage() {
   ];
 
   const headerActions = (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Button variant="outline" size="sm">
         <RefreshCw className="h-4 w-4 mr-2" />
         Sync
@@ -554,129 +558,155 @@ export default function OrganisationUsersPage() {
     >
       <Card>
         <CardHeader>
-          <CardTitle>Users ({organisationUsers?.length || 0})</CardTitle>
-          <CardDescription>All users in your organisation</CardDescription>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>All users in your organisation</CardDescription>
+            </div>
+            <Badge variant="neutral" className="w-fit">
+              {organisationUsers?.length || 0} total
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
           {/* Toolbar */}
-          <div className="p-3 mb-3 border rounded-md">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1 min-w-0">
+          <div className="app-surface rounded-2xl p-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
+              <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  className="pl-10 w-full h-9 rounded-md border px-3 text-sm"
+                <Input
+                  className="pl-10"
                   placeholder="Search users by name, email, or username..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="shrink-0">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filters
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-80 p-4">
-                  <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Role
-                        </label>
-                        <Select
-                          value={roleFilter}
-                          onValueChange={setRoleFilter}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All roles" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All roles</SelectItem>
-                            {getUniqueRoles().map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {getRoleLabel(role)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Organisation Role
-                        </label>
-                        <Select
-                          value={orgRoleFilter}
-                          onValueChange={setOrgRoleFilter}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All org roles" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All org roles</SelectItem>
-                            {(orgRoles || []).map(
-                              (r: { _id: string; name: string }) => (
-                                <SelectItem key={r._id} value={r._id}>
-                                  {r.name}
+              <div className="grid gap-3 sm:grid-cols-2 xl:flex xl:flex-wrap xl:items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="shrink-0">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filters
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-80 p-4">
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">
+                            Role
+                          </label>
+                          <Select
+                            value={roleFilter}
+                            onValueChange={setRoleFilter}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="All roles" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All roles</SelectItem>
+                              {getUniqueRoles().map((role) => (
+                                <SelectItem key={role} value={role}>
+                                  {getRoleLabel(role)}
                                 </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">
+                            Organisation Role
+                          </label>
+                          <Select
+                            value={orgRoleFilter}
+                            onValueChange={setOrgRoleFilter}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="All org roles" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All org roles</SelectItem>
+                              {(orgRoles || []).map(
+                                (r: { _id: string; name: string }) => (
+                                  <SelectItem key={r._id} value={r._id}>
+                                    {r.name}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-sm font-medium">
+                            Status
+                          </label>
+                          <Select
+                            value={statusFilter}
+                            onValueChange={setStatusFilter}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="All status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All status</SelectItem>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-sm font-medium mb-2 block">
-                          Status
-                        </label>
-                        <Select
-                          value={statusFilter}
-                          onValueChange={setStatusFilter}
+                      <div className="flex justify-end border-t pt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSearchTerm('');
+                            setRoleFilter('all');
+                            setOrgRoleFilter('all');
+                            setStatusFilter('all');
+                          }}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="All status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All status</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          Clear All
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex justify-end pt-2 border-t">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSearchTerm('');
-                          setRoleFilter('all');
-                          setOrgRoleFilter('all');
-                          setStatusFilter('all');
-                        }}
-                      >
-                        Clear All
-                      </Button>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {selectedUserIds.size > 0 && (
-                <Button size="sm" onClick={() => openAssignRoles(null, true)}>
-                  <UserCog className="h-4 w-4 mr-2" />
-                  Bulk Assign ({selectedUserIds.size})
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {selectedUserIds.size > 0 && (
+                  <Button size="sm" onClick={() => openAssignRoles(null, true)}>
+                    <UserCog className="h-4 w-4 mr-2" />
+                    Bulk Assign ({selectedUserIds.size})
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" className="shrink-0">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
                 </Button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {searchTerm && (
+                <Badge variant="outline">Search: {searchTerm}</Badge>
               )}
-              <Button variant="outline" size="sm" className="shrink-0">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
+              {roleFilter !== 'all' && (
+                <Badge variant="outline">
+                  Role: {getRoleLabel(roleFilter)}
+                </Badge>
+              )}
+              {statusFilter !== 'all' && (
+                <Badge variant="outline">Status: {statusFilter}</Badge>
+              )}
+              {orgRoleFilter !== 'all' && (
+                <Badge variant="outline">Filtered org role</Badge>
+              )}
             </div>
           </div>
 
           {sortedUsers && sortedUsers.length > 0 ? (
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 border-b-2 border-muted-foreground/20">
+                <TableRow>
                   <TableHead className="w-[32px] text-center">
                     <input
                       type="checkbox"
@@ -688,7 +718,7 @@ export default function OrganisationUsersPage() {
                     />
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[18%]"
+                    className="w-[18%] cursor-pointer text-center"
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -696,7 +726,7 @@ export default function OrganisationUsersPage() {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[18%]"
+                    className="w-[18%] cursor-pointer text-center"
                     onClick={() => handleSort('email')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -704,7 +734,7 @@ export default function OrganisationUsersPage() {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
+                    className="w-[12%] cursor-pointer text-center"
                     onClick={() => handleSort('username')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -712,18 +742,18 @@ export default function OrganisationUsersPage() {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[16%]"
+                    className="w-[16%] cursor-pointer text-center"
                     onClick={() => handleSort('role')}
                   >
                     <div className="flex items-center justify-center gap-1">
                       System Roles {getSortIcon('role')}
                     </div>
                   </TableHead>
-                  <TableHead className="text-center font-semibold text-sm py-4 w-[16%]">
+                  <TableHead className="w-[16%] text-center">
                     Organisation Role
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[10%]"
+                    className="w-[10%] cursor-pointer text-center"
                     onClick={() => handleSort('status')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -731,7 +761,7 @@ export default function OrganisationUsersPage() {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
+                    className="w-[12%] cursor-pointer text-center"
                     onClick={() => handleSort('created')}
                   >
                     <div className="flex items-center justify-center gap-1">
@@ -739,16 +769,14 @@ export default function OrganisationUsersPage() {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="text-center cursor-pointer hover:bg-muted transition-colors font-semibold text-sm py-4 w-[12%]"
+                    className="w-[12%] cursor-pointer text-center"
                     onClick={() => handleSort('lastSignIn')}
                   >
                     <div className="flex items-center justify-center gap-1">
                       Last Sign In {getSortIcon('lastSignIn')}
                     </div>
                   </TableHead>
-                  <TableHead className="w-[8%] text-center font-semibold text-sm py-4">
-                    Actions
-                  </TableHead>
+                  <TableHead className="w-[8%] text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -774,19 +802,21 @@ export default function OrganisationUsersPage() {
                             <User className="w-4 h-4" />
                           </div>
                         )}
-                        <div>
-                          <div className="font-medium">{user.fullName}</div>
-                          <div className="text-sm text-muted-foreground">
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">
+                            {user.fullName}
+                          </div>
+                          <div className="truncate text-sm text-muted-foreground">
                             {user.username ||
                               `${user.givenName} ${user.familyName}`}
                           </div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-muted-foreground" />
-                        {user.email}
+                        <span className="truncate">{user.email}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
@@ -795,19 +825,12 @@ export default function OrganisationUsersPage() {
                     <TableCell className="text-center">
                       <div className="flex flex-wrap gap-1 justify-center">
                         {(user.systemRoles || []).length === 0 ? (
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800`}
-                          >
-                            None
-                          </span>
+                          <Badge variant="neutral">None</Badge>
                         ) : (
                           user.systemRoles.map((r) => (
-                            <span
-                              key={r}
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeClass(r)}`}
-                            >
+                            <Badge key={r} variant={getRoleBadgeClass(r)}>
                               {getRoleLabel(r)}
-                            </span>
+                            </Badge>
                           ))
                         )}
                       </div>
@@ -840,12 +863,9 @@ export default function OrganisationUsersPage() {
                                 }>;
                               }
                             ).organisationalRoles.map((r) => (
-                              <span
-                                key={r.id}
-                                className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800"
-                              >
+                              <Badge key={r.id} variant="neutral">
                                 {r.name}
-                              </span>
+                              </Badge>
                             ))
                           ) : (
                             <span className="text-sm">—</span>
@@ -854,25 +874,20 @@ export default function OrganisationUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex items-center gap-2 justify-center">
-                        <div className="flex items-center">
-                          {user.isActive ? (
-                            <>
-                              <UserCheck className="h-4 w-4 text-green-600 mr-1" />
-                              <span className="text-green-600 text-sm">
-                                Active
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <UserX className="h-4 w-4 text-red-600 mr-1" />
-                              <span className="text-red-600 text-sm">
-                                Inactive
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      {user.isActive ? (
+                        <Badge variant="success">
+                          <UserCheck className="mr-1 h-3.5 w-3.5" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="danger">
+                          <UserX className="mr-1 h-3.5 w-3.5" />
+                          Inactive
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {formatDate(user.createdAt)}
                     </TableCell>
                     <TableCell className="text-center">
                       {user.lastSignInAt
@@ -880,15 +895,12 @@ export default function OrganisationUsersPage() {
                         : 'Never'}
                     </TableCell>
                     <TableCell className="text-center">
-                      {formatDate(user.createdAt)}
-                    </TableCell>
-                    <TableCell className="text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-9 w-9 p-0"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">Open menu</span>
@@ -943,10 +955,10 @@ export default function OrganisationUsersPage() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center py-8">
-              <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No users found</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="rounded-2xl border border-dashed border-border/80 bg-white/65 py-12 text-center">
+              <User className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 text-lg font-semibold">No users found</h3>
+              <p className="mb-4 text-muted-foreground">
                 Get started by adding your first user to the organisation.
               </p>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -987,7 +999,7 @@ export default function OrganisationUsersPage() {
                               : [...selectedSystemRoles, role]
                           )
                         }
-                        className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${checked ? 'border-primary bg-primary text-white' : 'border-border bg-white/85 text-foreground hover:bg-accent'}`}
                       >
                         {getRoleLabel(role)}
                       </button>
@@ -1013,7 +1025,7 @@ export default function OrganisationUsersPage() {
                               : [...selectedOrgRoleIds, r._id]
                           )
                         }
-                        className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${checked ? 'border-primary bg-primary text-white' : 'border-border bg-white/85 text-foreground hover:bg-accent'}`}
                       >
                         {r.name}
                       </button>

@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight, type LucideIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import posthog from 'posthog-js';
 
@@ -38,6 +38,7 @@ export function NavMain({
 }) {
   const { state } = useSidebar();
   const router = useRouter();
+  const pathname = usePathname();
   // Synchronously initialize from localStorage to avoid flicker
   const initialisedFromStorageRef = useRef(false);
   const [openItems, setOpenItems] = useState<Set<string>>(() => {
@@ -127,6 +128,10 @@ export function NavMain({
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     tooltip={item.title}
+                    isActive={
+                      pathname === item.url ||
+                      !!item.items?.some((subItem) => pathname === subItem.url)
+                    }
                     onClick={(e) => {
                       // Prevent default collapsible behavior when collapsed
                       if (state === 'collapsed') {
@@ -144,7 +149,10 @@ export function NavMain({
                   <SidebarMenuSub>
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === subItem.url}
+                        >
                           <a
                             href={subItem.url}
                             onClick={() => {
@@ -166,6 +174,7 @@ export function NavMain({
             ) : (
               <SidebarMenuButton
                 tooltip={item.title}
+                isActive={pathname === item.url}
                 onClick={() => handleMainItemClick(item)}
               >
                 {item.icon && <item.icon />}

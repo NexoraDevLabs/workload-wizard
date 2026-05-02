@@ -16,12 +16,9 @@ export function TeamSwitcher() {
       <SidebarMenuItem>
         <SidebarMenuButton
           size="lg"
-          className="cursor-default hover:bg-transparent"
+          className="cursor-default rounded-2xl border border-sidebar-border/70 bg-white/60 hover:bg-white/60"
         >
-          <div
-            className="flex aspect-square size-8 items-center justify-center rounded-lg text-white"
-            style={{ backgroundColor: '#0F59FF' }}
-          >
+          <div className="flex aspect-square size-9 items-center justify-center rounded-2xl bg-primary text-white shadow-sm">
             <WandSparkles className="size-4" />
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">

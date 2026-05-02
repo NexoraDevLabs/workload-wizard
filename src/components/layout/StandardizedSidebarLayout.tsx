@@ -41,15 +41,15 @@ export function StandardizedSidebarLayout({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset data-testid="page-ready">
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sticky top-0 z-10 bg-background border-b">
-          <div className="flex items-center gap-2 px-4 w-1/4">
+        <header className="sticky top-0 z-20 flex min-h-18 shrink-0 items-center gap-3 border-b border-border/70 bg-white/82 px-4 py-3 backdrop-blur-xl transition-[width,height] ease-linear md:px-6">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
               className="mr-2 data-[orientation=vertical]:h-4"
             />
             {breadcrumbs.length > 0 && (
-              <Breadcrumb>
+              <Breadcrumb className="min-w-0">
                 <BreadcrumbList>
                   {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={index}>
@@ -75,26 +75,31 @@ export function StandardizedSidebarLayout({
               </Breadcrumb>
             )}
           </div>
-
-          <div className="flex-1"></div>
-
-          <div className="flex items-center gap-3 px-4 justify-end">
+          <div className="flex items-center gap-3 justify-end">
             {headerActions}
           </div>
         </header>
 
         {(title || subtitle) && (
-          <div className="flex flex-col gap-1 px-4 py-2 border-b">
-            {title && (
-              <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-            )}
-            {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
-            )}
+          <div className="section-wrap border-b border-border/60 py-6">
+            <div className="app-surface rounded-[1.75rem] px-5 py-5 sm:px-7">
+              {title && (
+                <h1 className="text-3xl font-semibold tracking-tight">
+                  {title}
+                </h1>
+              )}
+              {subtitle && (
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+                  {subtitle}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-4">{children}</div>
+        <div className="section-wrap flex flex-1 flex-col gap-6 py-6">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -8,11 +8,6 @@
  * @module
  */
 
-import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
-} from 'convex/server';
 import type * as academicYears from '../academicYears.js';
 import type * as allocations from '../allocations.js';
 import type * as allocationsMath from '../allocationsMath.js';
@@ -26,7 +21,7 @@ import type * as modules from '../modules.js';
 import type * as organisationSettings from '../organisationSettings.js';
 import type * as organisationalRoles from '../organisationalRoles.js';
 import type * as organisations from '../organisations.js';
-import type * as permissions___tests___testUtils from '../permissions/__tests__/testUtils.js';
+import type * as permissions from '../permissions.js';
 import type * as permissions_constants from '../permissions/constants.js';
 import type * as permissions_guards from '../permissions/guards.js';
 import type * as permissions_index from '../permissions/index.js';
@@ -36,20 +31,17 @@ import type * as permissions_queries from '../permissions/queries.js';
 import type * as permissions_rules from '../permissions/rules.js';
 import type * as permissions_types from '../permissions/types.js';
 import type * as permissions_utils from '../permissions/utils.js';
-import type * as permissions from '../permissions.js';
 import type * as quickAccess from '../quickAccess.js';
 import type * as staff from '../staff.js';
 import type * as users from '../users.js';
 import type * as waitlist from '../waitlist.js';
 
-/**
- * A utility for referencing Convex functions in your app's API.
- *
- * Usage:
- * ```js
- * const myFunctionReference = api.myModule.myFunction;
- * ```
- */
+import type {
+  ApiFromModules,
+  FilterApi,
+  FunctionReference,
+} from 'convex/server';
+
 declare const fullApi: ApiFromModules<{
   academicYears: typeof academicYears;
   allocations: typeof allocations;
@@ -64,7 +56,7 @@ declare const fullApi: ApiFromModules<{
   organisationSettings: typeof organisationSettings;
   organisationalRoles: typeof organisationalRoles;
   organisations: typeof organisations;
-  'permissions/__tests__/testUtils': typeof permissions___tests___testUtils;
+  permissions: typeof permissions;
   'permissions/constants': typeof permissions_constants;
   'permissions/guards': typeof permissions_guards;
   'permissions/index': typeof permissions_index;
@@ -74,17 +66,36 @@ declare const fullApi: ApiFromModules<{
   'permissions/rules': typeof permissions_rules;
   'permissions/types': typeof permissions_types;
   'permissions/utils': typeof permissions_utils;
-  permissions: typeof permissions;
   quickAccess: typeof quickAccess;
   staff: typeof staff;
   users: typeof users;
   waitlist: typeof waitlist;
 }>;
+
+/**
+ * A utility for referencing Convex functions in your app's public API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = api.myModule.myFunction;
+ * ```
+ */
 export declare const api: FilterApi<
   typeof fullApi,
   FunctionReference<any, 'public'>
 >;
+
+/**
+ * A utility for referencing Convex functions in your app's internal API.
+ *
+ * Usage:
+ * ```js
+ * const myFunctionReference = internal.myModule.myFunction;
+ * ```
+ */
 export declare const internal: FilterApi<
   typeof fullApi,
   FunctionReference<any, 'internal'>
 >;
+
+export declare const components: {};
