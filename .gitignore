@@ -123,3 +123,8 @@ jspm_packages/
 
 # Local dev
 .local/
+
+# Docs
+CLAUDE_CODE_REVIEW.md
+CODEX_CONTEXT.md
+.codexignore
