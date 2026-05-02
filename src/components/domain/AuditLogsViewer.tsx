@@ -1328,7 +1328,6 @@ export function AuditLogsViewer({
                           </>
                         )}
                       </Button>
-
                     </div>
                   </div>
                 </div>

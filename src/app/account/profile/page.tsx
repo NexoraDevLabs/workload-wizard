@@ -283,7 +283,8 @@ export default function ProfilePage() {
 
             toast({
               title: 'Avatar Updated',
-              description: 'Your profile picture has been updated successfully.',
+              description:
+                'Your profile picture has been updated successfully.',
               variant: 'success',
             });
 
