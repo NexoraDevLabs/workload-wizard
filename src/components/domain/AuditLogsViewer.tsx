@@ -1313,20 +1313,14 @@ export function AuditLogsViewer({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          loadMore();
-                        }}
-                        disabled={!hasMore || isLoading}
+                        onClick={loadMore}
+                        disabled={!hasMore}
                         className="h-8 px-3"
                       >
-                        {isLoading ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <ChevronRight className="h-4 w-4" />
-                            Next
-                          </>
-                        )}
+                        <>
+                          <ChevronRight className="h-4 w-4" />
+                          Next
+                        </>
                       </Button>
                     </div>
                   </div>
