@@ -60,7 +60,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -1330,20 +1329,6 @@ export function AuditLogsViewer({
                         )}
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // For cursor-based pagination, we can't jump to last page directly
-                          // This would load all remaining pages
-                        }}
-                        disabled={!hasMore || isLoading}
-                        className="h-8 px-3"
-                        title="Go to last page (not supported with cursor-based pagination)"
-                      >
-                        <ChevronsRight className="h-4 w-4 mr-1" />
-                        Last
-                      </Button>
                     </div>
                   </div>
                 </div>

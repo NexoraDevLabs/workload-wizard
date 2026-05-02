@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { getEnv } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 // Initialize Convex client
 function getConvexClient(): ConvexHttpClient | null {
@@ -62,8 +63,7 @@ export async function POST(request: NextRequest) {
   try {
     const convex = getConvexClient();
     if (!convex) {
-      // eslint-disable-next-line no-console
-      console.error('Convex client not available for CSP report storage');
+      logger.error('Convex client not available for CSP report storage');
       return NextResponse.json(
         { error: 'Service unavailable' },
         { status: 503 }
@@ -74,9 +74,8 @@ export async function POST(request: NextRequest) {
     let body: unknown;
     try {
       body = await request.json();
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to parse CSP report JSON:', error);
+    } catch {
+      logger.error('Failed to parse CSP report JSON');
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
     }
 
@@ -91,8 +90,10 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!effectiveDirective || !violatedDirective) {
-      // eslint-disable-next-line no-console
-      console.error('Invalid CSP report: missing required fields', report);
+      logger.error('Invalid CSP report: missing required fields', {
+        hasEffectiveDirective: Boolean(effectiveDirective),
+        hasViolatedDirective: Boolean(violatedDirective),
+      });
       return NextResponse.json(
         { error: 'Invalid report format' },
         { status: 400 }
@@ -192,8 +193,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Error processing CSP report:', error);
+    logger.error('Error processing CSP report', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

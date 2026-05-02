@@ -10,7 +10,7 @@
 import { readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -127,11 +127,19 @@ console.log('   4. Switch to enforce mode when ready');
     writeFileSync(tempFile, cspScript);
 
     // Run the TypeScript file with tsx
-    execSync(`npx tsx ${tempFile}`, {
-      cwd: projectRoot,
-      stdio: 'inherit',
-      env: { ...process.env, ...mockEnv },
-    });
+    const runResult = spawnSync(
+      process.execPath,
+      ['--import', 'tsx', tempFile],
+      {
+        cwd: projectRoot,
+        stdio: 'inherit',
+        env: { ...process.env, ...mockEnv },
+        shell: false,
+      }
+    );
+    if (runResult.status !== 0) {
+      throw new Error('CSP check process failed');
+    }
   } catch (error) {
     console.error('❌ Error checking CSP configuration:', error.message);
     process.exit(1);

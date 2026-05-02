@@ -55,6 +55,25 @@ interface Post {
   author?: { name?: string; avatar?: SanityImage };
 }
 
+function isSanityImage(value: unknown): value is SanityImage {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const asset = (value as { asset?: unknown }).asset;
+  return (
+    !!asset &&
+    typeof asset === 'object' &&
+    '_ref' in asset &&
+    '_type' in asset &&
+    (asset as { _type?: unknown })._type === 'reference'
+  );
+}
+
+function isPost(value: unknown): value is Post {
+  return !!value && typeof value === 'object' && '_id' in value;
+}
+
 const POST_QUERY = `*[_type == "post" && slug.current == $slug][0]{
   _id,
   title,
@@ -164,28 +183,13 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       }
 
       try {
-        const fetchedPost = await client.fetch<Post | null>(POST_QUERY, {
+        const fetchedPost: unknown = await client.fetch(POST_QUERY, {
           slug: params.slug,
         });
-        if (
-          fetchedPost &&
-          typeof fetchedPost === 'object' &&
-          fetchedPost !== null &&
-          '_id' in fetchedPost
-        ) {
+        if (isPost(fetchedPost)) {
           setPost(fetchedPost);
-          // Use proper type guards for the coverImage
           const coverImage = fetchedPost.coverImage;
-          if (
-            coverImage &&
-            typeof coverImage === 'object' &&
-            'asset' in coverImage &&
-            coverImage.asset &&
-            typeof coverImage.asset === 'object' &&
-            '_ref' in coverImage.asset &&
-            '_type' in coverImage.asset &&
-            coverImage.asset._type === 'reference'
-          ) {
+          if (isSanityImage(coverImage)) {
             setCoverUrl(
               urlFor(coverImage).width(1600).height(840).fit('crop').url()
             );

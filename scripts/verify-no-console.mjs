@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { globby } from 'globby';
 import fs from 'node:fs';
 
-const buildCmd = process.env.BUILD_CMD || 'pnpm build';
 console.log('Building application...');
-execSync(buildCmd, { stdio: 'inherit' });
+const buildResult = spawnSync('pnpm', ['build'], {
+  stdio: 'inherit',
+  shell: false,
+});
+if (buildResult.status !== 0) {
+  process.exit(buildResult.status ?? 1);
+}
 
 // Adjust these to your build output directories
 const dirs = ['.next', 'dist', 'build'].filter((d) => fs.existsSync(d));

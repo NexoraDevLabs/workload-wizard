@@ -180,8 +180,6 @@ export function LoginForm({
       setResetSuccess(
         'Verification code sent! Please enter the code and your new password.'
       );
-      // Save email to localStorage for refresh recovery
-      localStorage.setItem('passwordResetEmail', resetEmail);
     } catch (err: unknown) {
       // Handle Clerk password reset errors
       const clerkError = err as {
@@ -319,8 +317,6 @@ export function LoginForm({
             special: false,
             match: false,
           });
-          // Clear localStorage
-          localStorage.removeItem('passwordResetEmail');
           // Mark that user has returned to login after successful reset
           setHasReturnedToLogin(true);
         }, 1500);
@@ -432,8 +428,6 @@ export function LoginForm({
       special: false,
       match: false,
     });
-    // Clear localStorage
-    localStorage.removeItem('passwordResetEmail');
     // Mark that user has explicitly returned to login
     setHasReturnedToLogin(true);
   };
@@ -474,9 +468,6 @@ export function LoginForm({
             return;
           }
 
-          // Check if there's a saved email indicating a password reset was started
-          const savedEmail = localStorage.getItem('passwordResetEmail');
-
           // Try to get the current first factor
           const firstFactor = signIn.firstFactorVerification;
 
@@ -489,29 +480,13 @@ export function LoginForm({
               // Code was verified, show password form
               setShowPasswordForm(true);
               setResetSuccess('Please enter your new password.');
-              // Restore email from localStorage if available
-              if (savedEmail) {
-                setResetEmail(savedEmail);
-              }
             } else {
               // Code was sent but not verified, show password form
               setShowPasswordForm(true);
               setResetSuccess(
                 'Please enter the verification code and your new password.'
               );
-              // Restore email from localStorage if available
-              if (savedEmail) {
-                setResetEmail(savedEmail);
-              }
             }
-          } else if (savedEmail && !hasReturnedToLogin) {
-            // No active session but we have a saved email - user probably has a code sent
-            // but session was lost. Show password form to let them enter the code and password
-            setShowPasswordForm(true);
-            setResetEmail(savedEmail);
-            setResetSuccess(
-              'Please enter the verification code and your new password.'
-            );
           }
         } catch {
           // If there's an error checking the state, just stay on login form

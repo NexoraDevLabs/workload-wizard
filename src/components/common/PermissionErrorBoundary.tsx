@@ -21,7 +21,6 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
   isPermissionError: boolean;
 }
 
@@ -51,7 +50,6 @@ export class PermissionErrorBoundary extends Component<Props, State> {
 
     return {
       hasError: true,
-      error,
       isPermissionError,
     };
   }

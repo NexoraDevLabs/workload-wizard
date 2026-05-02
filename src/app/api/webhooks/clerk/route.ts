@@ -255,7 +255,7 @@ async function handleUserCreated(userData: ClerkUserData) {
   // Also create the user in Statsig Users by logging an event
   try {
     const adapter = await getStatsigAdapter();
-    if (adapter && typeof adapter === 'object' && 'initialize' in adapter) {
+    if (isValidStatsigAdapter(adapter)) {
       const Statsig = await adapter.initialize();
       if (
         Statsig &&
@@ -330,12 +330,7 @@ async function handleUserUpdated(userData: ClerkUserData) {
 
   // Mirror update to Statsig
   const adapter = await getStatsigAdapter();
-  if (
-    adapter &&
-    typeof adapter === 'object' &&
-    adapter !== null &&
-    'initialize' in adapter
-  ) {
+  if (isValidStatsigAdapter(adapter)) {
     try {
       const Statsig = await adapter.initialize();
       if (
@@ -407,20 +402,8 @@ async function handleSessionCreated(sessionData: unknown) {
 
   // Log a login event to Statsig to ensure the user appears in Users
   const adapter = await getStatsigAdapter();
-  if (
-    adapter &&
-    typeof adapter === 'object' &&
-    adapter !== null &&
-    'initialize' in adapter
-  ) {
-    const Statsig = await (
-      adapter as {
-        initialize(): Promise<{
-          logEvent: (event: unknown, name: string) => Promise<void>;
-          flush: () => Promise<void>;
-        }>;
-      }
-    ).initialize();
+  if (isValidStatsigAdapter(adapter)) {
+    const Statsig = await adapter.initialize();
     await Statsig.logEvent(
       { userID: (s.user_id as string) || 'unknown' },
       'login'

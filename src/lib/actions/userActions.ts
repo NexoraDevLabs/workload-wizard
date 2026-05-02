@@ -2,6 +2,7 @@
 
 import { clerkClient } from '@clerk/nextjs/server';
 import { currentUser } from '@clerk/nextjs/server';
+import { randomBytes } from 'node:crypto';
 // Removed unused imports
 import { revalidatePath } from 'next/cache';
 import { api } from '@/convex/_generated/api';
@@ -183,7 +184,7 @@ export async function createUser(data: CreateUserData) {
 
     // Generate password if not provided
     const password =
-      data.password || Math.random().toString(36).substring(2, 15) + '!1';
+      data.password || `${randomBytes(12).toString('base64url')}!1aA`;
 
     // Create new user in Clerk
     const clerk = await clerkClient();
@@ -755,16 +756,15 @@ export async function deactivateUser(userId: string) {
 
   try {
     // Get user details before deactivation for audit logging
-    let userEmail = 'unknown';
-    let userRole = 'unknown';
+    let userEmail: string | null = null;
 
     try {
       const user = await (await clerkClient()).users.getUser(userId);
       const primaryEmail = user.emailAddresses.find(
         (email) => email.id === user.primaryEmailAddressId
       );
-      userEmail = primaryEmail?.emailAddress || 'unknown';
-      userRole = (user.publicMetadata?.role as string) || 'unknown';
+      userEmail = primaryEmail?.emailAddress || null;
+      const userRole = (user.publicMetadata?.role as string) || 'unknown';
 
       // Prevent deactivating orgadmin or sysadmin users
       if (userRole === 'orgadmin' || userRole === 'sysadmin') {
@@ -788,7 +788,7 @@ export async function deactivateUser(userId: string) {
     // Log the user deactivation
     await logUserDeactivated(
       userId,
-      userEmail,
+      userEmail || 'unknown',
       `User deactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
     );
 

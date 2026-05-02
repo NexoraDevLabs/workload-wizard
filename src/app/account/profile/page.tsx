@@ -185,174 +185,166 @@ export default function ProfilePage() {
       }
 
       // Update user data
-      if (user) {
-        await user.update({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          username: formData.username,
-        });
+      await user.update({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
+      });
 
-        // Update email if changed
-        if (formData.email !== userEmail) {
-          try {
-            const response = await fetch('/api/update-user-email', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: user.id,
-                newEmail: formData.email.trim(),
-              }),
-            });
+      // Update email if changed
+      if (formData.email !== userEmail) {
+        try {
+          const response = await fetch('/api/update-user-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              newEmail: formData.email.trim(),
+            }),
+          });
 
-            if (!response.ok) {
-              const errorData = (await response.json()) as { error?: string };
-              throw new Error(errorData.error || 'Failed to update email');
-            }
+          if (!response.ok) {
+            const errorData = (await response.json()) as { error?: string };
+            throw new Error(errorData.error || 'Failed to update email');
+          }
 
+          toast({
+            title: 'Email Updated',
+            description: 'Your email address has been updated successfully.',
+            variant: 'success',
+          });
+
+          // Reload user data to get updated email
+          await user.reload();
+        } catch (emailError) {
+          toast({
+            title: 'Email Update Failed',
+            description:
+              emailError instanceof Error
+                ? emailError.message
+                : 'Failed to update email. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+
+      // Update avatar if selected
+      if (avatarFile && avatarFile.size > 0) {
+        try {
+          // Validate file type
+          const allowedTypes = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+          ];
+          if (!allowedTypes.includes(avatarFile.type)) {
             toast({
-              title: 'Email Updated',
-              description: 'Your email address has been updated successfully.',
-              variant: 'success',
-            });
-
-            // Reload user data to get updated email
-            await user.reload();
-          } catch (emailError) {
-            toast({
-              title: 'Email Update Failed',
-              description:
-                emailError instanceof Error
-                  ? emailError.message
-                  : 'Failed to update email. Please try again.',
+              title: 'Invalid File Type',
+              description: 'Please select a JPG, PNG, GIF, or WebP image.',
               variant: 'destructive',
             });
             return;
           }
-        }
 
-        // Update avatar if selected
-        if (avatarFile && avatarFile.size > 0) {
-          try {
-            // Validate file type
-            const allowedTypes = [
-              'image/jpeg',
-              'image/png',
-              'image/gif',
-              'image/webp',
-            ];
-            if (!allowedTypes.includes(avatarFile.type)) {
-              toast({
-                title: 'Invalid File Type',
-                description: 'Please select a JPG, PNG, GIF, or WebP image.',
-                variant: 'destructive',
-              });
-              return;
-            }
-
-            // Validate file size (5MB limit)
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (avatarFile.size > maxSize) {
-              toast({
-                title: 'File Too Large',
-                description: 'Please select an image smaller than 5MB.',
-                variant: 'destructive',
-              });
-              return;
-            }
-
-            // Upload to Clerk first
-
-            try {
-              await user.setProfileImage({ file: avatarFile });
-            } catch (clerkError) {
-              // Clerk upload error
-              throw new Error(
-                `Clerk upload failed: ${clerkError instanceof Error ? clerkError.message : 'Unknown error'}`
-              );
-            }
-
-            // Wait a moment for Clerk to process the image and update the URL
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // Get the updated image URL from Clerk
-            const updatedImageUrl = user.imageUrl;
-
-            // Sync the new avatar URL to Convex
-            if (updatedImageUrl && updatedImageUrl !== avatarUrl) {
-              await updateUserAvatar({
-                subject: user.id,
-                pictureUrl: updatedImageUrl,
-              });
-
-              toast({
-                title: 'Avatar Updated',
-                description:
-                  'Your profile picture has been updated successfully.',
-                variant: 'success',
-              });
-
-              // Force a refresh of the user data to get the updated avatar
-              await user.reload();
-
-              // Increment refresh key to force avatar re-render
-              setAvatarRefreshKey((prev) => prev + 1);
-            } else {
-              toast({
-                title: 'Avatar Update',
-                description:
-                  'Avatar uploaded to Clerk. It may take a moment to appear.',
-                variant: 'success',
-              });
-            }
-          } catch (avatarError) {
-            // Avatar update error
-
-            // Provide more specific error messages
-            let errorMessage = 'Failed to update avatar. Please try again.';
-            if (avatarError instanceof Error) {
-              if (avatarError.message.includes('network')) {
-                errorMessage =
-                  'Network error. Please check your connection and try again.';
-              } else if (avatarError.message.includes('unauthorized')) {
-                errorMessage = 'Authentication error. Please sign in again.';
-              } else if (avatarError.message.includes('file')) {
-                errorMessage =
-                  'Invalid file. Please select a valid image file.';
-              }
-            }
-
+          // Validate file size (5MB limit)
+          const maxSize = 5 * 1024 * 1024; // 5MB
+          if (avatarFile.size > maxSize) {
             toast({
-              title: 'Avatar Update Failed',
-              description: errorMessage,
+              title: 'File Too Large',
+              description: 'Please select an image smaller than 5MB.',
               variant: 'destructive',
             });
+            return;
           }
-        }
 
-        // Only capture if PostHog is available
-        if (typeof posthog !== 'undefined' && posthog.capture) {
-          posthog.capture('profile-updated', {
-            user_id: user.id,
-            avatar_updated: !!(avatarFile && avatarFile.size > 0),
+          // Upload to Clerk first
+          try {
+            await user.setProfileImage({ file: avatarFile });
+          } catch (clerkError) {
+            throw new Error(
+              `Clerk upload failed: ${clerkError instanceof Error ? clerkError.message : 'Unknown error'}`
+            );
+          }
+
+          // Wait a moment for Clerk to process the image and update the URL
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Get the updated image URL from Clerk
+          const updatedImageUrl = user.imageUrl;
+
+          // Sync the new avatar URL to Convex
+          if (updatedImageUrl && updatedImageUrl !== avatarUrl) {
+            await updateUserAvatar({
+              subject: user.id,
+              pictureUrl: updatedImageUrl,
+            });
+
+            toast({
+              title: 'Avatar Updated',
+              description: 'Your profile picture has been updated successfully.',
+              variant: 'success',
+            });
+
+            // Force a refresh of the user data to get the updated avatar
+            await user.reload();
+
+            // Increment refresh key to force avatar re-render
+            setAvatarRefreshKey((prev) => prev + 1);
+          } else {
+            toast({
+              title: 'Avatar Update',
+              description:
+                'Avatar uploaded to Clerk. It may take a moment to appear.',
+              variant: 'success',
+            });
+          }
+        } catch (avatarError) {
+          // Provide more specific error messages
+          let errorMessage = 'Failed to update avatar. Please try again.';
+          if (avatarError instanceof Error) {
+            if (avatarError.message.includes('network')) {
+              errorMessage =
+                'Network error. Please check your connection and try again.';
+            } else if (avatarError.message.includes('unauthorized')) {
+              errorMessage = 'Authentication error. Please sign in again.';
+            } else if (avatarError.message.includes('file')) {
+              errorMessage = 'Invalid file. Please select a valid image file.';
+            }
+          }
+
+          toast({
+            title: 'Avatar Update Failed',
+            description: errorMessage,
+            variant: 'destructive',
           });
         }
-
-        toast({
-          title: 'Profile Updated',
-          description: 'Your profile has been successfully updated.',
-          variant: 'success',
-        });
-
-        setIsEditing(false);
-        setFormData({
-          firstName: user.firstName || '',
-          lastName: user.lastName || '',
-          username: user.username || '',
-          email: userEmail,
-        });
-        setAvatarFile(null);
-        setAvatarPreview('');
       }
+
+      // Only capture if PostHog is available
+      if (typeof posthog !== 'undefined' && posthog.capture) {
+        posthog.capture('profile-updated', {
+          user_id: user.id,
+          avatar_updated: !!(avatarFile && avatarFile.size > 0),
+        });
+      }
+
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been successfully updated.',
+        variant: 'success',
+      });
+
+      setIsEditing(false);
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        username: user.username || '',
+        email: userEmail,
+      });
+      setAvatarFile(null);
+      setAvatarPreview('');
     } catch {
       toast({
         title: 'Error',

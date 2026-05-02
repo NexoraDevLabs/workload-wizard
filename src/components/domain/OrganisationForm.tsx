@@ -111,12 +111,10 @@ export function OrganisationForm() {
         },
         toast
       );
-      if (data) {
-        analytics.track('organisation.created', {
-          code: data.code,
-          name: data.name,
-        });
-      }
+      analytics.track('organisation.created', {
+        code: data.code,
+        name: data.name,
+      });
       (event.target as HTMLFormElement).reset();
     } finally {
       setIsLoading(false);
