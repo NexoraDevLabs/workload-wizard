@@ -9,12 +9,12 @@ const EMAIL_CONFIG = {
   // Base URL for the application
   BASE_URL:
     process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL?.replace('/sign-in', '') ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace('/sign-in', '') ||
     'https://workload-wiz.xyz',
 
   // Sign-in URL
   SIGN_IN_URL:
-    process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
     'https://workload-wiz.xyz/sign-in',
 
   // Dashboard URL
@@ -49,9 +49,9 @@ const getBaseUrl = () => {
       return process.env.NEXT_PUBLIC_APP_URL;
     }
 
-    if (process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL) {
+    if (process.env.NEXT_PUBLIC_APP_URL) {
       // Extract base URL from the sign-in URL
-      const url = new URL(process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL);
+      const url = new URL(process.env.NEXT_PUBLIC_APP_URL);
       return `${url.protocol}//${url.host}`;
     }
   } catch {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -58,7 +58,7 @@ function SummaryCard({
 }
 
 export function WorkloadSummaryCards() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { currentYear } = useAcademicYear();
 
   // Find the linked lecturer profile for the current user

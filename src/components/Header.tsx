@@ -3,13 +3,13 @@
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { WandSparkles } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 const Header = () => {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAuthUser();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const _isBlogPage = pathname === '/blog';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -31,7 +31,7 @@ interface AcademicYear {
 }
 
 export default function AcademicYearsAdminPage() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);

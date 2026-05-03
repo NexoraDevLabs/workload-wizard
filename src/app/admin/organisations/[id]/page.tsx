@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -26,7 +26,7 @@ import {
 export default function AdminOrganisationOverviewPage() {
   const params = useParams();
   const organisationId = params?.id as Id<'organisations'>;
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const router = useRouter();
 
   // Authorisation: only sysadmin or developer

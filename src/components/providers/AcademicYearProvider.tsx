@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -60,7 +60,7 @@ function AcademicYearProviderInternal({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
 
   // Management detection from convex user.systemRoles
@@ -321,7 +321,7 @@ export function AcademicYearProvider({
 
   // Check if we're in build time to avoid Clerk initialization
   const isBuildTime =
-    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
+    !env.NEXT_PUBLIC_CONVEX_URL;
 
   // If in build time, render children without context
   if (isBuildTime) {

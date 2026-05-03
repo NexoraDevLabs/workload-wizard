@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { logger } from '@/lib/logger';
@@ -94,8 +94,8 @@ const onboardingSteps = [
 ];
 
 export default function OnboardingPage() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { user } = useAuthUser();
+  const { signOut } = useAuthUser();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);
