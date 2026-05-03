@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
 import { z } from 'zod';
 import { PermissionGate } from '@/components/common/PermissionGate';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface AdminCategory {
   _id: Id<'organisation_admin_allocation_categories'>;
@@ -25,7 +25,7 @@ interface AdminCategory {
 
 export default function OrganisationAdminAllocationsSettingsPage() {
   const { toast } = useToast();
-  const { isLoaded } = useUser();
+  const { isLoaded } = useAuthUser();
   const categories = useQuery(
     api.allocations.listOrganisationAdminCategories,
     isLoaded ? {} : 'skip'

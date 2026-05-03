@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -60,7 +60,7 @@ function AcademicYearProviderInternal({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
 
   // Management detection from convex user.systemRoles

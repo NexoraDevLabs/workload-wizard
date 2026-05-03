@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSignIn } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import {
   Card,
   CardContent,
@@ -40,7 +40,7 @@ function ResetPasswordForm() {
   const [success, setSuccess] = useState(false);
   const [token, setToken] = useState<string | null>(null);
 
-  const { signIn, setActive: _setActive } = useSignIn();
+  const { signIn, setActive: _setActive } = useAuthUser();
   // Wrap useSearchParams usage to appease Next.js build when prerendering
   const searchParams = useSearchParams();
   const router = useRouter();

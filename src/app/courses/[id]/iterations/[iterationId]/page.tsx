@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
@@ -82,7 +82,7 @@ export default function IterationDetailsPage() {
   const iterationId = params?.iterationId;
 
   const { currentYear: _currentYear } = useAcademicYear();
-  const { user } = useUser();
+  const { user } = useAuthUser();
 
   // Fetch course and module data
   const course = useQuery(

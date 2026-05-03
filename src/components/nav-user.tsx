@@ -10,7 +10,7 @@ import {
   Shield,
   LifeBuoy,
 } from 'lucide-react';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -33,8 +33,8 @@ import {
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export function NavUser() {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { user, isLoaded } = useAuthUser();
+  const { signOut } = useAuthUser();
   const { isMobile } = useSidebar();
   const router = useRouter();
 

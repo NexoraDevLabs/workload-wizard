@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { getUserRoles } from '@/lib/utils';
 import {
   Building2,
@@ -254,7 +254,7 @@ const getProjectsData = (userRoles?: string[]) => {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const userRoles = getUserRoles(user);
   const { state } = useSidebar();
 

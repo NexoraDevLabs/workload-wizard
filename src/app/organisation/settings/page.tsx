@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -53,7 +53,7 @@ export default function OrganisationSettingsPage() {
     { label: 'Settings' },
   ];
 
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const settings = useQuery(api.organisationSettings.getOrganisationSettings, {
     userId: user?.id || '',
   });
