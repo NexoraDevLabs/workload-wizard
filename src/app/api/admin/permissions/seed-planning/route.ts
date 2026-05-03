@@ -5,6 +5,7 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { recordAudit } from '@/lib/audit';
 import { can } from '@/lib/auth/permissions';
+import { getAuthUser } from '@/lib/authz';
 
 interface ApiError {
   statusCode?: number;
@@ -19,7 +20,8 @@ export async function POST(_req: NextRequest) {
     }
 
     const me = await currentUser();
-    if (!can(me, 'permissions.seed')) {
+    const authUser = await getAuthUser();
+    if (!can(authUser, 'permissions.seed')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -1,6 +1,8 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { hasPermission, type PermissionId } from './permissions';
 import { redirect } from 'next/navigation';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 export type SessionUser = {
   userId: string;
@@ -15,22 +17,13 @@ export type AuthUser = {
   email: string | undefined;
   orgId: string;
   role: AuthRole;
+  systemRoles: string[];
+  organisationRoles: string[];
 };
 
 // Define proper error type with status code
 export interface AuthError extends Error {
   statusCode: number;
-}
-
-function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
-  if (
-    value &&
-    typeof value === 'object' &&
-    key in (value as Record<string, unknown>)
-  ) {
-    return (value as Record<string, unknown>)[key] as T;
-  }
-  return undefined;
 }
 
 export function normalizeRole(role: string | undefined): AuthRole {
@@ -54,6 +47,48 @@ function toLegacyPermissionRole(role: AuthRole): string {
   return role;
 }
 
+let convexClient: ConvexHttpClient | null = null;
+
+function getConvexClient(): ConvexHttpClient {
+  if (!convexClient) {
+    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!url) {
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
+    }
+    convexClient = new ConvexHttpClient(url);
+  }
+  return convexClient;
+}
+
+function normalizeOrgRole(role: string | undefined): AuthRole {
+  const normalized = role
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (
+    normalized === 'org_admin' ||
+    normalized === 'orgadmin' ||
+    normalized === 'organisation_admin' ||
+    normalized === 'admin'
+  ) {
+    return 'org_admin';
+  }
+  return 'member';
+}
+
+function getHighestRole(systemRoles: string[], organisationRoles: string[]) {
+  if (systemRoles.some((role) => normalizeRole(role) === 'sysadmin')) {
+    return 'sysadmin';
+  }
+  if (
+    systemRoles.some((role) => normalizeRole(role) === 'org_admin') ||
+    organisationRoles.some((role) => normalizeOrgRole(role) === 'org_admin')
+  ) {
+    return 'org_admin';
+  }
+  return 'member';
+}
+
 export async function getSessionUser(): Promise<SessionUser> {
   const user = await getAuthUser();
   return {
@@ -66,29 +101,27 @@ export async function getSessionUser(): Promise<SessionUser> {
 export async function getAuthUser(): Promise<AuthUser> {
   const session = await auth();
   if (!session?.userId) throw new Error('Unauthenticated');
-  const user = await currentUser();
+  const clerkUser = await currentUser();
+  const dbUser = await getConvexClient().query(api.users.getAuthContext, {
+    subject: session.userId,
+  });
 
   const orgId =
-    extractFromUnknown<string>(
-      session.sessionClaims as unknown,
-      'organisationId'
-    ) ||
-    extractFromUnknown<string>(
-      user?.publicMetadata as unknown,
-      'organisationId'
-    );
-
-  const role = normalizeRole(
-    extractFromUnknown<string>(session.sessionClaims as unknown, 'role') ||
-      extractFromUnknown<string>(user?.publicMetadata as unknown, 'role')
-  );
+    dbUser?.organisationId &&
+    typeof dbUser.organisationId === 'string' &&
+    dbUser.organisationId;
+  const systemRoles = dbUser?.systemRoles ?? [];
+  const organisationRoles = dbUser?.organisationRoles ?? [];
+  const role = getHighestRole(systemRoles, organisationRoles);
 
   if (!orgId) throw new Error('Missing organisationId');
   return {
     id: session.userId,
-    email: user?.emailAddresses[0]?.emailAddress,
+    email: dbUser?.email ?? clerkUser?.emailAddresses[0]?.emailAddress,
     orgId,
     role,
+    systemRoles,
+    organisationRoles,
   };
 }
 

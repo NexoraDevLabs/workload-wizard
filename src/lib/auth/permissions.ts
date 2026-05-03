@@ -11,6 +11,8 @@ type Metadata = {
 };
 
 type PermissionUser = {
+  role?: unknown;
+  systemRoles?: unknown;
   publicMetadata?: Metadata;
 };
 
@@ -31,6 +33,18 @@ export type AuthAction =
   | 'users.update_username';
 
 function getUserRoles(user: PermissionUser | null | undefined): AuthRole[] {
+  const systemRoles = Array.isArray(user?.systemRoles)
+    ? user.systemRoles.filter(
+        (role): role is string => typeof role === 'string'
+      )
+    : [];
+  const directRoles = [
+    ...(typeof user?.role === 'string' ? [user.role] : []),
+    ...systemRoles,
+  ]
+    .filter((role): role is string => typeof role === 'string')
+    .map((role) => normalizeRole(role));
+
   const metadata = user?.publicMetadata;
   const rawRoles = Array.isArray(metadata?.roles) ? metadata.roles : [];
   const roles = rawRoles
@@ -41,7 +55,9 @@ function getUserRoles(user: PermissionUser | null | undefined): AuthRole[] {
     roles.push(normalizeRole(metadata.role));
   }
 
-  return roles.length > 0 ? Array.from(new Set(roles)) : ['member'];
+  const allRoles = [...directRoles, ...roles];
+
+  return allRoles.length > 0 ? Array.from(new Set(allRoles)) : ['member'];
 }
 
 export function hasRole(

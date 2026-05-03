@@ -10,6 +10,7 @@ import {
 import type { Id } from '@/convex/_generated/dataModel';
 import { z } from 'zod';
 import { can, hasRole } from '@/lib/auth/permissions';
+import { getAuthUser, getOrganisationIdFromSession } from '@/lib/authz';
 
 const BodySchema = z.object({
   userId: z.string().min(1),
@@ -27,7 +28,6 @@ const BodySchema = z.object({
   organisationalRoleId: z.string().optional(),
   organisationalRoleIds: z.array(z.string()).optional(),
 });
-import { getOrganisationIdFromSession } from '@/lib/authz';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -55,10 +55,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isAdmin = hasRole(currentUserData, 'sysadmin');
-    const isOrgAdmin = hasRole(currentUserData, 'org_admin');
+    const authUser = await getAuthUser();
+    const isAdmin = hasRole(authUser, 'sysadmin');
+    const isOrgAdmin = hasRole(authUser, 'org_admin');
 
-    if (!can(currentUserData, 'users.admin')) {
+    if (!can(authUser, 'users.admin')) {
       return NextResponse.json(
         { error: 'Unauthorised: Admin access required' },
         { status: 403 }
@@ -100,12 +101,13 @@ export async function POST(request: NextRequest) {
 
     // Guardrail: orgadmin (who is NOT sysadmin/developer) cannot assign or revoke system-level roles
     if (!isAdmin && isOrgAdmin && Array.isArray(systemRoles)) {
-      const targetUserPreview = await (
-        await clerkClient()
-      ).users.getUser(userId);
+      const targetUserPreview = await getConvexClient().query(
+        api.users.getAuthContext,
+        { subject: userId }
+      );
       const targetIsSystem = hasRole(targetUserPreview, 'sysadmin');
       const addingSystem = systemRoles.some((role: string) =>
-        hasRole({ publicMetadata: { role } }, 'sysadmin')
+        hasRole({ systemRoles: [role] }, 'sysadmin')
       );
       if (targetIsSystem || addingSystem) {
         return NextResponse.json(
@@ -123,9 +125,11 @@ export async function POST(request: NextRequest) {
 
     // If orgadmin (and not sysadmin/developer), ensure they can only update users in their own organisation
     if (!isAdmin && isOrgAdmin) {
-      const targetUser = await clerk.users.getUser(userId);
-      const targetUserOrgId = targetUser.publicMetadata
-        ?.organisationId as string;
+      const targetUser = await getConvexClient().query(
+        api.users.getAuthContext,
+        { subject: userId }
+      );
+      const targetUserOrgId = targetUser?.organisationId;
       const currentUserOrgId = await getOrganisationIdFromSession();
 
       if (targetUserOrgId !== currentUserOrgId) {
@@ -166,31 +170,6 @@ export async function POST(request: NextRequest) {
       }
       if (username && username !== existingClerkUser.username) {
         clerkUpdates.username = username;
-      }
-
-      // Update public metadata if systemRoles or organisationId is different
-      const needsMetadataUpdate =
-        (systemRoles &&
-          JSON.stringify(systemRoles) !==
-            JSON.stringify(existingClerkUser.publicMetadata?.roles)) ||
-        (isAdmin &&
-          organisationId !== undefined &&
-          organisationId !==
-            (existingClerkUser.publicMetadata?.organisationId as
-              | string
-              | undefined));
-
-      if (needsMetadataUpdate) {
-        const nextMeta: Record<string, unknown> = {
-          ...(existingClerkUser.publicMetadata as Record<string, unknown>),
-        };
-        if (systemRoles) {
-          nextMeta.roles = systemRoles;
-        }
-        if (isAdmin && organisationId !== undefined) {
-          nextMeta.organisationId = organisationId;
-        }
-        clerkUpdates.publicMetadata = nextMeta;
       }
 
       // Only make API call if there are actual changes

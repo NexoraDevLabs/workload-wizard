@@ -17,6 +17,7 @@ import {
 import type { Id } from '@/convex/_generated/dataModel';
 import { sendUserInvitationEmail } from '@/lib/services/emailService';
 import { can, hasRole } from '@/lib/auth/permissions';
+import { getAuthUser } from '@/lib/authz';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -52,17 +53,16 @@ export async function createUser(data: CreateUserData) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  const isOrgAdmin = hasRole(currentUserData, 'org_admin');
+  const authUser = await getAuthUser();
+  const isOrgAdmin = hasRole(authUser, 'org_admin');
 
-  if (!can(currentUserData, 'users.admin')) {
+  if (!can(authUser, 'users.admin')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
   // If orgadmin, ensure they can only create users in their own organisation
   if (isOrgAdmin) {
-    const actorOrgId = currentUserData.publicMetadata?.organisationId as
-      | string
-      | undefined;
+    const actorOrgId = authUser.orgId;
     if (!actorOrgId) {
       throw new Error('Unauthorised: User must be assigned to an organisation');
     }
@@ -74,7 +74,7 @@ export async function createUser(data: CreateUserData) {
   }
 
   // Ensure user has an organisationId (for orgadmins)
-  if (isOrgAdmin && !currentUserData.publicMetadata?.organisationId) {
+  if (isOrgAdmin && !authUser.orgId) {
     throw new Error('Unauthorised: User must be assigned to an organisation');
   }
 
@@ -90,9 +90,7 @@ export async function createUser(data: CreateUserData) {
     let organisationId: Id<'organisations'> | undefined =
       (data.organisationId as unknown as Id<'organisations'>) || undefined;
     if (!organisationId) {
-      const actorOrgId = currentUserData.publicMetadata?.organisationId as
-        | string
-        | undefined;
+      const actorOrgId = authUser.orgId;
       if (isOrgAdmin && actorOrgId) {
         organisationId = actorOrgId as unknown as Id<'organisations'>;
       }
@@ -135,18 +133,6 @@ export async function createUser(data: CreateUserData) {
           );
 
           if (primaryEmail) {
-            // Update Clerk user with organisationId if not already set
-            if (!existingUser.publicMetadata?.organisationId) {
-              await (
-                await clerkClient()
-              ).users.updateUser(existingUser.id, {
-                publicMetadata: {
-                  ...existingUser.publicMetadata,
-                  organisationId: organisationId,
-                },
-              });
-            }
-
             await getConvexClient().mutation(api.users.create, {
               email: primaryEmail.emailAddress,
               username: existingUser.username || '',
@@ -303,6 +289,7 @@ export async function createUser(data: CreateUserData) {
 
 export async function listUsers() {
   const currentUserData = await currentUser();
+  const authUser = currentUserData ? await getAuthUser() : null;
 
   // Check if this is a dev login session (server-side check)
   const isDevLoginSession =
@@ -310,7 +297,7 @@ export async function listUsers() {
 
   if (
     !currentUserData ||
-    (!can(currentUserData, 'users.list') && !isDevLoginSession)
+    (!can(authUser, 'users.list') && !isDevLoginSession)
   ) {
     throw new Error('Unauthorised: Admin access required');
   }
@@ -341,6 +328,7 @@ export async function listUsers() {
 
 export async function deleteUser(userId: string) {
   const currentUserData = await currentUser();
+  const authUser = currentUserData ? await getAuthUser() : null;
 
   // Check if this is a dev login session (server-side check)
   const isDevLoginSession =
@@ -348,7 +336,7 @@ export async function deleteUser(userId: string) {
 
   if (
     !currentUserData ||
-    (!can(currentUserData, 'users.delete') && !isDevLoginSession)
+    (!can(authUser, 'users.delete') && !isDevLoginSession)
   ) {
     throw new Error('Unauthorised: Admin access required');
   }
@@ -423,25 +411,28 @@ export async function updateUser(
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  const isOrgAdmin = hasRole(currentUserData, 'org_admin');
+  const authUser = await getAuthUser();
+  const isOrgAdmin = hasRole(authUser, 'org_admin');
 
-  if (!can(currentUserData, 'users.admin')) {
+  if (!can(authUser, 'users.admin')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
   // If orgadmin, ensure they can only update users in their own organisation
   if (isOrgAdmin) {
     // Ensure orgadmin has an organisationId
-    if (!currentUserData.publicMetadata?.organisationId) {
+    if (!authUser.orgId) {
       throw new Error('Unauthorised: User must be assigned to an organisation');
     }
 
     // Get the user being updated to check their organisation
     try {
-      const userToUpdate = await (await clerkClient()).users.getUser(userId);
-      const userOrgId = userToUpdate.publicMetadata?.organisationId as string;
-      const currentUserOrgId = currentUserData.publicMetadata
-        ?.organisationId as string;
+      const userToUpdate = await getConvexClient().query(
+        api.users.getAuthContext,
+        { subject: userId }
+      );
+      const userOrgId = userToUpdate?.organisationId;
+      const currentUserOrgId = authUser.orgId;
 
       if (userOrgId !== currentUserOrgId) {
         throw new Error(
@@ -539,11 +530,12 @@ export async function updateUser(
     // Update organisational role if provided
     if (updates.organisationalRoleId && userToUpdateData) {
       try {
+        const targetAuthContext = await getConvexClient().query(
+          api.users.getAuthContext,
+          { subject: userId }
+        );
         const targetOrganisationId =
-          updates.organisationId ||
-          ((
-            userToUpdateData as { publicMetadata?: { organisationId?: string } }
-          ).publicMetadata?.organisationId as string);
+          updates.organisationId || targetAuthContext?.organisationId;
         if (targetOrganisationId) {
           await getConvexClient().mutation(
             api.organisationalRoles.assignToUser,
@@ -577,18 +569,14 @@ export async function getUsersByOrganisationId(organisationId: string) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  if (
-    !hasRole(currentUserData, 'sysadmin') &&
-    currentUserData.publicMetadata?.organisationId !== organisationId
-  ) {
+  const authUser = await getAuthUser();
+
+  if (!hasRole(authUser, 'sysadmin') && authUser.orgId !== organisationId) {
     throw new Error('Unauthorised: Access denied to this organisation');
   }
 
   // Ensure user has an organisationId (for orgadmins)
-  if (
-    hasRole(currentUserData, 'org_admin') &&
-    !currentUserData.publicMetadata?.organisationId
-  ) {
+  if (hasRole(authUser, 'org_admin') && !authUser.orgId) {
     throw new Error('Unauthorised: User must be assigned to an organisation');
   }
 
@@ -652,15 +640,14 @@ export async function deactivateUser(userId: string) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  if (!can(currentUserData, 'users.deactivate')) {
+  const authUser = await getAuthUser();
+
+  if (!can(authUser, 'users.deactivate')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
   // Ensure user has an organisationId (for orgadmins)
-  if (
-    hasRole(currentUserData, 'org_admin') &&
-    !currentUserData.publicMetadata?.organisationId
-  ) {
+  if (hasRole(authUser, 'org_admin') && !authUser.orgId) {
     throw new Error('Unauthorised: User must be assigned to an organisation');
   }
 
@@ -698,7 +685,7 @@ export async function deactivateUser(userId: string) {
     await logUserDeactivated(
       userId,
       userEmail || 'unknown',
-      `User deactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
+      `User deactivated by ${authUser.role}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
     );
 
     revalidatePath('/organisation/users');
@@ -718,15 +705,14 @@ export async function reactivateUser(userId: string) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  if (!can(currentUserData, 'users.reactivate')) {
+  const authUser = await getAuthUser();
+
+  if (!can(authUser, 'users.reactivate')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
   // Ensure user has an organisationId (for orgadmins)
-  if (
-    hasRole(currentUserData, 'org_admin') &&
-    !currentUserData.publicMetadata?.organisationId
-  ) {
+  if (hasRole(authUser, 'org_admin') && !authUser.orgId) {
     throw new Error('Unauthorized: User must be assigned to an organisation');
   }
 
@@ -760,7 +746,7 @@ export async function reactivateUser(userId: string) {
     await logUserReactivated(
       userId,
       userEmail,
-      `User reactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
+      `User reactivated by ${authUser.role}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
     );
 
     revalidatePath('/organisation/users');
@@ -803,13 +789,11 @@ export async function getUsersByOrganisationIdWithOverride(
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  const isAdmin = hasRole(currentUserData, 'sysadmin');
+  const authUser = await getAuthUser();
+  const isAdmin = hasRole(authUser, 'sysadmin');
 
   // If not admin, check if user has access to this organisation
-  if (
-    !isAdmin &&
-    currentUserData.publicMetadata?.organisationId !== organisationId
-  ) {
+  if (!isAdmin && authUser.orgId !== organisationId) {
     throw new Error('Unauthorized: Access denied to this organisation');
   }
 
@@ -880,13 +864,11 @@ export async function getAllUsersByOrganisationIdWithOverride(
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  const isAdmin = hasRole(currentUserData, 'sysadmin');
+  const authUser = await getAuthUser();
+  const isAdmin = hasRole(authUser, 'sysadmin');
 
   // If not admin, check if user has access to this organisation
-  if (
-    !isAdmin &&
-    currentUserData.publicMetadata?.organisationId !== organisationId
-  ) {
+  if (!isAdmin && authUser.orgId !== organisationId) {
     throw new Error('Unauthorized: Access denied to this organisation');
   }
 
@@ -954,7 +936,9 @@ export async function getAllOrganisations() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  if (!can(currentUserData, 'organisations.list')) {
+  const authUser = await getAuthUser();
+
+  if (!can(authUser, 'organisations.list')) {
     throw new Error('Unauthorized: Admin access required');
   }
 

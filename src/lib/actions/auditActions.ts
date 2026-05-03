@@ -6,6 +6,7 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 import { can } from '@/lib/auth/permissions';
+import { getAuthUser } from '@/lib/authz';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -107,8 +108,8 @@ export async function logAuditEvent(data: AuditLogData) {
     const action = normalizeAction(data.action);
     const entityType = normalizeEntityType(data.entityType);
     const severity = normalizeSeverity(data.severity);
-    const organisationId = currentUserData.publicMetadata
-      ?.organisationId as string;
+    const authUser = await getAuthUser();
+    const organisationId = authUser.orgId;
 
     // Create the audit log entry
     const base = {
@@ -611,16 +612,16 @@ export async function getAuditLogs(filters?: {
     throw new Error('Unauthorized: User not authenticated');
   }
 
+  const authUser = await getAuthUser();
+
   // System-level unrestricted access is ONLY for sysadmin/developer.
   // Orgadmins must always be scoped to their own organisation.
-  const isSystemAdmin = can(currentUserData, 'audit.stats');
+  const isSystemAdmin = can(authUser, 'audit.stats');
 
   if (!isSystemAdmin) {
     // Require an organisation scope matching the user's org
     const requestedOrgId = filters?.organisationId || undefined;
-    const userOrgId =
-      (currentUserData.publicMetadata?.organisationId as string | undefined) ||
-      undefined;
+    const userOrgId = authUser.orgId;
     if (!requestedOrgId || !userOrgId || requestedOrgId !== userOrgId) {
       throw new Error('Unauthorized: Admin access required');
     }
@@ -658,10 +659,9 @@ export async function getAuditLogs(filters?: {
                   organisationId: filters.organisationId as Id<'organisations'>,
                 }
               : {}),
-            ...(currentUserData.publicMetadata?.organisationId
+            ...(authUser.orgId
               ? {
-                  organisationId: currentUserData.publicMetadata
-                    .organisationId as Id<'organisations'>,
+                  organisationId: authUser.orgId as Id<'organisations'>,
                 }
               : {}),
           }),
@@ -697,7 +697,9 @@ export async function getAuditStats(filters?: {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  if (!can(currentUserData, 'audit.stats')) {
+  const authUser = await getAuthUser();
+
+  if (!can(authUser, 'audit.stats')) {
     throw new Error('Unauthorized: Admin access required');
   }
 

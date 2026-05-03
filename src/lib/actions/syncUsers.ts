@@ -5,6 +5,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { can } from '@/lib/auth/permissions';
+import { getAuthUser } from '@/lib/authz';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -27,7 +28,9 @@ export async function syncUsersFromClerk() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  if (!can(currentUserData, 'sync.users')) {
+  const authUser = await getAuthUser();
+
+  if (!can(authUser, 'sync.users')) {
     throw new Error('Unauthorized: Admin access required');
   }
 
@@ -76,13 +79,7 @@ export async function syncUsersFromClerk() {
 
         if (!existingConvexUser) {
           // Create user in Convex if not found
-          const systemRole =
-            (clerkUser.publicMetadata?.role as
-              | 'orgadmin'
-              | 'sysadmin'
-              | 'developer'
-              | 'user'
-              | 'trial') || 'user';
+          const systemRole = 'member';
 
           const createData = {
             email: primaryEmail,
@@ -145,7 +142,9 @@ export async function getSyncStatus() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  if (!can(currentUserData, 'sync.users')) {
+  const authUser = await getAuthUser();
+
+  if (!can(authUser, 'sync.users')) {
     throw new Error('Unauthorized: Admin access required');
   }
 

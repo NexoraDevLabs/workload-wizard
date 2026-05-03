@@ -444,6 +444,59 @@ export const getBySubject = query({
   },
 });
 
+export const getAuthContext = query({
+  args: { subject: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user) return null;
+
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.subject))
+      .collect();
+    const primaryMembership =
+      memberships.find((membership) => membership.isPrimary) ??
+      memberships[0] ??
+      null;
+    const organisationId =
+      primaryMembership?.organisationId ?? user.organisationId;
+
+    const assignments = await ctx.db
+      .query('user_role_assignments')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', args.subject).eq('organisationId', organisationId)
+      )
+      .filter((q) => q.eq(q.field('isActive'), true))
+      .collect();
+
+    const roles = await Promise.all(
+      assignments.map((assignment) => ctx.db.get(assignment.roleId))
+    );
+
+    return {
+      id: user._id,
+      subject: user.subject,
+      email: user.email,
+      fullName: user.fullName,
+      organisationId,
+      systemRoles: user.systemRoles,
+      organisationRoles: roles
+        .filter((role): role is NonNullable<typeof role> => role !== null)
+        .filter((role) => role.isActive)
+        .map((role) => role.name),
+      memberships: memberships.map((membership) => ({
+        organisationId: membership.organisationId,
+        isPrimary: membership.isPrimary,
+      })),
+      isActive: user.isActive,
+    };
+  },
+});
+
 export const getByEmail = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
