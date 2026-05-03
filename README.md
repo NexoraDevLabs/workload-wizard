@@ -300,23 +300,6 @@ pnpm convex deploy
 
 ## 🌟 **Advanced Features**
 
-### **PostHog Analytics Dashboard**
-
-Visit `/dev/posthog-test` to test:
-
-- Session recordings with privacy controls
-- Heatmaps for user interaction analysis
-- Advanced analytics and user tracking
-
-### **Sentry Monitoring Dashboard**
-
-Visit `/sentry-example-page` to test:
-
-- Error reporting and monitoring
-- Performance tracking and metrics
-- Session replay with privacy settings
-- User feedback collection
-
 ### Feature Flag Management
 
 **Statsig Integration** - Single source of truth for feature flags:

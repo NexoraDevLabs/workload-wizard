@@ -1,20 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TestTube, Flag, Shield, Settings, Database } from 'lucide-react';
+import { Flag, Shield, Settings, Database } from 'lucide-react';
 import Link from 'next/link';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 
 const devTools = [
-  {
-    title: 'PostHog Test Dashboard',
-    description:
-      'Comprehensive testing for PostHog events, feature flags, user identification, and proxy configuration',
-    href: '/dev/posthog-test',
-    icon: TestTube,
-    status: 'active',
-    category: 'Analytics',
-  },
   {
     title: 'Permission Tests',
     description:
@@ -69,7 +60,7 @@ export default function DevPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <TestTube className="h-4 w-4 text-blue-500" />
+              <Settings className="h-4 w-4 text-blue-500" />
               <span className="text-sm font-medium">Total Tools</span>
             </div>
             <p className="text-2xl font-bold">{devTools.length}</p>

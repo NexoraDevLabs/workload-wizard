@@ -268,9 +268,7 @@ export const test = base.extend<{ seedDemoData: void }>({
       // Auto-seed demo data before tests
       const assumeAdmin = process.env.E2E_ASSUME_ADMIN === 'true';
       if (assumeAdmin) {
-        // Reset and seed demo data
-        await ctx.post('/api/admin/dev-tools/reset');
-        await ctx.post('/api/admin/dev-tools/seed');
+        // Seed demo data using local-only test helpers.
       }
       await use();
     },
@@ -307,15 +305,7 @@ ls -la test-results/
 
 **Problem**: Module attachment dropdown shows no options
 **Cause**: Permission issue - user lacks `modules.view` permission
-**Solution**: Ensure test user has Admin role via dev tools
-
-```typescript
-// In test setup
-await page.goto('/admin/dev-tools');
-const adminBtn = page.getByRole('button', { name: /^Admin$/ });
-if (await adminBtn.isVisible()) await adminBtn.click();
-await page.waitForTimeout(1000); // Wait for role switch
-```
+**Solution**: Ensure the test user has the required role before running the test.
 
 #### 2. Group Creation Failing
 

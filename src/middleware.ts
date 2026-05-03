@@ -40,7 +40,6 @@ const isAccountRoute = createRouteMatcher(['/account(.*)']);
 const isApiRoute = createRouteMatcher([
   '/api/complete-onboarding',
   '/api/update-user-email',
-  '/api/admin/dev-tools(.*)', // Allow admin dev tools API routes
   // Feature flag routes removed
   '/api/admin/reset-password', // Allow admin password reset
 ]);
@@ -48,6 +47,30 @@ const isOnboardingRoute = createRouteMatcher([
   '/onboarding',
   '/onboarding-success',
 ]);
+const isDevOnlyRoute = createRouteMatcher([
+  '/dev/posthog-test(.*)',
+  '/sentry-example-page(.*)',
+  '/api/sentry-example-api(.*)',
+]);
+const isAdminDevToolsRoute = createRouteMatcher(['/api/admin/dev-tools(.*)']);
+
+function hasSystemAdminRole(sessionClaims: unknown): boolean {
+  const claims = sessionClaims as
+    | {
+        publicMetadata?: { role?: unknown; roles?: unknown };
+        metadata?: { publicMetadata?: { role?: unknown; roles?: unknown } };
+      }
+    | undefined;
+  const metadata =
+    claims?.publicMetadata ?? claims?.metadata?.publicMetadata ?? {};
+  const roles = Array.isArray(metadata.roles)
+    ? metadata.roles
+    : typeof metadata.role === 'string'
+      ? [metadata.role]
+      : [];
+
+  return roles.some((role) => role === 'sysadmin' || role === 'developer');
+}
 
 function getConvex(): ConvexHttpClient | null {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -146,6 +169,27 @@ export default clerkMiddleware(async (auth, req) => {
   // }
 
   const { userId, sessionClaims } = await auth();
+
+  if (isDevOnlyRoute(req)) {
+    if (process.env.NODE_ENV === 'production') {
+      return new NextResponse(null, { status: 404 });
+    }
+
+    await auth.protect();
+    return response;
+  }
+
+  if (isAdminDevToolsRoute(req)) {
+    if (process.env.NODE_ENV === 'production') {
+      return new NextResponse(null, { status: 404 });
+    }
+
+    await auth.protect();
+    if (!hasSystemAdminRole(sessionClaims)) {
+      return new NextResponse(null, { status: 403 });
+    }
+    return response;
+  }
 
   // Allow public routes without authentication
   if (isPublicRoute(req)) {

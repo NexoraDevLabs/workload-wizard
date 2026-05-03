@@ -114,10 +114,6 @@ const getNavigationData = (userRoles?: string[]) => {
           url: '/dev/permission-test',
         },
         {
-          title: 'PostHog Test Dashboard',
-          url: '/dev/posthog-test',
-        },
-        {
           title: 'Statsig Test',
           url: '/dev/statsig-test',
         },
