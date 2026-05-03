@@ -17,12 +17,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install npm
-        uses: npm/action-setup@v4
-        with:
-          version: 10.15.0
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,7 +24,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --frozen-lockfile
+        run: npm ci
 
       - name: Set CSP mode
         run: echo "CSP_MODE=${{ matrix.mode }}" >> $GITHUB_ENV
