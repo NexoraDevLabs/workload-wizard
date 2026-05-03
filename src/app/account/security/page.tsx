@@ -79,7 +79,7 @@ export default function SecurityPage() {
       { strength: 4, label: 'Strong', color: 'text-green-500', bg: 'bg-green-500' },
       { strength: 5, label: 'Very Strong', color: 'text-green-600', bg: 'bg-green-600' },
     ];
-    return strengthMap[Math.min(score, 5)];
+    return strengthMap[Math.min(score, 5)] ?? strengthMap[0]!;
   };
 
   const handlePasswordChange = (field: string, value: string) => {
