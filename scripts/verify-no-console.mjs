@@ -5,7 +5,7 @@ import { globby } from 'globby';
 import fs from 'node:fs';
 
 console.log('Building application...');
-const buildResult = spawnSync('pnpm', ['build'], {
+const buildResult = spawnSync('npm', ['build'], {
   stdio: 'inherit',
   shell: false,
 });

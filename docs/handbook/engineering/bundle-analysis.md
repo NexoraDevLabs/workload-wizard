@@ -18,7 +18,7 @@ The analysis is generated using `@next/bundle-analyzer` and produces interactive
 ### Locally
 
 ```bash
-pnpm analyze
+npm run analyze
 ```
 
 This will:
