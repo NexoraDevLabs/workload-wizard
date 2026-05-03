@@ -1,7 +1,7 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { getAuthUser } from '@/lib/authz';
+import { getAuthUser, normalizeRole } from '@/lib/authz';
 
 export async function getCurrentUserDetails() {
   const clerkUser = await currentUser();
@@ -31,7 +31,7 @@ export async function getCurrentUserDetails() {
       organisationId: clerkUser.publicMetadata?.organisationId as
         | string
         | undefined,
-      role: clerkUser.publicMetadata?.role as string | undefined,
+      role: normalizeRole(clerkUser.publicMetadata?.role as string | undefined),
     };
   }
 }

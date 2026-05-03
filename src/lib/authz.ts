@@ -5,14 +5,16 @@ import { redirect } from 'next/navigation';
 export type SessionUser = {
   userId: string;
   organisationId: string;
-  role: string;
+  role: AuthRole;
 };
+
+export type AuthRole = 'sysadmin' | 'org_admin' | 'member';
 
 export type AuthUser = {
   id: string;
   email: string | undefined;
   orgId: string;
-  role: string;
+  role: AuthRole;
 };
 
 // Define proper error type with status code
@@ -29,6 +31,27 @@ function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
     return (value as Record<string, unknown>)[key] as T;
   }
   return undefined;
+}
+
+export function normalizeRole(role: string | undefined): AuthRole {
+  switch (role) {
+    case 'sysadmin':
+    case 'developer':
+    case 'dev':
+    case 'systemadmin':
+    case 'admin':
+      return 'sysadmin';
+    case 'org_admin':
+    case 'orgadmin':
+      return 'org_admin';
+    default:
+      return 'member';
+  }
+}
+
+function toLegacyPermissionRole(role: AuthRole): string {
+  if (role === 'org_admin') return 'orgadmin';
+  return role;
 }
 
 export async function getSessionUser(): Promise<SessionUser> {
@@ -55,10 +78,10 @@ export async function getAuthUser(): Promise<AuthUser> {
       'organisationId'
     );
 
-  const role =
+  const role = normalizeRole(
     extractFromUnknown<string>(session.sessionClaims as unknown, 'role') ||
-    extractFromUnknown<string>(user?.publicMetadata as unknown, 'role') ||
-    'user';
+      extractFromUnknown<string>(user?.publicMetadata as unknown, 'role')
+  );
 
   if (!orgId) throw new Error('Missing organisationId');
   return {
@@ -75,7 +98,9 @@ export async function getOrganisationIdFromSession(): Promise<string> {
 
 export async function requireSystemPermission(permissionId: PermissionId) {
   const { role } = await getSessionUser();
-  if (!hasPermission(role, permissionId, undefined, true)) {
+  if (
+    !hasPermission(toLegacyPermissionRole(role), permissionId, undefined, true)
+  ) {
     const error = new Error('Forbidden') as AuthError;
     error.statusCode = 403;
     throw error;
@@ -90,7 +115,14 @@ export async function requireOrgPermission(
   const { role, organisationId: userOrgId } = await getSessionUser();
   const targetOrgId = organisationId || userOrgId;
 
-  if (!hasPermission(role, permissionId, targetOrgId, false)) {
+  if (
+    !hasPermission(
+      toLegacyPermissionRole(role),
+      permissionId,
+      targetOrgId,
+      false
+    )
+  ) {
     const error = new Error('Forbidden') as AuthError;
     error.statusCode = 403;
     throw error;
@@ -107,7 +139,12 @@ export async function checkPermission(
   try {
     const { role, organisationId: userOrgId } = await getSessionUser();
     const targetOrgId = organisationId || userOrgId;
-    return hasPermission(role, permissionId, targetOrgId, isSystemAction);
+    return hasPermission(
+      toLegacyPermissionRole(role),
+      permissionId,
+      targetOrgId,
+      isSystemAction
+    );
   } catch {
     return false;
   }
