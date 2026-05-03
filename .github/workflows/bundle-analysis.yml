@@ -33,14 +33,8 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-
-      - name: Setup npm
-        uses: npm/action-setup@v4
-        with:
-          version: 9
-
       - name: Install
-        run: npm install --frozen-lockfile
+        run: npm ci
 
       - name: Build with ANALYZE=true
         run: |
