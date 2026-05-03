@@ -1,6 +1,5 @@
 'use server';
 
-import { currentUser } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
@@ -97,18 +96,14 @@ function safeStringify(obj?: Record<string, unknown>): string | undefined {
 // Main audit logging function
 export async function logAuditEvent(data: AuditLogData) {
   try {
-    const currentUserData = await currentUser();
+    const authUser = await getAuthUser();
     const requestInfo = await getRequestInfo();
 
-    if (!currentUserData) {
-      return;
-    }
 
     // Normalize core fields
     const action = normalizeAction(data.action);
     const entityType = normalizeEntityType(data.entityType);
     const severity = normalizeSeverity(data.severity);
-    const authUser = await getAuthUser();
     const organisationId = authUser.orgId;
 
     // Create the audit log entry
@@ -116,21 +111,13 @@ export async function logAuditEvent(data: AuditLogData) {
       action,
       entityType,
       entityId: data.entityId,
-      performedBy: currentUserData.id,
+      performedBy: authUser.id,
       severity,
     } as const;
 
     const optional: Record<string, unknown> = {
       ...(data.entityName ? { entityName: data.entityName } : {}),
-      ...(currentUserData.firstName ||
-      currentUserData.lastName ||
-      currentUserData.emailAddresses[0]?.emailAddress
-        ? {
-            performedByName:
-              (`${currentUserData.firstName || ''} ${currentUserData.lastName || ''}`.trim() ||
-                currentUserData.emailAddresses[0]?.emailAddress) as string,
-          }
-        : {}),
+      ...(authUser.email ? { performedByName: authUser.email } : {}),
       ...(organisationId ? { organisationId } : {}),
       ...(data.details ? { details: data.details } : {}),
       ...(safeStringify(data.metadata)
@@ -606,12 +593,6 @@ export async function getAuditLogs(filters?: {
   limit?: number;
   cursor?: string;
 }) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorized: User not authenticated');
-  }
-
   const authUser = await getAuthUser();
 
   // System-level unrestricted access is ONLY for sysadmin/developer.
@@ -691,12 +672,6 @@ export async function getAuditStats(filters?: {
   startDate?: number;
   endDate?: number;
 }) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorized: User not authenticated');
-  }
-
   const authUser = await getAuthUser();
 
   if (!can(authUser, 'audit.stats')) {
