@@ -8,6 +8,13 @@ export type SessionUser = {
   role: string;
 };
 
+export type AuthUser = {
+  id: string;
+  email: string | undefined;
+  orgId: string;
+  role: string;
+};
+
 // Define proper error type with status code
 export interface AuthError extends Error {
   statusCode: number;
@@ -25,11 +32,20 @@ function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
 }
 
 export async function getSessionUser(): Promise<SessionUser> {
+  const user = await getAuthUser();
+  return {
+    userId: user.id,
+    organisationId: user.orgId,
+    role: user.role,
+  };
+}
+
+export async function getAuthUser(): Promise<AuthUser> {
   const session = await auth();
   if (!session?.userId) throw new Error('Unauthenticated');
   const user = await currentUser();
 
-  const organisationId =
+  const orgId =
     extractFromUnknown<string>(
       session.sessionClaims as unknown,
       'organisationId'
@@ -44,8 +60,13 @@ export async function getSessionUser(): Promise<SessionUser> {
     extractFromUnknown<string>(user?.publicMetadata as unknown, 'role') ||
     'user';
 
-  if (!organisationId) throw new Error('Missing organisationId');
-  return { userId: session.userId, organisationId, role };
+  if (!orgId) throw new Error('Missing organisationId');
+  return {
+    id: session.userId,
+    email: user?.emailAddresses[0]?.emailAddress,
+    orgId,
+    role,
+  };
 }
 
 export async function getOrganisationIdFromSession(): Promise<string> {
