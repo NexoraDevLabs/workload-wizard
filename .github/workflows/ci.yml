@@ -23,8 +23,8 @@ env:
   # Build optimizations
   SKIP_ENV_VALIDATION: '1'
   CI: 'true'
-  # pnpm optimizations
-  PNPM_CACHE_FOLDER: '.pnpm-cache'
+  # npm optimizations
+  NPM_CACHE_FOLDER: '.npm-cache'
   # Dummy envs so server code doesn't crash in CI
   NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
   CONVEX_DEPLOYMENT: 'https://example.invalid'
@@ -42,32 +42,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup npm
+        uses: npm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+          cache: npm
 
-      - name: Get pnpm store directory
+      - name: Get npm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Setup npm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-npm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: npm install --frozen-lockfile --prefer-offline
 
       - name: Build
-        run: pnpm build
+        run: npm run build
 
       - name: Job Summary
         if: ${{ always() }}
@@ -81,7 +81,7 @@ jobs:
             echo ""
             echo "### Key Outputs"
             echo "- Node: \`$(node -v)\`"
-            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- npm: \`$(npm -v)\`"
             echo "- Status: **${{ job.status }}**"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -92,35 +92,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup npm
+        uses: npm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+          cache: npm
 
-      - name: Get pnpm store directory
+      - name: Get npm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Setup npm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-npm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: npm install --frozen-lockfile --prefer-offline
 
       - name: Type check
-        run: pnpm typecheck
+        run: npm run typecheck
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint
 
       - name: Job Summary
         if: ${{ always() }}
@@ -134,8 +134,8 @@ jobs:
             echo ""
             echo "### Key Outputs"
             echo "- Node: \`$(node -v)\`"
-            echo "- pnpm: \`$(pnpm -v)\`"
-            echo "- TypeScript: \`$(pnpm exec tsc -v)\`"
+            echo "- npm: \`$(npm -v)\`"
+            echo "- TypeScript: \`$(npx tsc -v)\`"
             echo "- Status: **${{ job.status }}**"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -147,32 +147,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup npm
+        uses: npm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+          cache: npm
 
-      - name: Get pnpm store directory
+      - name: Get npm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Setup npm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-npm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: npm install --frozen-lockfile --prefer-offline
 
       - name: Run tests
-        run: pnpm test -- --ci
+        run: npm test -- --ci
 
       - name: Job Summary
         if: ${{ always() }}
@@ -186,7 +186,7 @@ jobs:
             echo ""
             echo "### Key Outputs"
             echo "- Node: \`$(node -v)\`"
-            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- npm: \`$(npm -v)\`"
             echo "- Test runner: **Vitest**"
             echo "- Status: **${{ job.status }}**"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -199,39 +199,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup npm
+        uses: npm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+          cache: npm
 
-      - name: Get pnpm store directory
+      - name: Get npm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
 
-      - name: Setup pnpm cache
+      - name: Setup npm cache
         uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-npm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline
+        run: npm install --frozen-lockfile --prefer-offline
 
       - name: Audit dependencies
         run: |
-          echo "Running pnpm audit..."
-          if pnpm audit --audit-level=high; then
+          echo "Running npm audit..."
+          if npm audit --audit-level=high; then
             echo "✅ No high/critical vulnerabilities found"
           else
             echo "⚠️ Vulnerabilities found. Checking if they're from dev dependencies..."
             # Check if vulnerabilities are only in dev dependencies (like Vercel CLI)
-            pnpm audit --audit-level=high --prod || echo "⚠️ Some vulnerabilities found in production dependencies"
+            npm audit --audit-level=high --prod || echo "⚠️ Some vulnerabilities found in production dependencies"
           fi
 
       - name: Job Summary
@@ -246,7 +246,7 @@ jobs:
             echo ""
             echo "### Key Outputs"
             echo "- Node: \`$(node -v)\`"
-            echo "- pnpm: \`$(pnpm -v)\`"
+            echo "- npm: \`$(npm -v)\`"
             echo "- Audit level: **high**"
             echo "- Status: **${{ job.status }}**"
             echo ""

@@ -8,17 +8,17 @@ This document describes the complete CI setup for the WorkloadWizard app, includ
 
 ```bash
 # Run complete CI workflow (starts services automatically)
-pnpm ci:recipe
+npm ci:recipe
 
 # Run CI workflow without starting services (if already running)
-pnpm ci:recipe:no-services
+npm ci:recipe:no-services
 ```
 
 ### What It Does
 
 The CI recipe executes the complete workflow in this order:
 
-1. **Prerequisites Check** - Verify Node.js, pnpm, and project structure
+1. **Prerequisites Check** - Verify Node.js, npm, and project structure
 2. **Environment Setup** - Load CI environment variables
 3. **Dependencies** - Install packages with frozen lockfile
 4. **Code Quality** - Format, lint, and type check
@@ -120,7 +120,7 @@ The GitHub Actions CI workflow is defined in `.github/workflows/ci.yml` and auto
 ### CI Job Steps
 
 1. **Checkout** - Clone repository
-2. **Setup** - Install pnpm and Node.js
+2. **Setup** - Install npm and Node.js
 3. **Install** - Install dependencies
 4. **Format** - Run Prettier and auto-commit changes
 5. **Quality** - Lint and type check
@@ -147,28 +147,28 @@ env:
 
 ### E2E Tests
 
-- **Command**: `pnpm e2e`
+- **Command**: `npm e2e`
 - **Coverage**: Full application workflow testing
 - **Admin Access**: Automatic admin privileges for testing
 - **Dependencies**: Requires Next.js and Convex running
 
 ### Unit Tests
 
-- **Command**: `pnpm test`
+- **Command**: `npm test`
 - **Coverage**: Individual component and function testing
 - **Framework**: Vitest
 - **Dependencies**: None (runs independently)
 
 ### Visual Regression Tests
 
-- **Command**: `pnpm test:visual`
+- **Command**: `npm test:visual`
 - **Coverage**: UI component visual consistency
 - **Stabilization**: UTC timezone, disabled animations
 - **Dependencies**: Requires Next.js running
 
 ### Performance Tests
 
-- **Command**: `pnpm test:performance`
+- **Command**: `npm test:performance`
 - **Coverage**: Page load and interaction performance
 - **Warm-up**: Automatic service warm-up for consistent results
 - **Dependencies**: Requires Next.js and Convex running
@@ -207,13 +207,13 @@ cp env.ci.template .env.ci
 
 ```bash
 # Run individual test suites to isolate issues
-pnpm test              # Unit tests only
-pnpm e2e              # E2E tests only
-pnpm test:visual      # Visual tests only
-pnpm test:performance # Performance tests only
+npm test              # Unit tests only
+npm e2e              # E2E tests only
+npm test:visual      # Visual tests only
+npm test:performance # Performance tests only
 
 # Check test results
-pnpm test:report
+npm test:report
 ```
 
 #### Permission Issues
@@ -299,18 +299,18 @@ graph TD
 
 ```bash
 # Quick test run
-pnpm ci:recipe:no-services
+npm ci:recipe:no-services
 
 # Full CI workflow
-pnpm ci:recipe
+npm ci:recipe
 
 # Individual steps
-pnpm test:setup
-pnpm e2e
-pnpm test
-pnpm test:visual
-pnpm test:performance
-pnpm build
+npm test:setup
+npm e2e
+npm test
+npm test:visual
+npm test:performance
+npm run build
 ```
 
 ### CI Issues

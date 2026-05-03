@@ -86,7 +86,7 @@ export function BetaBanner() {
 
 ### Optional developer proxy test steps (previous `test-proxy.js`)
 
-1. Start the dev server (`pnpm dev`).
+1. Start the dev server (`npm run dev`).
 2. Visit any page, then verify:
    - `/e/capture/` responds (proxy endpoint)
    - `/e/static/` serves assets (static proxy)
