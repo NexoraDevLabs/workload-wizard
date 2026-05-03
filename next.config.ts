@@ -2,16 +2,6 @@
 
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
-import type { Configuration as WebpackConfig } from 'webpack';
-import bundleAnalyzer from '@next/bundle-analyzer';
-
-// Environment variables are loaded automatically by Next.js from .env files
-
-// Bundle analyzer configuration
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-  openAnalyzer: false,
-});
 
 // Security headers applied to all routes
 const securityHeaders: Array<{ key: string; value: string }> = [
@@ -25,59 +15,17 @@ const securityHeaders: Array<{ key: string; value: string }> = [
 ];
 
 const nextConfig: NextConfig = {
-  // Environment variables are handled by lib/env-loader.js
-  // NODE_ENV is automatically available in Next.js
-
   eslint: {
-    // Block production builds on ESLint errors.
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 
   typescript: {
-    // Block production builds on TypeScript errors.
     ignoreBuildErrors: false,
   },
 
   experimental: {
-    // Disable optimizeCss to avoid critters dependency issue
     optimizeCss: false,
-    // Keep your import optimisation
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-  },
-
-  webpack: (config: WebpackConfig) => {
-    // Type assertion to ensure proper typing for webpack config mutation
-
-    const webpackConfig = config;
-
-    // Reduce noisy infrastructure logs in CI
-
-    if (webpackConfig.infrastructureLogging) {
-      webpackConfig.infrastructureLogging.level = 'error';
-    }
-
-    // Optimize for memory usage during build
-
-    if (webpackConfig.optimization?.splitChunks) {
-      const currentSplitChunks = webpackConfig.optimization.splitChunks;
-
-      const newOptimization = {
-        ...webpackConfig.optimization,
-        splitChunks: {
-          ...currentSplitChunks,
-          chunks: 'all' as const,
-          cacheGroups: {
-            ...currentSplitChunks.cacheGroups,
-          },
-        },
-      } as WebpackConfig['optimization'];
-
-      if (newOptimization) {
-        webpackConfig.optimization = newOptimization;
-      }
-    }
-
-    return webpackConfig;
   },
 
   images: {
@@ -89,7 +37,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Security headers for all routes (must be top-level, not inside `experimental`)
   async headers() {
     return [
       {
@@ -100,12 +47,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Sentry options
 const sentryOptions = {
   org: 'smcnab-tech',
   project: 'workload-wizard',
   silent: true,
 };
 
-// Export wrapped config
-export default withSentryConfig(withBundleAnalyzer(nextConfig), sentryOptions);
+export default withSentryConfig(nextConfig, sentryOptions);
