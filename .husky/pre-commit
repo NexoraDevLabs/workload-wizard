@@ -7,4 +7,4 @@ export NVM_DIR="$HOME/.nvm"
 
 nvm use 20 > /dev/null
 
-pnpm exec lint-staged
+npx lint-staged

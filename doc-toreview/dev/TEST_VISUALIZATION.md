@@ -55,12 +55,12 @@ The easiest way to visualize and debug tests is through Playwright's built-in UI
 
 ```bash
 # Open Playwright UI for all tests
-pnpm test:ui
+npm test:ui
 
 # Open UI for specific test types
-pnpm test:ui:performance    # Performance tests only
-pnpm test:ui:visual         # Visual regression tests only
-pnpm test:ui:smoke          # Smoke tests only
+npm test:ui:performance    # Performance tests only
+npm test:ui:visual         # Visual regression tests only
+npm test:ui:smoke          # Smoke tests only
 ```
 
 **Features**:
@@ -78,10 +78,10 @@ Generate and view detailed HTML reports:
 
 ```bash
 # Generate HTML report
-pnpm test:report
+npm test:report
 
 # View latest report
-pnpm test:report:latest
+npm test:report:latest
 
 # Open specific report
 open playwright-report/index.html
@@ -93,13 +93,13 @@ open playwright-report/index.html
 
 ```bash
 # Run tests in debug mode
-pnpm test:debug
+npm test:debug
 
 # Debug specific test
-pnpm test:debug --grep "dashboard performance"
+npm test:debug --grep "dashboard performance"
 
 # Debug with specific project
-pnpm test:debug --project=performance
+npm test:debug --project=performance
 ```
 
 **Debug Features**:
@@ -129,7 +129,7 @@ open test-results/*.zip
 
 ```bash
 # Run visual tests with UI
-pnpm test:ui:visual
+npm test:ui:visual
 
 # Update baseline screenshots
 ./scripts/test-runner.sh -u
@@ -157,7 +157,7 @@ mkdir -p test-results/archive/$(date +%Y%m%d)
 mv test-results/*.png test-results/archive/$(date +%Y%m%d)/
 
 # Compare specific screenshots
-pnpm test:visual --grep "dashboard"
+npm test:visual --grep "dashboard"
 ```
 
 ## 📊 **Performance Testing Visualization**
@@ -166,13 +166,13 @@ pnpm test:visual --grep "dashboard"
 
 ```bash
 # Run performance tests with UI
-pnpm test:ui:performance
+npm test:ui:performance
 
 # View performance results
 cat test-results/results.json | jq '.results[].metrics'
 
 # Performance dashboard
-pnpm test:performance --reporter=html
+npm test:performance --reporter=html
 ```
 
 **Performance Features**:
@@ -187,13 +187,13 @@ pnpm test:performance --reporter=html
 
 ```bash
 # Run with detailed profiling
-pnpm test:performance --trace=on
+npm test:performance --trace=on
 
 # View performance traces
 open test-results/*.zip
 
 # Performance analysis
-pnpm test:performance --project=performance
+npm test:performance --project=performance
 ```
 
 ## 🔍 **Test Debugging Tools**
@@ -202,10 +202,10 @@ pnpm test:performance --project=performance
 
 ```bash
 # Run tests with element highlighting
-pnpm test:ui --headed
+npm test:ui --headed
 
 # Debug specific element
-pnpm test:debug --grep "button click"
+npm test:debug --grep "button click"
 ```
 
 **Inspection Features**:
@@ -220,7 +220,7 @@ pnpm test:debug --grep "button click"
 
 ```bash
 # Monitor network requests
-pnpm test:debug --project=e2e
+npm test:debug --project=e2e
 
 # View network logs
 cat test-results/results.json | jq '.results[].logs'
@@ -232,13 +232,13 @@ cat test-results/results.json | jq '.results[].logs'
 
 ```bash
 # Test different screen sizes
-pnpm test:ui:visual --grep "responsive"
+npm test:ui:visual --grep "responsive"
 
 # Mobile testing
-pnpm test:visual --grep "mobile"
+npm test:visual --grep "mobile"
 
 # Tablet testing
-pnpm test:visual --grep "tablet"
+npm test:visual --grep "tablet"
 ```
 
 **Responsive Features**:
@@ -255,10 +255,10 @@ pnpm test:visual --grep "tablet"
 
 ```bash
 # Visualize complete workflows
-pnpm test:ui --grep "workflow"
+npm test:ui --grep "workflow"
 
 # Step-by-step execution
-pnpm test:ui --grep "step"
+npm test:ui --grep "step"
 ```
 
 **Journey Features**:
@@ -273,10 +273,10 @@ pnpm test:ui --grep "step"
 
 ```bash
 # View test data setup
-pnpm test:ui --grep "setup"
+npm test:ui --grep "setup"
 
 # Monitor data changes
-pnpm test:ui --grep "data"
+npm test:ui --grep "data"
 ```
 
 ## 🛠️ **Custom Visualization Tools**
@@ -298,10 +298,10 @@ pnpm test:ui --grep "data"
 
 ```bash
 # CI test results
-pnpm test:all --reporter=json
+npm test:all --reporter=json
 
 # Generate CI report
-pnpm test:all --reporter=html
+npm test:all --reporter=html
 ```
 
 ## 📋 **Test Visualization Best Practices**
@@ -355,23 +355,23 @@ chmod 755 test-results/
 
 ```bash
 # Check browser support
-pnpm test:performance --headed
+npm test:performance --headed
 
 # Verify performance API
-pnpm test:performance --grep "navigation"
+npm test:performance --grep "navigation"
 ```
 
 ### 2. Debug Commands
 
 ```bash
 # Verbose logging
-DEBUG=pw:api pnpm test:ui
+DEBUG=pw:api npm test:ui
 
 # Trace generation
-pnpm test:debug --trace=on
+npm test:debug --trace=on
 
 # Screenshot on failure
-pnpm test:visual --screenshot=on
+npm test:visual --screenshot=on
 ```
 
 ## 🔧 **Advanced Configuration**
@@ -418,28 +418,28 @@ expect(loadTime).toBeLessThan(2000); // 2 seconds
 
 ```bash
 # 🖥️ Open Playwright UI
-pnpm test:ui
+npm test:ui
 
 # 📊 View test reports
-pnpm test:report
+npm test:report
 
 # 🐛 Debug tests
-pnpm test:debug
+npm test:debug
 
 # 📸 Visual regression
-pnpm test:ui:visual
+npm test:ui:visual
 
 # ⚡ Performance testing
-pnpm test:ui:performance
+npm test:ui:performance
 
 # 🔄 Update snapshots
 ./scripts/test-runner.sh -u
 
 # 📱 Responsive testing
-pnpm test:ui --grep "responsive"
+npm test:ui --grep "responsive"
 
 # 🎭 User journey testing
-pnpm test:ui --grep "workflow"
+npm test:ui --grep "workflow"
 ```
 
 ---

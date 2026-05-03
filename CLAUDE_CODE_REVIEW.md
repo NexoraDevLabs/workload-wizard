@@ -42,7 +42,7 @@
 
 | ID   | Title                      | Severity | Likelihood | Area        | File/Path                    | Summary                                     | Impact                      | Evidence                                             | Fix Summary                                 |
 | ---- | -------------------------- | -------- | ---------- | ----------- | ---------------------------- | ------------------------------------------- | --------------------------- | ---------------------------------------------------- | ------------------------------------------- |
-| R001 | Dependency Vulnerabilities | HIGH     | HIGH       | Security    | package.json, pnpm-lock.yaml | Vulnerable dependencies in production build | DoS attacks, data tampering | undici CVE-2025-22150, path-to-regexp CVE-2024-45296 | Update dependencies, implement dep scanning |
+| R001 | Dependency Vulnerabilities | HIGH     | HIGH       | Security    | package.json, package-lock.json | Vulnerable dependencies in production build | DoS attacks, data tampering | undici CVE-2025-22150, path-to-regexp CVE-2024-45296 | Update dependencies, implement dep scanning |
 | R002 | Missing Branch Protection  | HIGH     | MEDIUM     | CI/CD       | .github/                     | No branch protection on main/dev            | Unauthorised code changes   | No required checks in repo settings                  | Configure branch protection rules           |
 | R003 | CSP Report-Only Mode       | MEDIUM   | HIGH       | Security    | src/lib/security/csp.ts      | CSP not enforced in production              | XSS vulnerabilities         | CSP_MODE defaults to 'report-only'                   | Implement CSP enforcement                   |
 | R004 | Excessive Tracing Rate     | MEDIUM   | HIGH       | Performance | sentry.\*.config.ts          | 100% trace sampling in production           | Performance degradation     | tracesSampleRate: 1.0                                | Reduce to 0.1 for production                |
@@ -266,12 +266,12 @@
     "labels": ["security", "dependencies", "P0"],
     "priority": "P0",
     "severity": "HIGH",
-    "paths": ["package.json", "pnpm-lock.yaml"],
+    "paths": ["package.json", "package-lock.json"],
     "estimate": "8 hours",
     "dependencies": [],
     "acceptanceCriteria": [
       "All HIGH/CRITICAL vulnerabilities resolved",
-      "pnpm audit passes with no high-severity issues",
+      "npm audit passes with no high-severity issues",
       "CI includes automated dependency scanning"
     ]
   },

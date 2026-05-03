@@ -126,7 +126,7 @@ A build verification script ensures no console calls are present in production b
 
 ```bash
 # Run verification after build
-pnpm verify:no-console
+npm verify:no-console
 ```
 
 This script:
@@ -178,7 +178,7 @@ The logger includes comprehensive tests covering:
 Run tests with:
 
 ```bash
-pnpm test
+npm test
 ```
 
 ## Migration from console.\*
@@ -206,7 +206,7 @@ If you see ESLint errors about console usage:
 
 ### Build Verification Failures
 
-If `pnpm verify:no-console` fails:
+If `npm verify:no-console` fails:
 
 1. Check the reported files and line numbers
 2. Replace console calls with logger methods
