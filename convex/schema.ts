@@ -425,9 +425,9 @@ export default defineSchema({
     .index('by_role_permission', ['roleId', 'permissionId'])
     .index('by_organisation', ['organisationId']),
 
-  // 🧪 Early Access Features (Admin-managed metadata)
+  // Legacy early access metadata retained for data compatibility.
   feature_flags: defineTable({
-    key: v.string(), // Statsig gate key
+    key: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     stage: v.union(
@@ -441,10 +441,10 @@ export default defineSchema({
     updatedAt: v.float64(),
   }).index('by_key', ['key']),
 
-  // 🧪 Per-user feature enrollments (drives Statsig user custom props)
+  // Legacy per-user feature enrollments retained for data compatibility.
   feature_enrollments: defineTable({
     userId: v.string(), // Clerk subject
-    featureKey: v.string(), // matches feature_flags.key / Statsig gate key
+    featureKey: v.string(),
     enabled: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),

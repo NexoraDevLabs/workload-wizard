@@ -7,8 +7,6 @@ vi.mock('@/lib/env', () => ({
     NODE_ENV: 'test',
     NEXT_PUBLIC_CONVEX_URL: 'https://test-convex.convex.cloud',
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-    NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
-    NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
     CSP_MODE: 'report-only',
   })),
 }));
@@ -46,8 +44,6 @@ describe('CSP Builder', () => {
         NODE_ENV: 'test',
         NEXT_PUBLIC_CONVEX_URL: 'https://test-convex.convex.cloud',
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-        NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
-        NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
       });
 
       const mode = getCSPMode();
@@ -131,17 +127,9 @@ describe('CSP Builder', () => {
       expect(policy).toContain('*.sentry.io');
       expect(policy).toContain('*.sentry-cdn.com');
 
-      // Statsig
-      expect(policy).toContain('*.statsig.com');
-      expect(policy).toContain('*.statsigapi.net');
-
       // Vercel
       expect(policy).toContain('vitals.vercel-insights.com');
       expect(policy).toContain('va.vercel-scripts.com');
-
-      // PostHog
-      expect(policy).toContain('eu.i.posthog.com');
-      expect(policy).toContain('eu-assets.i.posthog.com');
 
       // Sanity
       expect(policy).toContain('cdn.sanity.io');

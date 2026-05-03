@@ -1,6 +1,5 @@
 'use client';
 
-import posthog from 'posthog-js';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -155,13 +154,6 @@ export default function SecurityPage() {
         variant: 'success',
       });
 
-      // Only capture if PostHog is available
-      if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('password-updated', {
-          user_id: user.id,
-        });
-      }
-
       // Clear password fields after successful update
       setPasswordData({
         currentPassword: '',
@@ -283,17 +275,7 @@ export default function SecurityPage() {
                     </p>
                   </div>
                   {!isEditingPassword && (
-                    <Button
-                      onClick={() => {
-                        setIsEditingPassword(true);
-                        // Only capture if PostHog is available
-                        if (typeof posthog !== 'undefined' && posthog.capture) {
-                          posthog.capture('password-edit-started', {
-                            user_id: user.id,
-                          });
-                        }
-                      }}
-                    >
+                    <Button onClick={() => setIsEditingPassword(true)}>
                       <Key className="h-4 w-4 mr-2" />
                       Change Password
                     </Button>

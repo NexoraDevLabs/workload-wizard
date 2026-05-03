@@ -4,47 +4,8 @@ import type { WebhookEvent } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
-import { logger } from '@/lib/logger';
 import { withApiTracing } from '@/lib/otel/withApiTracing';
 import { withDbSpan } from '@/lib/otel/withDbSpan';
-
-// Define proper types for Statsig adapter
-interface StatsigAdapter {
-  initialize: () => Promise<{
-    logEvent: (
-      event: Record<string, unknown>,
-      eventName: string
-    ) => Promise<void>;
-    flush: () => Promise<void>;
-  }>;
-}
-
-// Type guard to ensure adapter has required methods
-function isValidStatsigAdapter(adapter: unknown): adapter is StatsigAdapter {
-  return (
-    adapter !== null &&
-    typeof adapter === 'object' &&
-    'initialize' in adapter &&
-    typeof (adapter as Record<string, unknown>).initialize === 'function'
-  );
-}
-
-// Lazy import to avoid build-time issues
-let statsigAdapter: StatsigAdapter | null = null;
-async function getStatsigAdapter(): Promise<StatsigAdapter | null> {
-  if (!statsigAdapter) {
-    try {
-      const { statsigAdapter: adapter } = await import('@/flags');
-      if (isValidStatsigAdapter(adapter)) {
-        statsigAdapter = adapter;
-      }
-    } catch {
-      // If import fails, return null
-      return null;
-    }
-  }
-  return statsigAdapter;
-}
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -251,39 +212,6 @@ async function handleUserCreated(userData: ClerkUserData) {
   );
 
   // User created in Convex
-
-  // Also create the user in Statsig Users by logging an event
-  try {
-    const adapter = await getStatsigAdapter();
-    if (isValidStatsigAdapter(adapter)) {
-      const Statsig = await adapter.initialize();
-      if (
-        Statsig &&
-        typeof Statsig === 'object' &&
-        'logEvent' in Statsig &&
-        'flush' in Statsig
-      ) {
-        await Statsig.logEvent(
-          {
-            userID: userData.id,
-            email: primaryEmail.email_address,
-            custom: {
-              fullName:
-                `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-              organisationId,
-              roles,
-              source: 'clerk.webhook',
-            },
-          },
-          'user_created'
-        );
-        await Statsig.flush();
-      }
-    }
-  } catch {
-    // Log error but don't fail the webhook
-    logger.error('Failed to create user in Statsig: Unknown error');
-  }
 }
 
 async function handleUserUpdated(userData: ClerkUserData) {
@@ -327,44 +255,6 @@ async function handleUserUpdated(userData: ClerkUserData) {
   );
 
   // User updated in Convex
-
-  // Mirror update to Statsig
-  const adapter = await getStatsigAdapter();
-  if (isValidStatsigAdapter(adapter)) {
-    try {
-      const Statsig = await adapter.initialize();
-      if (
-        Statsig &&
-        typeof Statsig === 'object' &&
-        'logEvent' in Statsig &&
-        'flush' in Statsig
-      ) {
-        await Statsig.logEvent(
-          {
-            userID: userData.id,
-            email: primaryEmail?.email_address as string,
-            custom: {
-              fullName:
-                `${(userData.first_name as string) || ''} ${(userData.last_name as string) || ''}`.trim(),
-              organisationId:
-                (publicMetadata.organisationId as string) || undefined,
-              roles:
-                (publicMetadata.roles as string[]) ||
-                ((publicMetadata.role as string | undefined)
-                  ? [publicMetadata.role as string]
-                  : []),
-              source: 'clerk.webhook',
-            },
-          },
-          'user_updated'
-        );
-        await Statsig.flush();
-      }
-    } catch {
-      // Log error but don't fail the webhook
-      logger.error('Failed to update Statsig: Unknown error');
-    }
-  }
 }
 
 async function handleUserDeleted(userData: DeletedUserData) {
@@ -399,15 +289,4 @@ async function handleSessionCreated(sessionData: unknown) {
   );
 
   // Last sign in time updated in Convex for user
-
-  // Log a login event to Statsig to ensure the user appears in Users
-  const adapter = await getStatsigAdapter();
-  if (isValidStatsigAdapter(adapter)) {
-    const Statsig = await adapter.initialize();
-    await Statsig.logEvent(
-      { userID: (s.user_id as string) || 'unknown' },
-      'login'
-    );
-    await Statsig.flush();
-  }
 }

@@ -51,19 +51,10 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
     connectSrc: ['*.sentry.io', '*.sentry-cdn.com'],
     imgSrc: ['*.sentry.io'],
   },
-  statsig: {
-    scriptSrc: ['*.statsig.com', '*.statsigapi.net'],
-    connectSrc: ['*.statsig.com', '*.statsigapi.net'],
-  },
   vercel: {
     scriptSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
     connectSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
     imgSrc: ['va.vercel-scripts.com'],
-  },
-  posthog: {
-    scriptSrc: ['eu-assets.i.posthog.com', 'eu.i.posthog.com'],
-    connectSrc: ['eu.i.posthog.com', 'eu-assets.i.posthog.com'],
-    imgSrc: ['eu-assets.i.posthog.com'],
   },
   sanity: {
     imgSrc: ['cdn.sanity.io'],
@@ -179,19 +170,8 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
   // Always include Sentry (commonly used for error monitoring)
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
 
-  if (
-    env.NEXT_PUBLIC_STATSIG_CLIENT_KEY ||
-    env.FEATFLAG_STATSIG_SERVER_API_KEY
-  ) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.statsig);
-  }
-
   // Vercel Analytics and Speed Insights are always present in Vercel deployments
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.vercel);
-
-  if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.posthog);
-  }
 
   // Sanity is used for images
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sanity);
