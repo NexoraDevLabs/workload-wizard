@@ -1,11 +1,27 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { getOrganisationIdFromSession } from '@/lib/authz';
+import { getAuthUser, getOrganisationIdFromSession } from '@/lib/authz';
 import { createClerkClient } from '@clerk/backend';
 import { z } from 'zod';
+import { can, hasRole } from '@/lib/auth/permissions';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
 
 const BodySchema = z.object({ userId: z.string().min(1) });
+
+let convexClient: ConvexHttpClient | null = null;
+
+function getConvexClient(): ConvexHttpClient {
+  if (!convexClient) {
+    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!url) {
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
+    }
+    convexClient = new ConvexHttpClient(url);
+  }
+  return convexClient;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,17 +35,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has appropriate permissions
-    const userRole = currentUserData.publicMetadata?.role as string;
-    const userRoles = currentUserData.publicMetadata?.roles as string[];
-    const isAdmin =
-      userRole === 'sysadmin' ||
-      userRole === 'developer' ||
-      (userRoles &&
-        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-    const isOrgAdmin = userRole === 'orgadmin';
+    const authUser = await getAuthUser();
+    const isOrgAdmin = hasRole(authUser, 'org_admin');
 
-    if (!isAdmin && !isOrgAdmin) {
+    if (!can(authUser, 'users.reset_password')) {
       return NextResponse.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 403 }
@@ -66,9 +75,11 @@ export async function POST(request: NextRequest) {
 
     // If orgadmin, ensure they can only reset passwords for users in their own organisation
     if (isOrgAdmin) {
-      const targetUser = await clerk.users.getUser(userId);
-      const targetUserOrgId = targetUser.publicMetadata
-        ?.organisationId as string;
+      const targetUser = await getConvexClient().query(
+        api.users.getAuthContext,
+        { subject: userId }
+      );
+      const targetUserOrgId = targetUser?.organisationId;
       const currentUserOrgId = await getOrganisationIdFromSession();
 
       if (targetUserOrgId !== currentUserOrgId) {

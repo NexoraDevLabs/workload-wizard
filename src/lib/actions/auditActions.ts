@@ -5,6 +5,8 @@ import { headers } from 'next/headers';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { can } from '@/lib/auth/permissions';
+import { getAuthUser } from '@/lib/authz';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -106,8 +108,8 @@ export async function logAuditEvent(data: AuditLogData) {
     const action = normalizeAction(data.action);
     const entityType = normalizeEntityType(data.entityType);
     const severity = normalizeSeverity(data.severity);
-    const organisationId = currentUserData.publicMetadata
-      ?.organisationId as string;
+    const authUser = await getAuthUser();
+    const organisationId = authUser.orgId;
 
     // Create the audit log entry
     const base = {
@@ -610,26 +612,16 @@ export async function getAuditLogs(filters?: {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin role in Clerk metadata - support both old and new format
-  const userRoles = (currentUserData.publicMetadata?.roles as string[]) || [];
-  const userRole = currentUserData.publicMetadata?.role as string;
-
-  // Add legacy role to roles array if it exists
-  if (userRole && !userRoles.includes(userRole)) {
-    userRoles.push(userRole);
-  }
+  const authUser = await getAuthUser();
 
   // System-level unrestricted access is ONLY for sysadmin/developer.
   // Orgadmins must always be scoped to their own organisation.
-  const isSystemAdmin =
-    userRoles.includes('sysadmin') || userRoles.includes('developer');
+  const isSystemAdmin = can(authUser, 'audit.stats');
 
   if (!isSystemAdmin) {
     // Require an organisation scope matching the user's org
     const requestedOrgId = filters?.organisationId || undefined;
-    const userOrgId =
-      (currentUserData.publicMetadata?.organisationId as string | undefined) ||
-      undefined;
+    const userOrgId = authUser.orgId;
     if (!requestedOrgId || !userOrgId || requestedOrgId !== userOrgId) {
       throw new Error('Unauthorized: Admin access required');
     }
@@ -667,10 +659,9 @@ export async function getAuditLogs(filters?: {
                   organisationId: filters.organisationId as Id<'organisations'>,
                 }
               : {}),
-            ...(currentUserData.publicMetadata?.organisationId
+            ...(authUser.orgId
               ? {
-                  organisationId: currentUserData.publicMetadata
-                    .organisationId as Id<'organisations'>,
+                  organisationId: authUser.orgId as Id<'organisations'>,
                 }
               : {}),
           }),
@@ -706,19 +697,9 @@ export async function getAuditStats(filters?: {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin role in Clerk metadata - support both old and new format
-  const userRoles = (currentUserData.publicMetadata?.roles as string[]) || [];
-  const userRole = currentUserData.publicMetadata?.role as string;
+  const authUser = await getAuthUser();
 
-  // Add legacy role to roles array if it exists
-  if (userRole && !userRoles.includes(userRole)) {
-    userRoles.push(userRole);
-  }
-
-  const hasAdminAccess =
-    userRoles.includes('sysadmin') || userRoles.includes('developer');
-
-  if (!hasAdminAccess) {
+  if (!can(authUser, 'audit.stats')) {
     throw new Error('Unauthorized: Admin access required');
   }
 

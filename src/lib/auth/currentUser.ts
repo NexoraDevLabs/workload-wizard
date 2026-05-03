@@ -1,7 +1,7 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { getAuthUser, normalizeRole } from '@/lib/authz';
+import { getAuthUser } from '@/lib/authz';
 
 export async function getCurrentUserDetails() {
   const clerkUser = await currentUser();
@@ -20,19 +20,10 @@ export async function getCurrentUserDetails() {
       role: user.role,
     };
   } catch (error) {
-    if (error instanceof Error && error.message !== 'Missing organisationId') {
-      throw error;
+    if (error instanceof Error && error.message === 'Missing organisationId') {
+      return null;
     }
-
-    return {
-      id: clerkUser.id,
-      email: clerkUser.emailAddresses[0]?.emailAddress,
-      fullName,
-      organisationId: clerkUser.publicMetadata?.organisationId as
-        | string
-        | undefined,
-      role: normalizeRole(clerkUser.publicMetadata?.role as string | undefined),
-    };
+    throw error;
   }
 }
 
