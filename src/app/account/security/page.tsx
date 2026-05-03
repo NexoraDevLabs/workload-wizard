@@ -478,11 +478,11 @@ export default function SecurityPage() {
                         onClick={handlePasswordSave}
                         disabled={Boolean(
                           isLoading ||
-                            (passwordData.newPassword &&
-                              (passwordData.newPassword !==
-                                passwordData.confirmPassword ||
-                                passwordData.newPassword.length < 8 ||
-                                !passwordData.currentPassword))
+                          (passwordData.newPassword &&
+                            (passwordData.newPassword !==
+                              passwordData.confirmPassword ||
+                              passwordData.newPassword.length < 8 ||
+                              !passwordData.currentPassword))
                         )}
                       >
                         {isLoading ? (

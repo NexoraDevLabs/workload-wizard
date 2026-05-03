@@ -18,7 +18,10 @@ import { CheckCircle2, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 
 type WorkloadStatus = 'optimal' | 'warning' | 'over' | 'unset';
 
-function getStatusMeta(pct: number, hasMax: boolean): {
+function getStatusMeta(
+  pct: number,
+  hasMax: boolean
+): {
   status: WorkloadStatus;
   label: string;
   badgeVariant: 'default' | 'secondary' | 'destructive' | 'outline';
@@ -51,7 +54,8 @@ function getStatusMeta(pct: number, hasMax: boolean): {
       status: 'warning',
       label: 'Near capacity',
       badgeVariant: 'outline',
-      badgeClass: 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      badgeClass:
+        'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
       Icon: AlertTriangle,
       barClass: 'bg-amber-500',
     };
@@ -60,7 +64,8 @@ function getStatusMeta(pct: number, hasMax: boolean): {
     status: 'optimal',
     label: 'On track',
     badgeVariant: 'outline',
-    badgeClass: 'border-emerald-400 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+    badgeClass:
+      'border-emerald-400 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     Icon: CheckCircle2,
     barClass: 'bg-emerald-500',
   };
@@ -74,7 +79,13 @@ interface CapacityBarProps {
   tooltip?: string;
 }
 
-function CapacityBar({ label, used, max, colorClass, tooltip }: CapacityBarProps) {
+function CapacityBar({
+  label,
+  used,
+  max,
+  colorClass,
+  tooltip,
+}: CapacityBarProps) {
   const pct = max > 0 ? Math.min(100, Math.round((used / max) * 100)) : 0;
 
   return (
@@ -96,9 +107,7 @@ function CapacityBar({ label, used, max, colorClass, tooltip }: CapacityBarProps
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{pct}% used</span>
-              {max > 0 && (
-                <span>{Math.max(0, max - used)}h remaining</span>
-              )}
+              {max > 0 && <span>{Math.max(0, max - used)}h remaining</span>}
             </div>
           </div>
         </TooltipTrigger>
@@ -119,15 +128,17 @@ export function WorkloadStatusPanel() {
   const staffList = useQuery(
     api.staff.list,
     user?.id ? { userId: user.id } : 'skip'
-  ) as Array<{
-    _id: string;
-    fullName: string;
-    userSubject?: string;
-    maxTeachingHours?: number;
-    totalContract?: number;
-    contract?: string;
-    fte?: number;
-  }> | undefined;
+  ) as
+    | Array<{
+        _id: string;
+        fullName: string;
+        userSubject?: string;
+        maxTeachingHours?: number;
+        totalContract?: number;
+        contract?: string;
+        fte?: number;
+      }>
+    | undefined;
 
   const linkedProfile = staffList?.find((s) => s.userSubject === user?.id);
 
@@ -165,11 +176,17 @@ export function WorkloadStatusPanel() {
           academicYearId: currentYear._id as Id<'academic_years'>,
         }
       : 'skip'
-  ) as Array<{
-    allocation: { type: string; hoursOverride?: number; hoursComputed?: number };
-    module: { code?: string; name?: string } | null;
-    group: { name?: string } | null;
-  }> | undefined;
+  ) as
+    | Array<{
+        allocation: {
+          type: string;
+          hoursOverride?: number;
+          hoursComputed?: number;
+        };
+        module: { code?: string; name?: string } | null;
+        group: { name?: string } | null;
+      }>
+    | undefined;
 
   const isLoadingProfile = staffList === undefined;
   const isLoadingTotals = linkedProfile && totals === undefined;
@@ -185,7 +202,8 @@ export function WorkloadStatusPanel() {
   const maxTeaching = Number(linkedProfile?.maxTeachingHours) || 0;
   const maxTotal = Number(linkedProfile?.totalContract) || 0;
 
-  const teachingPct = maxTeaching > 0 ? Math.round((teaching / maxTeaching) * 100) : 0;
+  const teachingPct =
+    maxTeaching > 0 ? Math.round((teaching / maxTeaching) * 100) : 0;
   const totalPct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
 
   const teachingStatus = getStatusMeta(teachingPct, maxTeaching > 0);
@@ -319,7 +337,11 @@ export function WorkloadStatusPanel() {
                           className="h-full bg-amber-400 transition-all duration-700 ease-out"
                           style={{
                             width: `${Math.min(
-                              100 - Math.min(100, Math.round((teaching / maxTotal) * 100)),
+                              100 -
+                                Math.min(
+                                  100,
+                                  Math.round((teaching / maxTotal) * 100)
+                                ),
                               Math.round((admin / maxTotal) * 100)
                             )}%`,
                           }}

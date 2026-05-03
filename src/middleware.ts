@@ -183,7 +183,7 @@ export default clerkMiddleware(async (auth, req) => {
       };
       const hasCompletedInClaims = Boolean(
         claimsAny?.publicMetadata?.onboardingCompleted ??
-          claimsAny?.metadata?.publicMetadata?.onboardingCompleted
+        claimsAny?.metadata?.publicMetadata?.onboardingCompleted
       );
 
       let hasCompletedOnboarding = hasCompletedInClaims;

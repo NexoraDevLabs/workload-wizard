@@ -125,9 +125,7 @@ export function QuickLinksSection() {
               className="h-auto justify-start gap-3 px-3 py-3 text-left hover:bg-accent/60 transition-colors"
             >
               <Link href={link.href}>
-                <div
-                  className={`flex-shrink-0 rounded-lg p-2 ${link.iconBg}`}
-                >
+                <div className={`flex-shrink-0 rounded-lg p-2 ${link.iconBg}`}>
                   <link.icon className={`h-4 w-4 ${link.iconColor}`} />
                 </div>
                 <div className="min-w-0 flex-1">

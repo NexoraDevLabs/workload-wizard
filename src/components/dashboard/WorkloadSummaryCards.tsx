@@ -46,9 +46,7 @@ function SummaryCard({
             {sublabel && !isLoading && (
               <p className="mt-1 text-xs text-muted-foreground">{sublabel}</p>
             )}
-            {sublabel && isLoading && (
-              <Skeleton className="mt-1 h-3 w-24" />
-            )}
+            {sublabel && isLoading && <Skeleton className="mt-1 h-3 w-24" />}
           </div>
           <div className={`flex-shrink-0 rounded-xl p-2.5 ${iconBg}`}>
             <Icon className={`h-5 w-5 ${iconColor}`} />
@@ -67,17 +65,17 @@ export function WorkloadSummaryCards() {
   const staffList = useQuery(
     api.staff.list,
     user?.id ? { userId: user.id } : 'skip'
-  ) as Array<{
-    _id: string;
-    fullName: string;
-    userSubject?: string;
-    maxTeachingHours?: number;
-    totalContract?: number;
-  }> | undefined;
+  ) as
+    | Array<{
+        _id: string;
+        fullName: string;
+        userSubject?: string;
+        maxTeachingHours?: number;
+        totalContract?: number;
+      }>
+    | undefined;
 
-  const linkedProfile = staffList?.find(
-    (s) => s.userSubject === user?.id
-  );
+  const linkedProfile = staffList?.find((s) => s.userSubject === user?.id);
 
   const totals = useQuery(
     api.allocations.computeLecturerTotals,
@@ -162,12 +160,14 @@ export function WorkloadSummaryCards() {
         ? `${remaining}h available to allocate`
         : 'Set a contract to see remaining hours',
       icon: Clock,
-      iconBg: remaining === 0 && maxTeaching > 0
-        ? 'bg-destructive/10'
-        : 'bg-secondary',
-      iconColor: remaining === 0 && maxTeaching > 0
-        ? 'text-destructive'
-        : 'text-secondary-foreground',
+      iconBg:
+        remaining === 0 && maxTeaching > 0
+          ? 'bg-destructive/10'
+          : 'bg-secondary',
+      iconColor:
+        remaining === 0 && maxTeaching > 0
+          ? 'text-destructive'
+          : 'text-secondary-foreground',
       isLoading,
     },
   ];
