@@ -12,18 +12,18 @@
 
 # User Management
 
-Consolidated features and setup for real user management (Clerk + Convex).
+Consolidated features and setup for real user management (WorkOS + Convex).
 
 ## Setup
 
-- Env: Clerk keys, webhook secret; Convex URL
-- Webhook: `/api/webhooks/clerk` for `user.created/updated/deleted`
+- Env: WorkOS keys, webhook secret; Convex URL
+- Webhook: `/api/webhooks/workos` for `user.created/updated/deleted`
 - Initial sync via `/admin/users`
 
 ## Features
 
 - List, invite, deactivate/reactivate, edit orgs
-- Sync between Clerk and Convex
+- Sync between WorkOS and Convex
 - Full audit of management actions
 
 ## Troubleshooting

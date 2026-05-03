@@ -3,7 +3,7 @@
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useState } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { useMemo } from 'react';

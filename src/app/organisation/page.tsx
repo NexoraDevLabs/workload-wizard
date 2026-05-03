@@ -27,7 +27,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Badge } from '@/components/ui/badge';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function OrganisationAdminPage() {
@@ -41,7 +41,7 @@ export default function OrganisationAdminPage() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    const hasByClerk =
+    const hasByWorkOS =
       hasAnyRole(user, ['orgadmin', 'sysadmin', 'developer']) ||
       (user?.publicMetadata as Record<string, unknown> | undefined)?.[
         'devLoginSession'
@@ -52,14 +52,14 @@ export default function OrganisationAdminPage() {
       convexUser.systemRoles.some((r: string) =>
         ['sysadmin', 'developer'].includes(r)
       );
-    if (!(hasByClerk || hasByConvex)) {
+    if (!(hasByWorkOS || hasByConvex)) {
       router.replace('/unauthorised');
     }
   }, [isLoaded, user, convexUser, router]);
 
   if (!isLoaded) return <p>Loading...</p>;
 
-  const hasByClerk =
+  const hasByWorkOS =
     hasAnyRole(user, ['orgadmin', 'sysadmin', 'developer']) ||
     (user?.publicMetadata as Record<string, unknown> | undefined)?.[
       'devLoginSession'
@@ -70,7 +70,7 @@ export default function OrganisationAdminPage() {
     convexUser.systemRoles.some((r: string) =>
       ['sysadmin', 'developer'].includes(r)
     );
-  if (!(hasByClerk || hasByConvex)) return null; // redirect in effect
+  if (!(hasByWorkOS || hasByConvex)) return null; // redirect in effect
 
   const organisationId = (user?.publicMetadata?.organisationId as string) || '';
 

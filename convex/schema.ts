@@ -50,7 +50,7 @@ export default defineSchema({
     phone: v.optional(v.string()),
     organisationId: v.id('organisations'),
     pictureUrl: v.optional(v.string()),
-    subject: v.string(), // Clerk ID
+    subject: v.string(), // WorkOS ID
     tokenIdentifier: v.optional(v.string()),
     isActive: v.boolean(),
     lastSignInAt: v.optional(v.float64()),
@@ -86,7 +86,7 @@ export default defineSchema({
 
   // 👤 User Preferences (per user per organisation)
   user_preferences: defineTable({
-    userId: v.string(), // Clerk subject ID
+    userId: v.string(), // WorkOS subject ID
     organisationId: v.id('organisations'),
     selectedAcademicYearId: v.optional(v.id('academic_years')),
     includeDrafts: v.optional(v.boolean()),
@@ -248,7 +248,7 @@ export default defineSchema({
     fte: v.float64(),
     maxTeachingHours: v.float64(),
     totalContract: v.float64(),
-    userSubject: v.optional(v.string()), // Optional link to Clerk subject / users.subject
+    userSubject: v.optional(v.string()), // Optional link to WorkOS subject / users.subject
     role: v.optional(v.string()),
     teamName: v.optional(v.string()),
     contractFamily: v.optional(v.string()),
@@ -443,7 +443,7 @@ export default defineSchema({
 
   // Legacy per-user feature enrollments retained for data compatibility.
   feature_enrollments: defineTable({
-    userId: v.string(), // Clerk subject
+    userId: v.string(), // WorkOS subject
     featureKey: v.string(),
     enabled: v.boolean(),
     createdAt: v.float64(),
@@ -454,7 +454,7 @@ export default defineSchema({
 
   // ⭐ Per-user Quick Access preferences
   quick_access_prefs: defineTable({
-    userId: v.string(), // Clerk subject
+    userId: v.string(), // WorkOS subject
     links: v.array(v.object({ name: v.string(), url: v.string() })),
     showNames: v.boolean(),
     createdAt: v.float64(),

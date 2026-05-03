@@ -1,5 +1,5 @@
 {
-  "lastCompletedPhase": "remove-clerk",
+  "lastCompletedPhase": "final-cleanup",
   "completedBranches": [
     "auth/convex-refactor",
     "auth/remove-jwt",
@@ -7,6 +7,7 @@
     "auth/identity-swap",
     "auth/backend-migration",
     "auth/frontend-migration",
-    "auth/remove-clerk"
+    "auth/remove-clerk",
+    "auth/final-cleanup"
   ]
 }

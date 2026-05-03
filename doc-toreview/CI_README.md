@@ -52,13 +52,13 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_CONVEX_URL=https://your-convex-deployment.convex.cloud
 ```
 
-#### Clerk Authentication
+#### WorkOS Authentication
 
 ```bash
-CLERK_SECRET_KEY=your_clerk_secret_key_here
-CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-CLERK_TEST_USER_EMAIL=test@example.com
-CLERK_TEST_USER_PASSWORD=your_test_password_here
+WORKOS_API_KEY=your_workos_secret_key_here
+WORKOS_CLIENT_ID=your_workos_publishable_key_here
+WORKOS_TEST_USER_EMAIL=test@example.com
+WORKOS_TEST_USER_PASSWORD=your_test_password_here
 ```
 
 #### Convex Configuration

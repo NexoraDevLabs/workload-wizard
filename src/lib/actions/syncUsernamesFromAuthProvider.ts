@@ -3,7 +3,7 @@
 import { can } from '@/lib/auth/permissions';
 import { getAuthUser } from '@/lib/authz';
 
-export async function syncUsernamesFromClerk() {
+export async function syncUsernamesFromAuthProvider() {
   const authUser = await getAuthUser();
 
   if (!can(authUser, 'sync.users')) {
@@ -12,7 +12,7 @@ export async function syncUsernamesFromClerk() {
 
   return {
     success: true,
-    message: 'Clerk username sync has been removed. Usernames are managed in the database.',
+    message: 'WorkOS username sync has been removed. Usernames are managed in the database.',
     updatedCount: 0,
     skippedCount: 0,
     errorCount: 0,

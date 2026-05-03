@@ -341,7 +341,7 @@ export const update = mutation({
 // Ensure a user has a membership row for an organisation (optionally set as primary)
 export const ensureMembership = mutation({
   args: {
-    userId: v.string(), // Clerk subject
+    userId: v.string(), // WorkOS subject
     organisationId: v.id('organisations'),
     isPrimary: v.optional(v.boolean()),
   },
@@ -751,7 +751,7 @@ export const updateLastSignIn = mutation({
 // Webhook-specific mutation to update user data (no permission check)
 export const updateByWebhook = mutation({
   args: {
-    userId: v.string(), // Clerk user ID (subject)
+    userId: v.string(), // WorkOS user ID (subject)
     email: v.optional(v.string()),
     username: v.optional(v.string()),
     givenName: v.optional(v.string()),
@@ -854,7 +854,7 @@ export const updateByWebhook = mutation({
 
 export const completeOnboarding = mutation({
   args: {
-    subject: v.string(), // Clerk user ID
+    subject: v.string(), // WorkOS user ID
     onboardingData: v.object({
       firstName: v.optional(v.string()),
       lastName: v.optional(v.string()),
@@ -948,13 +948,13 @@ export const completeOnboarding = mutation({
 
 export const updateUserAvatar = mutation({
   args: {
-    subject: v.string(), // Clerk user ID
-    pictureUrl: v.string(), // New avatar URL from Clerk
+    subject: v.string(), // WorkOS user ID
+    pictureUrl: v.string(), // New avatar URL from WorkOS
   },
   handler: async (ctx, args) => {
     const { subject, pictureUrl } = args;
 
-    // Find the user by Clerk subject ID
+    // Find the user by WorkOS subject ID
     const user = await ctx.db
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', subject))
@@ -994,7 +994,7 @@ export const updateUserAvatar = mutation({
 
 export const getUserAvatar = query({
   args: {
-    subject: v.string(), // Clerk user ID
+    subject: v.string(), // WorkOS user ID
   },
   handler: async (ctx, args) => {
     const { subject } = args;

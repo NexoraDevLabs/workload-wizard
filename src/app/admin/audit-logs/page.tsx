@@ -4,7 +4,7 @@ import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSideb
 import { AuditLogsViewer } from '@/components/domain/AuditLogsViewer';
 import { AuditViewGate } from '@/components/common/PermissionGate';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function AdminAuditLogsPage() {

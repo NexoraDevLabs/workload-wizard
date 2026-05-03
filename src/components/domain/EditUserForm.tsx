@@ -34,7 +34,7 @@ interface User {
   roles?: string[];
   organisationId: string;
   isActive: boolean;
-  subject?: string; // Clerk user ID
+  subject?: string; // WorkOS user ID
   organisationalRoles?: {
     id: string;
     name: string;
@@ -122,7 +122,7 @@ export function EditUserForm({
     };
 
     try {
-      // Update user details in both Clerk and Convex
+      // Update user details in both WorkOS and Convex
       const updatePromises = [];
 
       // Check if email has changed
@@ -203,7 +203,7 @@ export function EditUserForm({
     if (!user.subject) {
       setMessage({
         type: 'error',
-        text: 'Cannot reset password: User not found in Clerk',
+        text: 'Cannot reset password: User not found in WorkOS',
       });
       return;
     }

@@ -43,7 +43,7 @@ This Standard Operating Procedure (SOP) defines the process for detecting, respo
 
 - **Vercel deployment failures** (build errors, deployment timeouts)
 - **Convex service outages** (database unavailable, function failures)
-- **Clerk authentication failures** (login issues, token validation errors)
+- **WorkOS authentication failures** (login issues, token validation errors)
 - **Upstash/Redis connectivity issues** (cache failures, connection timeouts)
 - **Statsig service degradation** (feature flag failures)
 - **GitHub Actions workflow failures** (CI/CD pipeline issues)
@@ -61,7 +61,7 @@ This Standard Operating Procedure (SOP) defines the process for detecting, respo
 
 - **Monitoring**: Sentry, PostHog, Vercel Analytics
 - **Communication**: Slack/Teams, GitHub Issues, Status page
-- **Infrastructure**: Vercel, Convex, Clerk, Upstash, Statsig
+- **Infrastructure**: Vercel, Convex, WorkOS, Upstash, Statsig
 - **Development**: GitHub, Git, local development environment
 - **Documentation**: Runbooks, architecture diagrams, contact lists
 

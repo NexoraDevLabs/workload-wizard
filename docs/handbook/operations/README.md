@@ -24,7 +24,7 @@ WorkloadWizard operates on the following technology stack:
 
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Backend**: Convex (real-time database)
-- **Authentication**: Clerk
+- **Authentication**: WorkOS
 - **Analytics**: PostHog (session replays & heatmaps)
 - **Monitoring**: Sentry (error tracking & performance)
 - **Deployment**: Vercel

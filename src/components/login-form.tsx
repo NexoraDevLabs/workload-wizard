@@ -84,8 +84,8 @@ export function LoginForm({
         setError(errorMessage);
       }
     } catch (err: unknown) {
-      // Handle Clerk authentication errors
-      const clerkError = err as {
+      // Handle WorkOS authentication errors
+      const workosError = err as {
         errors?: Array<{
           code?: string;
           message?: string;
@@ -98,8 +98,8 @@ export function LoginForm({
       let errorMessage =
         'Invalid email/username or password. Please try again.';
       // Don't log to console, handle errors gracefully
-      if (clerkError.errors && clerkError.errors.length > 0) {
-        const error = clerkError.errors[0];
+      if (workosError.errors && workosError.errors.length > 0) {
+        const error = workosError.errors[0];
 
         // Handle specific error codes
         switch (error?.code) {
@@ -121,8 +121,8 @@ export function LoginForm({
               error?.longMessage ||
               'Sign in failed. Please try again.';
         }
-      } else if (clerkError.message) {
-        errorMessage = clerkError.message;
+      } else if (workosError.message) {
+        errorMessage = workosError.message;
       }
 
       setError(errorMessage);
@@ -153,8 +153,8 @@ export function LoginForm({
         'Verification code sent! Please enter the code and your new password.'
       );
     } catch (err: unknown) {
-      // Handle Clerk password reset errors
-      const clerkError = err as {
+      // Handle WorkOS password reset errors
+      const workosError = err as {
         errors?: Array<{
           code?: string;
           message?: string;
@@ -165,8 +165,8 @@ export function LoginForm({
       };
 
       let errorMessage = 'An error occurred. Please try again.';
-      if (clerkError.errors && clerkError.errors.length > 0) {
-        const error = clerkError.errors[0];
+      if (workosError.errors && workosError.errors.length > 0) {
+        const error = workosError.errors[0];
 
         // Handle specific error codes
         switch (error?.code) {
@@ -185,12 +185,12 @@ export function LoginForm({
               error?.longMessage ||
               'Failed to send reset email. Please try again.';
         }
-      } else if (clerkError.message) {
+      } else if (workosError.message) {
         // Filter out generic "is invalid" messages for better UX
-        if (clerkError.message.includes('is invalid')) {
+        if (workosError.message.includes('is invalid')) {
           errorMessage = 'Please enter a valid email address.';
         } else {
-          errorMessage = clerkError.message;
+          errorMessage = workosError.message;
         }
       }
 
@@ -242,7 +242,7 @@ export function LoginForm({
     setIsResetLoading(true);
 
     try {
-      // Follow the official Clerk pattern: send code AND password together
+      // Follow the official WorkOS pattern: send code AND password together
       const result = await signIn.attemptFirstFactor({
         strategy: 'reset_password_email_code',
         code: resetCode,
@@ -286,7 +286,7 @@ export function LoginForm({
     } catch (err: unknown) {
       // Password reset error
 
-      const clerkError = err as {
+      const workosError = err as {
         errors?: Array<{
           code?: string;
           message?: string;
@@ -297,8 +297,8 @@ export function LoginForm({
       };
 
       let errorMessage = 'Failed to reset password. Please try again.';
-      if (clerkError.errors && clerkError.errors.length > 0) {
-        const error = clerkError.errors[0];
+      if (workosError.errors && workosError.errors.length > 0) {
+        const error = workosError.errors[0];
 
         switch (error?.code) {
           case 'form_password_pwned':
@@ -335,24 +335,24 @@ export function LoginForm({
               error?.longMessage ||
               'Failed to reset password. Please try again.';
         }
-      } else if (clerkError.message) {
+      } else if (workosError.message) {
         // Handle specific error messages
-        if (clerkError.message.includes('verification code')) {
+        if (workosError.message.includes('verification code')) {
           errorMessage =
             'Verification code has expired. Please request a new code.';
           // Reset to reset form to request new code
           setShowPasswordForm(false);
           setShowResetForm(true);
-        } else if (clerkError.message.includes('is missing')) {
+        } else if (workosError.message.includes('is missing')) {
           errorMessage =
             'Password reset session has expired. Please start the password reset process again.';
           // Reset the form state
           setShowPasswordForm(false);
           setShowResetForm(true);
-        } else if (clerkError.message.includes('is invalid')) {
+        } else if (workosError.message.includes('is invalid')) {
           errorMessage = 'Password requirements not met. Please try again.';
         } else {
-          errorMessage = clerkError.message;
+          errorMessage = workosError.message;
         }
       }
 

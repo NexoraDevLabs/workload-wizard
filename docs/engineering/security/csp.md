@@ -122,7 +122,7 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
 The CSP policy automatically includes allowlists for:
 
 - **Convex**: Database and real-time subscriptions
-- **Clerk**: Authentication and user management
+- **WorkOS**: Authentication and user management
 - **Sentry**: Error monitoring and performance tracking
 - **Statsig**: Feature flags and experimentation
 - **Vercel**: Analytics and speed insights

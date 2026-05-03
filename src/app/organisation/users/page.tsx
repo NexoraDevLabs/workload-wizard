@@ -3,7 +3,7 @@
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useEffect, useState, useCallback } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -84,7 +84,7 @@ interface User {
   isActive: boolean;
   lastSignInAt?: number;
   createdAt: number;
-  subject?: string; // Clerk user ID
+  subject?: string; // WorkOS user ID
   pictureUrl?: string;
   organisation?: {
     id: string;

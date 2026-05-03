@@ -17,7 +17,7 @@ import { PermissionGate } from '@/components/common/PermissionGate';
 import { withToast } from '@/lib/utils';
 import { Edit, Trash2 } from 'lucide-react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 interface Module {
@@ -50,10 +50,10 @@ export default function ModulesPage() {
   const me = useQuery(
     api.users.getBySubject,
     typeof window !== 'undefined' &&
-      (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id
+      (window as { WorkOS?: { user?: { id: string } } }).WorkOS?.user?.id
       ? {
           subject:
-            (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id ||
+            (window as { WorkOS?: { user?: { id: string } } }).WorkOS?.user?.id ||
             '',
         }
       : 'skip'

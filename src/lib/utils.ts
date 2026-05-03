@@ -16,7 +16,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * Get user roles from Clerk metadata, supporting both single role and multiple roles
+ * Get user roles from WorkOS metadata, supporting both single role and multiple roles
  */
 export function getUserRoles(user: unknown): string[] {
   if (!isObject(user)) return [];

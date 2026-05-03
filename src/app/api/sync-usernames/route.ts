@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { syncUsernamesFromClerk } from '@/lib/actions/syncUsernamesFromClerk';
+import { syncUsernamesFromAuthProvider } from '@/lib/actions/syncUsernamesFromAuthProvider';
 
 export async function POST() {
   try {
-    const result = await syncUsernamesFromClerk();
+    const result = await syncUsernamesFromAuthProvider();
 
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
