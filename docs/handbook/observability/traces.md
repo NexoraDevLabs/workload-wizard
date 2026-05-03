@@ -17,10 +17,10 @@ Enable tracing in your local environment:
 
 ```bash
 # Set trace level and start the app
-TRACE_LEVEL=info pnpm dev
+TRACE_LEVEL=info npm run dev
 
 # Or use the existing development script
-pnpm dev:trace
+npm run dev:trace
 ```
 
 Traces will appear in your browser's developer tools and be sent to your configured observability provider.

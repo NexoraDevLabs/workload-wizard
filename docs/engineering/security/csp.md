@@ -47,13 +47,13 @@ Browser → CSP Policy → Violation → Report Handler → Convex DB → Admin 
 
 ```bash
 # Switch to report-only mode
-pnpm run csp:mode:report
+npm run csp:mode:report
 
 # Switch to enforce mode
-pnpm run csp:mode:enforce
+npm run csp:mode:enforce
 
 # Check current CSP configuration
-pnpm run csp:check
+npm run csp:check
 ```
 
 #### Production (Vercel)
@@ -195,15 +195,15 @@ If issues arise after switching to enforce mode:
 
 ```bash
 # Check CSP configuration
-pnpm run csp:check
+npm run csp:check
 
 # Test in report-only mode
-pnpm run csp:mode:report
-pnpm run dev
+npm run csp:mode:report
+npm run dev
 
 # Test in enforce mode
-pnpm run csp:mode:enforce
-pnpm run dev
+npm run csp:mode:enforce
+npm run dev
 ```
 
 ### CI Testing

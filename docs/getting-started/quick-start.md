@@ -1,14 +1,14 @@
 # Quick start
 
-Step-by-step guide to run Workload Wizard locally using pnpm.
+Step-by-step guide to run Workload Wizard locally using npm.
 
 ## Prerequisites
 
 - Node 20
-- pnpm 9+
+- npm 9+
 
 ## Steps
 
 1. Clone the repo
-2. `pnpm install`
-3. `pnpm dev`
+2. `npm install`
+3. `npm run dev`

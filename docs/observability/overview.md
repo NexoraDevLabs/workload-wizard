@@ -109,10 +109,10 @@ Alerts are configured via the Sentry API using the provided scripts:
 
 ```bash
 # Create dashboards
-pnpm dashboards:sentry
+npm dashboards:sentry
 
 # Create alerts
-pnpm alerts:sentry
+npm alerts:sentry
 ```
 
 **Required Environment Variables:**
