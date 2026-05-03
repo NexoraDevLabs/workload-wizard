@@ -4,6 +4,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { getOrganisationIdFromSession } from '@/lib/authz';
 import { createClerkClient } from '@clerk/backend';
 import { z } from 'zod';
+import { can, hasRole } from '@/lib/auth/permissions';
 
 const BodySchema = z.object({ userId: z.string().min(1) });
 
@@ -19,17 +20,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has appropriate permissions
-    const userRole = currentUserData.publicMetadata?.role as string;
-    const userRoles = currentUserData.publicMetadata?.roles as string[];
-    const isAdmin =
-      userRole === 'sysadmin' ||
-      userRole === 'developer' ||
-      (userRoles &&
-        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-    const isOrgAdmin = userRole === 'orgadmin';
+    const isOrgAdmin = hasRole(currentUserData, 'org_admin');
 
-    if (!isAdmin && !isOrgAdmin) {
+    if (!can(currentUserData, 'users.reset_password')) {
       return NextResponse.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 403 }

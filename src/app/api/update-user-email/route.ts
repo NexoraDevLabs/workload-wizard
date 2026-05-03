@@ -5,6 +5,7 @@ import { getOrganisationIdFromSession } from '@/lib/authz';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { z } from 'zod';
+import { can, hasRole } from '@/lib/auth/permissions';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -58,20 +59,12 @@ export async function POST(request: NextRequest) {
 
     // validated by schema
 
-    // Check if user has appropriate permissions
-    const userRole = currentUserData.publicMetadata?.role as string;
-    const userRoles = currentUserData.publicMetadata?.roles as string[];
-    const isAdmin =
-      userRole === 'sysadmin' ||
-      userRole === 'developer' ||
-      (userRoles &&
-        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-    const isOrgAdmin = userRole === 'orgadmin';
+    const isOrgAdmin = hasRole(currentUserData, 'org_admin');
 
     // Allow users to update their own email
     const isUpdatingOwnEmail = currentUserData.id === userId;
 
-    if (!isAdmin && !isOrgAdmin && !isUpdatingOwnEmail) {
+    if (!can(currentUserData, 'users.update_email') && !isUpdatingOwnEmail) {
       return NextResponse.json(
         {
           error:

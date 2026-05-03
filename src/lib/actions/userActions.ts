@@ -16,6 +16,7 @@ import {
 } from './auditActions';
 import type { Id } from '@/convex/_generated/dataModel';
 import { sendUserInvitationEmail } from '@/lib/services/emailService';
+import { can, hasRole } from '@/lib/auth/permissions';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -51,18 +52,9 @@ export async function createUser(data: CreateUserData) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  // Check if user has appropriate permissions
-  const userRole = currentUserData.publicMetadata?.role as string;
-  const userRoles = currentUserData.publicMetadata?.roles as string[];
-  const isAdmin =
-    userRole === 'sysadmin' ||
-    userRole === 'developer' ||
-    (userRoles &&
-      (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-  const isOrgAdmin =
-    userRole === 'orgadmin' || (userRoles && userRoles.includes('orgadmin'));
+  const isOrgAdmin = hasRole(currentUserData, 'org_admin');
 
-  if (!isAdmin && !isOrgAdmin) {
+  if (!can(currentUserData, 'users.admin')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
@@ -312,31 +304,13 @@ export async function createUser(data: CreateUserData) {
 export async function listUsers() {
   const currentUserData = await currentUser();
 
-  // Check for multiple roles first (new format)
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData?.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData?.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
   // Check if this is a dev login session (server-side check)
   const isDevLoginSession =
     currentUserData?.publicMetadata?.devLoginSession === true;
 
   if (
     !currentUserData ||
-    (!currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    ) &&
-      !isDevLoginSession)
+    (!can(currentUserData, 'users.list') && !isDevLoginSession)
   ) {
     throw new Error('Unauthorised: Admin access required');
   }
@@ -368,31 +342,13 @@ export async function listUsers() {
 export async function deleteUser(userId: string) {
   const currentUserData = await currentUser();
 
-  // Check for multiple roles first (new format)
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData?.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData?.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
   // Check if this is a dev login session (server-side check)
   const isDevLoginSession =
     currentUserData?.publicMetadata?.devLoginSession === true;
 
   if (
     !currentUserData ||
-    (!currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    ) &&
-      !isDevLoginSession)
+    (!can(currentUserData, 'users.delete') && !isDevLoginSession)
   ) {
     throw new Error('Unauthorised: Admin access required');
   }
@@ -467,18 +423,9 @@ export async function updateUser(
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  // Check if user has appropriate permissions
-  const userRole = currentUserData.publicMetadata?.role as string;
-  const userRoles = currentUserData.publicMetadata?.roles as string[];
-  const isAdmin =
-    userRole === 'sysadmin' ||
-    userRole === 'developer' ||
-    (userRoles &&
-      (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-  const isOrgAdmin =
-    userRole === 'orgadmin' || (userRoles && userRoles.includes('orgadmin'));
+  const isOrgAdmin = hasRole(currentUserData, 'org_admin');
 
-  if (!isAdmin && !isOrgAdmin) {
+  if (!can(currentUserData, 'users.admin')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
@@ -630,25 +577,8 @@ export async function getUsersByOrganisationId(organisationId: string) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  // Check if user has access to this organisation
-  const currentUserRoles: string[] = [];
   if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    ) &&
+    !hasRole(currentUserData, 'sysadmin') &&
     currentUserData.publicMetadata?.organisationId !== organisationId
   ) {
     throw new Error('Unauthorised: Access denied to this organisation');
@@ -656,7 +586,7 @@ export async function getUsersByOrganisationId(organisationId: string) {
 
   // Ensure user has an organisationId (for orgadmins)
   if (
-    currentUserData.publicMetadata?.role === 'orgadmin' &&
+    hasRole(currentUserData, 'org_admin') &&
     !currentUserData.publicMetadata?.organisationId
   ) {
     throw new Error('Unauthorised: User must be assigned to an organisation');
@@ -722,33 +652,13 @@ export async function deactivateUser(userId: string) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  // Only orgadmin, sysadmin, and developer can deactivate users
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) =>
-        role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
-    )
-  ) {
+  if (!can(currentUserData, 'users.deactivate')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
   // Ensure user has an organisationId (for orgadmins)
   if (
-    currentUserRoles.includes('orgadmin') &&
+    hasRole(currentUserData, 'org_admin') &&
     !currentUserData.publicMetadata?.organisationId
   ) {
     throw new Error('Unauthorised: User must be assigned to an organisation');
@@ -764,10 +674,9 @@ export async function deactivateUser(userId: string) {
         (email) => email.id === user.primaryEmailAddressId
       );
       userEmail = primaryEmail?.emailAddress || null;
-      const userRole = (user.publicMetadata?.role as string) || 'unknown';
 
       // Prevent deactivating orgadmin or sysadmin users
-      if (userRole === 'orgadmin' || userRole === 'sysadmin') {
+      if (hasRole(user, 'org_admin') || hasRole(user, 'sysadmin')) {
         throw new Error(
           'Cannot deactivate organisation admin or system admin users'
         );
@@ -809,33 +718,13 @@ export async function reactivateUser(userId: string) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  // Only orgadmin, sysadmin, and developer can reactivate users
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) =>
-        role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
-    )
-  ) {
+  if (!can(currentUserData, 'users.reactivate')) {
     throw new Error('Unauthorised: Admin access required');
   }
 
   // Ensure user has an organisationId (for orgadmins)
   if (
-    currentUserRoles.includes('orgadmin') &&
+    hasRole(currentUserData, 'org_admin') &&
     !currentUserData.publicMetadata?.organisationId
   ) {
     throw new Error('Unauthorized: User must be assigned to an organisation');
@@ -914,10 +803,7 @@ export async function getUsersByOrganisationIdWithOverride(
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin privileges
-  const isAdmin =
-    currentUserData.publicMetadata?.role === 'sysadmin' ||
-    currentUserData.publicMetadata?.role === 'developer';
+  const isAdmin = hasRole(currentUserData, 'sysadmin');
 
   // If not admin, check if user has access to this organisation
   if (
@@ -994,24 +880,7 @@ export async function getAllUsersByOrganisationIdWithOverride(
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin privileges
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  const isAdmin = currentUserRoles.some(
-    (role) => role === 'sysadmin' || role === 'developer'
-  );
+  const isAdmin = hasRole(currentUserData, 'sysadmin');
 
   // If not admin, check if user has access to this organisation
   if (
@@ -1085,26 +954,7 @@ export async function getAllOrganisations() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Only sysadmin and developer can view all organisations
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    )
-  ) {
+  if (!can(currentUserData, 'organisations.list')) {
     throw new Error('Unauthorized: Admin access required');
   }
 

@@ -9,6 +9,7 @@ import {
 } from '@/lib/actions/auditActions';
 import type { Id } from '@/convex/_generated/dataModel';
 import { z } from 'zod';
+import { can, hasRole } from '@/lib/auth/permissions';
 
 const BodySchema = z.object({
   userId: z.string().min(1),
@@ -54,18 +55,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has appropriate permissions
-    const userRole = currentUserData.publicMetadata?.role as string;
-    const userRoles = (currentUserData.publicMetadata?.roles as string[]) || [];
-    const isAdmin =
-      userRole === 'sysadmin' ||
-      userRole === 'developer' ||
-      (userRoles &&
-        (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-    const isOrgAdmin =
-      userRole === 'orgadmin' || userRoles.includes('orgadmin');
+    const isAdmin = hasRole(currentUserData, 'sysadmin');
+    const isOrgAdmin = hasRole(currentUserData, 'org_admin');
 
-    if (!isAdmin && !isOrgAdmin) {
+    if (!can(currentUserData, 'users.admin')) {
       return NextResponse.json(
         { error: 'Unauthorised: Admin access required' },
         { status: 403 }
@@ -110,12 +103,9 @@ export async function POST(request: NextRequest) {
       const targetUserPreview = await (
         await clerkClient()
       ).users.getUser(userId);
-      const targetRoles =
-        (targetUserPreview.publicMetadata?.roles as string[]) || [];
-      const targetIsSystem =
-        targetRoles.includes('sysadmin') || targetRoles.includes('developer');
-      const addingSystem = systemRoles.some(
-        (r: string) => r === 'sysadmin' || r === 'developer'
+      const targetIsSystem = hasRole(targetUserPreview, 'sysadmin');
+      const addingSystem = systemRoles.some((role: string) =>
+        hasRole({ publicMetadata: { role } }, 'sysadmin')
       );
       if (targetIsSystem || addingSystem) {
         return NextResponse.json(

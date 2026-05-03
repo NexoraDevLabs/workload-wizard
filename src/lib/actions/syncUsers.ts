@@ -4,7 +4,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import { hasAdminAccess } from '@/lib/auth/permissions';
+import { can } from '@/lib/auth/permissions';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -27,17 +27,7 @@ export async function syncUsersFromClerk() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin role in Clerk metadata
-  const userRole = currentUserData.publicMetadata?.role as string;
-  const userRoles = currentUserData.publicMetadata?.roles as string[];
-
-  if (
-    !hasAdminAccess(userRole) &&
-    !(
-      userRoles &&
-      (userRoles.includes('sysadmin') || userRoles.includes('developer'))
-    )
-  ) {
+  if (!can(currentUserData, 'sync.users')) {
     throw new Error('Unauthorized: Admin access required');
   }
 
@@ -125,7 +115,6 @@ export async function syncUsersFromClerk() {
             message: 'User already exists in Convex',
           });
         }
-
       } catch (innerError) {
         // Error processing Clerk user
         const errorMessage =
@@ -156,17 +145,7 @@ export async function getSyncStatus() {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin role in Clerk metadata
-  const userRole = currentUserData.publicMetadata?.role as string;
-  const userRoles = currentUserData.publicMetadata?.roles as string[];
-
-  if (
-    !hasAdminAccess(userRole) &&
-    !(
-      userRoles &&
-      (userRoles.includes('sysadmin') || userRoles.includes('developer'))
-    )
-  ) {
+  if (!can(currentUserData, 'sync.users')) {
     throw new Error('Unauthorized: Admin access required');
   }
 

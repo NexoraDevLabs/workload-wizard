@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { can } from '@/lib/auth/permissions';
 
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
@@ -610,19 +611,9 @@ export async function getAuditLogs(filters?: {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin role in Clerk metadata - support both old and new format
-  const userRoles = (currentUserData.publicMetadata?.roles as string[]) || [];
-  const userRole = currentUserData.publicMetadata?.role as string;
-
-  // Add legacy role to roles array if it exists
-  if (userRole && !userRoles.includes(userRole)) {
-    userRoles.push(userRole);
-  }
-
   // System-level unrestricted access is ONLY for sysadmin/developer.
   // Orgadmins must always be scoped to their own organisation.
-  const isSystemAdmin =
-    userRoles.includes('sysadmin') || userRoles.includes('developer');
+  const isSystemAdmin = can(currentUserData, 'audit.stats');
 
   if (!isSystemAdmin) {
     // Require an organisation scope matching the user's org
@@ -706,19 +697,7 @@ export async function getAuditStats(filters?: {
     throw new Error('Unauthorized: User not authenticated');
   }
 
-  // Check if user has admin role in Clerk metadata - support both old and new format
-  const userRoles = (currentUserData.publicMetadata?.roles as string[]) || [];
-  const userRole = currentUserData.publicMetadata?.role as string;
-
-  // Add legacy role to roles array if it exists
-  if (userRole && !userRoles.includes(userRole)) {
-    userRoles.push(userRole);
-  }
-
-  const hasAdminAccess =
-    userRoles.includes('sysadmin') || userRoles.includes('developer');
-
-  if (!hasAdminAccess) {
+  if (!can(currentUserData, 'audit.stats')) {
     throw new Error('Unauthorized: Admin access required');
   }
 
