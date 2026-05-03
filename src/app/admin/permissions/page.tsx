@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
@@ -78,7 +78,7 @@ interface SystemRoleTemplate {
 export const dynamic = 'force-dynamic';
 
 export default function AdminPermissionsPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const router = useRouter();
   const { toast } = useToast();
   const [showCreateForm, setShowCreateForm] = useState(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -45,7 +45,7 @@ function getConvexClient(): ConvexHttpClient {
 }
 
 export default function AdminDashboardPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const router = useRouter();
   const [stats, setStats] = useState({
     totalUsers: 0,

@@ -1,4 +1,4 @@
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useMemo } from 'react';
 import {
   hasPermission,
@@ -16,7 +16,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
 export function usePermissions(organisationId?: string) {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const convexUser = useQuery(
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'

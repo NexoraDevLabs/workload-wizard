@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useEffect, useState, useCallback } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
@@ -94,7 +94,7 @@ interface User {
 }
 
 export default function OrganisationUsersPage() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useClerk, useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -9,8 +9,8 @@ import { api } from '@/convex/_generated/api';
 export const dynamic = 'force-dynamic';
 
 export default function OnboardingSuccessPage() {
-  const { user, isLoaded } = useUser();
-  const { session } = useClerk();
+  const { user, isLoaded } = useAuthUser();
+  const { session } = useAuthUser();
   const [message, setMessage] = useState('Finalizing your account setup...');
 
   // Check Convex user record for onboarding completion

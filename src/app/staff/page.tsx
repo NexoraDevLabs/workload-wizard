@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useState } from 'react';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
@@ -68,7 +68,7 @@ interface UserData {
 
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
-  const { user } = useUser();
+  const { user } = useAuthUser();
 
   const convexUser = useQuery(
     api.users.getBySubject,

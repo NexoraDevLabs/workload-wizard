@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
@@ -62,7 +62,7 @@ interface LecturerAllocationDetail {
 }
 
 export default function LecturerProfilePage() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const params = useParams();
   const { toast } = useToast();
   const profileId = params.id as string;
@@ -608,7 +608,7 @@ function AdminAllocationsTable({
   lecturerId: Id<'lecturer_profiles'>;
 }) {
   const { currentYear } = useAcademicYear();
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const orgCategories = useQuery(
     api.allocations.listOrganisationAdminCategories,
