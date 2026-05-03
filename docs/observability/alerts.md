@@ -123,7 +123,7 @@ export SENTRY_PROJECT=your_project_slug
 export SENTRY_AUTH_TOKEN=your_api_token
 
 # Create alerts
-pnpm alerts:sentry
+npm alerts:sentry
 ```
 
 #### Manual Setup

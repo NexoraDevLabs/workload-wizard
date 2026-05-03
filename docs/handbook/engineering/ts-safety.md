@@ -115,7 +115,7 @@ import { Component } from './component';
 Most of these conversions can be automatically applied using:
 
 ```bash
-pnpm lint --fix
+npm run lint --fix
 ```
 
 ## Test Files
@@ -143,7 +143,7 @@ When migrating code to be compatible with our safety rules:
 
 These rules are enforced in CI/CD:
 
-- `pnpm typecheck`: Must pass with 0 errors
-- `pnpm lint`: Must pass with 0 errors (warnings allowed in test files)
+- `npm run typecheck`: Must pass with 0 errors
+- `npm run lint`: Must pass with 0 errors (warnings allowed in test files)
 
 Any new suppressions should be reviewed and approved as part of the PR process.

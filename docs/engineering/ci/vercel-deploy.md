@@ -59,7 +59,7 @@ The workflow requires the following repository secrets to be configured:
 
 ### Performance Optimizations
 
-- **pnpm caching** - Dependencies are cached between runs
+- **npm caching** - Dependencies are cached between runs
 - **Next.js build cache** - Build artifacts are cached for faster subsequent builds
 - **Concurrency control** - Cancels redundant runs per git reference
 - **Prebuilt deployments** - Uses `vercel build` + `vercel deploy --prebuilt` to avoid duplicate builds

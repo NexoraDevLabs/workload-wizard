@@ -6,15 +6,15 @@
 
 ```bash
 # Update visual regression baselines
-✅ pnpm test:visual:update
+✅ npm test:visual:update
 
 # Run specific failing test categories to identify issues
-✅ pnpm e2e tests/e2e/core-workflow.spec.ts
-✅ pnpm e2e tests/e2e/allocations-capacity.spec.ts
+✅ npm e2e tests/e2e/core-workflow.spec.ts
+✅ npm e2e tests/e2e/allocations-capacity.spec.ts
 ❌ Feature flags removed
 
 # Check test setup and authentication
-✅ pnpm test:setup
+✅ npm test:setup
 ```
 
 ### **Test Environment Setup (30 minutes)**
@@ -25,11 +25,11 @@ cp env.ci.template .env.ci
 # Edit .env.ci with your values
 
 # Start services
-pnpm dev:convex
-pnpm dev:next
+npm run dev:convex
+npm run dev:next
 
 # Run complete CI recipe locally
-pnpm ci:recipe
+npm ci:recipe
 ```
 
 ## 📈 **COVERAGE IMPROVEMENT STRATEGY**
@@ -64,36 +64,36 @@ pnpm ci:recipe
 
 ```bash
 # Quick health check
-pnpm test:smoke
+npm test:smoke
 
 # Run all tests
-pnpm test:all
+npm test:all
 
 # CI recipe (local)
-pnpm ci:recipe
+npm ci:recipe
 ```
 
 ### **Debugging Failing Tests**
 
 ```bash
 # Run specific test file
-pnpm e2e tests/e2e/[test-file].spec.ts
+npm e2e tests/e2e/[test-file].spec.ts
 
 # Run with UI for debugging
-pnpm test:ui
+npm test:ui
 
 # Run with debug mode
-pnpm test:debug
+npm test:debug
 ```
 
 ### **Coverage Analysis**
 
 ```bash
 # Unit test coverage
-pnpm test --coverage
+npm test --coverage
 
 # E2E test results
-pnpm test:report
+npm test:report
 ```
 
 ## 📊 **SUCCESS METRICS**
@@ -132,6 +132,6 @@ pnpm test:report
 
 - Focus on **core functionality first** - get basic workflows working
 - **Fix tests, don't lower standards** - maintain quality thresholds
-- **Test locally before CI** - use `pnpm ci:recipe` for validation
+- **Test locally before CI** - use `npm ci:recipe` for validation
 - **Document fixes** - track what was changed and why
 - **Celebrate progress** - 33% → 100% is achievable with focused effort

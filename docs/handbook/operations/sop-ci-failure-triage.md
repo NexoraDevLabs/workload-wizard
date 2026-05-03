@@ -59,7 +59,7 @@ This Standard Operating Procedure (SOP) defines the process for responding to an
 - **Clerk**: Authentication logs, API status
 - **Upstash/Redis**: Connection logs, performance metrics
 - **Statsig**: Feature flag status, API logs
-- **Local Development**: Git, Node.js, pnpm, testing tools
+- **Local Development**: Git, Node.js, npm, testing tools
 
 ## Procedure
 
