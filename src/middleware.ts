@@ -13,6 +13,30 @@ const isOnboardingRoute = createRouteMatcher([
   '/onboarding-success',
   '/api/complete-onboarding',
 ]);
+const isDevOnlyRoute = createRouteMatcher([
+  '/dev/posthog-test(.*)',
+  '/sentry-example-page(.*)',
+  '/api/sentry-example-api(.*)',
+]);
+const isAdminDevToolsRoute = createRouteMatcher(['/api/admin/dev-tools(.*)']);
+
+function hasSystemAdminRole(sessionClaims: unknown): boolean {
+  const claims = sessionClaims as
+    | {
+        publicMetadata?: { role?: unknown; roles?: unknown };
+        metadata?: { publicMetadata?: { role?: unknown; roles?: unknown } };
+      }
+    | undefined;
+  const metadata =
+    claims?.publicMetadata ?? claims?.metadata?.publicMetadata ?? {};
+  const roles = Array.isArray(metadata.roles)
+    ? metadata.roles
+    : typeof metadata.role === 'string'
+      ? [metadata.role]
+      : [];
+
+  return roles.some((role) => role === 'sysadmin' || role === 'developer');
+}
 
 function hasCompletedOnboarding(sessionClaims: unknown) {
   const claims = sessionClaims as {

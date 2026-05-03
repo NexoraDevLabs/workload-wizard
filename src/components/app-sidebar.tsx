@@ -106,6 +106,10 @@ const getNavigationData = (userRoles?: string[]) => {
           title: 'Permission Tests',
           url: '/dev/permission-test',
         },
+        {
+          title: 'Statsig Test',
+          url: '/dev/statsig-test',
+        },
       ],
     });
   }

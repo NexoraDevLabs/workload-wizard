@@ -169,7 +169,7 @@ Removed from this project.
 
 ## Early Access Features (EAF)
 
-Create an EAF in PostHog with key `beta_features`. The dev page `/dev/posthog-test` can help verify.
+Create an EAF in PostHog with key `beta_features` and verify it in a local development environment.
 
 Minimal usage:
 
@@ -211,27 +211,7 @@ session_recording: {
 
 ## Testing the integration
 
-### PostHog Test Dashboard
-
-Visit `/dev/posthog-test` for comprehensive testing of:
-
-- Session replays
-- Heatmaps
-- Autocapture
-- Performance tracking
-- User identification
-- Custom events
-
-### Sentry Test Dashboard
-
-Visit `/sentry-example-page` for comprehensive testing of:
-
-- Error reporting
-- Performance monitoring
-- Session replay
-- User feedback
-- Custom metrics
-- Breadcrumbs and context
+Verify PostHog and Sentry behaviour in a local development environment.
 
 ### Testing the proxy
 

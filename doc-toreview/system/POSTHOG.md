@@ -64,7 +64,7 @@ Quick test page: `/dev/feature-flags-test`
 
 ## Early Access Features (EAF)
 
-Create an EAF in PostHog with key `beta_features`. The dev page `/dev/posthog-test` can help verify.
+Create an EAF in PostHog with key `beta_features` and verify it in a local development environment.
 
 Minimal usage:
 

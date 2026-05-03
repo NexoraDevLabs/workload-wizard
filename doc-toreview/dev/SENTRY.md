@@ -377,25 +377,7 @@ Sentry.setTag('user_type', 'premium');
 
 ## Testing the Integration
 
-### Sentry Test Dashboard
-
-Visit `/sentry-example-page` for comprehensive testing of:
-
-- Error reporting
-- Performance monitoring
-- Session replay
-- User feedback
-- Custom metrics
-- Breadcrumbs and context
-
-### API Testing
-
-Test the Sentry API integration at `/api/sentry-example-api`:
-
-- `GET` - Test performance monitoring and metrics
-- `POST` - Test request context and breadcrumbs
-- `PUT` - Test error reporting
-- `DELETE` - Test custom spans and breadcrumbs
+Verify Sentry behaviour in a local development environment.
 
 ## Privacy and Security
 

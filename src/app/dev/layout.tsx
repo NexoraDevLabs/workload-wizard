@@ -5,7 +5,13 @@ import { useSelectedLayoutSegments } from 'next/navigation';
 
 export default function DevLayout({ children }: { children: React.ReactNode }) {
   const segments = useSelectedLayoutSegments();
-  if (segments.length === 0 || segments.includes('tools')) {
+  // Allow explicitly dev-only utility pages to render without org permission gating.
+  if (
+    segments.length === 0 ||
+    segments.includes('statsig-test') ||
+    segments.includes('features') ||
+    segments.includes('tools')
+  ) {
     return <>{children}</>;
   }
   return (
