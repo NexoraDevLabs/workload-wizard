@@ -1,8 +1,8 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { hasPermission, type PermissionId } from './permissions';
 import { redirect } from 'next/navigation';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
+import { getAuthUserFromWorkOS } from './auth/workos';
 
 export type SessionUser = {
   userId: string;
@@ -110,11 +110,11 @@ export async function getSessionUser(): Promise<SessionUser> {
 }
 
 export async function getAuthUser(): Promise<AuthUser> {
-  const session = await auth();
-  if (!session?.userId) throw new Error('Unauthenticated');
-  const clerkUser = await currentUser();
+  const workosUser = await getAuthUserFromWorkOS();
+  if (!workosUser) throw new Error('Unauthenticated');
+
   const dbUser = await getConvexClient().query(api.users.getAuthContext, {
-    subject: session.userId,
+    subject: workosUser.id,
   });
 
   if (!dbUser) throw new Error('Missing auth context');
@@ -140,8 +140,8 @@ export async function getAuthUser(): Promise<AuthUser> {
 
   if (!orgId) throw new Error('Missing organisationId');
   return {
-    id: session.userId,
-    email: dbUser?.email ?? clerkUser?.emailAddresses[0]?.emailAddress,
+    id: workosUser.id,
+    email: dbUser?.email ?? workosUser.email,
     orgId,
     role,
     systemRoles,

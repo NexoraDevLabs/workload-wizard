@@ -24,6 +24,8 @@ const ServerEnvSchema = PublicEnvSchema.extend({
   CONVEX_DEPLOYMENT: z.string().min(1, 'CONVEX_DEPLOYMENT is required'),
   CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required'),
   CLERK_WEBHOOK_SECRET: z.string().min(1, 'CLERK_WEBHOOK_SECRET is required'),
+  WORKOS_API_KEY: z.string().optional(),
+  WORKOS_CLIENT_ID: z.string().optional(),
 });
 
 type PublicEnv = z.infer<typeof PublicEnvSchema>;
@@ -72,6 +74,8 @@ export function getServerEnv(): ServerEnv {
       CONVEX_DEPLOYMENT: process.env.CONVEX_DEPLOYMENT,
       CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
       CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
+      WORKOS_API_KEY: process.env.WORKOS_API_KEY,
+      WORKOS_CLIENT_ID: process.env.WORKOS_CLIENT_ID,
     });
 
     if (!result.success) {

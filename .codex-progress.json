@@ -1,0 +1,9 @@
+{
+  "lastCompletedPhase": "identity-swap",
+  "completedBranches": [
+    "auth/convex-refactor",
+    "auth/remove-jwt",
+    "auth/workos-base",
+    "auth/identity-swap"
+  ]
+}
