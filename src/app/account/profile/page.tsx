@@ -6,34 +6,80 @@ import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Settings,
   User,
-  Shield,
   Mail,
   Calendar,
   Camera,
   Save,
   X,
   RefreshCw,
+  AtSign,
+  Pencil,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getUserRoles } from '@/lib/utils';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
+
+const getRoleLabel = (role: string) => {
+  switch (role) {
+    case 'orgadmin':
+      return 'Org Admin';
+    case 'sysadmin':
+      return 'System Admin';
+    case 'developer':
+      return 'Developer';
+    case 'user':
+      return 'User';
+    case 'trial':
+      return 'Trial';
+    default:
+      return role.charAt(0).toUpperCase() + role.slice(1);
+  }
+};
+
+const getRoleBadgeVariant = (role: string): NonNullable<BadgeProps['variant']> => {
+  switch (role) {
+    case 'orgadmin':
+      return 'danger';
+    case 'sysadmin':
+      return 'info';
+    case 'developer':
+      return 'info';
+    case 'user':
+      return 'success';
+    case 'trial':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+};
+
+const formatDate = (date: Date | null) => {
+  if (!date) return 'Unknown';
+  return new Intl.DateTimeFormat('en-GB', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((p) => p.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -44,7 +90,6 @@ export default function ProfilePage() {
     user ? { subject: user.id } : 'skip'
   );
 
-  // Form state
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -75,21 +120,17 @@ export default function ProfilePage() {
 
   const userName = user.fullName || user.firstName || 'User';
   const userEmail = user.emailAddresses[0]?.emailAddress || '';
-  const userRole = user.publicMetadata?.role as string;
+  const userRoles = getUserRoles(user);
   const clerkAvatarUrl = user.imageUrl;
   const convexAvatarUrlValue = convexAvatarUrl || null;
-
-  // Use Clerk avatar as priority since it's more up-to-date, fall back to Convex
-  // Add cache-busting parameter to force refresh (only when refresh key changes)
   const avatarUrl = clerkAvatarUrl
     ? `${clerkAvatarUrl}?r=${avatarRefreshKey}`
     : convexAvatarUrlValue
       ? `${convexAvatarUrlValue}?r=${avatarRefreshKey}`
       : '';
-
   const createdAt = user.createdAt;
+  const initials = getInitials(userName);
 
-  // Initialize form data when user loads
   if (!isEditing && formData.firstName === '') {
     setFormData({
       firstName: user.firstName || '',
@@ -99,74 +140,27 @@ export default function ProfilePage() {
     });
   }
 
-  // Generate initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return 'Unknown';
-    return new Intl.DateTimeFormat('en-GB', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
-  };
-
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
-      const allowedTypes = [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-      ];
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: 'Invalid File Type',
-          description: 'Please select a JPG, PNG, GIF, or WebP image.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Invalid File Type', description: 'Please select a JPG, PNG, GIF, or WebP image.', variant: 'destructive' });
         return;
       }
-
-      // Validate file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        toast({
-          title: 'File Too Large',
-          description: 'Please select an image smaller than 5MB.',
-          variant: 'destructive',
-        });
+        toast({ title: 'File Too Large', description: 'Please select an image smaller than 5MB.', variant: 'destructive' });
         return;
       }
-
       setAvatarFile(file);
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.onerror = () => {
-        toast({
-          title: 'File Read Error',
-          description: 'Failed to read the selected file. Please try again.',
-          variant: 'destructive',
-        });
-      };
+      reader.onload = (e) => setAvatarPreview(e.target?.result as string);
+      reader.onerror = () => toast({ title: 'File Read Error', description: 'Failed to read the selected file. Please try again.', variant: 'destructive' });
       reader.readAsDataURL(file);
     }
   };
@@ -174,201 +168,77 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Ensure user is authenticated
-      if (!user || !user.id) {
-        toast({
-          title: 'Authentication Error',
-          description: 'Please sign in again to update your profile.',
-          variant: 'destructive',
-        });
+      if (!user?.id) {
+        toast({ title: 'Authentication Error', description: 'Please sign in again to update your profile.', variant: 'destructive' });
         return;
       }
+      await user.update({ firstName: formData.firstName, lastName: formData.lastName, username: formData.username });
 
-      // Update user data
-      await user.update({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        username: formData.username,
-      });
-
-      // Update email if changed
       if (formData.email !== userEmail) {
         try {
           const response = await fetch('/api/update-user-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              newEmail: formData.email.trim(),
-            }),
+            body: JSON.stringify({ userId: user.id, newEmail: formData.email.trim() }),
           });
-
           if (!response.ok) {
             const errorData = (await response.json()) as { error?: string };
             throw new Error(errorData.error || 'Failed to update email');
           }
-
-          toast({
-            title: 'Email Updated',
-            description: 'Your email address has been updated successfully.',
-            variant: 'success',
-          });
-
-          // Reload user data to get updated email
+          toast({ title: 'Email Updated', description: 'Your email address has been updated successfully.', variant: 'success' });
           await user.reload();
         } catch (emailError) {
-          toast({
-            title: 'Email Update Failed',
-            description:
-              emailError instanceof Error
-                ? emailError.message
-                : 'Failed to update email. Please try again.',
-            variant: 'destructive',
-          });
+          toast({ title: 'Email Update Failed', description: emailError instanceof Error ? emailError.message : 'Failed to update email. Please try again.', variant: 'destructive' });
           return;
         }
       }
 
-      // Update avatar if selected
       if (avatarFile && avatarFile.size > 0) {
         try {
-          // Validate file type
-          const allowedTypes = [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-          ];
-          if (!allowedTypes.includes(avatarFile.type)) {
-            toast({
-              title: 'Invalid File Type',
-              description: 'Please select a JPG, PNG, GIF, or WebP image.',
-              variant: 'destructive',
-            });
-            return;
-          }
-
-          // Validate file size (5MB limit)
-          const maxSize = 5 * 1024 * 1024; // 5MB
-          if (avatarFile.size > maxSize) {
-            toast({
-              title: 'File Too Large',
-              description: 'Please select an image smaller than 5MB.',
-              variant: 'destructive',
-            });
-            return;
-          }
-
-          // Upload to Clerk first
-          try {
-            await user.setProfileImage({ file: avatarFile });
-          } catch (clerkError) {
-            throw new Error(
-              `Clerk upload failed: ${clerkError instanceof Error ? clerkError.message : 'Unknown error'}`
-            );
-          }
-
-          // Wait a moment for Clerk to process the image and update the URL
+          await user.setProfileImage({ file: avatarFile });
           await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          // Get the updated image URL from Clerk
           const updatedImageUrl = user.imageUrl;
-
-          // Sync the new avatar URL to Convex
           if (updatedImageUrl && updatedImageUrl !== avatarUrl) {
-            await updateUserAvatar({
-              subject: user.id,
-              pictureUrl: updatedImageUrl,
-            });
-
-            toast({
-              title: 'Avatar Updated',
-              description:
-                'Your profile picture has been updated successfully.',
-              variant: 'success',
-            });
-
-            // Force a refresh of the user data to get the updated avatar
+            await updateUserAvatar({ subject: user.id, pictureUrl: updatedImageUrl });
+            toast({ title: 'Avatar Updated', description: 'Your profile picture has been updated successfully.', variant: 'success' });
             await user.reload();
-
-            // Increment refresh key to force avatar re-render
             setAvatarRefreshKey((prev) => prev + 1);
           } else {
-            toast({
-              title: 'Avatar Update',
-              description:
-                'Avatar uploaded to Clerk. It may take a moment to appear.',
-              variant: 'success',
-            });
+            toast({ title: 'Avatar Update', description: 'Avatar uploaded. It may take a moment to appear.', variant: 'success' });
           }
         } catch (avatarError) {
-          // Provide more specific error messages
           let errorMessage = 'Failed to update avatar. Please try again.';
           if (avatarError instanceof Error) {
-            if (avatarError.message.includes('network')) {
-              errorMessage =
-                'Network error. Please check your connection and try again.';
-            } else if (avatarError.message.includes('unauthorized')) {
-              errorMessage = 'Authentication error. Please sign in again.';
-            } else if (avatarError.message.includes('file')) {
-              errorMessage = 'Invalid file. Please select a valid image file.';
-            }
+            if (avatarError.message.includes('network')) errorMessage = 'Network error. Please check your connection and try again.';
+            else if (avatarError.message.includes('unauthorized')) errorMessage = 'Authentication error. Please sign in again.';
+            else if (avatarError.message.includes('file')) errorMessage = 'Invalid file. Please select a valid image file.';
           }
-
-          toast({
-            title: 'Avatar Update Failed',
-            description: errorMessage,
-            variant: 'destructive',
-          });
+          toast({ title: 'Avatar Update Failed', description: errorMessage, variant: 'destructive' });
         }
       }
 
-      // Only capture if PostHog is available
       if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('profile-updated', {
-          user_id: user.id,
-          avatar_updated: !!(avatarFile && avatarFile.size > 0),
-        });
+        posthog.capture('profile-updated', { user_id: user.id, avatar_updated: !!(avatarFile && avatarFile.size > 0) });
       }
 
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been successfully updated.',
-        variant: 'success',
-      });
-
+      toast({ title: 'Profile Updated', description: 'Your profile has been successfully updated.', variant: 'success' });
       setIsEditing(false);
-      setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        username: user.username || '',
-        email: userEmail,
-      });
+      setFormData({ firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || '', email: userEmail });
       setAvatarFile(null);
       setAvatarPreview('');
     } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to update profile. Please try again.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    // Only capture if PostHog is available
     if (typeof posthog !== 'undefined' && posthog.capture) {
       posthog.capture('profile-edit-cancelled', { user_id: user.id });
     }
     setIsEditing(false);
-    setFormData({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || '',
-      email: userEmail,
-    });
+    setFormData({ firstName: user.firstName || '', lastName: user.lastName || '', username: user.username || '', email: userEmail });
     setAvatarFile(null);
     setAvatarPreview('');
   };
@@ -377,17 +247,9 @@ export default function ProfilePage() {
     try {
       await user.reload();
       setAvatarRefreshKey((prev) => prev + 1);
-      toast({
-        title: 'Avatar Refreshed',
-        description: 'Profile picture has been refreshed.',
-        variant: 'success',
-      });
+      toast({ title: 'Avatar Refreshed', description: 'Profile picture has been refreshed.', variant: 'success' });
     } catch {
-      toast({
-        title: 'Refresh Failed',
-        description: 'Failed to refresh avatar. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Refresh Failed', description: 'Failed to refresh avatar. Please try again.', variant: 'destructive' });
     }
   };
 
@@ -400,103 +262,160 @@ export default function ProfilePage() {
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
-      title="Profile Management"
-      subtitle="Manage your profile information and password"
+      title="Profile"
+      subtitle="Manage your personal information and profile picture"
     >
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Overview Card */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profile Overview
-            </CardTitle>
-            <CardDescription>Your current profile information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={avatarPreview || avatarUrl} alt={userName} />
-                <AvatarFallback className="text-lg">
-                  {getInitials(userName)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold">{userName}</h3>
-                <p className="text-sm text-muted-foreground">{userEmail}</p>
-                {userRole && (
-                  <Badge variant="secondary" className="mt-1">
-                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-                  </Badge>
+      <div className="flex flex-col gap-6">
+        {/* ── Hero Identity Card ───────────────────────────────── */}
+        <Card className="overflow-hidden border-border/60">
+          <div className="h-24 bg-primary/8 relative">
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 20% 50%, var(--color-primary) 0%, transparent 60%), radial-gradient(circle at 80% 20%, var(--color-accent-foreground) 0%, transparent 50%)',
+              }}
+            />
+          </div>
+          <CardContent className="px-6 pb-6 pt-0">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between -mt-10">
+              {/* Avatar upload area */}
+              <div className="flex items-end gap-4">
+                <div className="relative group">
+                  <Avatar className="h-20 w-20 ring-4 ring-background shadow-md">
+                    <AvatarImage src={avatarPreview || avatarUrl} alt={userName} />
+                    <AvatarFallback className="text-2xl font-semibold bg-primary text-primary-foreground">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('avatar')?.click()}
+                      className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Change profile picture"
+                    >
+                      <Camera className="h-5 w-5 text-white" />
+                    </button>
+                  )}
+                </div>
+                <div className="mb-1">
+                  <h2 className="text-xl font-semibold leading-tight">{userName}</h2>
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
+                </div>
+              </div>
+              {/* Roles + actions */}
+              <div className="flex flex-wrap items-center gap-2 sm:mb-1">
+                {userRoles && userRoles.length > 0 ? (
+                  userRoles.map((role, i) => (
+                    <Badge key={i} variant={getRoleBadgeVariant(role)}>
+                      {getRoleLabel(role)}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="neutral">No roles</Badge>
+                )}
+                {!isEditing && (
+                  <Button
+                    size="sm"
+                    variant="soft"
+                    className="ml-1"
+                    onClick={() => {
+                      if (typeof posthog !== 'undefined' && posthog.capture) {
+                        posthog.capture('profile-edit-started', { user_id: user.id });
+                      }
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                    Edit Profile
+                  </Button>
                 )}
               </div>
             </div>
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{userEmail}</span>
-              </div>
-
-              {userRole && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Role:</span>
-                  <span className="font-medium">
-                    {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
-                  </span>
-                </div>
+            {/* Metadata row */}
+            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-border/50 pt-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5" />
+                {userEmail}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                Member since {formatDate(createdAt)}
+              </span>
+              {user.username && (
+                <span className="flex items-center gap-1.5">
+                  <AtSign className="h-3.5 w-3.5" />
+                  {user.username}
+                </span>
               )}
-
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Member since:</span>
-                <span className="font-medium">{formatDate(createdAt)}</span>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Profile Management Card */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Profile Management
-            </CardTitle>
-            <CardDescription>
-              Update your profile information, password, and settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Avatar Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage
-                      src={avatarPreview || avatarUrl}
-                      alt={userName}
-                    />
-                    <AvatarFallback className="text-xl">
-                      {getInitials(userName)}
-                    </AvatarFallback>
-                  </Avatar>
+        {/* ── Personal Information ─────────────────────────────── */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Personal Information
+          </h3>
+          <Card className="border-border/60">
+            <CardContent className="px-6 py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="First name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="Last name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="email@example.com"
+                  />
+                </div>
+              </div>
+
+              {isEditing && (
+                <>
+                  <Separator className="mt-6 mb-5" />
+
+                  {/* Avatar upload controls (inline when editing) */}
                   <div className="space-y-2">
-                    <Label htmlFor="avatar" className="text-sm font-medium">
-                      Profile Picture
-                    </Label>
-                    <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">Profile Picture</p>
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          document.getElementById('avatar')?.click()
-                        }
-                        disabled={!isEditing}
+                        onClick={() => document.getElementById('avatar')?.click()}
                       >
                         <Camera className="h-4 w-4 mr-2" />
                         Change Photo
@@ -505,10 +424,7 @@ export default function ProfilePage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setAvatarFile(null);
-                            setAvatarPreview('');
-                          }}
+                          onClick={() => { setAvatarFile(null); setAvatarPreview(''); }}
                         >
                           <X className="h-4 w-4 mr-2" />
                           Remove
@@ -524,84 +440,21 @@ export default function ProfilePage() {
                         Refresh
                       </Button>
                     </div>
-                    <input
-                      id="avatar"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                      disabled={!isEditing}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      JPG, PNG or GIF. Max size 5MB.
-                    </p>
+                    <p className="text-xs text-muted-foreground">JPG, PNG, GIF or WebP. Max 5 MB.</p>
                   </div>
-                </div>
-              </div>
 
-              <Separator />
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
 
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Personal Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) =>
-                        handleInputChange('firstName', e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) =>
-                        handleInputChange('lastName', e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={formData.username}
-                      onChange={(e) =>
-                        handleInputChange('username', e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange('email', e.target.value)
-                      }
-                      disabled={!isEditing}
-                    />
-                  </div>
-                </div>
-              </div>
+                  <Separator className="mt-5 mb-5" />
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-4">
-                {isEditing ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={handleCancel}
-                      disabled={isLoading}
-                    >
+                  <div className="flex items-center justify-end gap-2">
+                    <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
                       Cancel
                     </Button>
                     <Button onClick={handleSave} disabled={isLoading}>
@@ -617,27 +470,62 @@ export default function ProfilePage() {
                         </>
                       )}
                     </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Account Details ──────────────────────────────────── */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Account Details
+          </h3>
+          <Card className="border-border/60">
+            <CardContent className="px-6 py-5">
+              <div className="flex flex-col gap-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground w-28 shrink-0">Email</span>
+                  <span className="font-medium">{userEmail}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground w-28 shrink-0">Member since</span>
+                  <span className="font-medium">{formatDate(createdAt)}</span>
+                </div>
+                {user.username && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center gap-3">
+                      <AtSign className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground w-28 shrink-0">Username</span>
+                      <span className="font-medium">{user.username}</span>
+                    </div>
                   </>
-                ) : (
-                  <Button
-                    onClick={() => {
-                      // Only capture if PostHog is available
-                      if (typeof posthog !== 'undefined' && posthog.capture) {
-                        posthog.capture('profile-edit-started', {
-                          user_id: user.id,
-                        });
-                      }
-                      setIsEditing(true);
-                    }}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                )}
+                {userRoles.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground w-28 shrink-0">Roles</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {userRoles.map((role, i) => (
+                          <Badge key={i} variant={getRoleBadgeVariant(role)}>
+                            {getRoleLabel(role)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </StandardizedSidebarLayout>
   );

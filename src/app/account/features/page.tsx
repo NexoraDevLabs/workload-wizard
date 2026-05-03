@@ -7,16 +7,11 @@ import { api } from '@/convex/_generated/api';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   Crown,
   Loader2,
@@ -27,7 +22,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-// Feature flags removed
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -40,41 +34,29 @@ interface EarlyAccessFeature {
   enrolled?: boolean;
 }
 
-// Local storage key for feature flag overrides
 const LOCAL_FLAG_OVERRIDES_KEY = 'feature-flag-overrides';
 
 function getLocalFlagOverrides(): Record<string, boolean> {
   if (typeof window === 'undefined') return {};
-
   try {
     const stored = localStorage.getItem(LOCAL_FLAG_OVERRIDES_KEY);
     if (!stored) return {};
-    // Properly type the parsed JSON result
     const parsed: unknown = JSON.parse(stored);
-    if (
-      typeof parsed === 'object' &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-    ) {
-      // Validate that all values are booleans
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
       const result: Record<string, boolean> = {};
       for (const [key, value] of Object.entries(parsed)) {
-        if (typeof value === 'boolean') {
-          result[key] = value;
-        }
+        if (typeof value === 'boolean') result[key] = value;
       }
       return result;
     }
     return {};
   } catch {
-    // Failed to get local flag overrides
     return {};
   }
 }
 
 function _setLocalFlagOverride(flagKey: string, enabled: boolean): void {
   if (typeof window === 'undefined') return;
-
   try {
     const overrides = getLocalFlagOverrides();
     overrides[flagKey] = enabled;
@@ -84,15 +66,25 @@ function _setLocalFlagOverride(flagKey: string, enabled: boolean): void {
   }
 }
 
+const getStageBadgeVariant = (stage: string) => {
+  switch (stage.toLowerCase()) {
+    case 'concept': return 'secondary' as const;
+    case 'beta': return 'default' as const;
+    case 'alpha': return 'danger' as const;
+    default: return 'neutral' as const;
+  }
+};
+
+const capitalizeStage = (stage: string) =>
+  stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
+
 export default function AccountFeaturesPage() {
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const [features, setFeatures] = useState<EarlyAccessFeature[]>([]);
   const publicFeatures = useQuery(api.featureFlags.listPublic, {});
   const enrollments = useQuery(api.featureEnrollments.listForCurrentUser, {});
-  const upsertEnrollment = useMutation(
-    api.featureEnrollments.upsertForCurrentUser
-  );
+  const upsertEnrollment = useMutation(api.featureEnrollments.upsertForCurrentUser);
   const { client } = useStatsigClient();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -102,7 +94,6 @@ export default function AccountFeaturesPage() {
   const loadFeatures = useCallback(async () => {
     try {
       setLoading(true);
-
       const enrollmentMap = new Map(
         (enrollments || []).map((e) => [e.featureKey, !!e.enabled])
       );
@@ -116,53 +107,29 @@ export default function AccountFeaturesPage() {
       setFeatures(rows);
       setLastRefresh(new Date());
     } catch {
-      // Use toast directly instead of in dependency
-      toast({
-        title: 'Error',
-        description: 'Failed to load early access features. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to load early access features. Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [publicFeatures, enrollments, toast]); // refresh when data changes
+  }, [publicFeatures, enrollments, toast]);
 
   const toggleFeature = async (flagKey: string, enabled: boolean) => {
     try {
       setUpdating(flagKey);
-
-      // Persist server-side enrollment
       await upsertEnrollment({ featureKey: flagKey, enabled });
-
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(
-        new CustomEvent('featureFlagChanged', {
-          detail: { flagKey, enabled },
-        })
-      );
-
-      // Update local state
+      window.dispatchEvent(new CustomEvent('featureFlagChanged', { detail: { flagKey, enabled } }));
       setFeatures((prev) =>
         prev.map((feature) =>
-          feature.flagKey === flagKey
-            ? { ...feature, enrolled: enabled }
-            : feature
+          feature.flagKey === flagKey ? { ...feature, enrolled: enabled } : feature
         )
       );
-
       const feature = features.find((f) => f.flagKey === flagKey);
-      const featureName = feature?.name || flagKey;
-
       toast({
         title: enabled ? 'Feature Enabled' : 'Feature Disabled',
-        description: `${enabled ? 'Opted into' : 'Opted out of'} ${featureName}`,
+        description: `${enabled ? 'Opted into' : 'Opted out of'} ${feature?.name || flagKey}`,
       });
     } catch {
-      toast({
-        title: 'Error',
-        description: `Failed to ${enabled ? 'enable' : 'disable'} feature. Please try again.`,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: `Failed to ${enabled ? 'enable' : 'disable'} feature. Please try again.`, variant: 'destructive' });
     } finally {
       setUpdating(null);
     }
@@ -171,10 +138,7 @@ export default function AccountFeaturesPage() {
   const refreshFeatures = async () => {
     await loadFeatures();
     try {
-      // Build a fresh Statsig user and force client re-evaluation to reduce delay
-      const enrolledMap = new Map(
-        (enrollments || []).map((e) => [e.featureKey, !!e.enabled])
-      );
+      const enrolledMap = new Map((enrollments || []).map((e) => [e.featureKey, !!e.enabled]));
       const enrolled: Record<string, boolean> = {};
       const flattened: Record<string, boolean> = {};
       for (const [k, v] of enrolledMap.entries()) {
@@ -188,259 +152,213 @@ export default function AccountFeaturesPage() {
             email: user.primaryEmailAddress?.emailAddress,
             custom: {
               fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-              organisationId:
-                (user.publicMetadata?.organisationId as string) ?? undefined,
+              organisationId: (user.publicMetadata?.organisationId as string) ?? undefined,
               role: (user.publicMetadata?.role as string) ?? undefined,
               enrolled,
               ...flattened,
             },
           }
         : { userID: 'anonymous' };
-      const anyClient = client as unknown as {
-        updateUser?: (u: unknown) => Promise<unknown>;
-      };
+      const anyClient = client as unknown as { updateUser?: (u: unknown) => Promise<unknown> };
       await anyClient.updateUser?.(statsigUser);
       client.logEvent('features_refresh');
     } catch {
       // Ignore feature refresh errors silently
     }
-    toast({
-      title: 'Refreshed',
-      description: 'Features and flags re-synced.',
-    });
+    toast({ title: 'Refreshed', description: 'Features and flags re-synced.' });
     router.refresh();
   };
 
   useEffect(() => {
-    if (isLoaded && user) {
-      void loadFeatures();
-    }
-
-    // Cleanup function to prevent memory leaks
+    if (isLoaded && user) void loadFeatures();
     return () => {
-      // Clear any pending state updates
       setFeatures([]);
       setLoading(false);
       setUpdating(null);
     };
   }, [isLoaded, user, loadFeatures]);
 
+  const enrolledCount = features.filter((f) => f.enrolled).length;
+
   const breadcrumbs = [
     { label: 'Home', href: '/' },
     { label: 'Account', href: '/account' },
-    { label: 'Features' },
+    { label: 'Early Access' },
   ];
 
   const headerActions = (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={refreshFeatures}
-        disabled={loading}
-      >
-        <RefreshCw
-          className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-        />
-        Refresh
-      </Button>
-    </div>
+    <Button variant="outline" size="sm" onClick={refreshFeatures} disabled={loading}>
+      <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+      Refresh
+    </Button>
   );
-
-  const getStageBadgeVariant = (stage: string) => {
-    switch (stage.toLowerCase()) {
-      case 'concept':
-        return 'secondary' as const;
-      case 'beta':
-        return 'default' as const;
-      case 'alpha':
-        return 'destructive' as const;
-      default:
-        return 'outline' as const;
-    }
-  };
-
-  const capitalizeStage = (stage: string) => {
-    return stage.charAt(0).toUpperCase() + stage.slice(1).toLowerCase();
-  };
 
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
       title="Early Access Features"
-      subtitle="Manage your opt-in preferences for experimental features"
+      subtitle="Opt into experimental features and preview upcoming functionality"
       headerActions={headerActions}
     >
-      {/* Status Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5" />
-            Feature Status
-          </CardTitle>
-          <CardDescription>
-            Your early access feature preferences and account information.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Available Features:</span>
-              <Badge variant="outline">
-                {features.length}{' '}
-                {features.length === 1 ? 'feature' : 'features'}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Enrolled Features:</span>
-              <Badge variant="outline">
-                {features.filter((f) => f.enrolled).length}{' '}
-                {features.filter((f) => f.enrolled).length === 1
-                  ? 'feature'
-                  : 'features'}
-              </Badge>
-            </div>
+      <div className="flex flex-col gap-6">
+        {/* ── Status Banner ────────────────────────────────────── */}
+        <Card className="overflow-hidden border-border/60">
+          <div className="h-20 bg-primary/8 relative">
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 15% 50%, var(--color-primary) 0%, transparent 55%), radial-gradient(circle at 85% 25%, var(--color-accent-foreground) 0%, transparent 50%)',
+              }}
+            />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Features List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Available Early Access Features
-          </CardTitle>
-          <CardDescription>
-            Toggle features on or off to control your access to experimental
-            functionality.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Loading early access features...</span>
-            </div>
-          ) : features.length > 0 ? (
-            <div className="space-y-4">
-              {features.map((feature) => (
-                <div key={feature.flagKey} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{feature.name}</h3>
-                        <Badge
-                          variant={getStageBadgeVariant(feature.stage)}
-                          className="text-xs"
-                        >
-                          {capitalizeStage(feature.stage)}
-                        </Badge>
-                        <Badge
-                          variant={feature.enrolled ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {feature.enrolled ? 'Enrolled' : 'Not Enrolled'}
-                        </Badge>
-                      </div>
-
-                      {feature.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {feature.description}
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="font-mono">{feature.flagKey}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 ml-4">
-                      <div className="flex items-center gap-2">
-                        {updating === feature.flagKey ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : feature.enrolled ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-gray-400" />
-                        )}
-                        <Switch
-                          checked={feature.enrolled || false}
-                          onCheckedChange={(enabled) =>
-                            toggleFeature(feature.flagKey, enabled)
-                          }
-                          disabled={updating === feature.flagKey}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Crown className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                No Early Access Features Available
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                There are currently no early access features available for your
-                account.
-              </p>
-              <Button onClick={refreshFeatures} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Check for Features
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Information Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            About Early Access Features
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm">
-            <p>
-              Early access features are experimental functionality that may not
-              be fully tested or stable. These features are provided to give you
-              a preview of upcoming functionality.
-            </p>
-            <div className="space-y-2">
-              <h4 className="font-medium">Feature Stages:</h4>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="destructive" className="text-xs">
-                    Alpha
+          <CardContent className="px-6 pb-6 pt-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-muted shadow-xs">
+                <Crown className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-semibold leading-tight">Early Access Status</h2>
+                <p className="text-sm text-muted-foreground">
+                  {features.length === 0
+                    ? 'No features available at this time'
+                    : `${enrolledCount} of ${features.length} feature${features.length === 1 ? '' : 's'} enrolled`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3" />
+                  {features.length} available
+                </Badge>
+                {enrolledCount > 0 && (
+                  <Badge variant="success" className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3 w-3" />
+                    {enrolledCount} enrolled
                   </Badge>
-                  <span>Very early development, may be unstable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="default" className="text-xs">
-                    Beta
-                  </Badge>
-                  <span>Feature complete, undergoing testing</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">
-                    Concept
-                  </Badge>
-                  <span>Experimental ideas, may change significantly</span>
-                </div>
+                )}
               </div>
             </div>
-            <p className="text-muted-foreground">
-              Your preferences are saved automatically and will persist across
-              all your devices and sessions.
-            </p>
+          </CardContent>
+        </Card>
+
+        {/* ── Features List ────────────────────────────────────── */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Available Features
+          </h3>
+          <Card className="border-border/60">
+            <CardContent className="px-6 py-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Loading features...</span>
+                </div>
+              ) : features.length > 0 ? (
+                <div className="space-y-0">
+                  {features.map((feature, index) => (
+                    <div key={feature.flagKey}>
+                      {index > 0 && <Separator className="my-4" />}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted mt-0.5">
+                            {feature.enrolled ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-medium text-sm">{feature.name}</span>
+                              <Badge variant={getStageBadgeVariant(feature.stage)} className="text-[10px] py-0 px-1.5">
+                                {capitalizeStage(feature.stage)}
+                              </Badge>
+                              <Badge
+                                variant={feature.enrolled ? 'success' : 'neutral'}
+                                className="text-[10px] py-0 px-1.5"
+                              >
+                                {feature.enrolled ? 'Enrolled' : 'Not enrolled'}
+                              </Badge>
+                            </div>
+                            {feature.description && (
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {feature.description}
+                              </p>
+                            )}
+                            <p className="mt-1 text-[11px] text-muted-foreground/60 font-mono">
+                              {feature.flagKey}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                          {updating === feature.flagKey && (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                          <Switch
+                            checked={feature.enrolled || false}
+                            onCheckedChange={(enabled) => toggleFeature(feature.flagKey, enabled)}
+                            disabled={updating === feature.flagKey}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-border/60 bg-muted mx-auto mb-4">
+                    <Crown className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-medium mb-1">No Features Available</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    There are currently no early access features available for your account.
+                  </p>
+                  <Button onClick={refreshFeatures} variant="outline" size="sm">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Check for Features
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Stage Guide ──────────────────────────────────────── */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Feature Stages
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { label: 'Alpha', variant: 'danger' as const, desc: 'Very early development, may be unstable' },
+              { label: 'Beta', variant: 'default' as const, desc: 'Feature complete, undergoing testing' },
+              { label: 'Concept', variant: 'secondary' as const, desc: 'Experimental ideas, may change significantly' },
+            ].map((stage) => (
+              <div
+                key={stage.label}
+                className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-4"
+              >
+                <Badge variant={stage.variant} className="mt-0.5 shrink-0">
+                  {stage.label}
+                </Badge>
+                <p className="text-xs text-muted-foreground leading-relaxed">{stage.desc}</p>
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* ── Info Card ────────────────────────────────────────── */}
+        <Card className="border-border/60">
+          <CardContent className="px-6 py-5">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Early access features are experimental and may not be fully stable. Your preferences are saved automatically and persist across all devices and sessions.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </StandardizedSidebarLayout>
   );
 }
