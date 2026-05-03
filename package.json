@@ -8,7 +8,7 @@
   "type": "module",
   "//": "TODO: Remove the build script NODE_OPTIONS memory flag after dependency and build complexity is reduced.",
   "engines": {
-    "node": "20.11.x"
+    "node": ">=20.11.0 <21"
   },
   "packageManager": "pnpm@10.15.0",
   "scripts": {
