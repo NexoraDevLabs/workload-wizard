@@ -6,31 +6,6 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { hasAdminAccess } from '@/lib/auth/permissions';
 
-// Define proper types for Statsig adapter based on the actual types from @flags-sdk/statsig
-interface StatsigAdapterResponse {
-  initialize: () => Promise<{
-    logEvent: (
-      user: {
-        userID: string;
-        email?: string;
-        custom?: Record<string, unknown>;
-      },
-      eventName: string
-    ) => void;
-    flush: () => Promise<void>;
-  }>;
-}
-
-// Lazy import to avoid build-time issues
-let statsigAdapter: StatsigAdapterResponse | null = null;
-async function getStatsigAdapter(): Promise<StatsigAdapterResponse> {
-  if (!statsigAdapter) {
-    const { statsigAdapter: adapter } = await import('@/flags');
-    statsigAdapter = adapter as StatsigAdapterResponse;
-  }
-  return statsigAdapter;
-}
-
 // Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
 
@@ -67,10 +42,6 @@ export async function syncUsersFromClerk() {
   }
 
   try {
-    // Initialize Statsig once for the batch
-    const adapter = await getStatsigAdapter();
-    const Statsig = await adapter.initialize();
-
     // Get all users from Clerk
     const clerk = await clerkClient();
     const clerkUsersResponse = await clerk.users.getUserList({
@@ -155,26 +126,6 @@ export async function syncUsersFromClerk() {
           });
         }
 
-        // Ensure the user exists in Statsig Users by logging an event
-        Statsig.logEvent(
-          {
-            userID: clerkUser.id,
-            email: primaryEmail,
-            custom: {
-              fullName:
-                clerkUser.firstName && clerkUser.lastName
-                  ? `${clerkUser.firstName} ${clerkUser.lastName}`
-                  : primaryEmail,
-              roles:
-                (clerkUser.publicMetadata?.roles as string[] | undefined) ||
-                (clerkUser.publicMetadata?.role
-                  ? [clerkUser.publicMetadata.role as string]
-                  : []),
-              source: 'manual_sync',
-            },
-          },
-          'user_synced'
-        );
       } catch (innerError) {
         // Error processing Clerk user
         const errorMessage =
@@ -185,13 +136,6 @@ export async function syncUsersFromClerk() {
           message: `Failed to process: ${errorMessage}`,
         });
       }
-    }
-
-    // Flush Statsig events once at the end of the batch
-    try {
-      await Statsig.flush();
-    } catch {
-      // Statsig flush failed after sync batch
     }
 
     return {

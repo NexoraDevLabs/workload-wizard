@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useSignIn, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import posthog from 'posthog-js';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -78,21 +77,10 @@ export function LoginForm({
       });
 
       if (result.status === 'complete') {
-        // Only capture if PostHog is available
-        if (typeof posthog !== 'undefined' && posthog.capture) {
-          posthog.capture('login_submitted', { success: true });
-        }
         await setActive({ session: result.createdSessionId });
         router.push('/dashboard');
       } else {
         const errorMessage = 'Sign in failed. Please check your credentials.';
-        // Only capture if PostHog is available
-        if (typeof posthog !== 'undefined' && posthog.capture) {
-          posthog.capture('login_submitted', {
-            success: false,
-            error: errorMessage,
-          });
-        }
         setError(errorMessage);
       }
     } catch (err: unknown) {
@@ -137,14 +125,6 @@ export function LoginForm({
         errorMessage = clerkError.message;
       }
 
-      // Only capture if PostHog is available
-      if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('login_submitted', {
-          success: false,
-          error: errorMessage,
-          error_code: clerkError.errors?.[0]?.code,
-        });
-      }
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -167,14 +147,6 @@ export function LoginForm({
         strategy,
         identifier: resetEmail,
       });
-
-      // Only capture if PostHog is available
-      if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('password_reset_requested', {
-          success: true,
-          strategy,
-        });
-      }
 
       setShowPasswordForm(true);
       setResetSuccess(
@@ -222,14 +194,6 @@ export function LoginForm({
         }
       }
 
-      // Only capture if PostHog is available
-      if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('password_reset_requested', {
-          success: false,
-          error: errorMessage,
-          error_code: clerkError.errors?.[0]?.code,
-        });
-      }
       setResetError(errorMessage);
     } finally {
       setIsResetLoading(false);
@@ -286,10 +250,6 @@ export function LoginForm({
       });
 
       if (result.status === 'complete') {
-        // Only capture if PostHog is available
-        if (typeof posthog !== 'undefined' && posthog.capture) {
-          posthog.capture('password_reset_completed', { success: true });
-        }
         setResetSuccess('Password reset successfully! Redirecting to login...');
 
         // Sign out the user so they can sign in with their new password
@@ -396,14 +356,6 @@ export function LoginForm({
         }
       }
 
-      // Only capture if PostHog is available
-      if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('password_reset_completed', {
-          success: false,
-          error: errorMessage,
-          error_code: clerkError.errors?.[0]?.code,
-        });
-      }
       setResetError(errorMessage);
     } finally {
       setIsResetLoading(false);

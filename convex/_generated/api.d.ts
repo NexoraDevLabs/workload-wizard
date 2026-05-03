@@ -14,8 +14,6 @@ import type * as allocationsMath from '../allocationsMath.js';
 import type * as audit from '../audit.js';
 import type * as courses from '../courses.js';
 import type * as csp from '../csp.js';
-import type * as featureEnrollments from '../featureEnrollments.js';
-import type * as featureFlags from '../featureFlags.js';
 import type * as groups from '../groups.js';
 import type * as modules from '../modules.js';
 import type * as organisationSettings from '../organisationSettings.js';
@@ -49,8 +47,6 @@ declare const fullApi: ApiFromModules<{
   audit: typeof audit;
   courses: typeof courses;
   csp: typeof csp;
-  featureEnrollments: typeof featureEnrollments;
-  featureFlags: typeof featureFlags;
   groups: typeof groups;
   modules: typeof modules;
   organisationSettings: typeof organisationSettings;

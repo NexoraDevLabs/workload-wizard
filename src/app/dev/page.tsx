@@ -15,23 +15,6 @@ const devTools = [
     status: 'active',
     category: 'Features',
   },
-  {
-    title: 'Feature Flag Management',
-    description:
-      'Manage and preview all feature flags (PostHog and local) with comprehensive controls',
-    href: '/dev/features',
-    icon: Flag,
-    status: 'active',
-    category: 'Features',
-  },
-  {
-    title: 'Statsig Test',
-    description: 'Test Statsig feature flags and user targeting',
-    href: '/dev/statsig-test',
-    icon: Flag,
-    status: 'active',
-    category: 'Features',
-  },
 ];
 
 const breadcrumbs = [
@@ -41,7 +24,6 @@ const breadcrumbs = [
 
 const categories = [
   'All',
-  'Analytics',
   'Features',
   'UI',
   'Database',
@@ -69,7 +51,7 @@ export default function DevPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Flag className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
               <span className="text-sm font-medium">Active</span>
             </div>
             <p className="text-2xl font-bold">

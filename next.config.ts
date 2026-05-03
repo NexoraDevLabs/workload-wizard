@@ -68,12 +68,6 @@ const nextConfig: NextConfig = {
           chunks: 'all' as const,
           cacheGroups: {
             ...currentSplitChunks.cacheGroups,
-            redis: {
-              test: /[\\/]node_modules[\\/](@upstash|@vercel)[\\/]/,
-              name: 'redis',
-              chunks: 'all' as const,
-              priority: 10,
-            },
           },
         },
       } as WebpackConfig['optimization'];
@@ -95,36 +89,6 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  async rewrites() {
-    return [
-      // PostHog reverse proxy - DISABLED for direct access
-      // (Uncomment to re-enable)
-      // {
-      //   source: '/e/static/:path*',
-      //   destination: 'https://eu-assets.i.posthog.com/static/:path*',
-      // },
-      // {
-      //   source: '/e/:path*',
-      //   destination: 'https://eu.i.posthog.com/:path*',
-      // },
-      // {
-      //   source: '/ingest/static/:path*',
-      //   destination: 'https://eu-assets.i.posthog.com/static/:path*',
-      // },
-      // {
-      //   source: '/ingest/:path*',
-      //   destination: 'https://eu.i.posthog.com/:path*',
-      // },
-      // {
-      //   source: '/ingest/flags',
-      //   destination: 'https://eu.i.posthog.com/flags',
-      // },
-    ];
-  },
-
-  // This is required to support PostHog trailing slash API requests
-  skipTrailingSlashRedirect: true,
-
   // Security headers for all routes (must be top-level, not inside `experimental`)
   async headers() {
     return [
@@ -140,10 +104,7 @@ const nextConfig: NextConfig = {
 const sentryOptions = {
   org: 'smcnab-tech',
   project: 'workload-wizard',
-  // Suppress all Sentry build logs and warnings (including auth token warnings)
   silent: true,
-  // For Vercel cron monitors
-  automaticVercelMonitors: true,
 };
 
 // Export wrapped config
