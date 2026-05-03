@@ -41,30 +41,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup npm
-        uses: npm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-
-      - name: Get npm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup npm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-store-
-
+          cache: 'npm'
       - name: Install dependencies
-        run: npm install --frozen-lockfile --prefer-offline
+        run: npm ci
 
       - name: Build
         run: npm run build
@@ -91,30 +74,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup npm
-        uses: npm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-
-      - name: Get npm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup npm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-store-
-
+          cache: 'npm'
       - name: Install dependencies
-        run: npm install --frozen-lockfile --prefer-offline
+        run: npm ci
 
       - name: Type check
         run: npm run typecheck
@@ -146,30 +112,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup npm
-        uses: npm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-
-      - name: Get npm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup npm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-store-
-
+          cache: 'npm'
       - name: Install dependencies
-        run: npm install --frozen-lockfile --prefer-offline
+        run: npm ci
 
       - name: Run tests
         run: npm test -- --ci
@@ -198,30 +147,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup npm
-        uses: npm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-
-      - name: Get npm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(npm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup npm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-npm-store-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-store-
-
+          cache: 'npm'
       - name: Install dependencies
-        run: npm install --frozen-lockfile --prefer-offline
+        run: npm ci
 
       - name: Audit dependencies
         run: |
