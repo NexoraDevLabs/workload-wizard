@@ -40,12 +40,6 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
   convex: {
     connectSrc: ['*.convex.cloud', '*.convex.dev'],
   },
-  clerk: {
-    scriptSrc: ['*.clerk.accounts.dev', '*.clerk.com'],
-    connectSrc: ['*.clerk.accounts.dev', '*.clerk.com'],
-    frameSrc: ['*.clerk.accounts.dev', '*.clerk.com'],
-    imgSrc: ['img.clerk.com', 'images.clerk.com'],
-  },
   sentry: {
     scriptSrc: ['*.sentry-cdn.com', '*.sentry.io'],
     connectSrc: ['*.sentry.io', '*.sentry-cdn.com'],
@@ -163,9 +157,6 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.convex);
   }
 
-  if (env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.clerk);
-  }
 
   if (env.NEXT_PUBLIC_SENTRY_DSN) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -18,11 +18,11 @@ import { Separator } from '@/components/ui/separator';
 import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function SecurityPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const { toast } = useToast();
   const router = useRouter();
 

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -44,7 +44,7 @@ import { withToast } from '@/lib/utils';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 // Type definitions for course data
@@ -809,7 +809,7 @@ function ModuleIterationAndGroupsAndAllocations({
 }) {
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
-  const { user: _user } = useUser();
+  const { user: _user } = useAuthUser();
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,

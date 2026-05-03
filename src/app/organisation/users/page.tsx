@@ -1,9 +1,9 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useEffect, useState, useCallback } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -84,7 +84,7 @@ interface User {
   isActive: boolean;
   lastSignInAt?: number;
   createdAt: number;
-  subject?: string; // Clerk user ID
+  subject?: string; // WorkOS user ID
   pictureUrl?: string;
   organisation?: {
     id: string;
@@ -94,7 +94,7 @@ interface User {
 }
 
 export default function OrganisationUsersPage() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);

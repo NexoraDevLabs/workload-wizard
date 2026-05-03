@@ -36,12 +36,12 @@ FROM_EMAIL=system@workload-wiz.xyz
 
 # App URLs
 NEXT_PUBLIC_APP_URL=https://workload-wiz.xyz
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=https://workload-wiz.xyz/sign-in
+NEXT_PUBLIC_APP_URL=https://workload-wiz.xyz/sign-in
 NEXT_PUBLIC_DASHBOARD_URL=https://workload-wiz.xyz/dashboard
 
-# Clerk
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
-CLERK_SECRET_KEY=sk_test_your_key
+# WorkOS
+WORKOS_CLIENT_ID=pk_test_your_key
+WORKOS_API_KEY=sk_test_your_key
 
 # Convex
 NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
@@ -75,13 +75,13 @@ export async function sendUserInvitationEmail(
 ## Environment notes (URL resolution)
 
 - Prefer `NEXT_PUBLIC_APP_URL` as base
-- If missing, derive from `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
+- If missing, derive from `NEXT_PUBLIC_APP_URL`
 - If still missing, derive from `FROM_EMAIL` domain
 - Dev fallback to `http://localhost:3000`
 
 ## URL consistency and Resend warning
 
-All URLs in templates are resolved to absolute URLs matching your domain. If you see mismatch warnings, ensure `FROM_EMAIL`’s domain matches your app domain and that `NEXT_PUBLIC_CLERK_SIGN_IN_URL` points at the correct host.
+All URLs in templates are resolved to absolute URLs matching your domain. If you see mismatch warnings, ensure `FROM_EMAIL`’s domain matches your app domain and that `NEXT_PUBLIC_APP_URL` points at the correct host.
 
 ## Newsletter Subscription
 

@@ -37,7 +37,7 @@
 [![DR Backup](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml)
 [![DR Restore Test](https://github.com/sammcnab/workload-wizard/actions/workflows/restore-test.yml/badge.svg)](https://github.com/sammcnab/workload-wizard/actions/workflows/restore-test.yml)
 
-A comprehensive workload management application for educational institutions, built with Next.js, Convex, and Clerk.
+A comprehensive workload management application for educational institutions, built with Next.js, Convex, and WorkOS.
 
 > **Private Repository** — access is by invitation only. If you need access, contact the maintainer.
 
@@ -55,7 +55,7 @@ A comprehensive workload management application for educational institutions, bu
 
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Backend**: Convex (real-time database)
-- **Authentication**: Clerk
+- **Authentication**: WorkOS
 - **Monitoring**: Sentry (session replay & user feedback)
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Testing**: Playwright (E2E), Vitest (unit)
@@ -108,7 +108,7 @@ A comprehensive workload management application for educational institutions, bu
 - Node.js 18+ (see `.nvmrc`)
 - npm
 - Convex account
-- Clerk account
+- WorkOS account
 - Sentry account (optional)
 
 ### Installation
@@ -140,9 +140,9 @@ Copy `.env.example` to `.env.local` and fill in the MVP configuration:
 NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
 CONVEX_DEPLOYMENT=your-convex-deployment
 
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
-CLERK_SECRET_KEY=sk_test_your_key
-CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret
+WORKOS_CLIENT_ID=pk_test_your_key
+WORKOS_API_KEY=sk_test_your_key
+WORKOS_CLIENT_ID=whsec_your_webhook_secret
 
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
@@ -150,7 +150,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_SENTRY_DSN=
 ```
 
-Server routes validate `CONVEX_DEPLOYMENT`, `CLERK_SECRET_KEY`, and `CLERK_WEBHOOK_SECRET` and throw a clear configuration error when required values are missing. Optional tools, including Sentry, stay disabled when their env vars are unset. Never commit real secrets.
+Server routes validate `CONVEX_DEPLOYMENT`, `WORKOS_API_KEY`, and `WORKOS_CLIENT_ID` and throw a clear configuration error when required values are missing. Optional tools, including Sentry, stay disabled when their env vars are unset. Never commit real secrets.
 
 ## 🧪 **Testing**
 
@@ -204,7 +204,7 @@ npm run test:watch
 ### **Disaster Recovery (DR)**
 
 - **Policy**: RPO=24h, RTO=2h with automated nightly backups to Cloudflare R2
-- **Backups**: [Nightly DR Backup](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml) — Convex data, Vercel env vars, minimal Clerk extract
+- **Backups**: [Nightly DR Backup](https://github.com/sammcnab/workload-wizard/actions/workflows/backup.yml) — Convex data, Vercel env vars, minimal WorkOS extract
 - **Restore Tests**: [Weekly Restore Test](https://github.com/sammcnab/workload-wizard/actions/workflows/restore-test.yml) — Automated staging validation
 - **Documentation**:
   - [DR Policy](docs/operations/dr/policy.md) — Recovery objectives and data scope

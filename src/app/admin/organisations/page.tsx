@@ -1,10 +1,10 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { OrganisationForm } from '@/components/domain/OrganisationForm';
@@ -16,14 +16,14 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
 export default function AdminOrganisationsPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const router = useRouter();
   const convexUser = useQuery(
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   );
 
-  const hasByClerk =
+  const hasByWorkOS =
     hasAnyRole(user, ['sysadmin', 'developer']) ||
     (user?.publicMetadata as Record<string, unknown> | undefined)?.[
       'devLoginSession'
@@ -36,14 +36,14 @@ export default function AdminOrganisationsPage() {
     );
 
   useEffect(() => {
-    if (isLoaded && !(hasByClerk || hasByConvex)) {
+    if (isLoaded && !(hasByWorkOS || hasByConvex)) {
       router.replace('/unauthorised');
     }
-  }, [isLoaded, hasByClerk, hasByConvex, router]);
+  }, [isLoaded, hasByWorkOS, hasByConvex, router]);
 
   if (!isLoaded) return <p>Loading...</p>;
 
-  if (!(hasByClerk || hasByConvex)) {
+  if (!(hasByWorkOS || hasByConvex)) {
     return null; // Will redirect in useEffect
   }
 

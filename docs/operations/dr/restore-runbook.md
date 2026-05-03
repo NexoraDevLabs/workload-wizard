@@ -27,7 +27,7 @@ This document provides step-by-step procedures for restoring Workload Wizard fro
 - **Health Check:** `GET /api/health` returns `{ok: true}`
 - **Data Integrity:** Verify all backup files are valid JSON
 - **Convex Connectivity:** Confirm staging deployment is accessible
-- **User Count:** Validate Clerk user data was imported
+- **User Count:** Validate WorkOS user data was imported
 
 ## Manual Production Restore
 
@@ -154,14 +154,14 @@ This document provides step-by-step procedures for restoring Workload Wizard fro
    # Update variables as needed
    ```
 
-5. **Restore Clerk User Data**
+5. **Restore WorkOS User Data**
 
    ```bash
    # Review user data
-   cat clerk/users.min.json | jq 'length'
+   cat workos/users.min.json | jq 'length'
 
-   # Note: Clerk user data restoration requires manual intervention
-   # Contact Clerk support for user data restoration if needed
+   # Note: WorkOS user data restoration requires manual intervention
+   # Contact WorkOS support for user data restoration if needed
    ```
 
 #### Phase 4: Validation and Testing (90-120 minutes)
@@ -332,7 +332,7 @@ This document provides step-by-step procedures for restoring Workload Wizard fro
 
 - **Convex Support:** [Support Contact]
 - **Vercel Support:** [Support Contact]
-- **Clerk Support:** [Support Contact]
+- **WorkOS Support:** [Support Contact]
 - **Cloudflare R2 Support:** [Support Contact]
 
 ### Escalation Matrix

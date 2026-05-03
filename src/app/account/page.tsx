@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { getUserRoles } from '@/lib/utils';
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 const getRoleLabel = (role: string) => {
@@ -115,7 +115,7 @@ const settingsTiles: SettingsTile[] = [
 ];
 
 export default function AccountPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
 
   if (!isLoaded) return <LoadingOverlay delayMs={0} />;
 

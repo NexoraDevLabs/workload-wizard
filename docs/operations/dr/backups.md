@@ -42,9 +42,9 @@ This document describes the automated backup system for Workload Wizard, includi
   - Feature flags
   - Environment-specific settings
 
-### 3. Clerk User Data (Minimal Extract)
+### 3. WorkOS User Data (Minimal Extract)
 
-- **Source:** Clerk API with pagination
+- **Source:** WorkOS API with pagination
 - **Format:** Minified JSON array
 - **Size:** Variable (typically 10-100 KB)
 - **Contents:**
@@ -98,7 +98,7 @@ curl -H "Authorization: Bearer $VERCEL_TOKEN" \
   "https://api.vercel.com/v10/projects/$VERCEL_PROJECT/env" \
   | jq -c '.' > backup/vercel/env.json
 
-# Fetch Clerk users with minimal fields
+# Fetch WorkOS users with minimal fields
 # (Paginated API calls with field filtering)
 ```
 
@@ -111,7 +111,7 @@ curl -H "Authorization: Bearer $VERCEL_TOKEN" \
   "sizes": {
     "convex_zip": 1234567,
     "vercel_env": 2048,
-    "clerk_users": 51200
+    "workos_users": 51200
   }
 }
 ```
@@ -186,7 +186,7 @@ npm install -g convex
 export CONVEX_DEPLOY_KEY_PROD="your-prod-key"
 export VERCEL_TOKEN="your-vercel-token"
 export VERCEL_PROJECT="workload-wizard"
-export CLERK_SECRET_KEY="your-clerk-key"
+export WORKOS_API_KEY="your-workos-key"
 export R2_ACCESS_KEY_ID_BACKUP="your-r2-key"
 export R2_SECRET_ACCESS_KEY_BACKUP="your-r2-secret"
 export R2_BUCKET="ww-backups"
@@ -212,11 +212,11 @@ npm run backup:manual
 - **Causes:** Invalid token, project not found, API rate limits
 - **Resolution:** Verify `VERCEL_TOKEN` and `VERCEL_PROJECT` secrets
 
-#### Backup Fails - Clerk API
+#### Backup Fails - WorkOS API
 
-- **Symptom:** Clerk user fetch fails
+- **Symptom:** WorkOS user fetch fails
 - **Causes:** Invalid secret key, API rate limits, pagination issues
-- **Resolution:** Verify `CLERK_SECRET_KEY` secret, check API limits
+- **Resolution:** Verify `WORKOS_API_KEY` secret, check API limits
 
 #### Backup Fails - R2 Upload
 
@@ -244,7 +244,7 @@ npm run backup:manual
 3. **Test Individual Components**
    - Test Convex export manually
    - Test Vercel API access
-   - Test Clerk API access
+   - Test WorkOS API access
    - Test R2 connectivity
 
 4. **Check Resource Limits**

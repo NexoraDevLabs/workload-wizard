@@ -2,14 +2,14 @@
 
 import { WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function DynamicIslandHeader() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const [isScrolled, setIsScrolled] = useState(false);

@@ -125,7 +125,7 @@ Use area labels for feature-specific alerts:
 
 **Responsibilities**:
 
-- Clerk integration issues
+- WorkOS integration issues
 - Authentication flows
 - User session management
 - Permission system bugs

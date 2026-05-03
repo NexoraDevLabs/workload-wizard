@@ -43,7 +43,7 @@ Success criteria:
 
 ### Authentication and Access
 
-- Clerk sign-in and sign-out
+- WorkOS sign-in and sign-out
 - Organisation-aware access (users scoped to organisation)
 - Basic onboarding flow
 

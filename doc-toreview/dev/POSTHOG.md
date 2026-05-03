@@ -150,9 +150,9 @@ Add to `.env.local` as needed:
 # Required for Convex
 NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
 
-# Clerk (required for auth)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
-CLERK_SECRET_KEY=sk_test_your_key
+# WorkOS (required for auth)
+WORKOS_CLIENT_ID=pk_test_your_key
+WORKOS_API_KEY=sk_test_your_key
 
 # PostHog (optional; enables flags, analytics, session replays, and heatmaps)
 NEXT_PUBLIC_POSTHOG_KEY=phc_your_api_key_here

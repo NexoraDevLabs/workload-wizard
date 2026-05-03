@@ -130,7 +130,7 @@ export default function DevPage() {
                 Security & Auth
               </h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Clerk Dashboard</li>
+                <li>• WorkOS Dashboard</li>
                 <li>• Permission System</li>
                 <li>• Audit Logs</li>
               </ul>

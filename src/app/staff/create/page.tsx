@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 interface OrganisationSettings {
@@ -37,7 +37,7 @@ interface OrganisationSettings {
 }
 
 export default function CreateLecturerProfilePage() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const create = useMutation(api.staff.create);
   const [isLoading, setIsLoading] = useState(false);

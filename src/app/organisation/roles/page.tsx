@@ -1,9 +1,9 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useState } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -80,7 +80,7 @@ interface RoleWithPermissions extends Role {
 }
 
 export default function OrganisationRolesPage() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);

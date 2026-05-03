@@ -1,21 +1,14 @@
 'use server';
 
-import { currentUser } from '@clerk/nextjs/server';
 import { getAuthUser } from '@/lib/authz';
 
 export async function getCurrentUserDetails() {
-  const clerkUser = await currentUser();
-
-  if (!clerkUser) return null;
-
-  const fullName = clerkUser.firstName + ' ' + clerkUser.lastName;
-
   try {
     const user = await getAuthUser();
     return {
       id: user.id,
       email: user.email,
-      fullName,
+      fullName: user.email ?? user.id,
       organisationId: user.orgId,
       role: user.role,
     };
@@ -27,17 +20,7 @@ export async function getCurrentUserDetails() {
   }
 }
 
-/**
- * Gets current user and throws if they don't have an organisationId
- * Use this for actions that require organisation context
- */
 export async function getUserOrgOrThrow() {
-  const clerkUser = await currentUser();
-
-  if (!clerkUser) {
-    throw new Error('Unauthorised: User not authenticated');
-  }
-
   let user;
   try {
     user = await getAuthUser();
@@ -51,17 +34,12 @@ export async function getUserOrgOrThrow() {
   return {
     id: user.id,
     email: user.email,
-    fullName: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+    fullName: user.email ?? user.id,
     organisationId: user.orgId,
     role: user.role,
   };
 }
 
-/**
- * Gets current user and throws if they don't have an organisationId
- * Also validates that the user's organisationId matches the provided organisationId
- * Use this for actions that require specific organisation access
- */
 export async function getUserOrgOrThrowWithValidation(
   requiredOrganisationId: string
 ) {

@@ -1,32 +1,11 @@
-import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getAuthUser } from '@/lib/authz';
 
-export async function POST(_request: NextRequest) {
+export async function POST() {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
-    }
-
-    // This endpoint can be used to test session refresh
-    // In a real implementation, you might force a session refresh here
-
-    return NextResponse.json({
-      success: true,
-      message: 'Session refresh requested',
-      userId: userId,
-      note: 'The session should be refreshed to pick up any metadata changes',
-    });
-  } catch (error) {
-    // Session refresh error
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : 'Failed to refresh session',
-      },
-      { status: 500 }
-    );
+    const user = await getAuthUser();
+    return NextResponse.json({ success: true, userId: user.id });
+  } catch {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 }
