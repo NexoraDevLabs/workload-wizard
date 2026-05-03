@@ -24,7 +24,7 @@
     "automergeType": "squash"
   },
 
-  "postUpdateOptions": ["pnpmDedupe"],
+  "postUpdateOptions": ["npmDedupe"],
 
   "automerge": false,
   "separateMultipleMajor": true,
