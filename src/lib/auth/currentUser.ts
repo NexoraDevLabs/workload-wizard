@@ -1,19 +1,39 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
+import { getAuthUser, normalizeRole } from '@/lib/authz';
 
 export async function getCurrentUserDetails() {
-  const user = await currentUser();
+  const clerkUser = await currentUser();
 
-  if (!user) return null;
+  if (!clerkUser) return null;
 
-  return {
-    id: user.id,
-    email: user.emailAddresses[0]?.emailAddress,
-    fullName: user.firstName + ' ' + user.lastName,
-    organisationId: user.publicMetadata?.organisationId as string | undefined,
-    role: user.publicMetadata?.role as string | undefined,
-  };
+  const fullName = clerkUser.firstName + ' ' + clerkUser.lastName;
+
+  try {
+    const user = await getAuthUser();
+    return {
+      id: user.id,
+      email: user.email,
+      fullName,
+      organisationId: user.orgId,
+      role: user.role,
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message !== 'Missing organisationId') {
+      throw error;
+    }
+
+    return {
+      id: clerkUser.id,
+      email: clerkUser.emailAddresses[0]?.emailAddress,
+      fullName,
+      organisationId: clerkUser.publicMetadata?.organisationId as
+        | string
+        | undefined,
+      role: normalizeRole(clerkUser.publicMetadata?.role as string | undefined),
+    };
+  }
 }
 
 /**
@@ -21,26 +41,28 @@ export async function getCurrentUserDetails() {
  * Use this for actions that require organisation context
  */
 export async function getUserOrgOrThrow() {
-  const user = await currentUser();
+  const clerkUser = await currentUser();
 
-  if (!user) {
+  if (!clerkUser) {
     throw new Error('Unauthorised: User not authenticated');
   }
 
-  const organisationId = user.publicMetadata?.organisationId as
-    | string
-    | undefined;
-
-  if (!organisationId) {
-    throw new Error('Unauthorised: User must be assigned to an organisation');
+  let user;
+  try {
+    user = await getAuthUser();
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Missing organisationId') {
+      throw new Error('Unauthorised: User must be assigned to an organisation');
+    }
+    throw new Error('Unauthorised: User not authenticated');
   }
 
   return {
     id: user.id,
-    email: user.emailAddresses[0]?.emailAddress,
-    fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-    organisationId,
-    role: user.publicMetadata?.role as string | undefined,
+    email: user.email,
+    fullName: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim(),
+    organisationId: user.orgId,
+    role: user.role,
   };
 }
 
