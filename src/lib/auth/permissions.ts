@@ -5,15 +5,9 @@
 
 import { normalizeRole, type AuthRole } from '@/lib/authz';
 
-type Metadata = {
-  role?: unknown;
-  roles?: unknown;
-};
-
 type PermissionUser = {
   role?: unknown;
   systemRoles?: unknown;
-  publicMetadata?: Metadata;
 };
 
 export type AuthAction =
@@ -45,19 +39,7 @@ function getUserRoles(user: PermissionUser | null | undefined): AuthRole[] {
     .filter((role): role is string => typeof role === 'string')
     .map((role) => normalizeRole(role));
 
-  const metadata = user?.publicMetadata;
-  const rawRoles = Array.isArray(metadata?.roles) ? metadata.roles : [];
-  const roles = rawRoles
-    .filter((role): role is string => typeof role === 'string')
-    .map((role) => normalizeRole(role));
-
-  if (typeof metadata?.role === 'string') {
-    roles.push(normalizeRole(metadata.role));
-  }
-
-  const allRoles = [...directRoles, ...roles];
-
-  return allRoles.length > 0 ? Array.from(new Set(allRoles)) : ['member'];
+  return directRoles.length > 0 ? Array.from(new Set(directRoles)) : ['member'];
 }
 
 export function hasRole(

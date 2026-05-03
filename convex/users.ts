@@ -1,11 +1,119 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import type { MutationCtx } from './_generated/server';
 
 import { requirePermission } from './permissions';
 import { writeAudit } from './audit';
 import type { Id, Doc } from './_generated/dataModel';
 import { requireOrgPermission } from './permissions';
 import { makeLoaders } from '../src/lib/convex/loaders';
+
+type DbAuthRole = 'sysadmin' | 'org_admin' | 'member';
+
+function normalizeDbSystemRole(role: string | undefined): DbAuthRole {
+  const normalized = role
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+
+  switch (normalized) {
+    case 'sysadmin':
+    case 'developer':
+    case 'dev':
+    case 'systemadmin':
+    case 'admin':
+      return 'sysadmin';
+    case 'org_admin':
+    case 'orgadmin':
+    case 'organisation_admin':
+      return 'org_admin';
+    default:
+      return 'member';
+  }
+}
+
+function normalizeDbOrgRole(role: string | undefined): DbAuthRole {
+  const normalized = role
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+
+  if (
+    normalized === 'org_admin' ||
+    normalized === 'orgadmin' ||
+    normalized === 'organisation_admin' ||
+    normalized === 'admin'
+  ) {
+    return 'org_admin';
+  }
+
+  return 'member';
+}
+
+function resolveDbAuthRole(
+  systemRoles: string[] | undefined,
+  organisationRoles: string[]
+): DbAuthRole {
+  if (systemRoles?.some((role) => normalizeDbSystemRole(role) === 'sysadmin')) {
+    return 'sysadmin';
+  }
+  if (
+    systemRoles?.some((role) => normalizeDbSystemRole(role) === 'org_admin') ||
+    organisationRoles.some((role) => normalizeDbOrgRole(role) === 'org_admin')
+  ) {
+    return 'org_admin';
+  }
+  return 'member';
+}
+
+async function ensureMembershipDocument(
+  ctx: MutationCtx,
+  userId: string,
+  organisationId: Id<'organisations'>,
+  isPrimary?: boolean
+) {
+  const existing = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user_org', (q) =>
+      q.eq('userId', userId).eq('organisationId', organisationId)
+    )
+    .first();
+
+  const now = Date.now();
+  if (!existing) {
+    await ctx.db.insert('user_organisations', {
+      userId,
+      organisationId,
+      isPrimary: isPrimary ?? true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else if (isPrimary !== undefined && existing.isPrimary !== isPrimary) {
+    await ctx.db.patch(existing._id, {
+      isPrimary,
+      updatedAt: now,
+    });
+  }
+
+  if (isPrimary) {
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect();
+
+    for (const membership of memberships) {
+      if (
+        String(membership.organisationId) !== String(organisationId) &&
+        membership.isPrimary
+      ) {
+        await ctx.db.patch(membership._id, {
+          isPrimary: false,
+          updatedAt: now,
+        });
+      }
+    }
+  }
+}
 
 export const create = mutation({
   args: {
@@ -81,6 +189,14 @@ export const create = mutation({
         : {}),
     };
     const userId = await ctx.db.insert('users', { ...base, ...optional });
+    if (base.subject) {
+      await ensureMembershipDocument(
+        ctx,
+        base.subject,
+        base.organisationId,
+        true
+      );
+    }
 
     // Audit invite/create when initiated by an authenticated actor
     if (args.userId) {
@@ -195,6 +311,14 @@ export const update = mutation({
     }
 
     await ctx.db.patch(id, updates);
+    if (updates.organisationId && targetUser.subject) {
+      await ensureMembershipDocument(
+        ctx,
+        targetUser.subject,
+        updates.organisationId,
+        true
+      );
+    }
 
     // Audit update
     try {
@@ -228,47 +352,12 @@ export const ensureMembership = mutation({
       .first();
     if (!user) throw new Error('User not found');
 
-    const existing = await ctx.db
-      .query('user_organisations')
-      .withIndex('by_user_org', (q) =>
-        q.eq('userId', args.userId).eq('organisationId', args.organisationId)
-      )
-      .first();
-
-    const now = Date.now();
-    if (!existing) {
-      await ctx.db.insert('user_organisations', {
-        userId: args.userId,
-        organisationId: args.organisationId,
-        isPrimary: args.isPrimary ?? true,
-        createdAt: now,
-        updatedAt: now,
-      });
-    } else if (
-      args.isPrimary !== undefined &&
-      existing.isPrimary !== args.isPrimary
-    ) {
-      await ctx.db.patch(existing._id, {
-        isPrimary: args.isPrimary,
-        updatedAt: now,
-      });
-    }
-
-    // If setting primary, mark other memberships as non-primary
-    if (args.isPrimary) {
-      const others = await ctx.db
-        .query('user_organisations')
-        .withIndex('by_user', (q) => q.eq('userId', args.userId))
-        .collect();
-      for (const m of others) {
-        if (
-          String(m.organisationId) !== String(args.organisationId) &&
-          m.isPrimary
-        ) {
-          await ctx.db.patch(m._id, { isPrimary: false, updatedAt: now });
-        }
-      }
-    }
+    await ensureMembershipDocument(
+      ctx,
+      args.userId,
+      args.organisationId,
+      args.isPrimary
+    );
 
     return { ensured: true };
   },
@@ -452,29 +541,60 @@ export const getAuthContext = query({
       .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
 
-    if (!user) return null;
+    if (!user || !user.isActive) return null;
 
     const memberships = await ctx.db
       .query('user_organisations')
       .withIndex('by_user', (q) => q.eq('userId', args.subject))
       .collect();
+    const membershipsWithOrganisations = await Promise.all(
+      memberships.map(async (membership) => ({
+        membership,
+        organisation: await ctx.db.get(membership.organisationId),
+      }))
+    );
+    const activeMemberships = membershipsWithOrganisations.filter(
+      ({ organisation }) => organisation?.isActive
+    );
     const primaryMembership =
-      memberships.find((membership) => membership.isPrimary) ??
-      memberships[0] ??
+      activeMemberships.find(({ membership }) => membership.isPrimary) ??
+      activeMemberships[0] ??
       null;
-    const organisationId =
-      primaryMembership?.organisationId ?? user.organisationId;
 
-    const assignments = await ctx.db
-      .query('user_role_assignments')
-      .withIndex('by_user_org', (q) =>
-        q.eq('userId', args.subject).eq('organisationId', organisationId)
-      )
-      .filter((q) => q.eq(q.field('isActive'), true))
-      .collect();
+    if (!primaryMembership) return null;
 
-    const roles = await Promise.all(
-      assignments.map((assignment) => ctx.db.get(assignment.roleId))
+    const organisationId = primaryMembership.membership.organisationId;
+
+    async function getOrganisationRoles(orgId: Id<'organisations'>) {
+      const assignments = await ctx.db
+        .query('user_role_assignments')
+        .withIndex('by_user_org', (q) =>
+          q.eq('userId', args.subject).eq('organisationId', orgId)
+        )
+        .filter((q) => q.eq(q.field('isActive'), true))
+        .collect();
+
+      const roles = await Promise.all(
+        assignments.map((assignment) => ctx.db.get(assignment.roleId))
+      );
+
+      return roles
+        .filter((role): role is NonNullable<typeof role> => role !== null)
+        .filter((role) => role.isActive)
+        .map((role) => role.name);
+    }
+
+    const organisationRoles = await getOrganisationRoles(organisationId);
+    const membershipContexts = await Promise.all(
+      activeMemberships.map(async ({ membership }) => {
+        const roles = await getOrganisationRoles(membership.organisationId);
+        return {
+          userId: args.subject,
+          orgId: membership.organisationId,
+          role: resolveDbAuthRole(user.systemRoles, roles),
+          isPrimary: membership.isPrimary,
+        };
+      })
     );
 
     return {
@@ -484,14 +604,9 @@ export const getAuthContext = query({
       fullName: user.fullName,
       organisationId,
       systemRoles: user.systemRoles,
-      organisationRoles: roles
-        .filter((role): role is NonNullable<typeof role> => role !== null)
-        .filter((role) => role.isActive)
-        .map((role) => role.name),
-      memberships: memberships.map((membership) => ({
-        organisationId: membership.organisationId,
-        isPrimary: membership.isPrimary,
-      })),
+      organisationRoles,
+      role: resolveDbAuthRole(user.systemRoles, organisationRoles),
+      memberships: membershipContexts,
       isActive: user.isActive,
     };
   },
@@ -706,6 +821,14 @@ export const updateByWebhook = mutation({
     processedUpdates.updatedAt = Date.now();
 
     await ctx.db.patch(user._id, processedUpdates);
+    if (processedUpdates.organisationId) {
+      await ensureMembershipDocument(
+        ctx,
+        args.userId,
+        processedUpdates.organisationId as Id<'organisations'>,
+        true
+      );
+    }
 
     // Audit webhook update (system)
     try {

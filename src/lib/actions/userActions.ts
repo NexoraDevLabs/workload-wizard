@@ -663,7 +663,14 @@ export async function deactivateUser(userId: string) {
       userEmail = primaryEmail?.emailAddress || null;
 
       // Prevent deactivating orgadmin or sysadmin users
-      if (hasRole(user, 'org_admin') || hasRole(user, 'sysadmin')) {
+      const targetAuthContext = await getConvexClient().query(
+        api.users.getAuthContext,
+        { subject: userId }
+      );
+      if (
+        hasRole(targetAuthContext, 'org_admin') ||
+        hasRole(targetAuthContext, 'sysadmin')
+      ) {
         throw new Error(
           'Cannot deactivate organisation admin or system admin users'
         );
