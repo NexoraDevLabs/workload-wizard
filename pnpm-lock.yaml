@@ -113,6 +113,9 @@ importers:
       '@vercel/speed-insights':
         specifier: ^1.2.0
         version: 1.2.0(next@15.5.15(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)
+      '@workos-inc/node':
+        specifier: ^9.1.1
+        version: 9.1.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -4616,6 +4619,10 @@ packages:
 
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
+
+  '@workos-inc/node@9.1.1':
+    resolution: {integrity: sha512-4LxJ5t1KVkUcylrECo8c1Y4vbCeIvwmgB07xn88Pq/gluklOcK6PloKw8asfBhf78JuyuksEqmD2w2A2wNpW0w==}
+    engines: {node: '>=22.11.0'}
 
   '@xstate/react@6.0.0':
     resolution: {integrity: sha512-xXlLpFJxqLhhmecAXclBECgk+B4zYSrDTl8hTfPZBogkn82OHKbm9zJxox3Z/YXoOhAQhKFTRLMYGdlbhc6T9A==}
@@ -14169,6 +14176,10 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
+
+  '@workos-inc/node@9.1.1':
+    dependencies:
+      eventemitter3: 5.0.4
 
   '@xstate/react@6.0.0(@types/react@19.1.12)(react@19.1.1)(xstate@5.31.0)':
     dependencies:
