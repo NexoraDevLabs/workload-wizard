@@ -5,8 +5,10 @@ import { usePermissionManager } from '@/hooks/usePermissionManager';
 import { type PermissionId } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
-interface PermissionButtonProps
-  extends Omit<ComponentProps<typeof Button>, 'disabled'> {
+interface PermissionButtonProps extends Omit<
+  ComponentProps<typeof Button>,
+  'disabled'
+> {
   permission: PermissionId;
   organisationId?: string;
   isSystemAction?: boolean;

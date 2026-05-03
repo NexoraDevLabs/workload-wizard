@@ -4,39 +4,127 @@ import { useUser } from '@clerk/nextjs';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { getUserRoles } from '@/lib/utils';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import {
   User,
   Shield,
   Bell,
   Key,
-  Settings,
-  Mail,
-  Calendar,
-  ArrowRight,
   Sparkles,
+  ChevronRight,
+  Mail,
+  CalendarDays,
+  CheckCircle2,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 
 // Force dynamic rendering to prevent Clerk authentication errors during build
 export const dynamic = 'force-dynamic';
 
+const getRoleLabel = (role: string) => {
+  switch (role) {
+    case 'orgadmin':
+      return 'Org Admin';
+    case 'sysadmin':
+      return 'System Admin';
+    case 'developer':
+      return 'Developer';
+    case 'user':
+      return 'User';
+    case 'trial':
+      return 'Trial';
+    default:
+      return role.charAt(0).toUpperCase() + role.slice(1);
+  }
+};
+
+const getRoleBadgeVariant = (
+  role: string
+): NonNullable<BadgeProps['variant']> => {
+  switch (role) {
+    case 'orgadmin':
+      return 'danger';
+    case 'sysadmin':
+      return 'info';
+    case 'developer':
+      return 'info';
+    case 'user':
+      return 'success';
+    case 'trial':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+};
+
+const formatDate = (date: Date | null) => {
+  if (!date) return 'Unknown';
+  return new Intl.DateTimeFormat('en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .map((p) => p.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+interface SettingsTile {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  href: string;
+  comingSoon?: boolean;
+}
+
+const settingsTiles: SettingsTile[] = [
+  {
+    title: 'Profile',
+    description: 'Update your name, photo & contact details',
+    icon: User,
+    href: '/account/profile',
+  },
+  {
+    title: 'Security',
+    description: 'Password, two-factor auth & privacy',
+    icon: Shield,
+    href: '/account/security',
+  },
+  {
+    title: 'Early Access',
+    description: 'Opt into experimental features',
+    icon: Sparkles,
+    href: '/account/features',
+  },
+  {
+    title: 'Notifications',
+    description: 'Email alerts and notification preferences',
+    icon: Bell,
+    href: '/account/notifications',
+    comingSoon: true,
+  },
+  {
+    title: 'API Keys',
+    description: 'Manage access tokens & integrations',
+    icon: Key,
+    href: '/account/api-keys',
+    comingSoon: true,
+  },
+];
+
 export default function AccountPage() {
   const { user, isLoaded } = useUser();
 
-  if (!isLoaded) {
-    return <LoadingOverlay delayMs={0} />;
-  }
+  if (!isLoaded) return <LoadingOverlay delayMs={0} />;
 
   if (!user) {
     return (
@@ -49,100 +137,8 @@ export default function AccountPage() {
   const userName = user.fullName || user.firstName || 'User';
   const userEmail = user.emailAddresses[0]?.emailAddress || '';
   const userRoles = getUserRoles(user);
-  const avatarUrl = user.imageUrl;
   const createdAt = user.createdAt;
-
-  // Generate initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return 'Unknown';
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'orgadmin':
-        return 'Organisation Admin';
-      case 'sysadmin':
-        return 'System Admin';
-      case 'developer':
-        return 'Developer';
-      case 'user':
-        return 'User';
-      case 'trial':
-        return 'Trial';
-      default:
-        return role.charAt(0).toUpperCase() + role.slice(1);
-    }
-  };
-
-  const getRoleBadgeClass = (
-    role: string
-  ): NonNullable<BadgeProps['variant']> => {
-    switch (role) {
-      case 'orgadmin':
-        return 'danger';
-      case 'sysadmin':
-        return 'info';
-      case 'developer':
-        return 'info';
-      case 'user':
-        return 'success';
-      case 'trial':
-        return 'warning';
-      default:
-        return 'neutral';
-    }
-  };
-
-  const accountSections = [
-    {
-      title: 'Profile Management',
-      description:
-        'Update your personal information, profile picture, and contact details',
-      icon: User,
-      href: '/account/profile',
-    },
-    {
-      title: 'Security & Privacy',
-      description:
-        'Manage your password, two-factor authentication, and privacy settings',
-      icon: Shield,
-      href: '/account/security',
-    },
-    {
-      title: 'Early Access Features',
-      description: 'Manage your opt-in preferences for experimental features',
-      icon: Sparkles,
-      href: '/account/features',
-    },
-    {
-      title: 'Notifications',
-      description: 'Configure email notifications and alert preferences',
-      icon: Bell,
-      href: '/account/notifications',
-      comingSoon: true,
-    },
-    {
-      title: 'API Keys',
-      description: 'Manage your API keys and access tokens',
-      icon: Key,
-      href: '/account/api-keys',
-      comingSoon: true,
-    },
-  ];
+  const initials = getInitials(userName);
 
   const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Account' }];
 
@@ -150,177 +146,142 @@ export default function AccountPage() {
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
       title="Account Settings"
-      subtitle="Manage your account preferences and settings"
+      subtitle="Manage your profile, security and preferences"
     >
-      <div className="grid gap-6 xl:grid-cols-[minmax(20rem,24rem)_1fr]">
-        {/* Account Overview Card */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Account Overview
-            </CardTitle>
-            <CardDescription>Your current account information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={avatarUrl} alt={userName} />
-                <AvatarFallback className="text-lg">
-                  {getInitials(userName)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold">{userName}</h3>
-                <p className="text-sm text-muted-foreground">{userEmail}</p>
-                {userRoles && userRoles.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {userRoles.map((role, index) => (
-                      <Badge key={index} variant={getRoleBadgeClass(role)}>
-                        {getRoleLabel(role)}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <Badge variant="neutral" className="mt-1">
-                    No roles assigned
-                  </Badge>
-                )}
-              </div>
-            </div>
+      <div className="flex flex-col gap-6">
+        {/* ── Hero Profile Card ─────────────────────────────────── */}
+        <Card className="overflow-hidden border-border/60">
+          {/* Tinted banner strip */}
+          <div className="h-24 bg-primary/8 relative">
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 20% 50%, var(--color-primary) 0%, transparent 60%), radial-gradient(circle at 80% 20%, var(--color-accent-foreground) 0%, transparent 50%)',
+              }}
+            />
+          </div>
 
-            <Separator />
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Email:</span>
-                <span className="font-medium">{userEmail}</span>
-              </div>
-
-              <div className="flex items-start gap-2 text-sm">
-                <Shield className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <div>
-                  <span className="text-muted-foreground">Role Summary:</span>
-                  <div className="mt-1 space-y-1">
-                    {userRoles && userRoles.length > 0 ? (
-                      <>
-                        {userRoles.includes('sysadmin') && (
-                          <div className="text-xs text-purple-600">
-                            • Full system administration access
-                          </div>
-                        )}
-                        {userRoles.includes('developer') && (
-                          <div className="text-xs text-blue-600">
-                            • Developer tools and debugging access
-                          </div>
-                        )}
-                        {userRoles.includes('orgadmin') && (
-                          <div className="text-xs text-red-600">
-                            • Organisation management capabilities
-                          </div>
-                        )}
-                        {userRoles.includes('user') && (
-                          <div className="text-xs text-green-600">
-                            • Standard user access
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-xs text-gray-500">
-                        • No roles assigned
-                      </div>
-                    )}
-                  </div>
+          <CardContent className="px-6 pb-6 pt-0">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between -mt-10">
+              {/* Avatar + identity */}
+              <div className="flex items-end gap-4">
+                <Avatar className="h-20 w-20 ring-4 ring-background shadow-md">
+                  <AvatarImage src={user.imageUrl} alt={userName} />
+                  <AvatarFallback className="text-2xl font-semibold bg-primary text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="mb-1">
+                  <h2 className="text-xl font-semibold leading-tight">
+                    {userName}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">{userEmail}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Member since:</span>
-                <span className="font-medium">{formatDate(createdAt)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Account Settings Navigation */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Account Settings
-            </CardTitle>
-            <CardDescription>
-              Manage your account preferences and security settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              {accountSections.map((section) => {
-                const IconComponent = section.icon;
-                return (
-                  <Card
-                    key={section.title}
-                    className="border-border/80 py-0 transition-transform hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex h-full items-start justify-between gap-4">
-                        <div className="flex items-start gap-4">
-                          <div className="rounded-2xl border border-border/70 bg-white/85 p-3 shadow-xs">
-                            <IconComponent className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="font-semibold">{section.title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {section.description}
-                            </p>
-                          </div>
-                        </div>
-                        {section.comingSoon ? (
-                          <Badge variant="neutral" className="text-xs">
-                            Coming Soon
-                          </Badge>
-                        ) : (
-                          <Link href={section.href}>
-                            <Button
-                              variant="soft"
-                              size="sm"
-                              className="h-9 w-9 p-0"
-                            >
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            <Separator className="my-6" />
-
-            {/* Quick Actions */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Quick Actions</h3>
-              <div className="grid gap-3 md:grid-cols-2">
+              {/* Role badges + edit CTA */}
+              <div className="flex flex-wrap items-center gap-2 sm:mb-1">
+                {userRoles && userRoles.length > 0 ? (
+                  userRoles.map((role, i) => (
+                    <Badge key={i} variant={getRoleBadgeVariant(role)}>
+                      {getRoleLabel(role)}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="neutral">No roles</Badge>
+                )}
                 <Link href="/account/profile">
-                  <Button variant="outline" className="w-full justify-start">
-                    <User className="h-4 w-4 mr-2" />
+                  <Button size="sm" variant="soft" className="ml-1">
                     Edit Profile
                   </Button>
                 </Link>
-                <Link href="/account/security">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Shield className="h-4 w-4 mr-2" />
-                    Security Settings
-                  </Button>
-                </Link>
               </div>
+            </div>
+
+            {/* Metadata row */}
+            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 border-t border-border/50 pt-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5" />
+                {userEmail}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5" />
+                Member since {formatDate(createdAt)}
+              </span>
+              {userRoles.includes('sysadmin') && (
+                <span className="flex items-center gap-1.5 text-blue-600">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Full system access
+                </span>
+              )}
+              {userRoles.includes('orgadmin') && (
+                <span className="flex items-center gap-1.5 text-red-600">
+                  <Lock className="h-3.5 w-3.5" />
+                  Organisation admin
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* ── Settings Tiles Grid ───────────────────────────────── */}
+        <div>
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Settings
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {settingsTiles.map((tile) => {
+              const Icon = tile.icon;
+
+              if (tile.comingSoon) {
+                return (
+                  <div
+                    key={tile.title}
+                    className="flex items-center gap-4 rounded-xl border border-border/60 bg-card p-4 opacity-60"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted">
+                      <Icon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">
+                          {tile.title}
+                        </span>
+                        <Badge
+                          variant="neutral"
+                          className="text-[10px] py-0 px-1.5"
+                        >
+                          Soon
+                        </Badge>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground leading-snug line-clamp-1">
+                        {tile.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <Link key={tile.title} href={tile.href} className="group block">
+                  <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-card p-4 transition-all duration-150 group-hover:border-primary/30 group-hover:shadow-sm group-hover:-translate-y-0.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-white shadow-xs transition-colors group-hover:border-primary/20 group-hover:bg-primary/5">
+                      <Icon className="h-5 w-5 text-primary transition-transform group-hover:scale-110" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm">{tile.title}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground leading-snug line-clamp-1">
+                        {tile.description}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-all group-hover:text-primary group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </StandardizedSidebarLayout>
   );

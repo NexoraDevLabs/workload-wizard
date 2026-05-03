@@ -193,8 +193,9 @@ export const PermissionInput = forwardRef<
 
 PermissionInput.displayName = 'PermissionInput';
 
-interface PermissionTextareaProps
-  extends React.ComponentProps<typeof Textarea> {
+interface PermissionTextareaProps extends React.ComponentProps<
+  typeof Textarea
+> {
   permission: PermissionId;
   organisationId?: string;
   isSystemAction?: boolean;

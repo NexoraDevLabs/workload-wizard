@@ -29,13 +29,13 @@ const nextConfig: NextConfig = {
   // NODE_ENV is automatically available in Next.js
 
   eslint: {
-    // Don't block production builds on ESLint errors
-    ignoreDuringBuilds: true,
+    // Block production builds on ESLint errors.
+    ignoreDuringBuilds: false,
   },
 
   typescript: {
-    // Don't type-check during builds (CI does this separately)
-    ignoreBuildErrors: process.env.CI === 'true',
+    // Block production builds on TypeScript errors.
+    ignoreBuildErrors: false,
   },
 
   experimental: {
