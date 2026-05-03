@@ -5,7 +5,6 @@
 
 - [WorkloadWizard](#workloadwizard)
   - [🚀 **New Advanced Features**](#-new-advanced-features)
-    - [**PostHog Analytics & Session Replays**](#posthog-analytics--session-replays)
     - [**Sentry Error Monitoring & Performance**](#sentry-error-monitoring--performance)
   - [🛠️ **Tech Stack**](#-tech-stack)
   - [📊 **Key Features**](#-key-features)
@@ -24,9 +23,7 @@
     - [Code Quality](#code-quality)
     - [Database](#database)
   - [🌟 **Advanced Features**](#-advanced-features)
-    - [**PostHog Analytics Dashboard**](#posthog-analytics-dashboard)
     - [**Sentry Monitoring Dashboard**](#sentry-monitoring-dashboard)
-    - [Feature Flag Management](#feature-flag-management)
   - [📈 **Performance & Monitoring**](#-performance--monitoring)
   - [🤝 **Contributing**](#-contributing)
   - [📄 **License**](#-license)
@@ -46,14 +43,6 @@ A comprehensive workload management application for educational institutions, bu
 
 ## 🚀 **New Advanced Features**
 
-### **PostHog Analytics & Session Replays**
-
-- **Session Recordings** with privacy-focused settings
-- **Heatmaps** for user interaction analysis
-- **Advanced Analytics** with autocapture and performance tracking
-- Feature flags removed
-- **Enhanced User Identification** with comprehensive tracking
-
 ### **Sentry Error Monitoring & Performance**
 
 - **Session Replay** with privacy controls
@@ -67,7 +56,6 @@ A comprehensive workload management application for educational institutions, bu
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Backend**: Convex (real-time database)
 - **Authentication**: Clerk
-- **Analytics**: PostHog (session replays & heatmaps)
 - **Monitoring**: Sentry (session replay & user feedback)
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Testing**: Playwright (E2E), Vitest (unit)
@@ -118,10 +106,9 @@ A comprehensive workload management application for educational institutions, bu
 ### Prerequisites
 
 - Node.js 18+ (see `.nvmrc`)
-- pnpm (or npm; pnpm preferred)
+- npm
 - Convex account
 - Clerk account
-- PostHog account (optional)
 - Sentry account (optional)
 
 ### Installation
@@ -132,17 +119,17 @@ git clone git@github.com:<OWNER>/<REPO>.git
 cd workload-wizard-app
 
 # Install dependencies
-pnpm install
+npm install
 
 # Set up environment variables
 cp .env.example .env.local
 # Edit .env.local with your configuration
 
 # Start the development server
-pnpm dev
+npm run dev
 
 # In another terminal, start Convex
-pnpm convex dev
+npx convex dev
 ```
 
 ### Environment Variables
@@ -155,16 +142,8 @@ NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
 CLERK_SECRET_KEY=sk_test_your_key
 
-# PostHog (optional; enables analytics, session replays & heatmaps)
-NEXT_PUBLIC_POSTHOG_KEY=phc_your_api_key_here
-NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
-
 # Sentry (optional; enables error monitoring & session replay)
 NEXT_PUBLIC_SENTRY_DSN=https://your_dsn@your_org.ingest.sentry.io/your_project
-
-# Feature Flags (Statsig)
-FEATFLAG_STATSIG_SERVER_API_KEY=your_statsig_server_api_key_here
-NEXT_PUBLIC_STATSIG_CLIENT_KEY=your_statsig_client_key_here
 
 # App version for tracking
 NEXT_PUBLIC_APP_VERSION=1.0.0
@@ -178,29 +157,28 @@ NEXT_PUBLIC_APP_VERSION=1.0.0
 
 ```bash
 # Run all E2E tests
-pnpm e2e
+npm run e2e
 
 # Run smoke tests only
-pnpm e2e:smoke
+npm run e2e:smoke
 
 # Optional specialised suites
-pnpm test:performance
-pnpm test:visual-regression
+npm run test:performance
+npm run test:visual-regression
 ```
 
 ### Unit Tests
 
 ```bash
 # Run unit tests
-pnpm test
+npm test
 
 # Run tests in watch mode
-pnpm test:watch
+npm run test:watch
 ```
 
 ## 📚 **Documentation**
 
-- **PostHog Integration**: `./docs/POSTHOG.md` — Session replays, heatmaps, analytics
 - **Sentry Integration**: `./docs/SENTRY.md` — Error tracking, session replay, user feedback
 - **Permissions**: `./docs/PERMISSIONS.md` — Role-based access control
   _Removed: Feature Flags_
@@ -265,13 +243,13 @@ pnpm test:watch
 
 ```bash
 # Format code
-pnpm format
+npm run format
 
 # Lint code
-pnpm lint
+npm run lint
 
 # Type check
-pnpm typecheck
+npm run typecheck
 ```
 
 ### Type Safety
@@ -285,33 +263,23 @@ We maintain strict TypeScript safety with elevated linting rules and comprehensi
 
 ### Bundle Analysis
 
-We provide a CI job to generate static HTML bundle analysis. Run it via **Actions → Bundle Analysis** (or locally with `pnpm analyze`).  
+We provide a CI job to generate static HTML bundle analysis.
 See **docs/handbook/engineering/bundle-analysis.md** for how to interpret the report.
 
 ### Database
 
 ```bash
 # View Convex dashboard
-pnpm convex dashboard
+npx convex dashboard
 
 # Deploy schema changes
-pnpm convex deploy
+npx convex deploy
 ```
 
 ## 🌟 **Advanced Features**
 
-### Feature Flag Management
-
-**Statsig Integration** - Single source of truth for feature flags:
-
-- Server-side evaluation with Clerk user context
-- Convex integration for user enrollments
-- Client-side bootstrap for performance
-- Centralized flag keys in `src/flags.ts`
-
 ## 📈 **Performance & Monitoring**
 
-- **Real-time Analytics** with PostHog
 - **Error Monitoring** with Sentry
 - **Performance Tracking** with custom metrics
 - **Session Replay** for debugging user issues

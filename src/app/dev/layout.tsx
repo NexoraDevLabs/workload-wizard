@@ -8,7 +8,6 @@ export default function DevLayout({ children }: { children: React.ReactNode }) {
   // Allow explicitly dev-only utility pages to render without org permission gating.
   if (
     segments.length === 0 ||
-    segments.includes('statsig-test') ||
     segments.includes('features') ||
     segments.includes('tools')
   ) {
