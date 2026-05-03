@@ -44,10 +44,6 @@ jobs:
         run: |
           git config --global user.name "Nexoroid"
           git config --global user.email "nexoroid[bot]@users.noreply.github.com"
-
-      - name: Setup npm
-        uses: npm/action-setup@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -55,7 +51,7 @@ jobs:
           cache: 'npm'
 
       - name: Install deps (cached)
-        run: npm install --frozen-lockfile
+        run: npm ci
 
       - name: Cache Next.js build cache
         uses: actions/cache@v4
