@@ -24,7 +24,7 @@ env:
   SKIP_ENV_VALIDATION: '1'
   CI: 'true'
   # npm optimizations
-  PNPM_CACHE_FOLDER: '.npm-cache'
+  NPM_CACHE_FOLDER: '.npm-cache'
   # Dummy envs so server code doesn't crash in CI
   NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
   CONVEX_DEPLOYMENT: 'https://example.invalid'
