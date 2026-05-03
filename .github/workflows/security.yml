@@ -37,12 +37,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-
-      - name: Install npm
-        uses: npm/action-setup@v4
-
       - name: Install dependencies
-        run: npm install --frozen-lockfile
+        run: npm ci
 
       - name: Run npm audit
         run: |
@@ -89,10 +85,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-
-      - name: Install npm
-        uses: npm/action-setup@v4
-
       - name: Install OSV-Scanner
         run: |
           curl -L https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
