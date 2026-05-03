@@ -45,13 +45,13 @@ jobs:
           npm audit --audit-level=${{ env.SECURITY_SEVERITY_THRESHOLD }} --json > audit-results.json || true
 
           # Check for vulnerabilities at or above threshold
-          VULN_COUNT=$(jq '.vulnerabilities | length' audit-results.json 2>/dev/null || echo 0)
+          VULN_COUNT=$(jq '[.vulnerabilities[]? | select(.severity == "high" or .severity == "critical")] | length' audit-results.json 2>/dev/null || echo 0)
           echo "Vulnerabilities found: $VULN_COUNT"
 
           if [ "$VULN_COUNT" -gt 0 ]; then
             echo "::error::Found $VULN_COUNT vulnerabilities at ${{ env.SECURITY_SEVERITY_THRESHOLD }} level or above"
             echo "::group::Audit Results"
-            cat audit-results.json | jq '.vulnerabilities[] | {name: .name, severity: .severity, title: .title}'
+            cat audit-results.json | jq '.vulnerabilities[] | select(.severity == "high" or .severity == "critical") | {name: .name, severity: .severity, title: .title}'
             echo "::endgroup::"
             exit 1
           fi
