@@ -28,10 +28,10 @@ Generate reports locally for development:
 
 ```bash
 # Install dependencies (if not already done)
-pnpm install
+npm install
 
 # Generate bundle analysis
-pnpm analyze
+npm run analyze
 
 # Open reports in browser
 open .next/analyze/client.html
@@ -224,13 +224,13 @@ After bundle optimisations:
 
 ```bash
 # Test bundle size impact
-pnpm analyze
+npm run analyze
 
 # Test runtime performance
-pnpm test:performance
+npm test:performance
 
 # Test Core Web Vitals
-pnpm test:lighthouse
+npm test:lighthouse
 ```
 
 ## Advanced Analysis
@@ -241,10 +241,10 @@ For detailed analysis, use the webpack bundle analyzer:
 
 ```bash
 # Install analyzer
-pnpm add -D @next/bundle-analyzer
+npm install --save-dev @next/bundle-analyzer
 
 # Generate detailed report
-ANALYZE=true pnpm build
+ANALYZE=true npm run build
 ```
 
 ### Bundle Comparison
@@ -253,10 +253,10 @@ Compare bundles between versions:
 
 ```bash
 # Compare current vs previous
-pnpm analyze:compare
+npm run analyze:compare
 
 # Compare branches
-pnpm analyze:compare main dev
+npm run analyze:compare main dev
 ```
 
 ### Dependency Analysis
@@ -265,20 +265,20 @@ Identify problematic dependencies:
 
 ```bash
 # Find duplicate packages
-pnpm why package-name
+npm why package-name
 
 # Check dependency tree
-pnpm list --depth=0
+npm list --depth=0
 
 # Audit for vulnerabilities
-pnpm audit
+npm audit
 ```
 
 ## Troubleshooting
 
 ### Missing Reports
 
-1. **Check build success**: Ensure `pnpm build` completes successfully
+1. **Check build success**: Ensure `npm run build` completes successfully
 2. **Verify Next.js config**: Confirm bundle analyzer is enabled
 3. **Check file permissions**: Ensure write access to `.next/analyze/`
 4. **Review CI logs**: Check GitHub Actions for build errors

@@ -5,21 +5,21 @@ These commands used to live in `package.json`. They are kept here for occasional
 ## Build and Analysis
 
 ```sh
-ANALYZE=true pnpm build
+ANALYZE=true npm run build
 ```
 
 ```sh
-pnpm dlx pnpm@10.15.0 doctor || true
+npx npm@10.15.0 doctor || true
 ```
 
 ```sh
-pnpm update --latest --recursive
+npm update --latest --recursive
 ```
 
 ```sh
-rimraf node_modules .next dist coverage && pnpm store prune
-pnpm install
-pnpm check
+rimraf node_modules .next dist coverage && npm store prune
+npm install
+npm run check
 ```
 
 ## Benchmarks
@@ -51,35 +51,35 @@ node scripts/verify-no-console.mjs
 ## Sentry
 
 ```sh
-pnpm exec tsx scripts/sentry/createDashboards.ts
+npx tsx scripts/sentry/createDashboards.ts
 ```
 
 ```sh
-pnpm exec tsx scripts/sentry/createAlerts.ts
+npx tsx scripts/sentry/createAlerts.ts
 ```
 
 ## Commit and Hook Helpers
 
 ```sh
-pnpm typecheck && pnpm lint && pnpm test
+npm run typecheck && npm run lint && npm test
 ```
 
 ```sh
-pnpm exec czg
+npx czg
 ```
 
 ```sh
-pnpm exec commitlint --edit "$1"
+npx commitlint --edit "$1"
 ```
 
 ```sh
-pnpm exec husky
+npx husky
 ```
 
 ```sh
-pnpm exec husky install
+npx husky install
 ```
 
 ```sh
-pnpm exec husky add
+npx husky add
 ```

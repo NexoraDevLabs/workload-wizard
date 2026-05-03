@@ -221,7 +221,7 @@ Verify PostHog and Sentry behaviour in a local development environment.
 
 ### Optional developer proxy test steps
 
-1. Start the dev server (`pnpm dev`).
+1. Start the dev server (`npm run dev`).
 2. Visit any page, then verify:
    - `/e/capture/` responds (proxy endpoint)
    - `/e/static/` serves assets (static proxy)
