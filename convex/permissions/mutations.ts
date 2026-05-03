@@ -2,6 +2,7 @@ import { mutation, type MutationCtx } from '../_generated/server';
 import { v } from 'convex/values';
 import type { Id } from '../_generated/dataModel';
 import { writeAudit } from '../audit';
+import { getAuthContext } from '../lib/auth';
 import {
   PLANNING_MVP_PERMISSIONS,
   ACADEMIC_YEAR_PERMISSIONS,
@@ -999,8 +1000,8 @@ export const createOrganisationRole = mutation({
     const now = Date.now();
 
     // Determine organisation from actor (performedBy or authenticated identity)
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1065,8 +1066,8 @@ export const updateOrganisationRole = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation can modify
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1165,8 +1166,8 @@ export const deleteOrganisationRole = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation can delete
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1240,8 +1241,8 @@ export const updateRolePermissions = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
