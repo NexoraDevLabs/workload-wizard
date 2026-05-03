@@ -4,6 +4,7 @@ import type { WebhookEvent } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
+import { getServerEnv } from '@/lib/env';
 import { withApiTracing } from '@/lib/otel/withApiTracing';
 import { withDbSpan } from '@/lib/otel/withDbSpan';
 
@@ -12,10 +13,7 @@ let convexClient: ConvexHttpClient | null = null;
 
 function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
-    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (!url) {
-      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
-    }
+    const { NEXT_PUBLIC_CONVEX_URL: url } = getServerEnv();
     convexClient = new ConvexHttpClient(url);
   }
   return convexClient;
@@ -24,14 +22,7 @@ function getConvexClient(): ConvexHttpClient {
 async function handlePost(req: Request) {
   // Webhook received
 
-  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-
-  if (!WEBHOOK_SECRET) {
-    // CLERK_WEBHOOK_SECRET not found in environment variables
-    return new Response('Webhook secret not configured', {
-      status: 500,
-    });
-  }
+  const { CLERK_WEBHOOK_SECRET } = getServerEnv();
 
   // Get the headers
   const headerPayload = await headers();
@@ -56,7 +47,7 @@ async function handlePost(req: Request) {
   // Webhook payload type logged
 
   // Create a new Svix instance with your secret.
-  const wh = new Webhook(WEBHOOK_SECRET);
+  const wh = new Webhook(CLERK_WEBHOOK_SECRET);
 
   let evt: WebhookEvent;
 

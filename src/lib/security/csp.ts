@@ -163,12 +163,13 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.convex);
   }
 
-  if (env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || env.CLERK_SECRET_KEY) {
+  if (env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.clerk);
   }
 
-  // Always include Sentry (commonly used for error monitoring)
-  mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
+  if (env.NEXT_PUBLIC_SENTRY_DSN) {
+    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
+  }
 
   // Vercel Analytics and Speed Insights are always present in Vercel deployments
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.vercel);
@@ -243,8 +244,7 @@ export function generateNonce(): string {
  * Gets the CSP mode from environment variables
  */
 export function getCSPMode(): CSPMode {
-  const env = getEnv();
-  return env.CSP_MODE === 'enforce' ? 'enforce' : 'report-only';
+  return 'report-only';
 }
 
 /**
