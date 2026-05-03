@@ -61,14 +61,13 @@ infra:
           - 'eslint.config.*'
           - 'commitlint.config.*'
           - 'cz.config.*'
-          - 'pnpm-workspace.yaml'
 
 # ---------- Dependencies / Tooling ----------
 dependencies:
   - changed-files:
       - any-glob-to-any-file:
           - '**/package.json'
-          - '**/pnpm-lock.yaml'
+          - '**/package-lock.json'
 
 'pkg:config':
   - changed-files:

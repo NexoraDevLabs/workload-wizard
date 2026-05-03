@@ -9,8 +9,8 @@
 ## ✅ Checklist
 
 - [ ] PR title follows [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.)
-- [ ] Code has been linted (`pnpm lint`)
-- [ ] Tests added or updated (`pnpm test`) if relevant
+- [ ] Code has been linted (`npm lint`)
+- [ ] Tests added or updated (`npm test`) if relevant
 - [ ] Documentation updated (if applicable)
 - [ ] Ready for review (remove Draft status if finished)
 
