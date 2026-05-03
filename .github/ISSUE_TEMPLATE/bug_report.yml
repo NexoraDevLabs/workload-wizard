@@ -25,5 +25,5 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Node/pnpm/browser/version info
-      placeholder: 'Node 20.19.4, pnpm 10.15.0, Chrome 128'
+      description: Node/npm/browser/version info
+      placeholder: 'Node 20.19.4, npm 10.15.0, Chrome 128'

@@ -118,8 +118,8 @@ body:
       description: How can this failure be reproduced?
       placeholder: |
         1. Checkout commit abc123def456
-        2. Run 'pnpm install'
-        3. Run 'pnpm test'
+        2. Run 'npm install'
+        3. Run 'npm test'
         4. Observe failure in Button.test.tsx
     validations:
       required: true
