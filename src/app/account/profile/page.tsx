@@ -1,6 +1,5 @@
 'use client';
 
-import posthog from 'posthog-js';
 import { useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
@@ -323,14 +322,6 @@ export default function ProfilePage() {
         }
       }
 
-      // Only capture if PostHog is available
-      if (typeof posthog !== 'undefined' && posthog.capture) {
-        posthog.capture('profile-updated', {
-          user_id: user.id,
-          avatar_updated: !!(avatarFile && avatarFile.size > 0),
-        });
-      }
-
       toast({
         title: 'Profile Updated',
         description: 'Your profile has been successfully updated.',
@@ -358,10 +349,6 @@ export default function ProfilePage() {
   };
 
   const handleCancel = () => {
-    // Only capture if PostHog is available
-    if (typeof posthog !== 'undefined' && posthog.capture) {
-      posthog.capture('profile-edit-cancelled', { user_id: user.id });
-    }
     setIsEditing(false);
     setFormData({
       firstName: user.firstName || '',
@@ -619,17 +606,7 @@ export default function ProfilePage() {
                     </Button>
                   </>
                 ) : (
-                  <Button
-                    onClick={() => {
-                      // Only capture if PostHog is available
-                      if (typeof posthog !== 'undefined' && posthog.capture) {
-                        posthog.capture('profile-edit-started', {
-                          user_id: user.id,
-                        });
-                      }
-                      setIsEditing(true);
-                    }}
-                  >
+                  <Button onClick={() => setIsEditing(true)}>
                     <Settings className="h-4 w-4 mr-2" />
                     Edit Profile
                   </Button>

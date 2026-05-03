@@ -19,9 +19,6 @@ import {
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
-import { QuickAccessBeta } from '@/components/common/QuickAccessBeta';
-import { useGateValue } from '@statsig/react-bindings';
-// FeatureFlagKey will be imported dynamically to avoid build-time issues
 import { NavUser } from '@/components/nav-user';
 import { TeamSwitcher } from '@/components/team-switcher';
 import { YearSwitcher } from '@/components/common/YearSwitcher';
@@ -106,20 +103,8 @@ const getNavigationData = (userRoles?: string[]) => {
           url: '/dev/tools',
         },
         {
-          title: 'Feature Flags',
-          url: '/dev/features',
-        },
-        {
           title: 'Permission Tests',
           url: '/dev/permission-test',
-        },
-        {
-          title: 'PostHog Test Dashboard',
-          url: '/dev/posthog-test',
-        },
-        {
-          title: 'Statsig Test',
-          url: '/dev/statsig-test',
         },
       ],
     });
@@ -276,9 +261,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Get role-based navigation data
   const data = getNavigationData(userRoles);
 
-  // Feature flag evaluated on client via Statsig provider
-  const showQuickAccess = useGateValue('quick_access_beta');
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -291,7 +273,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        {showQuickAccess ? <QuickAccessBeta /> : null}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

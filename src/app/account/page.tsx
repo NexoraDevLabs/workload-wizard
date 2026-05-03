@@ -13,7 +13,6 @@ import {
   Shield,
   Bell,
   Key,
-  Sparkles,
   ChevronRight,
   Mail,
   CalendarDays,
@@ -98,12 +97,6 @@ const settingsTiles: SettingsTile[] = [
     description: 'Password, two-factor auth & privacy',
     icon: Shield,
     href: '/account/security',
-  },
-  {
-    title: 'Early Access',
-    description: 'Opt into experimental features',
-    icon: Sparkles,
-    href: '/account/features',
   },
   {
     title: 'Notifications',
