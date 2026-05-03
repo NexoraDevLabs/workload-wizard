@@ -42,7 +42,9 @@ const getRoleLabel = (role: string) => {
   }
 };
 
-const getRoleBadgeVariant = (role: string): NonNullable<BadgeProps['variant']> => {
+const getRoleBadgeVariant = (
+  role: string
+): NonNullable<BadgeProps['variant']> => {
   switch (role) {
     case 'orgadmin':
       return 'danger';
@@ -171,7 +173,9 @@ export default function AccountPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="mb-1">
-                  <h2 className="text-xl font-semibold leading-tight">{userName}</h2>
+                  <h2 className="text-xl font-semibold leading-tight">
+                    {userName}
+                  </h2>
                   <p className="text-sm text-muted-foreground">{userEmail}</p>
                 </div>
               </div>
@@ -241,8 +245,13 @@ export default function AccountPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{tile.title}</span>
-                        <Badge variant="neutral" className="text-[10px] py-0 px-1.5">
+                        <span className="font-medium text-sm">
+                          {tile.title}
+                        </span>
+                        <Badge
+                          variant="neutral"
+                          className="text-[10px] py-0 px-1.5"
+                        >
                           Soon
                         </Badge>
                       </div>
