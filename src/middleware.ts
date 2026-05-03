@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/api/health',
   '/api/webhooks(.*)',
 ]);
 
@@ -13,30 +14,8 @@ const isOnboardingRoute = createRouteMatcher([
   '/onboarding-success',
   '/api/complete-onboarding',
 ]);
-const isDevOnlyRoute = createRouteMatcher([
-  '/dev/posthog-test(.*)',
-  '/sentry-example-page(.*)',
-  '/api/sentry-example-api(.*)',
-]);
-const isAdminDevToolsRoute = createRouteMatcher(['/api/admin/dev-tools(.*)']);
-
-function hasSystemAdminRole(sessionClaims: unknown): boolean {
-  const claims = sessionClaims as
-    | {
-        publicMetadata?: { role?: unknown; roles?: unknown };
-        metadata?: { publicMetadata?: { role?: unknown; roles?: unknown } };
-      }
-    | undefined;
-  const metadata =
-    claims?.publicMetadata ?? claims?.metadata?.publicMetadata ?? {};
-  const roles = Array.isArray(metadata.roles)
-    ? metadata.roles
-    : typeof metadata.role === 'string'
-      ? [metadata.role]
-      : [];
-
-  return roles.some((role) => role === 'sysadmin' || role === 'developer');
-}
+const isBuildTimeClerkKey =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
 
 function hasCompletedOnboarding(sessionClaims: unknown) {
   const claims = sessionClaims as {
@@ -50,26 +29,30 @@ function hasCompletedOnboarding(sessionClaims: unknown) {
   );
 }
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isPublicRoute(req)) {
-    return NextResponse.next();
-  }
+const middleware = isBuildTimeClerkKey
+  ? () => NextResponse.next()
+  : clerkMiddleware(async (auth, req) => {
+      if (isPublicRoute(req)) {
+        return NextResponse.next();
+      }
 
-  await auth.protect();
+      await auth.protect();
 
-  const { sessionClaims } = await auth();
-  const onboardingComplete = hasCompletedOnboarding(sessionClaims);
+      const { sessionClaims } = await auth();
+      const onboardingComplete = hasCompletedOnboarding(sessionClaims);
 
-  if (!onboardingComplete && !isOnboardingRoute(req)) {
-    return NextResponse.redirect(new URL('/onboarding', req.url));
-  }
+      if (!onboardingComplete && !isOnboardingRoute(req)) {
+        return NextResponse.redirect(new URL('/onboarding', req.url));
+      }
 
-  if (onboardingComplete && isOnboardingRoute(req)) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
+      if (onboardingComplete && isOnboardingRoute(req)) {
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
 
-  return NextResponse.next();
-});
+      return NextResponse.next();
+    });
+
+export default middleware;
 
 export const config = {
   matcher: [

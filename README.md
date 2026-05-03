@@ -85,7 +85,7 @@ A comprehensive workload management application for educational institutions, bu
   ```
 
 * Do **not** commit secrets. Use:
-  - **GitHub Actions Secrets** for CI: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `CONVEX_DEPLOY_KEY`, etc.
+  - **GitHub Actions Secrets** for deployment credentials.
   - Local dev secrets in `.env.local` only (never commit).
 
 * Preview deploys are restricted to collaborators via Vercel previews.
@@ -134,22 +134,23 @@ npx convex dev
 
 ### Environment Variables
 
-```bash
-# Required for Convex
-NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
+Copy `.env.example` to `.env.local` and fill in the MVP configuration:
 
-# Clerk (required for auth)
+```bash
+NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
+CONVEX_DEPLOYMENT=your-convex-deployment
+
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
 CLERK_SECRET_KEY=sk_test_your_key
+CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret
 
-# Sentry (optional; enables error monitoring & session replay)
-NEXT_PUBLIC_SENTRY_DSN=https://your_dsn@your_org.ingest.sentry.io/your_project
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# App version for tracking
-NEXT_PUBLIC_APP_VERSION=1.0.0
+# Optional: enables Sentry when configured
+NEXT_PUBLIC_SENTRY_DSN=
 ```
 
-> See `.env.example` for the full set. Never commit real secrets.
+Server routes validate `CONVEX_DEPLOYMENT`, `CLERK_SECRET_KEY`, and `CLERK_WEBHOOK_SECRET` and throw a clear configuration error when required values are missing. Optional tools, including Sentry, stay disabled when their env vars are unset. Never commit real secrets.
 
 ## 🧪 **Testing**
 

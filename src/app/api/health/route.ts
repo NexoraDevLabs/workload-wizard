@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getServerEnv } from '@/lib/env';
 
 interface HealthResponse {
   ok: boolean;
@@ -13,6 +14,7 @@ interface HealthResponse {
 
 export async function GET() {
   const timestamp = new Date().toISOString();
+  const env = getServerEnv();
 
   try {
     // Basic health check - app is running
@@ -20,17 +22,15 @@ export async function GET() {
       ok: true,
       timestamp,
       service: 'workload-wizard',
-      environment: process.env.NODE_ENV || 'development',
+      environment: env.NODE_ENV,
     };
 
     // Optional: Add a simple Convex connectivity check
     // This is a lightweight check that doesn't require complex queries
-    if (process.env.CONVEX_DEPLOYMENT) {
-      health.convex = {
-        deployment: process.env.CONVEX_DEPLOYMENT,
-        status: 'connected',
-      };
-    }
+    health.convex = {
+      deployment: env.CONVEX_DEPLOYMENT,
+      status: 'configured',
+    };
 
     return NextResponse.json(health, {
       status: 200,

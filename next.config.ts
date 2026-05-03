@@ -55,4 +55,6 @@ const sentryOptions = {
   silent: true,
 };
 
-export default withSentryConfig(nextConfig, sentryOptions);
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, sentryOptions)
+  : nextConfig;
