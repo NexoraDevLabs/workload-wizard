@@ -1,5 +1,6 @@
 // next.config.ts
 
+// TODO post-MVP: @opentelemetry/instrumentation is kept because @sentry/nextjs requires it while loading config.
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
@@ -25,7 +26,8 @@ const nextConfig: NextConfig = {
 
   experimental: {
     optimizeCss: false,
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // Keep import optimisation for packages used directly by the app.
+    optimizePackageImports: ['lucide-react'],
   },
 
   images: {

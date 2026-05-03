@@ -1,5 +1,6 @@
 import { trace } from '@opentelemetry/api';
 
+// TODO post-MVP: Keep manual OpenTelemetry API spans until observability scope is revisited.
 let isInitialized = false;
 
 export async function registerOTel() {
