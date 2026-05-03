@@ -1,58 +1,48 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import type { NextRequest} from 'next/server';
 import { NextResponse } from 'next/server';
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/health',
-  '/api/webhooks(.*)',
-]);
+const publicRoutePatterns = [
+  /^\/$/,
+  /^\/sign-in(?:\/.*)?$/,
+  /^\/sign-up(?:\/.*)?$/,
+  /^\/api\/health$/,
+  /^\/api\/webhooks(?:\/.*)?$/,
+];
 
-const isOnboardingRoute = createRouteMatcher([
-  '/onboarding',
-  '/onboarding-success',
-  '/api/complete-onboarding',
-]);
-const isBuildTimeClerkKey =
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
+const onboardingRoutePatterns = [
+  /^\/onboarding$/,
+  /^\/onboarding-success$/,
+  /^\/api\/complete-onboarding$/,
+];
 
-function hasCompletedOnboarding(sessionClaims: unknown) {
-  const claims = sessionClaims as {
-    publicMetadata?: Record<string, unknown>;
-    metadata?: { publicMetadata?: Record<string, unknown> };
-  };
-
-  return Boolean(
-    claims.publicMetadata?.onboardingCompleted ??
-      claims.metadata?.publicMetadata?.onboardingCompleted
-  );
+function matches(pathname: string, patterns: RegExp[]) {
+  return patterns.some((pattern) => pattern.test(pathname));
 }
 
-const middleware = isBuildTimeClerkKey
-  ? () => NextResponse.next()
-  : clerkMiddleware(async (auth, req) => {
-      if (isPublicRoute(req)) {
-        return NextResponse.next();
-      }
+export default function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-      await auth.protect();
+  if (matches(pathname, publicRoutePatterns)) {
+    return NextResponse.next();
+  }
 
-      const { sessionClaims } = await auth();
-      const onboardingComplete = hasCompletedOnboarding(sessionClaims);
+  const hasWorkOSSession = Boolean(
+    req.cookies.get('wos-session')?.value ?? req.cookies.get('workos_session')?.value
+  );
 
-      if (!onboardingComplete && !isOnboardingRoute(req)) {
-        return NextResponse.redirect(new URL('/onboarding', req.url));
-      }
+  if (!hasWorkOSSession) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL('/sign-in', req.url));
+  }
 
-      if (onboardingComplete && isOnboardingRoute(req)) {
-        return NextResponse.redirect(new URL('/dashboard', req.url));
-      }
+  if (matches(pathname, onboardingRoutePatterns)) {
+    return NextResponse.next();
+  }
 
-      return NextResponse.next();
-    });
-
-export default middleware;
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [
