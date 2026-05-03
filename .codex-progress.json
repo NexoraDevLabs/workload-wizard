@@ -1,4 +1,13 @@
 {
-  "lastCompletedPhase": "convex-refactor",
-  "completedBranches": ["auth/convex-refactor"]
+  "lastCompletedPhase": "final-cleanup",
+  "completedBranches": [
+    "auth/convex-refactor",
+    "auth/remove-jwt",
+    "auth/workos-base",
+    "auth/identity-swap",
+    "auth/backend-migration",
+    "auth/frontend-migration",
+    "auth/remove-clerk",
+    "auth/final-cleanup"
+  ]
 }
