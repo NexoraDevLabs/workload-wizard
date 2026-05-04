@@ -1,4 +1,4 @@
 {
-  "lastCompletedPhase": "remove-jwt",
-  "completedBranches": ["auth/convex-refactor", "auth/remove-jwt"]
+  "lastCompletedPhase": "convex-refactor",
+  "completedBranches": ["auth/convex-refactor"]
 }
