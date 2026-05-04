@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { EditModuleForm } from '@/components/domain/EditModuleForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';

@@ -824,7 +824,14 @@ function ModuleIterationAndGroupsAndAllocations({
 }) {
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
-  const { user: _user } = useAuthUser();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,

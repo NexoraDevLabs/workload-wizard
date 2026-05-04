@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { EditCourseForm } from '@/components/domain/EditCourseForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { withToast } from '@/lib/utils';
