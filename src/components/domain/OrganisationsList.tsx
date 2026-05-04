@@ -34,9 +34,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 export function OrganisationsList() {
   const { toast } = useToast();
+  const { user } = useAuthUser();
   const organisations = useQuery(api.organisations.list);
   const deleteOrganisation = useMutation(api.organisations.remove);
   const reseedOrg = useMutation(api.organisations.reseedDefaultsForOrg);
@@ -80,7 +82,7 @@ export function OrganisationsList() {
     if (!confirm('Are you sure you want to delete this organisation?')) return;
 
     try {
-      await deleteOrganisation({ id });
+      await deleteOrganisation({ userId: user!.id, id });
     } catch (err) {
       toast({
         title: 'Failed to delete organisation',
@@ -158,7 +160,7 @@ export function OrganisationsList() {
                       onClick={async () => {
                         try {
                           setIsSeeding('all');
-                          await reseedAll({});
+                          await reseedAll({ userId: user!.id });
                           toast({
                             title: 'Defaults seeded across organisations',
                           });
@@ -293,6 +295,7 @@ export function OrganisationsList() {
                                     try {
                                       setIsSeeding(org._id);
                                       await reseedOrg({
+                                        userId: user!.id,
                                         organisationId: org._id,
                                       });
                                       toast({

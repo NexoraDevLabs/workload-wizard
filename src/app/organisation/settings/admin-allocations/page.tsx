@@ -25,17 +25,10 @@ interface AdminCategory {
 
 export default function OrganisationAdminAllocationsSettingsPage() {
   const { toast } = useToast();
-  const { user } = useAuthUser();
-  const authArgs =
-    user?.id && user.organisationId
-      ? {
-          userId: user.id,
-          organisationId: user.organisationId as Id<'organisations'>,
-        }
-      : null;
+  const { isLoaded, user } = useAuthUser();
   const categories = useQuery(
     api.allocations.listOrganisationAdminCategories,
-    authArgs ?? 'skip'
+    isLoaded && user?.id ? { userId: user.id } : 'skip'
   ) as AdminCategory[] | undefined;
   const upsert = useMutation(api.allocations.upsertOrganisationAdminCategory);
   const remove = useMutation(api.allocations.removeOrganisationAdminCategory);
@@ -117,6 +110,7 @@ export default function OrganisationAdminAllocationsSettingsPage() {
       await withToast(
         () =>
           upsert({
+            userId: user!.id,
             ...(parsed.data.id
               ? {
                   id: parsed.data
@@ -152,7 +146,10 @@ export default function OrganisationAdminAllocationsSettingsPage() {
     try {
       await withToast(
         () =>
-          remove({ id: id as Id<'organisation_admin_allocation_categories'> }),
+          remove({
+            userId: user!.id,
+            id: id as Id<'organisation_admin_allocation_categories'>,
+          }),
         {
           success: { title: 'Category deleted' },
           error: { title: 'Delete failed' },

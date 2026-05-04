@@ -2,7 +2,7 @@ import { hasPermission, type PermissionId } from './permissions';
 import { redirect } from 'next/navigation';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import { getAuthUserFromWorkOS } from './auth/workos';
+import { getAuthContext } from './auth';
 
 export type SessionUser = {
   userId: string;
@@ -15,7 +15,7 @@ export type AuthRole = 'sysadmin' | 'org_admin' | 'member';
 export type AuthUser = {
   id: string;
   email: string | undefined;
-  orgId: string;
+  orgId: string | null;
   role: AuthRole;
   systemRoles: string[];
   organisationRoles: string[];
@@ -102,6 +102,7 @@ function getHighestRole(
 
 export async function getSessionUser(): Promise<SessionUser> {
   const user = await getAuthUser();
+  if (!user.orgId) throw new Error('Missing organisationId');
   return {
     userId: user.id,
     organisationId: user.orgId,
@@ -110,18 +111,30 @@ export async function getSessionUser(): Promise<SessionUser> {
 }
 
 export async function getAuthUser(): Promise<AuthUser> {
-  const workosUser = await getAuthUserFromWorkOS();
-  if (!workosUser) throw new Error('Unauthenticated');
+  const session = await getAuthContext();
+  if (!session) throw new Error('Unauthenticated');
 
-  const dbUser = await getConvexClient().query(api.users.getAuthContext, {
-    subject: workosUser.id,
+  let dbUser = await getConvexClient().query(api.users.getAuthContext, {
+    subject: session.userId,
   });
 
-  if (!dbUser) throw new Error('Missing auth context');
+  if (!dbUser) {
+    try {
+      await getConvexClient().mutation(api.users.syncUser, {
+        userId: session.userId,
+        email: session.email,
+      });
+      dbUser = await getConvexClient().query(api.users.getAuthContext, {
+        subject: session.userId,
+      });
+    } catch {
+      dbUser = null;
+    }
+  }
 
   const systemRoles = dbUser?.systemRoles ?? [];
   const organisationRoles = dbUser?.organisationRoles ?? [];
-  const memberships = (dbUser.memberships ?? []).map((membership) => ({
+  const memberships = (dbUser?.memberships ?? []).map((membership) => ({
     userId: membership.userId,
     orgId: String(membership.orgId),
     role: normalizeOrgRole(membership.role),
@@ -131,17 +144,20 @@ export async function getAuthUser(): Promise<AuthUser> {
     memberships.find((membership) => membership.isPrimary) ??
     memberships[0] ??
     null;
-  const orgId = primaryMembership?.orgId ?? String(dbUser.organisationId);
+  const orgId =
+    primaryMembership?.orgId ??
+    (dbUser?.organisationId ? String(dbUser.organisationId) : undefined) ??
+    session.organisationId ??
+    null;
   const role = getHighestRole(
     systemRoles,
     organisationRoles,
-    primaryMembership?.role ?? normalizeOrgRole(dbUser.role)
+    primaryMembership?.role ?? normalizeOrgRole(dbUser?.role)
   );
 
-  if (!orgId) throw new Error('Missing organisationId');
   return {
-    id: workosUser.id,
-    email: dbUser?.email ?? workosUser.email,
+    id: session.userId,
+    email: dbUser?.email ?? session.email,
     orgId,
     role,
     systemRoles,

@@ -6,7 +6,7 @@ import { getAuthContext } from './lib/auth';
 
 // List courses for an organisation
 export const listByOrganisation = query({
-  args: { organisationId: v.id('organisations') },
+  args: { userId: v.string(), organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     // Only allow listing courses in your own organisation (or system roles)
     const authContext = await getAuthContext(ctx, args);
@@ -34,7 +34,7 @@ export const listByOrganisation = query({
 
 // List courses for the authenticated actor's organisation (no args)
 export const listForActor = query({
-  args: { userId: v.string(), organisationId: v.id('organisations') },
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
@@ -46,12 +46,12 @@ export const listForActor = query({
       ctx,
       authContext.userId,
       'courses.view',
-      actor.organisationId
+      authContext.organisationId
     );
     const courses = await ctx.db
       .query('courses')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .order('asc')
       .collect();
@@ -71,6 +71,7 @@ export const getById = query({
 // Create a new course in the actor's organisation
 export const create = mutation({
   args: {
+    userId: v.string(),
     code: v.string(),
     name: v.string(),
     leaderProfileId: v.optional(v.id('lecturer_profiles')),
@@ -95,14 +96,14 @@ export const create = mutation({
       ctx,
       authContext.userId,
       'courses.create',
-      actor.organisationId
+      authContext.organisationId
     );
 
     // Check uniqueness of code within organisation
     const existing = await ctx.db
       .query('courses')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('code'), args.code))
       .first();
@@ -113,7 +114,7 @@ export const create = mutation({
     const id = await ctx.db.insert('courses', {
       code: args.code,
       name: args.name,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       ...(args.leaderProfileId
         ? { leaderProfileId: args.leaderProfileId }
         : {}),
@@ -137,7 +138,7 @@ export const create = mutation({
         entityId: String(id),
         entityName: `${args.code} ${args.name}`,
         performedBy: authContext.userId,
-        organisationId: actor.organisationId,
+        organisationId: authContext.organisationId,
         details: `Course created (${args.code})`,
         severity: 'info',
         type: 'org',
@@ -155,6 +156,7 @@ export const create = mutation({
 // Update course
 export const update = mutation({
   args: {
+    userId: v.string(),
     id: v.id('courses'),
     code: v.string(),
     name: v.string(),
@@ -229,7 +231,7 @@ export const update = mutation({
 
 // Delete course
 export const remove = mutation({
-  args: { id: v.id('courses') },
+  args: { userId: v.string(), id: v.id('courses') },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.id);
@@ -270,7 +272,7 @@ export const remove = mutation({
 
 // List years for a course
 export const listYears = query({
-  args: { courseId: v.id('courses') },
+  args: { userId: v.string(), courseId: v.id('courses') },
   handler: async (ctx, args) => {
     const course = await ctx.db.get(args.courseId);
     if (!course) return [];
@@ -293,7 +295,7 @@ export const listYears = query({
 
 // Check if a course code is available within the actor's organisation
 export const isCodeAvailable = query({
-  args: { code: v.string(), excludeId: v.optional(v.id('courses')) },
+  args: { userId: v.string(), code: v.string(), excludeId: v.optional(v.id('courses')) },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
 
@@ -307,7 +309,7 @@ export const isCodeAvailable = query({
     const existing = await ctx.db
       .query('courses')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('code'), args.code))
       .first();
@@ -322,7 +324,7 @@ export const isCodeAvailable = query({
 
 // Add a year to a course
 export const addYear = mutation({
-  args: { courseId: v.id('courses'), yearNumber: v.number() },
+  args: { userId: v.string(), courseId: v.id('courses'), yearNumber: v.number() },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const course = await ctx.db.get(args.courseId);
@@ -377,6 +379,7 @@ export const addYear = mutation({
 // Creates N groups per module iteration campus split is not yet module-aware; this is per-course/year helper.
 export const initialiseRecommendedGroups = mutation({
   args: {
+    userId: v.string(),
     courseId: v.id('courses'),
     academicYearId: v.id('academic_years'),
   },

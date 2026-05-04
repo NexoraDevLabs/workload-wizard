@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
-import type { MutationCtx } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 
 import { requirePermission } from './permissions';
 import { writeAudit } from './audit';
@@ -114,6 +114,97 @@ async function ensureMembershipDocument(
     }
   }
 }
+
+async function getPrimaryUserOrganisationId(
+  ctx: QueryCtx | MutationCtx,
+  userId: string
+): Promise<Id<'organisations'> | null> {
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+  return (
+    memberships.find((membership) => membership.isPrimary)?.organisationId ??
+    memberships[0]?.organisationId ??
+    null
+  );
+}
+
+function splitEmailName(email: string) {
+  const localPart = email.split('@')[0] || 'User';
+  const normalised = localPart
+    .replace(/[._-]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+  const name = normalised || 'User';
+
+  return {
+    givenName: name.split(' ')[0] || 'User',
+    familyName: name.split(' ').slice(1).join(' '),
+    fullName: name,
+  };
+}
+
+export const syncUser = mutation({
+  args: {
+    userId: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error('userId is required');
+    }
+
+    const existing = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
+      .first();
+
+    let userDoc;
+
+    if (existing) {
+      const updates: Partial<Doc<'users'>> = {
+        updatedAt: Date.now(),
+      };
+
+      if (existing.email !== args.email) {
+        updates.email = args.email;
+      }
+
+      if (!existing.isActive) {
+        updates.isActive = true;
+      }
+
+      await ctx.db.patch(existing._id, updates);
+      userDoc = await ctx.db.get(existing._id);
+    } else {
+      const now = Date.now();
+      const names = splitEmailName(args.email);
+
+      const insertedId = await ctx.db.insert('users', {
+        email: args.email,
+        givenName: names.givenName,
+        familyName: names.familyName,
+        fullName: names.fullName,
+        systemRoles: ['user'],
+        subject: args.userId,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      userDoc = await ctx.db.get(insertedId);
+    }
+
+    // IMPORTANT: check membership but DO NOT create it
+    const membership = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .first();
+
+    return { user: userDoc, needsOrganisation: !membership };
+  },
+});
 
 export const create = mutation({
   args: {
@@ -455,21 +546,23 @@ export const list = query({
     // Get organisation details for each user using bulk batching
     const usersWithOrganisations = await Promise.all(
       users.map(async (user) => {
-        const organisation = await loaders.orgsById.load(
-          ctx,
-          user.organisationId
-        );
+        const organisationId =
+          user.organisationId ??
+          (await getPrimaryUserOrganisationId(ctx, user.subject));
+        const organisation = organisationId
+          ? await loaders.orgsById.load(ctx, organisationId)
+          : null;
 
         // Get all current organisational role assignments for this user in their org (support multiple)
-        const assignments = await ctx.db
-          .query('user_role_assignments')
-          .withIndex('by_user_org', (q) =>
-            q
-              .eq('userId', user.subject)
-              .eq('organisationId', user.organisationId)
-          )
-          .filter((q) => q.eq(q.field('isActive'), true))
-          .collect();
+        const assignments = organisationId
+          ? await ctx.db
+              .query('user_role_assignments')
+              .withIndex('by_user_org', (q) =>
+                q.eq('userId', user.subject).eq('organisationId', organisationId)
+              )
+              .filter((q) => q.eq(q.field('isActive'), true))
+              .collect()
+          : [];
 
         // Use bulk batching for role lookups instead of N+1 queries
         const organisationalRoles: Array<{
@@ -561,7 +654,20 @@ export const getAuthContext = query({
       activeMemberships[0] ??
       null;
 
-    if (!primaryMembership) return null;
+    if (!primaryMembership) {
+      return {
+        id: user._id,
+        subject: user.subject,
+        email: user.email,
+        fullName: user.fullName,
+        organisationId: null,
+        systemRoles: user.systemRoles,
+        organisationRoles: [] as string[],
+        role: resolveDbAuthRole(user.systemRoles, []),
+        memberships: [],
+        isActive: user.isActive,
+      };
+    }
 
     const organisationId = primaryMembership.membership.organisationId;
 
@@ -649,7 +755,7 @@ export const remove = mutation({
         entityId: user.subject,
         entityName: user.fullName,
         performedBy: user.subject,
-        organisationId: user.organisationId,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
         details: 'User deactivated',
         severity: 'warning',
         type: 'sys',
@@ -686,7 +792,7 @@ export const hardDelete = mutation({
         entityId: user.subject,
         entityName: user.fullName,
         performedBy: user.subject,
-        organisationId: user.organisationId,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
         details: 'User hard deleted',
         severity: 'critical',
         type: 'sys',
@@ -832,13 +938,17 @@ export const updateByWebhook = mutation({
 
     // Audit webhook update (system)
     try {
+      const auditOrganisationId =
+        processedUpdates.organisationId || user.organisationId;
       await writeAudit(ctx, {
         action: 'update',
         entityType: 'user',
         entityId: String(user._id),
         entityName: user.fullName || user.email,
         performedBy: 'system',
-        organisationId: processedUpdates.organisationId || user.organisationId,
+        ...(auditOrganisationId
+          ? { organisationId: auditOrganisationId as Id<'organisations'> }
+          : {}),
         details: 'User updated via webhook',
         metadata: JSON.stringify(processedUpdates),
         severity: 'info',
@@ -932,7 +1042,7 @@ export const completeOnboarding = mutation({
         entityId: String(user._id),
         entityName: updates.fullName || user.fullName || user.email,
         performedBy: user.subject,
-        organisationId: user.organisationId,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
         details: 'Onboarding completed',
         metadata: JSON.stringify(updates),
         severity: 'info',
@@ -978,7 +1088,7 @@ export const updateUserAvatar = mutation({
       entityName: user.fullName,
       performedBy: subject,
       performedByName: user.fullName,
-      organisationId: user.organisationId,
+      ...(user.organisationId ? { organisationId: user.organisationId } : {}),
       details: 'Updated profile picture',
       metadata: JSON.stringify({
         previousPictureUrl: user.pictureUrl,

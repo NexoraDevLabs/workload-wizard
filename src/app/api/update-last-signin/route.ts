@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
-import { getAuthUser } from '@/lib/authz';
+import { getAuthContext } from '@/lib/auth';
 
 let convexClient: ConvexHttpClient | null = null;
 function getConvexClient() {
@@ -15,8 +15,11 @@ function getConvexClient() {
 
 export async function POST() {
   try {
-    const user = await getAuthUser();
-    await getConvexClient().mutation(api.users.updateLastSignIn, { userId: user.id });
+    const user = await getAuthContext();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+    }
+    await getConvexClient().mutation(api.users.updateLastSignIn, { userId: user.userId });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to update last sign-in' }, { status: 500 });

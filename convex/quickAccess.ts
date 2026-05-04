@@ -3,7 +3,7 @@ import { v } from 'convex/values';
 import { getAuthContext } from './lib/auth';
 
 export const getForCurrentUser = query({
-  args: { userId: v.string(), organisationId: v.id('organisations') },
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const row = await ctx.db
@@ -21,6 +21,7 @@ export const getForCurrentUser = query({
 
 export const saveForCurrentUser = mutation({
   args: {
+    userId: v.string(),
     links: v.array(v.object({ name: v.string(), url: v.string() })),
     showNames: v.boolean(),
   },

@@ -22,7 +22,7 @@ export const list = query({
 
 // Reseed defaults for a specific organisation
 export const reseedDefaultsForOrg = mutation({
-  args: { organisationId: v.id('organisations') },
+  args: { userId: v.string(), organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     const now = Date.now();
     const authContext = await getAuthContext(ctx, args);
@@ -82,8 +82,8 @@ export const reseedDefaultsForOrg = mutation({
 
 // Reseed defaults for all active organisations
 export const reseedDefaultsAcrossOrganisations = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
     const orgs = await ctx.db
       .query('organisations')
       .filter((q) => q.eq(q.field('isActive'), true))
@@ -91,6 +91,7 @@ export const reseedDefaultsAcrossOrganisations = mutation({
     let processed = 0;
     for (const org of orgs) {
       await ctx.runMutation(api.organisations.reseedDefaultsForOrg, {
+        userId: args.userId,
         organisationId: org._id,
       });
       processed++;
@@ -111,6 +112,7 @@ export const getById = query({
 // Create new organisation
 export const create = mutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     code: v.string(),
     contactEmail: v.optional(v.string()),
@@ -231,6 +233,7 @@ export const create = mutation({
 // Update organisation
 export const update = mutation({
   args: {
+    userId: v.string(),
     id: v.id('organisations'),
     name: v.optional(v.string()),
     code: v.optional(v.string()),
@@ -274,7 +277,7 @@ export const update = mutation({
 
 // Delete organisation (soft delete)
 export const remove = mutation({
-  args: { id: v.id('organisations') },
+  args: { userId: v.string(), id: v.id('organisations') },
   handler: async (ctx, args) => {
     const now = Date.now();
     await ctx.db.patch(args.id, {
@@ -321,8 +324,23 @@ export const getByCode = query({
 
 // Get a single organisation by ID
 export const get = query({
-  args: { organisationId: v.id('organisations') },
+  args: { userId: v.string(), organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.organisationId);
+  },
+});
+
+export const getUserOrganisation = query({
+  args: { userId: v.string() },
+  handler: async (ctx, { userId }) => {
+    const membership = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect();
+
+    const primary =
+      membership.find((item) => item.isPrimary) ?? membership[0] ?? null;
+
+    return primary?.organisationId ?? null;
   },
 });

@@ -24,6 +24,7 @@ import type { Id } from '@/convex/_generated/dataModel';
 import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface Organisation {
   _id: Id<'organisations'>;
@@ -50,6 +51,7 @@ export function EditOrganisationForm({
 }: EditOrganisationFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuthUser();
 
   const updateOrganisation = useMutation(api.organisations.update);
 
@@ -83,6 +85,7 @@ export function EditOrganisationForm({
       await withToast(
         () =>
           updateOrganisation({
+            userId: user!.id,
             ...dataBase,
             ...optional,
           }),

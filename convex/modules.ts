@@ -18,7 +18,7 @@ export const getById = query({
 
 // List modules for an organisation (derived from actor)
 export const listByOrganisation = query({
-  args: { userId: v.string(), organisationId: v.id('organisations') },
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
 
@@ -33,13 +33,13 @@ export const listByOrganisation = query({
       ctx,
       authContext.userId,
       'modules.view',
-      actor.organisationId
+      authContext.organisationId
     );
 
     const modules = await ctx.db
       .query('modules')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .order('asc')
       .collect();
@@ -49,7 +49,7 @@ export const listByOrganisation = query({
 
 // List modules for a specific organisation (explicit org param)
 export const listForOrganisation = query({
-  args: { organisationId: v.id('organisations') },
+  args: { userId: v.string(), organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
 
@@ -75,6 +75,7 @@ export const listForOrganisation = query({
 // Create a module in actor's organisation
 export const create = mutation({
   args: {
+    userId: v.string(),
     code: v.string(),
     name: v.string(),
     credits: v.optional(v.number()),
@@ -97,14 +98,14 @@ export const create = mutation({
       ctx,
       authContext.userId,
       'modules.create',
-      actor.organisationId
+      authContext.organisationId
     );
 
     // ensure unique code per org
     const existing = await ctx.db
       .query('modules')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('code'), args.code))
       .first();
@@ -121,7 +122,7 @@ export const create = mutation({
       const settings = await ctx.db
         .query('organisation_settings')
         .withIndex('by_organisation', (q) =>
-          q.eq('organisationId', actor.organisationId)
+          q.eq('organisationId', authContext.organisationId)
         )
         .first();
       const mapping = settings?.moduleHoursByCredits as
@@ -149,7 +150,7 @@ export const create = mutation({
     } = {
       code: args.code,
       name: args.name,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       createdAt: now,
       updatedAt: now,
     };
@@ -170,7 +171,7 @@ export const create = mutation({
         entityId: String(id),
         entityName: `${args.code} ${args.name}`,
         performedBy: authContext.userId,
-        organisationId: actor.organisationId,
+        organisationId: authContext.organisationId,
         details: `Module created (${args.code})`,
         severity: 'info',
         type: 'org',
@@ -186,6 +187,7 @@ export const create = mutation({
 // Update a module
 export const update = mutation({
   args: {
+    userId: v.string(),
     id: v.id('modules'),
     code: v.string(),
     name: v.string(),
@@ -257,7 +259,7 @@ export const update = mutation({
 
 // Delete module
 export const remove = mutation({
-  args: { id: v.id('modules') },
+  args: { userId: v.string(), id: v.id('modules') },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.id);
@@ -295,7 +297,7 @@ export const remove = mutation({
 
 // Check if a module code is available within the actor's organisation
 export const isCodeAvailable = query({
-  args: { code: v.string(), excludeId: v.optional(v.id('modules')) },
+  args: { userId: v.string(), code: v.string(), excludeId: v.optional(v.id('modules')) },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
 
@@ -309,7 +311,7 @@ export const isCodeAvailable = query({
     const existing = await ctx.db
       .query('modules')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('code'), args.code))
       .first();
@@ -349,6 +351,7 @@ export const listForCourseYear = query({
 // Attach a module to a course year
 export const attachToCourseYear = mutation({
   args: {
+    userId: v.string(),
     courseYearId: v.id('course_years'),
     moduleId: v.id('modules'),
     isCore: v.boolean(),
@@ -408,6 +411,7 @@ export const attachToCourseYear = mutation({
 // Detach a module from a course year
 export const detachFromCourseYear = mutation({
   args: {
+    userId: v.string(),
     courseYearId: v.id('course_years'),
     moduleId: v.id('modules'),
   },
@@ -477,7 +481,7 @@ export const getIterationForYear = query({
 
 // Get iteration for the organisation's default academic year
 export const getIterationForDefaultYear = query({
-  args: { moduleId: v.id('modules') },
+  args: { userId: v.string(), moduleId: v.id('modules') },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
@@ -489,7 +493,7 @@ export const getIterationForDefaultYear = query({
     const defaultYear = await ctx.db
       .query('academic_years')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('isDefaultForOrg'), true))
       .first();
@@ -508,6 +512,7 @@ export const getIterationForDefaultYear = query({
 // Create iteration for a module in a specific academic year
 export const createIterationForYear = mutation({
   args: {
+    userId: v.string(),
     moduleId: v.id('modules'),
     academicYearId: v.id('academic_years'),
     totalHours: v.optional(v.number()),
@@ -567,7 +572,7 @@ export const createIterationForYear = mutation({
 
 // Convenience: create iteration for the organisation's default academic year
 export const createIterationForDefaultYear = mutation({
-  args: { moduleId: v.id('modules'), totalHours: v.optional(v.number()) },
+  args: { userId: v.string(), moduleId: v.id('modules'), totalHours: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
@@ -579,7 +584,7 @@ export const createIterationForDefaultYear = mutation({
     const defaultYear = await ctx.db
       .query('academic_years')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('isDefaultForOrg'), true))
       .first();
@@ -635,7 +640,7 @@ export const createIterationForDefaultYear = mutation({
 
 // Get a specific iteration by ID
 export const getIterationById = query({
-  args: { id: v.id('module_iterations') },
+  args: { userId: v.string(), id: v.id('module_iterations') },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
   },
@@ -644,6 +649,7 @@ export const getIterationById = query({
 // Update a module iteration
 export const updateIteration = mutation({
   args: {
+    userId: v.string(),
     id: v.id('module_iterations'),
     totalHours: v.optional(v.number()),
     weeks: v.optional(v.array(v.number())),

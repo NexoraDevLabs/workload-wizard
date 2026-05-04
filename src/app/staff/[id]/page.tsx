@@ -619,7 +619,7 @@ function AdminAllocationsTable({
   const { toast } = useToast();
   const orgCategories = useQuery(
     api.allocations.listOrganisationAdminCategories,
-    authArgs ?? 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   );
   const sysCategories = useQuery(api.allocations.listAdminCategories, {});
   const categories =
@@ -670,6 +670,7 @@ function AdminAllocationsTable({
       await withToast(
         () =>
           upsert({
+            userId: user!.id,
             lecturerId: lecturerId,
             academicYearId: currentYear!._id,
             ...(formOpen.isCustom
@@ -701,7 +702,7 @@ function AdminAllocationsTable({
     setIsRemoving(allocationId);
     try {
       await withToast(
-        () => remove({ allocationId: allocationId }),
+        () => remove({ userId: user!.id, allocationId: allocationId }),
         {
           success: { title: 'Allocation removed' },
           error: { title: 'Remove failed' },

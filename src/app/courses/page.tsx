@@ -15,6 +15,7 @@ import { EditCourseForm } from '@/components/domain/EditCourseForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { withToast } from '@/lib/utils';
 import { Edit, Trash2 } from 'lucide-react';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface Course {
   _id: Id<'courses'>;
@@ -29,20 +30,14 @@ export const dynamic = 'force-dynamic';
 export default function CoursesPage() {
   const { toast } = useToast();
   const { user } = useAuthUser();
-  const authArgs =
-    user?.id && user.organisationId
-      ? {
-          userId: user.id,
-          organisationId: user.organisationId as Id<'organisations'>,
-        }
-      : null;
   // Derive organisation on the server from the authenticated actor, not from client public metadata
-  const courses = useQuery(api.courses.listForActor, authArgs ?? 'skip') as
-    | Course[]
-    | undefined;
-  const settings = useQuery(
+  const courses = useQuery(
+    api.courses.listForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as Course[] | undefined;
+  const organisationSettings = useQuery(
     api.organisationSettings.getForActor,
-    authArgs ?? 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   ) as { campusOptions?: string[] } | null | undefined;
 
   const createCourse = useMutation(api.courses.create);
@@ -50,7 +45,9 @@ export default function CoursesPage() {
   const [form, setForm] = useState({ code: '', name: '', campuses: '' });
   const codeAvailability = useQuery(
     api.courses.isCodeAvailable,
-    form.code.trim() ? { code: form.code.trim() } : 'skip'
+    user?.id && form.code.trim()
+      ? { userId: user.id, code: form.code.trim() }
+      : 'skip'
   ) as { available: boolean } | undefined;
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
@@ -71,6 +68,7 @@ export default function CoursesPage() {
     e.preventDefault();
     try {
       await createCourse({
+        userId: user!.id,
         code: form.code.trim(),
         name: form.name.trim(),
         ...(form.campuses.trim()
@@ -116,7 +114,7 @@ export default function CoursesPage() {
         return next;
       });
       await withToast(
-        () => deleteCourse({ id: toDelete._id }),
+        () => deleteCourse({ userId: user!.id, id: toDelete._id }),
         {
           success: {
             title: 'Course deleted',
@@ -247,7 +245,7 @@ export default function CoursesPage() {
                   >
                     <option value="">Add campus…</option>
                     {(
-                      settings?.campusOptions || []
+                      organisationSettings?.campusOptions || []
                     ).map((c: string) => (
                       <option key={c} value={c}>
                         {c}

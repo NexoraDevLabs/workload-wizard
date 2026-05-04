@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
 import { z } from 'zod';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface AdminCategory {
   _id: Id<'admin_allocation_categories'>;
@@ -23,6 +24,7 @@ interface AdminCategory {
 
 export default function AdminAllocationCategoriesPage() {
   const { toast } = useToast();
+  const { user } = useAuthUser();
   const categories = useQuery(api.allocations.listAdminCategories, {});
   const upsert = useMutation(api.allocations.upsertAdminCategory);
   const remove = useMutation(api.allocations.removeAdminCategory);
@@ -99,6 +101,7 @@ export default function AdminAllocationCategoriesPage() {
       await withToast(
         () =>
           upsert({
+            userId: user!.id,
             ...(parsed.data.id
               ? { id: parsed.data.id as Id<'admin_allocation_categories'> }
               : {}),
@@ -130,7 +133,7 @@ export default function AdminAllocationCategoriesPage() {
     setIsRemoving(String(id));
     try {
       await withToast(
-        () => remove({ id }),
+        () => remove({ userId: user!.id, id }),
         {
           success: { title: 'Category deleted' },
           error: { title: 'Delete failed' },
@@ -226,7 +229,7 @@ export default function AdminAllocationCategoriesPage() {
                   size="sm"
                   onClick={async () => {
                     await withToast(
-                      () => pushToOrgs({}),
+                      () => pushToOrgs({ userId: user!.id }),
                       {
                         success: {
                           title: 'Pushed to organisations (non-destructive)',
@@ -250,7 +253,7 @@ export default function AdminAllocationCategoriesPage() {
                     )
                       return;
                     await withToast(
-                      () => pushToOrgs({ forceApply: true }),
+                      () => pushToOrgs({ userId: user!.id, forceApply: true }),
                       {
                         success: { title: 'Synced to organisations (force)' },
                         error: { title: 'Sync failed' },

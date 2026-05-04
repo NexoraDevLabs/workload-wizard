@@ -40,13 +40,10 @@ export function EditCourseForm({
 }: EditCourseFormProps) {
   const { toast } = useToast();
   const { user } = useAuthUser();
-  const authArgs =
-    user?.id && user.organisationId
-      ? {
-          userId: user.id,
-          organisationId: user.organisationId as Id<'organisations'>,
-        }
-      : null;
+  const organisationSettings = useQuery(
+    api.organisationSettings.getForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as { campusOptions?: string[] } | null | undefined;
   const updateCourse = useMutation(api.courses.update);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
@@ -55,14 +52,12 @@ export function EditCourseForm({
     studentCount: course.studentCount?.toString() || '',
     campuses: course.campuses?.join(', ') || '',
   });
-  const codeAvailability = useQuery(api.courses.isCodeAvailable, {
-    code: form.code,
-    excludeId: course._id,
-  }) as { available: boolean } | undefined;
-  const settings = useQuery(
-    api.organisationSettings.getForActor,
-    authArgs ?? 'skip'
-  ) as { campusOptions?: string[] } | null | undefined;
+  const codeAvailability = useQuery(
+    api.courses.isCodeAvailable,
+    user?.id
+      ? { userId: user.id, code: form.code, excludeId: course._id }
+      : 'skip'
+  ) as { available: boolean } | undefined;
 
   const canSubmit =
     form.code.trim().length > 0 &&
@@ -75,6 +70,7 @@ export function EditCourseForm({
 
     try {
       await updateCourse({
+        userId: user!.id,
         id: course._id,
         code: form.code.trim(),
         name: form.name.trim(),
@@ -222,7 +218,7 @@ export function EditCourseForm({
                   }}
                 >
                   <option value="">Add campus…</option>
-                  {settings?.campusOptions?.map((c: string) => (
+                  {organisationSettings?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>
                       {c}
                     </option>

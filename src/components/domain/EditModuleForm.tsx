@@ -55,13 +55,6 @@ export function EditModuleForm({
 }: EditModuleFormProps) {
   const { toast } = useToast();
   const { user } = useAuthUser();
-  const authArgs =
-    user?.id && user.organisationId
-      ? {
-          userId: user.id,
-          organisationId: user.organisationId as Id<'organisations'>,
-        }
-      : null;
   const updateModule = useMutation(api.modules.update);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
@@ -75,15 +68,20 @@ export function EditModuleForm({
     campuses: Array.isArray(module.campuses) ? module.campuses.join(', ') : '',
   });
   const [hoursTouched, setHoursTouched] = useState(false);
-  const codeAvailability = useQuery(api.modules.isCodeAvailable, {
-    code: form.code,
-    excludeId: module._id,
-  }) as { available: boolean } | undefined;
-  const lecturers = (useQuery(api.staff.listForActor, authArgs ?? 'skip') ||
+  const codeAvailability = useQuery(
+    api.modules.isCodeAvailable,
+    user?.id
+      ? { userId: user.id, code: form.code, excludeId: module._id }
+      : 'skip'
+  ) as { available: boolean } | undefined;
+  const lecturers = (useQuery(
+    api.staff.listForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) ||
     []) as LecturerProfileOption[];
   const orgSettings = useQuery(
     api.organisationSettings.getForActor,
-    authArgs ?? 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   ) as
     | {
         moduleHoursByCredits?: Array<{
@@ -128,6 +126,7 @@ export function EditModuleForm({
 
     try {
       await updateModule({
+        userId: user!.id,
         id: module._id,
         code: form.code.trim(),
         name: form.name.trim(),

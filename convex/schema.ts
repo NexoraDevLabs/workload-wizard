@@ -48,7 +48,7 @@ export default defineSchema({
     jobRole: v.optional(v.string()), // User's job role from onboarding
     department: v.optional(v.string()),
     phone: v.optional(v.string()),
-    organisationId: v.id('organisations'),
+    organisationId: v.optional(v.id('organisations')),
     pictureUrl: v.optional(v.string()),
     subject: v.string(), // WorkOS ID
     tokenIdentifier: v.optional(v.string()),

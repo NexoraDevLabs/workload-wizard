@@ -20,9 +20,14 @@ async function getActorAndOrgFromQuery(ctx: QueryCtx, subject: string) {
     .withIndex('by_subject', (q) => q.eq('subject', subject))
     .first();
   if (!actor) throw new Error('User not found');
+  const membership = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', subject))
+    .first();
+  if (!membership) throw new Error('Organisation context required');
   return {
     actor,
-    orgId: actor.organisationId,
+    orgId: membership.organisationId,
   };
 }
 
@@ -32,9 +37,14 @@ async function getActorAndOrgFromMutation(ctx: MutationCtx, subject: string) {
     .withIndex('by_subject', (q) => q.eq('subject', subject))
     .first();
   if (!actor) throw new Error('User not found');
+  const membership = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', subject))
+    .first();
+  if (!membership) throw new Error('Organisation context required');
   return {
     actor,
-    orgId: actor.organisationId,
+    orgId: membership.organisationId,
   };
 }
 
@@ -79,7 +89,7 @@ export const getOrganisationSettings = query({
 
 // Convenience: get settings for the current actor (no args)
 export const getForActor = query({
-  args: { userId: v.string(), organisationId: v.id('organisations') },
+  args: { userId: v.string() },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const { orgId } = await getActorAndOrgFromQuery(ctx, authContext.userId);

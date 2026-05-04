@@ -22,7 +22,17 @@ export async function getAuthContext(
     throw new Error('Unauthenticated');
   }
 
-  const organisationId = args.organisationId;
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+
+  const primaryMembership =
+    memberships.find((membership) => membership.isPrimary) ??
+    memberships[0] ??
+    null;
+
+  const organisationId = args.organisationId ?? primaryMembership?.organisationId;
 
   if (!organisationId) {
     throw new Error('Organisation context required');
