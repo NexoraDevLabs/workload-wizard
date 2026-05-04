@@ -6,32 +6,68 @@ import {
   WORKOS_SESSION_COOKIE_NAME,
 } from '@/lib/auth/workos';
 
-export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(new URL('/sign-in', request.url));
-  const workos = getWorkOSClient();
-  const sessionData = request.cookies.get(WORKOS_SESSION_COOKIE_NAME)?.value;
-
-  response.cookies.delete(WORKOS_SESSION_COOKIE_NAME);
-  response.cookies.delete('workos_session');
-
-  if (!workos || !sessionData) {
-    return response;
-  }
-
-  const cookiePassword = getWorkOSCookiePassword();
-  const session = await workos.userManagement.authenticateWithSessionCookie({
-    sessionData,
-    ...(cookiePassword ? { cookiePassword } : {}),
+function clearWorkOSCookies(response: NextResponse) {
+  response.cookies.set(WORKOS_SESSION_COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
   });
 
-  if (!session.authenticated) {
-    return response;
+  response.cookies.set('workos_session', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
+async function logout(request: NextRequest) {
+  const returnTo = new URL('/', request.url).toString();
+  const fallbackResponse = NextResponse.redirect(returnTo);
+  clearWorkOSCookies(fallbackResponse);
+
+  const workos = getWorkOSClient();
+  const cookiePassword = getWorkOSCookiePassword();
+
+  const sessionData =
+    request.cookies.get(WORKOS_SESSION_COOKIE_NAME)?.value ||
+    request.cookies.get('workos_session')?.value;
+
+  if (!workos || !cookiePassword || !sessionData) {
+    return fallbackResponse;
   }
 
-  return NextResponse.redirect(
-    workos.userManagement.getLogoutUrl({
+  try {
+    const session = await workos.userManagement.authenticateWithSessionCookie({
+      sessionData,
+      cookiePassword,
+    });
+
+    if (!session.authenticated) {
+      return fallbackResponse;
+    }
+
+    const logoutUrl = workos.userManagement.getLogoutUrl({
       sessionId: session.sessionId,
-      returnTo: new URL('/sign-in', request.url).toString(),
-    })
-  );
+      returnTo,
+    });
+
+    const response = NextResponse.redirect(logoutUrl);
+    clearWorkOSCookies(response);
+
+    return response;
+  } catch {
+    return fallbackResponse;
+  }
+}
+
+export async function GET(request: NextRequest) {
+  return logout(request);
+}
+
+export async function POST(request: NextRequest) {
+  return logout(request);
 }

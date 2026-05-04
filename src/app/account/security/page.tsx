@@ -2,7 +2,7 @@
 
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
@@ -12,42 +12,31 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Key, Save, Eye, EyeOff } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Shield, Key } from 'lucide-react';
 
 // Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function SecurityPage() {
-  const { user, isLoaded } = useAuthUser();
-  const { toast } = useToast();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
 
-  // Password form state
-  const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-
   useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
+    if (!isLoaded) return;
 
-    if (!user) {
-      router.push('/');
-      return;
+    if (!isSignedIn || !user) {
+      router.replace('/api/auth/login?returnTo=/account/security');
     }
-  }, [isLoaded, user, router]);
+  }, [isLoaded, isSignedIn, user, router]);
+
+  const breadcrumbs = [
+    { label: 'Home', href: '/' },
+    { label: 'Account', href: '/account' },
+    { label: 'Security & Privacy' },
+  ];
 
   if (!isLoaded) {
     return (
@@ -57,167 +46,9 @@ export default function SecurityPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Please sign in to view your security settings.</p>
-      </div>
-    );
+  if (!isSignedIn || !user) {
+    return null;
   }
-
-  const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: '', color: '' };
-
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    const strengthMap = [
-      { strength: 0, label: 'Very Weak', color: 'text-red-500' },
-      { strength: 1, label: 'Weak', color: 'text-orange-500' },
-      { strength: 2, label: 'Fair', color: 'text-yellow-500' },
-      { strength: 3, label: 'Good', color: 'text-blue-500' },
-      { strength: 4, label: 'Strong', color: 'text-green-500' },
-      { strength: 5, label: 'Very Strong', color: 'text-green-600' },
-    ];
-
-    return strengthMap[Math.min(score, 5)];
-  };
-
-  const handlePasswordChange = (field: string, value: string) => {
-    setPasswordData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handlePasswordSave = async () => {
-    setIsLoading(true);
-    try {
-      // Ensure user is properly loaded
-      if (!user || !user.id) {
-        toast({
-          title: 'Authentication Error',
-          description: 'Please sign in again to update your password.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // User validation complete
-
-      // Validate password match
-      if (passwordData.newPassword !== passwordData.confirmPassword) {
-        toast({
-          title: 'Password Mismatch',
-          description: 'New password and confirm password do not match.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Validate password strength (optional - you can customize these rules)
-      if (passwordData.newPassword.length < 8) {
-        toast({
-          title: 'Password Too Short',
-          description: 'Password must be at least 8 characters long.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // Validate current password is provided
-      if (!passwordData.currentPassword) {
-        toast({
-          title: 'Current Password Required',
-          description: 'Please enter your current password to change it.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      await user.updatePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
-
-      // Reload user data to ensure we have the latest information
-      await user.reload();
-
-      toast({
-        title: 'Password Updated',
-        description:
-          'Your password has been successfully updated. You may need to sign in again with your new password.',
-        variant: 'success',
-      });
-
-      // Clear password fields after successful update
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setIsEditingPassword(false);
-
-      // Reset password visibility states
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmPassword(false);
-    } catch (passwordError) {
-      // Provide more specific error messages
-      let errorMessage =
-        'Failed to update password. Please check your current password.';
-      if (passwordError instanceof Error) {
-        if (passwordError.message.includes('current password')) {
-          errorMessage = 'Current password is incorrect. Please try again.';
-        } else if (passwordError.message.includes('weak')) {
-          errorMessage =
-            'Password is too weak. Please choose a stronger password.';
-        } else if (passwordError.message.includes('recent')) {
-          errorMessage =
-            'Cannot reuse a recent password. Please choose a different password.';
-        } else if (
-          passwordError.message.includes('breach') ||
-          passwordError.message.includes('compromised')
-        ) {
-          errorMessage =
-            'This password has been found in online breaches. Please choose a different, more secure password.';
-        } else if (passwordError.message.includes('_baseFetch')) {
-          errorMessage =
-            'Network error occurred. Please check your connection and try again.';
-        }
-      }
-
-      toast({
-        title: 'Password Update Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePasswordCancel = () => {
-    setIsEditingPassword(false);
-    setPasswordData({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-    setShowCurrentPassword(false);
-    setShowNewPassword(false);
-    setShowConfirmPassword(false);
-  };
-
-  const breadcrumbs = [
-    { label: 'Home', href: '/' },
-    { label: 'Account', href: '/account' },
-    { label: 'Security & Privacy' },
-  ];
 
   return (
     <StandardizedSidebarLayout
@@ -226,7 +57,6 @@ export default function SecurityPage() {
       subtitle="Manage your password, authentication, and privacy settings"
     >
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Security Overview Card */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -240,19 +70,20 @@ export default function SecurityPage() {
               <div className="flex items-center gap-2 text-sm">
                 <Key className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Password:</span>
-                <span className="font-medium">Last updated recently</span>
+                <span className="font-medium text-muted-foreground">
+                  Managed by WorkOS
+                </span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
                 <Shield className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Two-factor:</span>
-                <span className="font-medium text-orange-500">Not enabled</span>
+                <span className="font-medium text-orange-500">Coming soon</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Security Settings Card */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -260,266 +91,56 @@ export default function SecurityPage() {
               Password Management
             </CardTitle>
             <CardDescription>
-              Update your password and manage authentication settings
+              Password changes will be handled through the WorkOS account
+              security flow.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Password Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">Change Password</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Update your password to keep your account secure
-                    </p>
-                  </div>
-                  {!isEditingPassword && (
-                    <Button onClick={() => setIsEditingPassword(true)}>
-                      <Key className="h-4 w-4 mr-2" />
-                      Change Password
-                    </Button>
-                  )}
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <h3 className="text-lg font-medium">Change Password</h3>
+                  <p className="text-sm text-muted-foreground">
+                    This feature is coming soon while account security is being
+                    finalised.
+                  </p>
                 </div>
-
-                {isEditingPassword && (
-                  <div className="space-y-4 p-4 border rounded-lg">
-                    <div className="space-y-2">
-                      <Label htmlFor="currentPassword">Current Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="currentPassword"
-                          type={showCurrentPassword ? 'text' : 'password'}
-                          value={passwordData.currentPassword}
-                          onChange={(e) =>
-                            handlePasswordChange(
-                              'currentPassword',
-                              e.target.value
-                            )
-                          }
-                          placeholder="Enter current password"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() =>
-                            setShowCurrentPassword(!showCurrentPassword)
-                          }
-                        >
-                          {showCurrentPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="newPassword">New Password</Label>
-                        <div className="relative">
-                          <Input
-                            id="newPassword"
-                            type={showNewPassword ? 'text' : 'password'}
-                            value={passwordData.newPassword}
-                            onChange={(e) =>
-                              handlePasswordChange(
-                                'newPassword',
-                                e.target.value
-                              )
-                            }
-                            placeholder="Enter new password"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowNewPassword(!showNewPassword)}
-                          >
-                            {showNewPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">
-                          Confirm New Password
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="confirmPassword"
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            value={passwordData.confirmPassword}
-                            onChange={(e) =>
-                              handlePasswordChange(
-                                'confirmPassword',
-                                e.target.value
-                              )
-                            }
-                            placeholder="Confirm new password"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Password validation feedback */}
-                    {passwordData.newPassword && (
-                      <div className="space-y-2">
-                        {/* Password strength indicator */}
-                        <div className="space-y-1">
-                          {(() => {
-                            const s = getPasswordStrength(
-                              passwordData.newPassword
-                            );
-                            return (
-                              <p className={`text-sm ${s?.color || ''}`}>
-                                Password strength: {s?.label || ''}
-                              </p>
-                            );
-                          })()}
-                          {(() => {
-                            const s = getPasswordStrength(
-                              passwordData.newPassword
-                            );
-                            return (
-                              <div className="flex space-x-1">
-                                {[1, 2, 3, 4, 5].map((level) => (
-                                  <div
-                                    key={level}
-                                    className={`h-1 flex-1 rounded ${
-                                      level <= (s?.strength || 0)
-                                        ? s?.color?.replace('text-', 'bg-') ||
-                                          'bg-gray-200'
-                                        : 'bg-gray-200'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Validation messages */}
-                        {passwordData.newPassword.length < 8 && (
-                          <p className="text-sm text-destructive">
-                            Password must be at least 8 characters long
-                          </p>
-                        )}
-                        {passwordData.newPassword &&
-                          passwordData.confirmPassword &&
-                          passwordData.newPassword !==
-                            passwordData.confirmPassword && (
-                            <p className="text-sm text-destructive">
-                              Passwords do not match
-                            </p>
-                          )}
-                        {passwordData.newPassword &&
-                          passwordData.confirmPassword &&
-                          passwordData.newPassword ===
-                            passwordData.confirmPassword &&
-                          passwordData.newPassword.length >= 8 && (
-                            <p className="text-sm text-green-600">
-                              ✓ Password is valid
-                            </p>
-                          )}
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-end gap-2 pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={handlePasswordCancel}
-                        disabled={isLoading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handlePasswordSave}
-                        disabled={Boolean(
-                          isLoading ||
-                          (passwordData.newPassword &&
-                            (passwordData.newPassword !==
-                              passwordData.confirmPassword ||
-                              passwordData.newPassword.length < 8 ||
-                              !passwordData.currentPassword))
-                        )}
-                      >
-                        {isLoading ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                            Updating...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4 mr-2" />
-                            Update Password
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <Button variant="outline" disabled>
+                  <Key className="h-4 w-4 mr-2" />
+                  Coming Soon
+                </Button>
               </div>
 
               <Separator />
 
-              {/* Two-Factor Authentication Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">
-                      Two-Factor Authentication
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Add an extra layer of security to your account
-                    </p>
-                  </div>
-                  <Button variant="outline" disabled>
-                    <Shield className="h-4 w-4 mr-2" />
-                    Coming Soon
-                  </Button>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <h3 className="text-lg font-medium">
+                    Two-Factor Authentication
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Add an extra layer of security to your account.
+                  </p>
                 </div>
+                <Button variant="outline" disabled>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Coming Soon
+                </Button>
               </div>
 
               <Separator />
 
-              {/* Privacy Settings Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">Privacy Settings</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Manage your privacy preferences and data settings
-                    </p>
-                  </div>
-                  <Button variant="outline" disabled>
-                    <Shield className="h-4 w-4 mr-2" />
-                    Coming Soon
-                  </Button>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <h3 className="text-lg font-medium">Privacy Settings</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Manage your privacy preferences and data settings.
+                  </p>
                 </div>
+                <Button variant="outline" disabled>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Coming Soon
+                </Button>
               </div>
             </div>
           </CardContent>

@@ -154,13 +154,19 @@ export function useAuthUser(options: UseAuthUserOptions = {}) {
   }, [redirectOnUnauthenticated, redirectTo]);
 
   const signOut = useCallback(async (callback?: () => void) => {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      cache: 'no-store',
+    });
+  
+    setSessionUser(undefined);
+  
     if (callback) {
       callback();
       return;
     }
-
-    await fetch('/api/auth/logout', { method: 'POST' });
-    window.location.assign('/sign-in');
+  
+    window.location.assign('/');
   }, []);
 
   const user = useMemo(

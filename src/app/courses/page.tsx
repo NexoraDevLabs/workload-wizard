@@ -28,7 +28,9 @@ export const dynamic = 'force-dynamic';
 
 export default function CoursesPage() {
   const { toast } = useToast();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   // Derive organisation on the server from the authenticated actor, not from client public metadata
   const courses = useQuery(
     api.courses.listForActor,
@@ -146,6 +148,22 @@ export default function CoursesPage() {
   const handleCourseUpdated = () => {
     setEditingCourse(null);
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

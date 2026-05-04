@@ -14,7 +14,6 @@ export default async function OrganisationAuditLogsPage() {
   if (!orgId) {
     throw new Error('Unauthorised: User must be assigned to an organisation');
   }
-  // Hard block non-orgadmins here to avoid rendering the viewer
 
   return (
     <AuditViewGate

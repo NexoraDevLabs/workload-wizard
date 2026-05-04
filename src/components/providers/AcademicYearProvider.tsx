@@ -60,13 +60,15 @@ function AcademicYearProviderInternal({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuthUser();
+  const { user, isLoaded } = useAuthUser();
   const { toast } = useToast();
 
   // Management detection from convex user.systemRoles
   const convexUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : 'skip'
+    isLoaded && user?.id && user?.organisationId
+    ? { subject: user.id }
+    : 'skip'
   ) as
     | { systemRoles?: string[]; organisationId?: Id<'organisations'> }
     | undefined;
@@ -89,13 +91,17 @@ function AcademicYearProviderInternal({
   // Fetch academic years for organisation, server decides visibility based on permissions
   const allYears = useQuery(
     api.academicYears.listForOrganisation,
-    convexUser ? { userId: user!.id } : 'skip'
+    isLoaded && user?.id && user?.organisationId
+    ? { userId: user.id }
+    : 'skip'
   ) as AcademicYear[] | undefined;
 
   // Load server preferences (selected year + includeDrafts)
   const preferences = useQuery(
     api.academicYears.getPreferences,
-    convexUser ? { userId: user!.id } : 'skip'
+    isLoaded && user?.id && user?.organisationId
+    ? { userId: user.id }
+    : 'skip'
   ) as
     | {
         _id: string;

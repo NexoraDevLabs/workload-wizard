@@ -94,8 +94,9 @@ const onboardingSteps = [
 ];
 
 export default function OnboardingPage() {
-  const { user } = useAuthUser();
-  const { signOut } = useAuthUser();
+  const { user, signOut } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleting, setIsCompleting] = useState(false);

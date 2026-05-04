@@ -1137,10 +1137,3 @@ export const getUserAvatar = query({
     return user?.pictureUrl || null;
   },
 });
-
-export const debugAuth = query({
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    return identity ?? null;
-  },
-});

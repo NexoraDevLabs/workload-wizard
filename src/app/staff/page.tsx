@@ -68,7 +68,9 @@ interface UserData {
 
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   const convexUser = useQuery(
     api.users.getBySubject,
@@ -94,6 +96,22 @@ export default function StaffCapacityPage() {
   );
   const [openCreate, setOpenCreate] = useState(false);
 
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
+  
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[

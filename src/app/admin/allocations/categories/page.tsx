@@ -24,7 +24,9 @@ interface AdminCategory {
 
 export default function AdminAllocationCategoriesPage() {
   const { toast } = useToast();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const categories = useQuery(api.allocations.listAdminCategories, {});
   const upsert = useMutation(api.allocations.upsertAdminCategory);
   const remove = useMutation(api.allocations.removeAdminCategory);
@@ -144,6 +146,13 @@ export default function AdminAllocationCategoriesPage() {
       setIsRemoving(null);
     }
   };
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (!isSignedIn || !user) {
+    return null;
+  }
 
   return (
     <StandardizedSidebarLayout

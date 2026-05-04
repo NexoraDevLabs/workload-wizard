@@ -27,10 +27,12 @@ import { Label } from '@/components/ui/label';
 type QuickLink = { name: string; url: string };
 
 export function QuickAccessBeta() {
-  const { user } = useAuthUser();
+  const { user, isLoaded } = useAuthUser();
   const prefs = useQuery(
     api.quickAccess.getForCurrentUser,
-    user?.id ? { userId: user.id } : 'skip'
+    isLoaded && user?.id && user?.organisationId
+    ? { userId: user.id }
+    : 'skip'
   );
   const savePrefs = useMutation(api.quickAccess.saveForCurrentUser);
   const [links, setLinks] = React.useState<QuickLink[]>([]);

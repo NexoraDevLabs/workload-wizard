@@ -42,7 +42,9 @@ interface Lecturer {
 
 export default function ModulesPage() {
   const { toast } = useToast();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const modules = useQuery(
     api.modules.listByOrganisation,
     user?.id ? { userId: user.id } : 'skip'
@@ -193,6 +195,22 @@ export default function ModulesPage() {
   const handleModuleUpdated = () => {
     setEditingModule(null);
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

@@ -45,7 +45,9 @@ function getConvexClient(): ConvexHttpClient {
 }
 
 export default function AdminDashboardPage() {
-  const { user, isLoaded } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -149,6 +151,14 @@ export default function AdminDashboardPage() {
       </Button>
     </div>
   );
+
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (!isSignedIn || !user) {
+    return null;
+  }
 
   return (
     <StandardizedSidebarLayout
