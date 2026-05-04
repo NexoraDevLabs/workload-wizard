@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { LoadingOverlay } from '@/components/loading-overlay';
 import { OnboardingCheck } from '@/components/common/OnboardingCheck';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -11,7 +11,7 @@ export function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn } = useAuthUser();
 
   if (!isLoaded) {
     return <LoadingOverlay delayMs={300} />;

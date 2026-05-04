@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Script from 'next/script';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -48,7 +48,7 @@ interface RoleAssignment {
 }
 
 function FeaturebaseMessengerInternal() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuthUser();
   const convexUser = useQuery(
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'

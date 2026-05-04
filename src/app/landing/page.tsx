@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { WandSparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useAuth } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -18,7 +18,7 @@ import {
 import { Label } from '@/components/ui/label';
 
 export default function LandingPage() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthUser();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [firstName, setFirstName] = useState('');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { WorkloadSummaryCards } from '@/components/dashboard/WorkloadSummaryCards';
 import { WorkloadStatusPanel } from '@/components/dashboard/WorkloadStatusPanel';
@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarDays } from 'lucide-react';
 
 export function DashboardContent() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { currentYear } = useAcademicYear();
 
   const greeting = () => {
