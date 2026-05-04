@@ -226,6 +226,14 @@ export default function CourseDetailPage() {
   const courseId = params?.id;
   const { toast } = useToast();
   const { currentYear } = useAcademicYear();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
 
   const course = useQuery(
     api.courses.getById,
@@ -244,7 +252,10 @@ export default function CourseDetailPage() {
   const [campusRows, setCampusRows] = useState<
     Array<{ campus: string; count: string }>
   >([]);
-  const settings = useQuery(api.organisationSettings.getForActor, {}) as
+  const settings = useQuery(
+    api.organisationSettings.getForActor,
+    authArgs ?? 'skip'
+  ) as
     | OrganisationSettings
     | null
     | undefined;
@@ -622,10 +633,21 @@ function CourseYearModules({
   recommendedList?: Array<{ campus: string; groups: number; count: number }>;
 }) {
   const { toast } = useToast();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   const attached = useQuery(api.modules.listForCourseYear, {
     courseYearId: yearId as Id<'course_years'>,
   });
-  const allModules = useQuery(api.modules.listByOrganisation);
+  const allModules = useQuery(
+    api.modules.listByOrganisation,
+    authArgs ?? 'skip'
+  );
   const attach = useMutation(api.modules.attachToCourseYear);
   const detach = useMutation(api.modules.detachFromCourseYear);
 
@@ -809,7 +831,14 @@ function ModuleIterationAndGroupsAndAllocations({
 }) {
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
-  const { user: _user } = useAuthUser();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,
@@ -832,7 +861,7 @@ function ModuleIterationAndGroupsAndAllocations({
   // Allocations UI bits
   const profiles = useQuery(
     api.staff.listForActor,
-    {} // No parameters needed for listing lecturer profiles
+    authArgs ?? 'skip'
   );
   const assign = useMutation(api.allocations.assignLecturer);
   const removeAllocation = useMutation(api.allocations.remove);

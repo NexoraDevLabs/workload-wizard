@@ -1,5 +1,3 @@
-'use server';
-
 import { WorkOS } from '@workos-inc/node';
 import { cookies } from 'next/headers';
 
@@ -13,10 +11,11 @@ export type WorkOSAuthUser = {
 };
 
 const WORKOS_SESSION_COOKIE_NAMES = ['wos-session', 'workos_session'];
+export const WORKOS_SESSION_COOKIE_NAME = 'wos-session';
 
 let workosClient: WorkOS | null = null;
 
-function getWorkOSClient() {
+export function getWorkOSClient() {
   const apiKey = process.env.WORKOS_API_KEY;
   const clientId = process.env.WORKOS_CLIENT_ID;
 
@@ -31,6 +30,17 @@ function getWorkOSClient() {
   return workosClient;
 }
 
+export function getWorkOSRedirectUri() {
+  return (
+    process.env.WORKOS_REDIRECT_URI ||
+    `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/callback`
+  );
+}
+
+export function getWorkOSCookiePassword() {
+  return process.env.WORKOS_COOKIE_PASSWORD;
+}
+
 export async function getAuthUserFromWorkOS(): Promise<WorkOSAuthUser | null> {
   const workos = getWorkOSClient();
   if (!workos) return null;
@@ -42,10 +52,11 @@ export async function getAuthUserFromWorkOS(): Promise<WorkOSAuthUser | null> {
 
   if (!sessionData) return null;
 
-  const session =
-    await workos.userManagement.authenticateWithSessionCookie({
-      sessionData,
-    });
+  const cookiePassword = getWorkOSCookiePassword();
+  const session = await workos.userManagement.authenticateWithSessionCookie({
+    sessionData,
+    ...(cookiePassword ? { cookiePassword } : {}),
+  });
 
   if (!session.authenticated) return null;
 

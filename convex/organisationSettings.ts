@@ -79,9 +79,9 @@ export const getOrganisationSettings = query({
 
 // Convenience: get settings for the current actor (no args)
 export const getForActor = query({
-  args: {},
-  handler: async (ctx) => {
-    const authContext = await getAuthContext(ctx);
+  args: { userId: v.string(), organisationId: v.id('organisations') },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const { orgId } = await getActorAndOrgFromQuery(ctx, authContext.userId);
     const row = await ctx.db
       .query('organisation_settings')

@@ -13,22 +13,16 @@ type AuthContext = {
 };
 
 export async function getAuthContext(
-  ctx: QueryCtx | MutationCtx,
+  _ctx: QueryCtx | MutationCtx,
   args: AuthArgs = {}
 ): Promise<AuthContext> {
-  const identity = await ctx.auth.getUserIdentity();
-  const userId = args.userId ?? identity?.subject;
+  const userId = args.userId;
 
   if (!userId) {
     throw new Error('Unauthenticated');
   }
 
-  const actor = await ctx.db
-    .query('users')
-    .withIndex('by_subject', (q) => q.eq('subject', userId))
-    .first();
-
-  const organisationId = args.organisationId ?? actor?.organisationId;
+  const organisationId = args.organisationId;
 
   if (!organisationId) {
     throw new Error('Organisation context required');

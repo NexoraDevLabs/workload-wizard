@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface Course {
   _id: Id<'courses'>;
@@ -38,6 +39,14 @@ export function EditCourseForm({
   onCourseUpdated,
 }: EditCourseFormProps) {
   const { toast } = useToast();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   const updateCourse = useMutation(api.courses.update);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
@@ -50,6 +59,10 @@ export function EditCourseForm({
     code: form.code,
     excludeId: course._id,
   }) as { available: boolean } | undefined;
+  const settings = useQuery(
+    api.organisationSettings.getForActor,
+    authArgs ?? 'skip'
+  ) as { campusOptions?: string[] } | null | undefined;
 
   const canSubmit =
     form.code.trim().length > 0 &&
@@ -209,9 +222,7 @@ export function EditCourseForm({
                   }}
                 >
                   <option value="">Add campus…</option>
-                  {(
-                    useQuery(api.organisationSettings.getForActor) || {}
-                  )?.campusOptions?.map((c: string) => (
+                  {settings?.campusOptions?.map((c: string) => (
                     <option key={c} value={c}>
                       {c}
                     </option>

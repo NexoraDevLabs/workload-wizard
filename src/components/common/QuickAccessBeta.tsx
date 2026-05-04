@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 import {
   SidebarGroup,
@@ -26,7 +28,18 @@ import { Label } from '@/components/ui/label';
 type QuickLink = { name: string; url: string };
 
 export function QuickAccessBeta() {
-  const prefs = useQuery(api.quickAccess.getForCurrentUser, {});
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
+  const prefs = useQuery(
+    api.quickAccess.getForCurrentUser,
+    authArgs ?? 'skip'
+  );
   const savePrefs = useMutation(api.quickAccess.saveForCurrentUser);
   const [links, setLinks] = React.useState<QuickLink[]>([]);
   const [draft, setDraft] = React.useState<QuickLink>({ name: '', url: '' });
