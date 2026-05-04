@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
+import { getAuthContext } from './lib/auth';
 
 // Create a new lecturer profile
 export const create = mutation({
@@ -206,11 +207,10 @@ export const list = query({
 export const listForActor = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return [];
+    const authContext = await getAuthContext(ctx);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) return [];
     return await ctx.db

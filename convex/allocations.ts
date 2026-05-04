@@ -6,6 +6,7 @@ import { computeHoursFromCredits, computeTotals } from './allocationsMath';
 import { requireOrgPermission } from './permissions';
 import { requirePermission } from './permissions';
 import { makeLoaders } from '../src/lib/convex/loaders';
+import { getAuthContext } from './lib/auth';
 
 // Assign a lecturer to a group
 export const assignLecturer = mutation({
@@ -18,8 +19,7 @@ export const assignLecturer = mutation({
     hoursOverride: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
 
     // Compute baseline hours from module credits via linked iteration->module
     const group = await ctx.db.get(args.groupId);
@@ -44,7 +44,7 @@ export const assignLecturer = mutation({
     // Permission: allocations.assign within module's org
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'allocations.assign',
       derivedOrgId
     );
@@ -69,7 +69,7 @@ export const assignLecturer = mutation({
         action: 'create',
         entityType: 'group_allocation',
         entityId: String(id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Allocated lecturer ${String(args.lecturerId)} to group ${String(args.groupId)} with ${typeof args.hoursOverride === 'number' ? `${args.hoursOverride} override hours` : `${baseHours} computed hours`}`,
         severity: 'info',
         type: 'org',
@@ -93,8 +93,7 @@ export const update = mutation({
     hoursOverride: v.optional(v.union(v.float64(), v.null())), // null clears override
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
 
     const existing = await ctx.db.get(args.allocationId);
     if (!existing) throw new Error('Allocation not found');
@@ -102,7 +101,7 @@ export const update = mutation({
     // Authorise within org
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'allocations.assign',
       existing.organisationId
     );
@@ -131,7 +130,7 @@ export const update = mutation({
         action: 'update',
         entityType: 'group_allocation',
         entityId: String(args.allocationId),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Updated allocation ${String(args.allocationId)}`,
         severity: 'info',
         type: 'org',
@@ -172,11 +171,11 @@ export const computeLecturerTotals = query({
   handler: async (ctx, args) => {
     // Permission: allocations.view within lecturer's org (derive via lecturer profile)
     const lecturer = await ctx.db.get(args.lecturerId);
-    const identity = await ctx.auth.getUserIdentity();
-    if (lecturer && identity?.subject) {
+    const authContext = await getAuthContext(ctx, args);
+    if (lecturer && authContext.userId) {
       await requireOrgPermission(
         ctx,
-        identity.subject,
+        authContext.userId,
         'allocations.view',
         lecturer.organisationId
       );
@@ -257,8 +256,7 @@ export const removeAllocationsForGroups = mutation({
     lecturerId: v.optional(v.id('lecturer_profiles')),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     // Fetch allocations matching groups (and optional lecturer)
     const all: Doc<'group_allocations'>[] = [];
     for (const gid of args.groupIds) {
@@ -275,7 +273,7 @@ export const removeAllocationsForGroups = mutation({
       // Authorize per allocation org
       await requireOrgPermission(
         ctx,
-        identity.subject,
+        authContext.userId,
         'allocations.assign',
         a.organisationId
       );
@@ -285,7 +283,7 @@ export const removeAllocationsForGroups = mutation({
           action: 'delete',
           entityType: 'group_allocation',
           entityId: String(a._id),
-          performedBy: identity.subject,
+          performedBy: authContext.userId,
           details: `Bulk removed allocation ${String(a._id)} from group ${String(a.groupId)}`,
           severity: 'warning',
           type: 'org',
@@ -332,8 +330,7 @@ export const iterationSummary = query({
 export const remove = mutation({
   args: { allocationId: v.id('group_allocations') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.allocationId);
     if (!existing) return args.allocationId;
 
@@ -344,7 +341,7 @@ export const remove = mutation({
     // Authorise within org
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'allocations.assign',
       existing.organisationId
     );
@@ -356,7 +353,7 @@ export const remove = mutation({
         action: 'delete',
         entityType: 'group_allocation',
         entityId: String(args.allocationId),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Removed lecturer ${lecturer?.fullName || String(existing.lecturerId)} from group ${group?.name || String(existing.groupId)} (${existing.type} allocation)`,
         severity: 'warning',
         type: 'org',
@@ -379,8 +376,7 @@ export const getLecturerTotals = query({
     academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return null;
+    const authContext = await getAuthContext(ctx, args);
 
     // Permission: allocations.view within lecturer's org
     const lecturer = await ctx.db.get(args.lecturerId);
@@ -388,7 +384,7 @@ export const getLecturerTotals = query({
 
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'allocations.view',
       lecturer.organisationId
     );
@@ -510,9 +506,8 @@ export const upsertAdminCategory = mutation({
     maxHours: v.optional(v.float64()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
-    await requirePermission(ctx, identity.subject, 'permissions.manage');
+    const authContext = await getAuthContext(ctx, args);
+    await requirePermission(ctx, authContext.userId, 'permissions.manage');
     if (
       args.minHours !== undefined &&
       args.maxHours !== undefined &&
@@ -536,7 +531,7 @@ export const upsertAdminCategory = mutation({
           action: 'update',
           entityType: 'admin_allocation_category',
           entityId: String(args.id),
-          performedBy: identity.subject,
+          performedBy: authContext.userId,
           details: `Updated admin allocation category ${args.name}`,
           severity: 'info',
           type: 'sys',
@@ -563,7 +558,7 @@ export const upsertAdminCategory = mutation({
         action: 'create',
         entityType: 'admin_allocation_category',
         entityId: String(id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Created admin allocation category ${args.name}`,
         severity: 'info',
         type: 'sys',
@@ -581,16 +576,15 @@ export const upsertAdminCategory = mutation({
 export const removeAdminCategory = mutation({
   args: { id: v.id('admin_allocation_categories') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
-    await requirePermission(ctx, identity.subject, 'permissions.manage');
+    const authContext = await getAuthContext(ctx, args);
+    await requirePermission(ctx, authContext.userId, 'permissions.manage');
     await ctx.db.delete(args.id);
     try {
       await writeAudit(ctx, {
         action: 'delete',
         entityType: 'admin_allocation_category',
         entityId: String(args.id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Removed admin allocation category ${String(args.id)}`,
         severity: 'warning',
         type: 'sys',
@@ -617,14 +611,13 @@ export const upsertAdminAllocation = mutation({
     allocationId: v.optional(v.id('admin_allocations')),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     // Check org scope via lecturer
     const lecturer = await ctx.db.get(args.lecturerId);
     if (!lecturer) throw new Error('Lecturer not found');
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'allocations.assign',
       lecturer.organisationId
     );
@@ -688,7 +681,7 @@ export const upsertAdminAllocation = mutation({
           action: 'update',
           entityType: 'admin_allocation',
           entityId: String(args.allocationId),
-          performedBy: identity.subject,
+          performedBy: authContext.userId,
           details: `Updated admin allocation ${String(args.allocationId)} hours=${args.hours}`,
           severity: 'info',
           type: 'org',
@@ -717,7 +710,7 @@ export const upsertAdminAllocation = mutation({
         action: 'create',
         entityType: 'admin_allocation',
         entityId: String(id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Created admin allocation for lecturer ${String(args.lecturerId)} hours=${args.hours}`,
         severity: 'info',
         type: 'org',
@@ -735,8 +728,7 @@ export const upsertAdminAllocation = mutation({
 export const removeAdminAllocation = mutation({
   args: { allocationId: v.id('admin_allocations') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.allocationId);
     if (!existing) return args.allocationId;
     // Authorise via org from user's subject ID stored as staffId (string)
@@ -747,7 +739,7 @@ export const removeAdminAllocation = mutation({
     if (user) {
       await requireOrgPermission(
         ctx,
-        identity.subject,
+        authContext.userId,
         'allocations.assign',
         user.organisationId
       );
@@ -758,7 +750,7 @@ export const removeAdminAllocation = mutation({
         action: 'delete',
         entityType: 'admin_allocation',
         entityId: String(args.allocationId),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Removed admin allocation ${String(args.allocationId)}`,
         severity: 'warning',
         type: 'sys',
@@ -778,11 +770,10 @@ export const removeAdminAllocation = mutation({
 export const listOrganisationAdminCategories = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
     const cats = await ctx.db
@@ -805,16 +796,15 @@ export const upsertOrganisationAdminCategory = mutation({
     maxHours: v.optional(v.float64()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'organisations.manage',
       actor.organisationId
     );
@@ -845,7 +835,7 @@ export const upsertOrganisationAdminCategory = mutation({
           action: 'update',
           entityType: 'org_admin_allocation_category',
           entityId: String(args.id),
-          performedBy: identity.subject,
+          performedBy: authContext.userId,
           details: `Updated org admin allocation category ${args.name}`,
           severity: 'info',
           type: 'org',
@@ -873,7 +863,7 @@ export const upsertOrganisationAdminCategory = mutation({
         action: 'create',
         entityType: 'org_admin_allocation_category',
         entityId: String(id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Created org admin allocation category ${args.name}`,
         severity: 'info',
         type: 'org',
@@ -892,16 +882,15 @@ export const upsertOrganisationAdminCategory = mutation({
 export const removeOrganisationAdminCategory = mutation({
   args: { id: v.id('organisation_admin_allocation_categories') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'organisations.manage',
       actor.organisationId
     );
@@ -915,7 +904,7 @@ export const removeOrganisationAdminCategory = mutation({
         action: 'delete',
         entityType: 'org_admin_allocation_category',
         entityId: String(args.id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Removed org admin allocation category ${String(args.id)}`,
         severity: 'warning',
         type: 'org',
@@ -978,9 +967,8 @@ export const seedOrgAdminCategories = mutation({
 export const pushAdminCategoriesToOrganisations = mutation({
   args: { forceApply: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
-    await requirePermission(ctx, identity.subject, 'permissions.manage');
+    const authContext = await getAuthContext(ctx, args);
+    await requirePermission(ctx, authContext.userId, 'permissions.manage');
 
     const now = Date.now();
     const sysCats = await ctx.db.query('admin_allocation_categories').collect();
@@ -1063,7 +1051,7 @@ export const pushAdminCategoriesToOrganisations = mutation({
             : 'admin_categories.pushed',
           entityType: 'organisation',
           entityId: String(org._id),
-          performedBy: identity.subject,
+          performedBy: authContext.userId,
           details: `${args.forceApply ? 'Synced' : 'Pushed'} admin categories to org ${String(org.name)}`,
           severity: args.forceApply ? 'warning' : 'info',
           type: 'org',

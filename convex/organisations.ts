@@ -4,6 +4,7 @@ import { ensureDefaultsForOrg } from './permissions';
 import { writeAudit } from './audit';
 import { api } from './_generated/api';
 import type { Id } from './_generated/dataModel';
+import { getAuthContext } from './lib/auth';
 
 // Get all organisations
 export const list = query({
@@ -24,8 +25,8 @@ export const reseedDefaultsForOrg = mutation({
   args: { organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject ?? 'system';
+    const authContext = await getAuthContext(ctx, args);
+    const subject = authContext.userId ?? 'system';
 
     // Roles & permissions
     await ensureDefaultsForOrg(ctx, args.organisationId);
@@ -119,8 +120,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = authContext.userId;
 
     const organisationId = await ctx.db.insert('organisations', {
       name: args.name,
@@ -242,8 +243,8 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject ?? 'system';
+    const authContext = await getAuthContext(ctx, args);
+    const subject = authContext.userId ?? 'system';
 
     await ctx.db.patch(id, {
       ...updates,
@@ -284,8 +285,8 @@ export const remove = mutation({
 
     // Audit delete
     try {
-      const identity = await ctx.auth.getUserIdentity();
-      const subject = identity?.subject ?? 'system';
+      const authContext = await getAuthContext(ctx, args);
+      const subject = authContext.userId ?? 'system';
       await writeAudit(ctx, {
         action: 'delete',
         entityType: 'organisation',
