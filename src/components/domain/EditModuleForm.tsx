@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import {
   Select,
   SelectContent,
@@ -53,6 +54,14 @@ export function EditModuleForm({
   onModuleUpdated,
 }: EditModuleFormProps) {
   const { toast } = useToast();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   const updateModule = useMutation(api.modules.update);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
@@ -70,9 +79,12 @@ export function EditModuleForm({
     code: form.code,
     excludeId: module._id,
   }) as { available: boolean } | undefined;
-  const lecturers = (useQuery(api.staff.listForActor) ||
+  const lecturers = (useQuery(api.staff.listForActor, authArgs ?? 'skip') ||
     []) as LecturerProfileOption[];
-  const orgSettings = useQuery(api.organisationSettings.getForActor) as
+  const orgSettings = useQuery(
+    api.organisationSettings.getForActor,
+    authArgs ?? 'skip'
+  ) as
     | {
         moduleHoursByCredits?: Array<{
           credits: number;

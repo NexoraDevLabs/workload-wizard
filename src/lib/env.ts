@@ -21,6 +21,12 @@ const ServerEnvSchema = PublicEnvSchema.extend({
   CONVEX_DEPLOYMENT: z.string().min(1, 'CONVEX_DEPLOYMENT is required'),
   WORKOS_API_KEY: z.string().min(1, 'WORKOS_API_KEY is required'),
   WORKOS_CLIENT_ID: z.string().min(1, 'WORKOS_CLIENT_ID is required'),
+  WORKOS_COOKIE_PASSWORD: z
+    .string()
+    .min(32, 'WORKOS_COOKIE_PASSWORD must be at least 32 characters'),
+  WORKOS_REDIRECT_URI: z
+    .string()
+    .url('WORKOS_REDIRECT_URI must be a URL'),
 });
 
 type PublicEnv = z.infer<typeof PublicEnvSchema>;
@@ -67,6 +73,8 @@ export function getServerEnv(): ServerEnv {
       CONVEX_DEPLOYMENT: process.env.CONVEX_DEPLOYMENT,
       WORKOS_API_KEY: process.env.WORKOS_API_KEY,
       WORKOS_CLIENT_ID: process.env.WORKOS_CLIENT_ID,
+      WORKOS_COOKIE_PASSWORD: process.env.WORKOS_COOKIE_PASSWORD,
+      WORKOS_REDIRECT_URI: process.env.WORKOS_REDIRECT_URI,
     });
 
     if (!result.success) {

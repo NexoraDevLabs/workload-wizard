@@ -25,10 +25,17 @@ interface AdminCategory {
 
 export default function OrganisationAdminAllocationsSettingsPage() {
   const { toast } = useToast();
-  const { isLoaded } = useAuthUser();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   const categories = useQuery(
     api.allocations.listOrganisationAdminCategories,
-    isLoaded ? {} : 'skip'
+    authArgs ?? 'skip'
   ) as AdminCategory[] | undefined;
   const upsert = useMutation(api.allocations.upsertOrganisationAdminCategory);
   const remove = useMutation(api.allocations.removeOrganisationAdminCategory);

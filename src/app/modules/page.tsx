@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { EditModuleForm } from '@/components/domain/EditModuleForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';
@@ -41,7 +42,18 @@ interface Lecturer {
 
 export default function ModulesPage() {
   const { toast } = useToast();
-  const modules = useQuery(api.modules.listByOrganisation) as
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
+  const modules = useQuery(
+    api.modules.listByOrganisation,
+    authArgs ?? 'skip'
+  ) as
     | Module[]
     | undefined;
   const { currentYear } = useAcademicYear();
@@ -72,7 +84,8 @@ export default function ModulesPage() {
     markingHours: '',
   });
 
-  const lecturers = (useQuery(api.staff.listForActor) || []) as Lecturer[];
+  const lecturers = (useQuery(api.staff.listForActor, authArgs ?? 'skip') ||
+    []) as Lecturer[];
   const codeAvailability = useQuery(
     api.modules.isCodeAvailable,
     form.code.trim() ? { code: form.code.trim() } : 'skip'

@@ -1208,7 +1208,18 @@ function BulkGroupsForm({
     }>
   ) => Promise<void> | void;
 }) {
-  const settings = useQuery(api.organisationSettings.getForActor) as
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
+  const settings = useQuery(
+    api.organisationSettings.getForActor,
+    authArgs ?? 'skip'
+  ) as
     | { campusOptions?: string[]; maxClassSizePerGroup?: number }
     | undefined;
   const [entries, setEntries] = useState<

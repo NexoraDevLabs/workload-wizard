@@ -205,9 +205,9 @@ export const list = query({
 
 // List lecturer profiles for the current actor (derives organisation from auth)
 export const listForActor = query({
-  args: {},
-  handler: async (ctx) => {
-    const authContext = await getAuthContext(ctx);
+  args: { userId: v.string(), organisationId: v.id('organisations') },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))

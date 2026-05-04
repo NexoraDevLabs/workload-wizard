@@ -18,9 +18,9 @@ export const getById = query({
 
 // List modules for an organisation (derived from actor)
 export const listByOrganisation = query({
-  args: {},
-  handler: async (ctx) => {
-    const authContext = await getAuthContext(ctx);
+  args: { userId: v.string(), organisationId: v.id('organisations') },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
 
     const actor = await ctx.db
       .query('users')

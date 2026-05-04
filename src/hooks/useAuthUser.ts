@@ -96,7 +96,7 @@ export function useAuthUser() {
       callback();
       return;
     }
-    window.location.assign('/sign-in');
+    window.location.assign('/api/auth/logout');
   }, []);
 
   return useMemo(
@@ -113,10 +113,13 @@ export function useAuthUser() {
           strategy?: string;
           status?: string;
         } | null,
-        create: async (_data?: Record<string, unknown>) => ({
-          status: 'needs_identifier',
-          createdSessionId: null,
-        }),
+        create: async (_data?: Record<string, unknown>) => {
+          window.location.assign('/api/auth/login?returnTo=/dashboard');
+          return {
+            status: 'redirect',
+            createdSessionId: null,
+          };
+        },
         attemptFirstFactor: async (_data?: Record<string, unknown>) => ({
           status: 'needs_first_factor',
           createdSessionId: null,

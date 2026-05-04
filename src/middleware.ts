@@ -5,8 +5,8 @@ const publicRoutePatterns = [
   /^\/$/,
   /^\/sign-in(?:\/.*)?$/,
   /^\/sign-up(?:\/.*)?$/,
+  /^\/api\/auth(?:\/.*)?$/,
   /^\/api\/health$/,
-  /^\/api\/webhooks(?:\/.*)?$/,
 ];
 
 const onboardingRoutePatterns = [

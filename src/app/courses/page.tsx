@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { EditCourseForm } from '@/components/domain/EditCourseForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { withToast } from '@/lib/utils';
@@ -27,8 +28,22 @@ export const dynamic = 'force-dynamic';
 
 export default function CoursesPage() {
   const { toast } = useToast();
+  const { user } = useAuthUser();
+  const authArgs =
+    user?.id && user.organisationId
+      ? {
+          userId: user.id,
+          organisationId: user.organisationId as Id<'organisations'>,
+        }
+      : null;
   // Derive organisation on the server from the authenticated actor, not from client public metadata
-  const courses = useQuery(api.courses.listForActor) as Course[] | undefined;
+  const courses = useQuery(api.courses.listForActor, authArgs ?? 'skip') as
+    | Course[]
+    | undefined;
+  const settings = useQuery(
+    api.organisationSettings.getForActor,
+    authArgs ?? 'skip'
+  ) as { campusOptions?: string[] } | null | undefined;
 
   const createCourse = useMutation(api.courses.create);
   const deleteCourse = useMutation(api.courses.remove);
@@ -232,12 +247,7 @@ export default function CoursesPage() {
                   >
                     <option value="">Add campus…</option>
                     {(
-                      (
-                        useQuery(api.organisationSettings.getForActor) as
-                          | { campusOptions?: string[] }
-                          | null
-                          | undefined
-                      )?.campusOptions || []
+                      settings?.campusOptions || []
                     ).map((c: string) => (
                       <option key={c} value={c}>
                         {c}
