@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function DynamicIslandHeader() {
-  const { user, isLoaded } = useAuthUser();
+  const { isLoaded, isSignedIn } = useAuthUser();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const [isScrolled, setIsScrolled] = useState(false);
@@ -105,7 +105,7 @@ export default function DynamicIslandHeader() {
             <ThemeToggle />
             {/* Conditional User Button */}
             {isLoaded &&
-              (user ? (
+              (isSignedIn ? (
                 <Button
                   variant="outline"
                   className="text-white border-white hover:text-white hover:bg-white/20 rounded-full px-4 py-2 h-8 bg-transparent"
@@ -119,7 +119,7 @@ export default function DynamicIslandHeader() {
                   className="text-white hover:text-white hover:bg-white/10 rounded-full px-4 py-2 h-8"
                   asChild
                 >
-                  <Link href="/sign-in">Sign In</Link>
+                  <Link href="/api/auth/login?returnTo=/dashboard">Sign In</Link>
                 </Button>
               ))}
           </div>

@@ -2,7 +2,7 @@
 
 ## Overview
 
-WorkloadWizard: multi-tenant academic workload web app (Next.js + Convex). Repo uses **npm**, Node from **.nvmrc**, TypeScript (strict), Vitest, ESLint + Prettier, Tailwind/shadcn UI. Auth by Clerk. CI is split into Format, Quality (lint/typecheck/test/build), CodeQL, Semgrep. AI PR reviews are label-gated (`ai-review`, `ai-deep`, `ai-ultra`).
+WorkloadWizard: multi-tenant academic workload web app (Next.js + Convex). Repo uses **npm**, Node from **.nvmrc**, TypeScript (strict), Vitest, ESLint + Prettier, Tailwind/shadcn UI. Auth by WorkOS. CI is split into Format, Quality (lint/typecheck/test/build), CodeQL, Semgrep. AI PR reviews are label-gated (`ai-review`, `ai-deep`, `ai-ultra`).
 
 ## Build & Validate (always follow in this order)
 

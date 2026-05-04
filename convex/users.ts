@@ -149,6 +149,8 @@ export const syncUser = mutation({
   args: {
     userId: v.string(),
     email: v.string(),
+    givenName: v.optional(v.string()),
+    familyName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     if (!args.userId) {
@@ -159,6 +161,16 @@ export const syncUser = mutation({
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
+
+    // Build names (WorkOS first, fallback to email)
+    const fallback = splitEmailName(args.email);
+
+    const givenName = args.givenName || fallback.givenName;
+    const familyName = args.familyName || fallback.familyName;
+
+    const fullName =
+      [givenName, familyName].filter(Boolean).join(' ') ||
+      fallback.fullName;
 
     let userDoc;
 
@@ -171,6 +183,16 @@ export const syncUser = mutation({
         updates.email = args.email;
       }
 
+      // ✅ update names if changed (important)
+      if (
+        existing.givenName !== givenName ||
+        existing.familyName !== familyName
+      ) {
+        updates.givenName = givenName;
+        updates.familyName = familyName;
+        updates.fullName = fullName;
+      }
+
       if (!existing.isActive) {
         updates.isActive = true;
       }
@@ -179,13 +201,12 @@ export const syncUser = mutation({
       userDoc = await ctx.db.get(existing._id);
     } else {
       const now = Date.now();
-      const names = splitEmailName(args.email);
 
       const insertedId = await ctx.db.insert('users', {
         email: args.email,
-        givenName: names.givenName,
-        familyName: names.familyName,
-        fullName: names.fullName,
+        givenName,
+        familyName,
+        fullName,
         systemRoles: ['user'],
         subject: args.userId,
         isActive: true,
@@ -196,7 +217,6 @@ export const syncUser = mutation({
       userDoc = await ctx.db.get(insertedId);
     }
 
-    // IMPORTANT: check membership but DO NOT create it
     const membership = await ctx.db
       .query('user_organisations')
       .withIndex('by_user', (q) => q.eq('userId', args.userId))
@@ -1115,5 +1135,12 @@ export const getUserAvatar = query({
       .first();
 
     return user?.pictureUrl || null;
+  },
+});
+
+export const debugAuth = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    return identity ?? null;
   },
 });

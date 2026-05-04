@@ -7,6 +7,9 @@ import { api } from '@/convex/_generated/api';
 type AuthUserResponse = {
   userId?: string;
   email?: string;
+  fullName?: string;
+  givenName?: string;
+  familyName?: string;
   organisationId?: string | null;
   needsOrganisation?: boolean;
 };
@@ -38,6 +41,11 @@ type ConvexAuthContext = {
   organisationRoles?: string[];
 } | null;
 
+type UseAuthUserOptions = {
+  redirectOnUnauthenticated?: boolean;
+  redirectTo?: string;
+};
+
 function toCompatUser(
   user: AuthUserResponse | undefined,
   dbUser?: ConvexAuthContext
@@ -47,14 +55,15 @@ function toCompatUser(
   const organisationId = dbUser?.organisationId
     ? String(dbUser.organisationId)
     : (user.organisationId ?? null);
+
   const role = dbUser?.role;
 
   return {
     id: user.userId,
     username: user.email ?? null,
-    firstName: null,
-    lastName: null,
-    fullName: user.email ?? user.userId,
+    firstName: user.givenName ?? null,
+    lastName: user.familyName ?? null,
+    fullName: user.fullName ?? user.email ?? user.userId,
     imageUrl: '',
     createdAt: new Date(),
     isActive: true,
@@ -77,9 +86,15 @@ function toCompatUser(
   };
 }
 
-export function useAuthUser() {
+export function useAuthUser(options: UseAuthUserOptions = {}) {
+  const {
+    redirectOnUnauthenticated = false,
+    redirectTo = '/api/auth/login',
+  } = options;
+
   const [sessionUser, setSessionUser] = useState<AuthUserResponse>();
   const [isLoaded, setIsLoaded] = useState(false);
+
   const dbUser = useQuery(
     api.users.getAuthContext,
     sessionUser?.userId ? { subject: sessionUser.userId } : 'skip'
@@ -91,15 +106,41 @@ export function useAuthUser() {
     async function loadUser() {
       try {
         const response = await fetch('/api/user', { cache: 'no-store' });
+
         if (!response.ok) {
-          if (!cancelled) setSessionUser(undefined);
+          if (!cancelled) {
+            setSessionUser(undefined);
+
+            if (
+              redirectOnUnauthenticated &&
+              response.status === 401 &&
+              window.location.pathname !== '/sign-in'
+            ) {
+              const returnTo = window.location.pathname + window.location.search;
+              window.location.assign(
+                `${redirectTo}?returnTo=${encodeURIComponent(returnTo)}`
+              );
+            }
+          }
           return;
         }
 
         const data = (await response.json()) as AuthUserResponse;
         if (!cancelled) setSessionUser(data);
       } catch {
-        if (!cancelled) setSessionUser(undefined);
+        if (!cancelled) {
+          setSessionUser(undefined);
+
+          if (
+            redirectOnUnauthenticated &&
+            window.location.pathname !== '/sign-in'
+          ) {
+            const returnTo = window.location.pathname + window.location.search;
+            window.location.assign(
+              `${redirectTo}?returnTo=${encodeURIComponent(returnTo)}`
+            );
+          }
+        }
       } finally {
         if (!cancelled) setIsLoaded(true);
       }
@@ -110,14 +151,16 @@ export function useAuthUser() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [redirectOnUnauthenticated, redirectTo]);
 
   const signOut = useCallback(async (callback?: () => void) => {
     if (callback) {
       callback();
       return;
     }
-    window.location.assign('/api/auth/logout');
+
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.assign('/sign-in');
   }, []);
 
   const user = useMemo(
@@ -140,7 +183,11 @@ export function useAuthUser() {
           status?: string;
         } | null,
         create: async (_data?: Record<string, unknown>) => {
-          window.location.assign('/api/auth/login?returnTo=/dashboard');
+          const returnTo = window.location.pathname + window.location.search;
+          window.location.assign(
+            `/api/auth/login?returnTo=${encodeURIComponent(returnTo || '/dashboard')}`
+          );
+
           return {
             status: 'redirect',
             createdSessionId: null,

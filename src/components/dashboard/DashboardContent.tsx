@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarDays } from 'lucide-react';
 
 export function DashboardContent() {
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const { currentYear } = useAcademicYear();
 
   const greeting = () => {
@@ -21,7 +23,13 @@ export function DashboardContent() {
   };
 
   const firstName = user?.firstName ?? user?.username ?? 'there';
-
+  if (!isLoaded) {
+    return null;
+  }
+  
+  if (!isSignedIn || !user) {
+    return null;
+  }
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[{ label: 'Dashboard' }]}

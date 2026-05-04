@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAuthContext } from '@/lib/auth';
+import { getAuthUserFromWorkOS } from '@/lib/auth/workos';
 import { withApiTracing } from '@/lib/otel/withApiTracing';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
@@ -12,47 +12,49 @@ function getConvexClient(): ConvexHttpClient {
     if (!url) throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     convexClient = new ConvexHttpClient(url);
   }
-
   return convexClient;
 }
 
 async function handleGet() {
   try {
-    const session = await getAuthContext();
-    if (!session) {
+    const authUser = await getAuthUserFromWorkOS();
+
+    if (!authUser) {
       return new NextResponse('Unauthorised', { status: 401 });
     }
 
-    try {
-      const sync = await getConvexClient().mutation(api.users.syncUser, {
-        userId: session.userId,
-        email: session.email,
-      });
+    const givenName = authUser.firstName ?? '';
+    const familyName = authUser.lastName ?? '';
 
-      return NextResponse.json(
-        {
-          userId: session.userId,
-          email: session.email,
-          organisationId: session.organisationId,
-          needsOrganisation: sync.needsOrganisation,
-        },
-        { status: 200 }
-      );
-    } catch (error) {
-      return NextResponse.json(
-        {
-          userId: session.userId,
-          email: session.email,
-          organisationId: session.organisationId,
-          needsOrganisation: session.organisationId === null,
-          syncError:
-            error instanceof Error ? error.message : 'Unable to sync user',
-        },
-        { status: 200 }
-      );
-    }
-  } catch {
-    return new NextResponse('Unauthorised', { status: 401 });
+    const sync = await getConvexClient().mutation(api.users.syncUser, {
+      userId: authUser.id,           // WorkOS user.id → your Convex userId/subject
+      email: authUser.email,
+      givenName,                    // now supported by your updated syncUser
+      familyName,
+    });
+
+    return NextResponse.json(
+      {
+        userId: authUser.id,
+        email: authUser.email,
+        fullName:
+          [givenName, familyName].filter(Boolean).join(' ') ||
+          authUser.email,
+        givenName,
+        familyName,
+        organisationId: authUser.organisationId ?? null,
+        needsOrganisation: sync?.needsOrganisation ?? false,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: 'Unauthorised',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 401 }
+    );
   }
 }
 

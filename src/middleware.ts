@@ -8,6 +8,7 @@ const publicRoutePatterns = [
   /^\/privacy$/,
   /^\/blog(?:\/.*)?$/,
   /^\/api\/auth(?:\/.*)?$/,
+  /^\/api\/user$/,
 ];
 
 function matches(pathname: string, patterns: RegExp[]) {
@@ -27,8 +28,10 @@ export default function middleware(req: NextRequest) {
   );
 
   if (!hasWorkOSSession) {
-    return NextResponse.redirect(new URL('/sign-in', req.url));
-  }
+    const loginUrl = new URL('/api/auth/login', req.url);
+    loginUrl.searchParams.set('returnTo', pathname);
+    return NextResponse.redirect(loginUrl);
+  };
 
   return NextResponse.next();
 }
@@ -39,3 +42,4 @@ export const config = {
     '/(api|trpc)(.*)',
   ],
 };
+
