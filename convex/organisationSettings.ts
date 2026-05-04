@@ -2,6 +2,7 @@ import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
 import type { QueryCtx, MutationCtx } from './_generated/server';
 import { writeAudit } from './audit';
+import { getAuthContext } from './lib/auth';
 
 function isSystemUser(systemRoles?: string[] | null) {
   const roles = systemRoles || [];
@@ -80,9 +81,8 @@ export const getOrganisationSettings = query({
 export const getForActor = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return null;
-    const { orgId } = await getActorAndOrgFromQuery(ctx, identity.subject);
+    const authContext = await getAuthContext(ctx);
+    const { orgId } = await getActorAndOrgFromQuery(ctx, authContext.userId);
     const row = await ctx.db
       .query('organisation_settings')
       .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
