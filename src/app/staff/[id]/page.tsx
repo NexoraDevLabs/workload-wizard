@@ -609,13 +609,6 @@ function AdminAllocationsTable({
 }) {
   const { currentYear } = useAcademicYear();
   const { user } = useAuthUser();
-  const authArgs =
-    user?.id && user.organisationId
-      ? {
-          userId: user.id,
-          organisationId: user.organisationId as Id<'organisations'>,
-        }
-      : null;
   const { toast } = useToast();
   const orgCategories = useQuery(
     api.allocations.listOrganisationAdminCategories,

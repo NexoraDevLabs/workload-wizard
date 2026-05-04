@@ -95,14 +95,6 @@ export default function OrganisationRolesPage() {
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   );
-  const authArgs =
-    user?.id && currentUser?.organisationId
-      ? {
-          userId: user.id,
-          organisationId: currentUser.organisationId,
-        }
-      : null;
-
   // Get organisation roles (server derives org from actor)
   const organisationRoles = useQuery(
     api.permissions.getOrganisationRoles,

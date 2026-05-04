@@ -17,7 +17,6 @@ import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { withToast } from '@/lib/utils';
 import { Edit, Trash2 } from 'lucide-react';
-import { useAuthUser } from '@/hooks/useAuthUser';
 
 // Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';

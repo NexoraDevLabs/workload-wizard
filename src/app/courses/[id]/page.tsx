@@ -825,13 +825,6 @@ function ModuleIterationAndGroupsAndAllocations({
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
   const { user } = useAuthUser();
-  const authArgs =
-    user?.id && user.organisationId
-      ? {
-          userId: user.id,
-          organisationId: user.organisationId as Id<'organisations'>,
-        }
-      : null;
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,
@@ -846,8 +839,8 @@ function ModuleIterationAndGroupsAndAllocations({
 
   const groups = useQuery(
     api.groups.listByIteration,
-    _user?.id && hasIteration && iteration
-      ? { userId: _user.id, moduleIterationId: iteration._id }
+    user?.id && hasIteration && iteration
+      ? { userId: user.id, moduleIterationId: iteration._id }
       : 'skip'
   ) as Array<Group> | undefined;
   const createGroup = useMutation(api.groups.create);
@@ -856,7 +849,7 @@ function ModuleIterationAndGroupsAndAllocations({
   // Allocations UI bits
   const profiles = useQuery(
     api.staff.listForActor,
-    _user?.id ? { userId: _user.id } : 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   );
   const assign = useMutation(api.allocations.assignLecturer);
   const removeAllocation = useMutation(api.allocations.remove);
@@ -894,7 +887,7 @@ function ModuleIterationAndGroupsAndAllocations({
     api.allocations.getLecturerTotals,
     selectedLecturerId
       ? {
-          userId: _user!.id,
+          userId: user!.id,
           lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
           academicYearId: currentYear?._id as Id<'academic_years'>,
         }
@@ -945,7 +938,7 @@ function ModuleIterationAndGroupsAndAllocations({
                 await withToast(
                   () =>
                     createGroup({
-                      userId: _user!.id,
+                      userId: user!.id,
                       moduleIterationId: iteration._id,
                       name,
                     }),
@@ -1191,7 +1184,7 @@ function ModuleIterationAndGroupsAndAllocations({
                       setIsSubmitting(true);
                       try {
                         await assign({
-                          userId: _user!.id,
+                          userId: user!.id,
                           groupId: selectedGroupId as Id<'module_groups'>,
                           lecturerId:
                             selectedLecturerId as Id<'lecturer_profiles'>,
@@ -1305,7 +1298,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                       await withToast(
                                         () =>
                                           updateAllocation({
-                                            userId: _user!.id,
+                                            userId: user!.id,
                                             allocationId: allocation._id,
                                             type: next,
                                           }),
@@ -1339,7 +1332,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                         await withToast(
                                           () =>
                                             updateAllocation({
-                                              userId: _user!.id,
+                                              userId: user!.id,
                                               allocationId: allocation._id,
                                               hoursOverride: null,
                                             }),
@@ -1371,7 +1364,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                         await withToast(
                                           () =>
                                             updateAllocation({
-                                              userId: _user!.id,
+                                              userId: user!.id,
                                               allocationId: allocation._id,
                                               hoursOverride: value,
                                             }),
@@ -1401,7 +1394,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                         await withToast(
                                           () =>
                                             removeAllocation({
-                                              userId: _user!.id,
+                                              userId: user!.id,
                                               allocationId: allocation._id,
                                             }),
                                           {
@@ -1533,7 +1526,7 @@ function ModuleIterationAndGroupsAndAllocations({
                         await withToast(
                           () =>
                             autoCreateGroups({
-                              userId: _user!.id,
+                              userId: user!.id,
                               moduleIterationId: iteration!._id,
                               campusGroups: campusGroups,
                             }),
@@ -1566,7 +1559,7 @@ function ModuleIterationAndGroupsAndAllocations({
               await withToast(
                 () =>
                   createIteration({
-                    userId: _user!.id,
+                    userId: user!.id,
                     moduleId: moduleId as Id<'modules'>,
                     academicYearId: currentYear._id,
                   }),

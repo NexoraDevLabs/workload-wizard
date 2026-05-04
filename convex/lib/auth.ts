@@ -13,7 +13,7 @@ type AuthContext = {
 };
 
 export async function getAuthContext(
-  _ctx: QueryCtx | MutationCtx,
+  ctx: QueryCtx | MutationCtx,
   args: AuthArgs = {}
 ): Promise<AuthContext> {
   const userId = args.userId;

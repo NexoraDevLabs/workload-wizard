@@ -15,7 +15,6 @@ import { EditCourseForm } from '@/components/domain/EditCourseForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { withToast } from '@/lib/utils';
 import { Edit, Trash2 } from 'lucide-react';
-import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface Course {
   _id: Id<'courses'>;
