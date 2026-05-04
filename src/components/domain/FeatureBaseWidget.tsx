@@ -231,7 +231,7 @@ export default function FeaturebaseMessenger() {
 
   // Check if we're in build time to avoid Clerk initialization
   const isBuildTime =
-    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
+    !env.NEXT_PUBLIC_CONVEX_URL;
 
   // If in build time, don't render anything
   if (isBuildTime) {

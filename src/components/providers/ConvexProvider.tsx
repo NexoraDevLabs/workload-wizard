@@ -19,8 +19,7 @@ export function ConvexClientProvider({
   children: React.ReactNode;
 }) {
   const env = getEnv();
-  const isBuildTime =
-    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'pk_test_build_time_only';
+  const isBuildTime = !env.NEXT_PUBLIC_CONVEX_URL
 
   if (isBuildTime) {
     return <>{children}</>;
