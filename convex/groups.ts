@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { writeAudit } from './audit';
 import { requireOrgPermission } from './permissions';
+import { getAuthContext } from './lib/auth';
 
 // List groups under a module iteration
 export const listByIteration = query({
@@ -11,12 +12,11 @@ export const listByIteration = query({
     const iteration = await ctx.db.get(args.moduleIterationId);
     if (!iteration) return [];
     const moduleDoc = iteration ? await ctx.db.get(iteration.moduleId) : null;
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return [];
+    const authContext = await getAuthContext(ctx, args);
     if (moduleDoc) {
       await requireOrgPermission(
         ctx,
-        identity.subject,
+        authContext.userId,
         'groups.view',
         moduleDoc.organisationId
       );
@@ -40,8 +40,7 @@ export const create = mutation({
     sizePlanned: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
 
     const iteration = await ctx.db.get(args.moduleIterationId);
     if (!iteration) throw new Error('Module iteration not found');
@@ -49,7 +48,7 @@ export const create = mutation({
     if (!moduleDoc) throw new Error('Module not found');
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'groups.create',
       moduleDoc.organisationId
     );
@@ -70,7 +69,7 @@ export const create = mutation({
         action: 'create',
         entityType: 'module_group',
         entityId: String(id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Created group ${args.name}`,
         severity: 'info',
         type: 'org',
@@ -94,8 +93,7 @@ export const createAutoForIteration = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
 
     const iteration = await ctx.db.get(args.moduleIterationId);
     if (!iteration) throw new Error('Module iteration not found');
@@ -103,7 +101,7 @@ export const createAutoForIteration = mutation({
     if (!moduleDoc) throw new Error('Module not found');
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'groups.create',
       moduleDoc.organisationId
     );
@@ -131,7 +129,7 @@ export const createAutoForIteration = mutation({
         action: 'create',
         entityType: 'module_groups_auto',
         entityId: String(args.moduleIterationId),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Auto-created ${created} groups`,
         severity: 'info',
         type: 'org',
@@ -150,8 +148,7 @@ export const createAutoForIteration = mutation({
 export const remove = mutation({
   args: { id: v.id('module_groups') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.id);
     if (!existing) return args.id;
     const iteration = await ctx.db.get(existing.moduleIterationId);
@@ -159,7 +156,7 @@ export const remove = mutation({
     if (!moduleDoc) return args.id;
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'groups.delete',
       moduleDoc.organisationId
     );
@@ -169,7 +166,7 @@ export const remove = mutation({
         action: 'delete',
         entityType: 'module_group',
         entityId: String(args.id),
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         details: `Deleted group ${existing.name}`,
         severity: 'warning',
         type: 'org',
