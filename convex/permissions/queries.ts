@@ -1,6 +1,7 @@
 import { query } from '../_generated/server';
 import { v } from 'convex/values';
 import type { Doc } from '../_generated/dataModel';
+import { getAuthContext } from '../lib/auth';
 
 /**
  * Check if a user has a specific permission
@@ -239,12 +240,11 @@ export const getUserEffectivePermissions = query({
 export const getOrganisationRoles = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx);
 
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
 
@@ -264,6 +264,7 @@ export const getOrganisationRoles = query({
  * Get all system permissions (for admin UI)
  */
 export const getSystemPermissions = query({
+  args: {},
   handler: async (ctx) => {
     return await ctx.db
       .query('system_permissions')
@@ -276,6 +277,7 @@ export const getSystemPermissions = query({
  * Get all system permissions grouped by group
  */
 export const getSystemPermissionsGrouped = query({
+  args: {},
   handler: async (ctx) => {
     const permissions = await ctx.db
       .query('system_permissions')
@@ -373,6 +375,7 @@ export const checkPermissionUsage = query({
  * Debug function to check what organizations and roles exist
  */
 export const debugOrganisationsAndRoles = query({
+  args: {},
   handler: async (ctx) => {
     const organisations = await ctx.db
       .query('organisations')
