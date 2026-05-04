@@ -44,30 +44,26 @@ jobs:
         run: |
           git config --global user.name "Nexoroid"
           git config --global user.email "nexoroid[bot]@users.noreply.github.com"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: Install deps (cached)
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Cache Next.js build cache
         uses: actions/cache@v4
         with:
           path: |
             .next/cache
-          key: next-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: next-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             next-${{ runner.os }}-
 
       - name: Install Vercel CLI
-        run: pnpm add -g vercel@latest
+        run: npm install -g vercel@latest
 
       - name: Determine environment
         id: env
