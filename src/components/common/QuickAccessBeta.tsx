@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 import {
   SidebarGroup,
@@ -26,7 +27,11 @@ import { Label } from '@/components/ui/label';
 type QuickLink = { name: string; url: string };
 
 export function QuickAccessBeta() {
-  const prefs = useQuery(api.quickAccess.getForCurrentUser, {});
+  const { user } = useAuthUser();
+  const prefs = useQuery(
+    api.quickAccess.getForCurrentUser,
+    user?.id ? { userId: user.id } : 'skip'
+  );
   const savePrefs = useMutation(api.quickAccess.saveForCurrentUser);
   const [links, setLinks] = React.useState<QuickLink[]>([]);
   const [draft, setDraft] = React.useState<QuickLink>({ name: '', url: '' });
@@ -43,12 +48,12 @@ export function QuickAccessBeta() {
     if (!draft.name || !draft.url) return;
     const next = [...links, draft];
     setLinks(next);
-    savePrefs({ links: next, showNames }).catch(() => {});
+    if (user?.id) savePrefs({ userId: user.id, links: next, showNames }).catch(() => {});
     setDraft({ name: '', url: '' });
   };
   const clearAll = () => {
     setLinks([]);
-    savePrefs({ links: [], showNames }).catch(() => {});
+    if (user?.id) savePrefs({ userId: user.id, links: [], showNames }).catch(() => {});
   };
 
   return (
@@ -120,10 +125,16 @@ export function QuickAccessBeta() {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={showNames}
-                    onCheckedChange={(v) => {
-                      setShowNames(v);
-                      savePrefs({ links, showNames: v }).catch(() => {});
-                    }}
+	                    onCheckedChange={(v) => {
+	                      setShowNames(v);
+	                      if (user?.id) {
+	                        savePrefs({
+	                          userId: user.id,
+	                          links,
+	                          showNames: v,
+	                        }).catch(() => {});
+	                      }
+	                    }}
                     id="qa-show-names"
                   />
                   <Label htmlFor="qa-show-names">Show names in sidebar</Label>

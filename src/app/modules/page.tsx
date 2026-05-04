@@ -16,6 +16,7 @@ import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { withToast } from '@/lib/utils';
 import { Edit, Trash2 } from 'lucide-react';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 // Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -41,7 +42,11 @@ interface Lecturer {
 
 export default function ModulesPage() {
   const { toast } = useToast();
-  const modules = useQuery(api.modules.listByOrganisation) as
+  const { user } = useAuthUser();
+  const modules = useQuery(
+    api.modules.listByOrganisation,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as
     | Module[]
     | undefined;
   const { currentYear } = useAcademicYear();
@@ -49,12 +54,9 @@ export default function ModulesPage() {
   const deleteModule = useMutation(api.modules.remove);
   const me = useQuery(
     api.users.getBySubject,
-    typeof window !== 'undefined' &&
-      (window as { WorkOS?: { user?: { id: string } } }).WorkOS?.user?.id
+    user?.id
       ? {
-          subject:
-            (window as { WorkOS?: { user?: { id: string } } }).WorkOS?.user?.id ||
-            '',
+          subject: user.id,
         }
       : 'skip'
   ) as { systemRoles?: string[] } | undefined;
@@ -72,10 +74,15 @@ export default function ModulesPage() {
     markingHours: '',
   });
 
-  const lecturers = (useQuery(api.staff.listForActor) || []) as Lecturer[];
+  const lecturers = (useQuery(
+    api.staff.listForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) || []) as Lecturer[];
   const codeAvailability = useQuery(
     api.modules.isCodeAvailable,
-    form.code.trim() ? { code: form.code.trim() } : 'skip'
+    user?.id && form.code.trim()
+      ? { userId: user.id, code: form.code.trim() }
+      : 'skip'
   ) as { available: boolean } | undefined;
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [deletingModule, setDeletingModule] = useState<Module | null>(null);
@@ -96,6 +103,7 @@ export default function ModulesPage() {
     e.preventDefault();
     try {
       await create({
+        userId: user!.id,
         code: form.code.trim(),
         name: form.name.trim(),
         ...(form.credits.trim() ? { credits: Number(form.credits) } : {}),
@@ -152,7 +160,7 @@ export default function ModulesPage() {
         return next;
       });
       await withToast(
-        () => deleteModule({ id: toDelete._id }),
+        () => deleteModule({ userId: user!.id, id: toDelete._id }),
         {
           success: {
             title: 'Module deleted',

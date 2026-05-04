@@ -16,19 +16,23 @@ export async function getAuthContext(
   ctx: QueryCtx | MutationCtx,
   args: AuthArgs = {}
 ): Promise<AuthContext> {
-  const identity = await ctx.auth.getUserIdentity();
-  const userId = args.userId ?? identity?.subject;
+  const userId = args.userId;
 
   if (!userId) {
     throw new Error('Unauthenticated');
   }
 
-  const actor = await ctx.db
-    .query('users')
-    .withIndex('by_subject', (q) => q.eq('subject', userId))
-    .first();
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
 
-  const organisationId = args.organisationId ?? actor?.organisationId;
+  const primaryMembership =
+    memberships.find((membership) => membership.isPrimary) ??
+    memberships[0] ??
+    null;
+
+  const organisationId = args.organisationId ?? primaryMembership?.organisationId;
 
   if (!organisationId) {
     throw new Error('Organisation context required');

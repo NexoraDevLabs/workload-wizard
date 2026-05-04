@@ -99,7 +99,7 @@ export default function OrganisationRolesPage() {
   // Get organisation roles (server derives org from actor)
   const organisationRoles = useQuery(
     api.permissions.getOrganisationRoles,
-    currentUser?.organisationId ? {} : 'skip'
+    currentUser?.organisationId && user?.id ? { userId: user.id } : 'skip'
   );
 
   // Get system permissions
@@ -126,6 +126,7 @@ export default function OrganisationRolesPage() {
 
     try {
       await createRole({
+        userId: user!.id,
         name: roleName.trim(),
         ...(roleDescription.trim()
           ? { description: roleDescription.trim() }
@@ -175,6 +176,7 @@ export default function OrganisationRolesPage() {
 
     try {
       await updateRole({
+        userId: user!.id,
         roleId: editingRole._id as unknown as Id<'user_roles'>,
         name: roleName.trim(),
         ...(roleDescription.trim()
@@ -216,6 +218,7 @@ export default function OrganisationRolesPage() {
   const handleDeleteRole = async (roleId: string) => {
     try {
       await deleteRole({
+        userId: user!.id,
         roleId: roleId as unknown as Id<'user_roles'>,
         ...(user?.id ? { performedBy: user.id } : {}),
         ...(user?.fullName || user?.emailAddresses?.[0]?.emailAddress
@@ -251,6 +254,7 @@ export default function OrganisationRolesPage() {
   ) => {
     try {
       await updateRolePermissions({
+        userId: user!.id,
         roleId: roleId as unknown as Id<'user_roles'>,
         permissionId,
         isGranted,

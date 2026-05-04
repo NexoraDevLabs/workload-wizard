@@ -3,9 +3,9 @@ import { v } from 'convex/values';
 import { getAuthContext } from './lib/auth';
 
 export const getForCurrentUser = query({
-  args: {},
-  handler: async (ctx) => {
-    const authContext = await getAuthContext(ctx);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const row = await ctx.db
       .query('quick_access_prefs')
       .withIndex('by_user', (q) => q.eq('userId', authContext.userId))
@@ -21,6 +21,7 @@ export const getForCurrentUser = query({
 
 export const saveForCurrentUser = mutation({
   args: {
+    userId: v.string(),
     links: v.array(v.object({ name: v.string(), url: v.string() })),
     showNames: v.boolean(),
   },

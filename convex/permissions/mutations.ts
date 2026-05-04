@@ -990,6 +990,7 @@ export const pushPermissionsToOrganisations = mutation({
  */
 export const createOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     permissions: v.array(v.string()),
@@ -1015,7 +1016,7 @@ export const createOrganisationRole = mutation({
       isDefault: false,
       isSystem: false,
       permissions: args.permissions,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -1032,12 +1033,12 @@ export const createOrganisationRole = mutation({
         ...(args.performedByName
           ? { performedByName: args.performedByName }
           : {}),
-        organisationId: actor.organisationId,
+        organisationId: authContext.organisationId,
         details: `Role "${args.name}" created with ${args.permissions.length} permission(s)`,
         metadata: JSON.stringify({
           description: args.description,
           permissions: args.permissions,
-          organisationId: actor.organisationId,
+          organisationId: authContext.organisationId,
         }),
         severity: 'info',
       });
@@ -1052,6 +1053,7 @@ export const createOrganisationRole = mutation({
  */
 export const updateOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     name: v.string(),
     description: v.optional(v.string()),
@@ -1081,7 +1083,7 @@ export const updateOrganisationRole = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot modify roles outside your organisation'
@@ -1136,6 +1138,7 @@ export const updateOrganisationRole = mutation({
  */
 export const deleteOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     performedBy: v.optional(v.string()),
     performedByName: v.optional(v.string()),
@@ -1181,7 +1184,7 @@ export const deleteOrganisationRole = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot delete roles outside your organisation'
@@ -1227,6 +1230,7 @@ export const deleteOrganisationRole = mutation({
  */
 export const updateRolePermissions = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     permissionId: v.string(),
     isGranted: v.boolean(),
@@ -1256,7 +1260,7 @@ export const updateRolePermissions = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot modify roles outside your organisation'

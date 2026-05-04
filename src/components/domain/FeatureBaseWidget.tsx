@@ -55,8 +55,8 @@ function FeaturebaseMessengerInternal() {
   ) as ConvexUser | undefined;
   const orgDoc = useQuery(
     api.organisations.get,
-    convexUser?.organisationId
-      ? { organisationId: convexUser.organisationId }
+    user?.id && convexUser?.organisationId
+      ? { userId: user.id, organisationId: convexUser.organisationId }
       : 'skip'
   ) as OrganisationDoc | undefined;
   const roleAssignments = useQuery(

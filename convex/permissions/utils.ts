@@ -1,5 +1,21 @@
 import type { QueryCtx, MutationCtx } from '../_generated/server';
+import type { Id } from '../_generated/dataModel';
 import { PERMISSION_ERRORS } from './constants';
+
+async function getPrimaryOrganisationId(
+  ctx: QueryCtx | MutationCtx,
+  userId: string
+): Promise<Id<'organisations'> | null> {
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+  return (
+    memberships.find((membership) => membership.isPrimary)?.organisationId ??
+    memberships[0]?.organisationId ??
+    null
+  );
+}
 
 /**
  * Permission enforcement wrapper
@@ -33,11 +49,14 @@ export const requirePermission = async (
         }
       }
 
+      const organisationId = await getPrimaryOrganisationId(ctx, userId);
+      if (!organisationId) return false;
+
       // Get user's role assignment
       const roleAssignment = await ctx.db
         .query('user_role_assignments')
         .withIndex('by_user_org', (q) =>
-          q.eq('userId', userId).eq('organisationId', user.organisationId)
+          q.eq('userId', userId).eq('organisationId', organisationId)
         )
         .filter((q) => q.eq(q.field('isActive'), true))
         .first();
@@ -107,7 +126,8 @@ export const requireOrgPermission = async (
   }
 
   // Must be operating within their own organisation
-  if (String(user.organisationId) !== String(organisationId)) {
+  const actorOrganisationId = await getPrimaryOrganisationId(ctx, userId);
+  if (String(actorOrganisationId) !== String(organisationId)) {
     throw new Error(PERMISSION_ERRORS.CROSS_ORG_ACCESS_DENIED);
   }
 

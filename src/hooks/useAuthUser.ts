@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 type AuthUserResponse = {
-  user?: {
-    id: string;
-    email?: string;
-    orgId?: string;
-    role?: string;
-  };
+  userId?: string;
+  email?: string;
+  organisationId?: string | null;
+  needsOrganisation?: boolean;
 };
 
 type CompatUser = {
@@ -20,7 +20,7 @@ type CompatUser = {
   imageUrl: string;
   createdAt: Date;
   isActive: boolean;
-  organisationId: string | undefined;
+  organisationId: string | null;
   organizationMemberships: Array<{ organization?: { id?: string } }>;
   publicMetadata: Record<string, unknown>;
   emailAddresses: Array<{ emailAddress: string }>;
@@ -31,25 +31,42 @@ type CompatUser = {
   setProfileImage: (_data: Record<string, unknown>) => Promise<void>;
 };
 
-function toCompatUser(user: AuthUserResponse['user']): CompatUser | null {
-  if (!user) return null;
+type ConvexAuthContext = {
+  organisationId?: string;
+  role?: string;
+  systemRoles?: string[];
+  organisationRoles?: string[];
+} | null;
+
+function toCompatUser(
+  user: AuthUserResponse | undefined,
+  dbUser?: ConvexAuthContext
+): CompatUser | null {
+  if (!user?.userId) return null;
+
+  const organisationId = dbUser?.organisationId
+    ? String(dbUser.organisationId)
+    : (user.organisationId ?? null);
+  const role = dbUser?.role;
 
   return {
-    id: user.id,
+    id: user.userId,
     username: user.email ?? null,
     firstName: null,
     lastName: null,
-    fullName: user.email ?? user.id,
+    fullName: user.email ?? user.userId,
     imageUrl: '',
     createdAt: new Date(),
     isActive: true,
-    organisationId: user.orgId,
-    organizationMemberships: user.orgId
-      ? [{ organization: { id: user.orgId } }]
+    organisationId,
+    organizationMemberships: organisationId
+      ? [{ organization: { id: organisationId } }]
       : [],
     publicMetadata: {
-      organisationId: user.orgId,
-      role: user.role,
+      organisationId,
+      role,
+      systemRoles: dbUser?.systemRoles ?? [],
+      organisationRoles: dbUser?.organisationRoles ?? [],
     },
     emailAddresses: user.email ? [{ emailAddress: user.email }] : [],
     primaryEmailAddress: user.email ? { emailAddress: user.email } : null,
@@ -61,8 +78,12 @@ function toCompatUser(user: AuthUserResponse['user']): CompatUser | null {
 }
 
 export function useAuthUser() {
-  const [user, setUser] = useState<CompatUser | null>(null);
+  const [sessionUser, setSessionUser] = useState<AuthUserResponse>();
   const [isLoaded, setIsLoaded] = useState(false);
+  const dbUser = useQuery(
+    api.users.getAuthContext,
+    sessionUser?.userId ? { subject: sessionUser.userId } : 'skip'
+  ) as ConvexAuthContext | undefined;
 
   useEffect(() => {
     let cancelled = false;
@@ -71,14 +92,14 @@ export function useAuthUser() {
       try {
         const response = await fetch('/api/user', { cache: 'no-store' });
         if (!response.ok) {
-          if (!cancelled) setUser(null);
+          if (!cancelled) setSessionUser(undefined);
           return;
         }
 
         const data = (await response.json()) as AuthUserResponse;
-        if (!cancelled) setUser(toCompatUser(data.user));
+        if (!cancelled) setSessionUser(data);
       } catch {
-        if (!cancelled) setUser(null);
+        if (!cancelled) setSessionUser(undefined);
       } finally {
         if (!cancelled) setIsLoaded(true);
       }
@@ -98,6 +119,11 @@ export function useAuthUser() {
     }
     window.location.assign('/sign-in');
   }, []);
+
+  const user = useMemo(
+    () => toCompatUser(sessionUser, dbUser),
+    [dbUser, sessionUser]
+  );
 
   return useMemo(
     () => ({

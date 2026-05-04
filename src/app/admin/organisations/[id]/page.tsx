@@ -46,12 +46,14 @@ export default function AdminOrganisationOverviewPage() {
   const users = useQuery(api.users.listByOrganisation, {
     organisationId,
   });
-  const courses = useQuery(api.courses.listByOrganisation, {
-    organisationId,
-  });
-  const modules = useQuery(api.modules.listForOrganisation, {
-    organisationId,
-  });
+  const courses = useQuery(
+    api.courses.listByOrganisation,
+    user?.id ? { userId: user.id, organisationId } : 'skip'
+  );
+  const modules = useQuery(
+    api.modules.listForOrganisation,
+    user?.id ? { userId: user.id, organisationId } : 'skip'
+  );
 
   const breadcrumbs = [
     { label: 'Home', href: '/' },

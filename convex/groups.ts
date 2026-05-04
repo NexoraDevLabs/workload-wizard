@@ -6,7 +6,7 @@ import { getAuthContext } from './lib/auth';
 
 // List groups under a module iteration
 export const listByIteration = query({
-  args: { moduleIterationId: v.id('module_iterations') },
+  args: { userId: v.string(), moduleIterationId: v.id('module_iterations') },
   handler: async (ctx, args) => {
     // Enforce view via module org
     const iteration = await ctx.db.get(args.moduleIterationId);
@@ -35,6 +35,7 @@ export const listByIteration = query({
 // Create a group under an iteration
 export const create = mutation({
   args: {
+    userId: v.string(),
     moduleIterationId: v.id('module_iterations'),
     name: v.string(),
     sizePlanned: v.optional(v.number()),
@@ -87,6 +88,7 @@ export const create = mutation({
 // Auto-create groups for an iteration given per-campus group counts.
 export const createAutoForIteration = mutation({
   args: {
+    userId: v.string(),
     moduleIterationId: v.id('module_iterations'),
     campusGroups: v.array(
       v.object({ campus: v.optional(v.string()), groups: v.number() })
@@ -146,7 +148,7 @@ export const createAutoForIteration = mutation({
 
 // Delete a group
 export const remove = mutation({
-  args: { id: v.id('module_groups') },
+  args: { userId: v.string(), id: v.id('module_groups') },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.id);

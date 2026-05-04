@@ -1,10 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/authz';
+import { getAuthContext } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthUser();
+    await getAuthContext();
     await request.json();
     return NextResponse.json({
       success: true,

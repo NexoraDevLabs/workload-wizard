@@ -25,6 +25,7 @@ export const create = mutation({
     userId: v.string(), // Current user ID for permission check
   },
   handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     // Derive organisationId from the actor's user record
     const actor = await ctx.db
       .query('users')
@@ -37,7 +38,7 @@ export const create = mutation({
       ctx,
       args.userId,
       'staff.create',
-      actor.organisationId
+      authContext.organisationId
     );
 
     const now = Date.now();
@@ -60,7 +61,7 @@ export const create = mutation({
         : {}),
       ...(args.prefSpecialism ? { prefSpecialism: args.prefSpecialism } : {}),
       ...(args.prefNotes ? { prefNotes: args.prefNotes } : {}),
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -73,7 +74,7 @@ export const create = mutation({
       entityId: String(profileId),
       entityName: args.fullName,
       performedBy: args.userId,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       details: `Created lecturer profile (${args.contract})`,
       metadata: JSON.stringify({
         email: args.email,
@@ -187,6 +188,7 @@ export const edit = mutation({
 export const list = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
@@ -196,7 +198,7 @@ export const list = query({
     return await ctx.db
       .query('lecturer_profiles')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
@@ -205,9 +207,9 @@ export const list = query({
 
 // List lecturer profiles for the current actor (derives organisation from auth)
 export const listForActor = query({
-  args: {},
-  handler: async (ctx) => {
-    const authContext = await getAuthContext(ctx);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
@@ -216,7 +218,7 @@ export const listForActor = query({
     return await ctx.db
       .query('lecturer_profiles')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();

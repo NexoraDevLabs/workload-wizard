@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/lib/authz';
+import { getAuthContext } from '@/lib/auth';
 
 export async function POST() {
   try {
-    await getAuthUser();
+    await getAuthContext();
     return NextResponse.json({
       success: true,
       message: 'Password reset is handled by WorkOS session management.',
