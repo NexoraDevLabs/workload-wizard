@@ -1,9 +1,10 @@
 {
-  "lastCompletedPhase": "identity-swap",
+  "lastCompletedPhase": "backend-migration",
   "completedBranches": [
     "auth/convex-refactor",
     "auth/remove-jwt",
     "auth/workos-base",
-    "auth/identity-swap"
+    "auth/identity-swap",
+    "auth/backend-migration"
   ]
 }
