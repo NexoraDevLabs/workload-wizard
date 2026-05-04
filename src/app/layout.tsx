@@ -9,7 +9,7 @@ import { BreadcrumbProvider } from '@/hooks/useBreadcrumbs';
 import FeaturebaseMessenger from '@/components/domain/FeatureBaseWidget';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { ClerkWrapper } from '@/components/providers/ClerkWrapper';
+import { WorkOSWrapper } from '@/components/providers/WorkOSWrapper';
 import { headers } from 'next/headers';
 // import { LoadingOverlay } from "@/components/loading-overlay";
 import { LoadingOverlayServer } from '@/components/loading-overlay-server';
@@ -63,7 +63,7 @@ export default async function RootLayout({
   }
 
   return (
-    <ClerkWrapper>
+    <WorkOSWrapper>
       <ConvexClientProvider>
         <html lang="en" suppressHydrationWarning>
           <body
@@ -91,6 +91,6 @@ export default async function RootLayout({
           </body>
         </html>
       </ConvexClientProvider>
-    </ClerkWrapper>
+    </WorkOSWrapper>
   );
 }

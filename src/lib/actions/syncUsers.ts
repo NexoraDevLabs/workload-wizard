@@ -3,7 +3,7 @@
 import { can } from '@/lib/auth/permissions';
 import { getAuthUser } from '@/lib/authz';
 
-export async function syncUsersFromClerk() {
+export async function syncUsersFromAuthProvider() {
   const authUser = await getAuthUser();
 
   if (!can(authUser, 'sync.users')) {
@@ -12,7 +12,7 @@ export async function syncUsersFromClerk() {
 
   return {
     totalUsers: 0,
-    message: 'Clerk sync has been removed. Users are managed from the application database.',
+    message: 'WorkOS sync has been removed. Users are managed from the application database.',
     results: [],
   };
 }
@@ -21,7 +21,7 @@ export async function getSyncStatus() {
   await getAuthUser();
 
   return {
-    clerkUserCount: 0,
+    workosUserCount: 0,
     convexUserCount: 0,
     missingInConvex: 0,
     extraInConvex: 0,

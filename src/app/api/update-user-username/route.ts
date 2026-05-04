@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     await request.json();
     return NextResponse.json({
       success: true,
-      message: 'Username updates are database-managed after Clerk removal.',
+      message: 'Username updates are database-managed after WorkOS removal.',
     });
   } catch (error) {
     return NextResponse.json(

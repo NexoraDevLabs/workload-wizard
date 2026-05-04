@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
@@ -75,13 +75,13 @@ export default function ProfilePage() {
   const userName = user.fullName || user.firstName || 'User';
   const userEmail = user.emailAddresses[0]?.emailAddress || '';
   const userRole = user.publicMetadata?.role as string;
-  const clerkAvatarUrl = user.imageUrl;
+  const workosAvatarUrl = user.imageUrl;
   const convexAvatarUrlValue = convexAvatarUrl || null;
 
-  // Use Clerk avatar as priority since it's more up-to-date, fall back to Convex
+  // Use WorkOS avatar as priority since it's more up-to-date, fall back to Convex
   // Add cache-busting parameter to force refresh (only when refresh key changes)
-  const avatarUrl = clerkAvatarUrl
-    ? `${clerkAvatarUrl}?r=${avatarRefreshKey}`
+  const avatarUrl = workosAvatarUrl
+    ? `${workosAvatarUrl}?r=${avatarRefreshKey}`
     : convexAvatarUrlValue
       ? `${convexAvatarUrlValue}?r=${avatarRefreshKey}`
       : '';
@@ -258,19 +258,19 @@ export default function ProfilePage() {
             return;
           }
 
-          // Upload to Clerk first
+          // Upload to WorkOS first
           try {
             await user.setProfileImage({ file: avatarFile });
-          } catch (clerkError) {
+          } catch (workosError) {
             throw new Error(
-              `Clerk upload failed: ${clerkError instanceof Error ? clerkError.message : 'Unknown error'}`
+              `WorkOS upload failed: ${workosError instanceof Error ? workosError.message : 'Unknown error'}`
             );
           }
 
-          // Wait a moment for Clerk to process the image and update the URL
+          // Wait a moment for WorkOS to process the image and update the URL
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
-          // Get the updated image URL from Clerk
+          // Get the updated image URL from WorkOS
           const updatedImageUrl = user.imageUrl;
 
           // Sync the new avatar URL to Convex
@@ -296,7 +296,7 @@ export default function ProfilePage() {
             toast({
               title: 'Avatar Update',
               description:
-                'Avatar uploaded to Clerk. It may take a moment to appear.',
+                'Avatar uploaded to WorkOS. It may take a moment to appear.',
               variant: 'success',
             });
           }

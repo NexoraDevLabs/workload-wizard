@@ -10,7 +10,7 @@ This document defines the Disaster Recovery (DR) policy for the Workload Wizard 
 
 - **Target:** 24 hours
 - **Implementation:** Nightly automated backups at 02:00 Europe/London
-- **Scope:** All critical data including Convex database, Vercel environment variables, and essential Clerk user data
+- **Scope:** All critical data including Convex database, Vercel environment variables, and essential WorkOS user data
 
 ### Recovery Time Objective (RTO)
 
@@ -32,7 +32,7 @@ This document defines the Disaster Recovery (DR) policy for the Workload Wizard 
    - API keys and secrets
    - Feature flags and environment-specific settings
 
-3. **Clerk User Data (Minimal Extract)**
+3. **WorkOS User Data (Minimal Extract)**
    - User IDs and external identifiers
    - Email addresses
    - Account status (banned, locked)
@@ -127,7 +127,7 @@ This document defines the Disaster Recovery (DR) policy for the Workload Wizard 
 
 ### Data Protection
 
-- **GDPR Compliance:** Minimal PII in Clerk extracts
+- **GDPR Compliance:** Minimal PII in WorkOS extracts
 - **Encryption:** All data encrypted in transit and at rest
 - **Access Control:** Least privilege principle for backup access
 - **Audit Trail:** Complete backup and restore activity logging

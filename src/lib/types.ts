@@ -38,7 +38,7 @@ export interface User {
   systemRoles: string[]; // Array of system roles like ['sysadmin', 'developer']
   organisationId: string;
   pictureUrl?: string;
-  subject: string; // Clerk identifier
+  subject: string; // WorkOS identifier
   tokenIdentifier?: string;
   isActive: boolean;
   createdAt: number;

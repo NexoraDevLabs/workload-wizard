@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function OnboardingSuccessPage() {
@@ -23,7 +23,7 @@ export default function OnboardingSuccessPage() {
     if (isLoaded && currentUserData) {
       // Check if onboarding is marked as complete in Convex
       if (currentUserData.onboardingCompleted) {
-        // Refresh Clerk session to pick up updated metadata, then redirect
+        // Refresh WorkOS session to pick up updated metadata, then redirect
         const doRedirect = async () => {
           try {
             await session?.reload();

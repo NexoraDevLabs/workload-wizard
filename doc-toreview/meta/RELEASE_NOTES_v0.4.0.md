@@ -30,9 +30,9 @@
 
 ### Authentication & Onboarding
 
-- **Clerk Integration**: Wired Clerk authentication into Convex client for authenticated mutations
+- **WorkOS Integration**: Wired WorkOS authentication into Convex client for authenticated mutations
 - **Onboarding Improvements**: Enhanced onboarding flow with session refresh and redirect handling
-- **Middleware Fallbacks**: Added Clerk live metadata fallback for onboarding completion recognition
+- **Middleware Fallbacks**: Added WorkOS live metadata fallback for onboarding completion recognition
 - **Session Management**: Improved session handling and onboarding completion detection
 
 ## 🔧 Improvements
@@ -62,7 +62,7 @@
 - **Onboarding Route**: Fixed 500 errors when Convex user is missing
 - **Session Claims**: Resolved stale session claims issues during onboarding
 - **Academic Year Queries**: Fixed queries returning errors when user doesn't exist
-- **Clerk Client Invocation**: Corrected clerkClient usage in complete-onboarding route
+- **WorkOS Client Invocation**: Corrected workosClient usage in complete-onboarding route
 - **User Actions**: Fixed organisation ID resolution and improved error handling
 
 ## 🔒 Security Updates

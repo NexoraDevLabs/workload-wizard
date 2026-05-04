@@ -35,7 +35,7 @@ import { EditStaffForm } from '@/components/domain/EditStaffForm';
 import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
 import type { Doc } from '@/convex/_generated/dataModel';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 interface AdminAllocation {
@@ -102,8 +102,8 @@ export default function LecturerProfilePage() {
     permissionId: 'staff.edit', // Using edit permission for deactivate
   });
 
-  // Check if email matches Clerk user
-  const clerkUser = useQuery(
+  // Check if email matches WorkOS user
+  const workosUser = useQuery(
     api.users.getByEmail,
     profile?.email ? { email: profile.email } : 'skip'
   );
@@ -153,11 +153,11 @@ export default function LecturerProfilePage() {
   };
 
   const handleLinkUser = async () => {
-    if (!profile || !clerkUser) return;
+    if (!profile || !workosUser) return;
     try {
       await editMutation({
         profileId: profileId as Id<'lecturer_profiles'>,
-        userSubject: clerkUser.subject,
+        userSubject: workosUser.subject,
         userId: user?.id || '',
       });
       toast({
@@ -176,16 +176,16 @@ export default function LecturerProfilePage() {
   };
 
   const handleSyncAvatar = async () => {
-    if (!clerkUser?.subject || !clerkUser?.pictureUrl) return;
+    if (!workosUser?.subject || !workosUser?.pictureUrl) return;
     try {
-      // call users.updateUserAvatar to sync from Clerk
+      // call users.updateUserAvatar to sync from WorkOS
       await updateUserAvatarMutation({
-        subject: clerkUser.subject,
-        pictureUrl: clerkUser.pictureUrl,
+        subject: workosUser.subject,
+        pictureUrl: workosUser.pictureUrl,
       });
       toast({
         title: 'Avatar synced',
-        description: 'Profile picture synced from Clerk.',
+        description: 'Profile picture synced from WorkOS.',
       });
     } catch (e) {
       toast({
@@ -275,17 +275,17 @@ export default function LecturerProfilePage() {
             <Badge
               variant="outline"
               className="flex items-center gap-1 border-emerald-300 bg-emerald-100 text-emerald-700"
-              title="Profile is linked to a Clerk user"
+              title="Profile is linked to a WorkOS user"
             >
               <CheckCircle className="h-3 w-3" />
-              Linked to Clerk
+              Linked to WorkOS
             </Badge>
           ) : (
-            clerkUser && (
+            workosUser && (
               <>
                 <Badge variant="outline" className="flex items-center gap-1">
                   <User className="h-3 w-3" />
-                  Clerk User
+                  WorkOS User
                 </Badge>
                 <Button
                   variant="outline"
@@ -298,12 +298,12 @@ export default function LecturerProfilePage() {
               </>
             )
           )}
-          {clerkUser?.pictureUrl && (
+          {workosUser?.pictureUrl && (
             <Button
               variant="outline"
               size="sm"
               onClick={handleSyncAvatar}
-              title="Sync avatar from Clerk"
+              title="Sync avatar from WorkOS"
             >
               <RefreshCw className="h-4 w-4 mr-2" /> Sync Avatar
             </Button>
@@ -415,19 +415,19 @@ export default function LecturerProfilePage() {
       <Dialog open={showLinkConfirm} onOpenChange={setShowLinkConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Link Profile to Clerk User</DialogTitle>
+            <DialogTitle>Link Profile to WorkOS User</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 text-sm">
             <div>
-              This will link this lecturer profile to the Clerk account:
+              This will link this lecturer profile to the WorkOS account:
             </div>
             <div className="rounded border p-2 text-xs">
               <div>
                 <span className="font-medium">Name:</span>{' '}
-                {clerkUser?.givenName} {clerkUser?.familyName}
+                {workosUser?.givenName} {workosUser?.familyName}
               </div>
               <div>
-                <span className="font-medium">Email:</span> {clerkUser?.email}
+                <span className="font-medium">Email:</span> {workosUser?.email}
               </div>
             </div>
             <div className="text-muted-foreground">

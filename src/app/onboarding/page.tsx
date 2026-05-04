@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { logger } from '@/lib/logger';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,13 +106,13 @@ export default function OnboardingPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string>('');
 
-  // Query current user from Convex using their Clerk ID (subject)
+  // Query current user from Convex using their WorkOS ID (subject)
   const currentUserData = useQuery(
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   );
 
-  // Get org ID from Convex user data or fallback to Clerk
+  // Get org ID from Convex user data or fallback to WorkOS
   const orgId =
     currentUserData?.organisationId ||
     user?.organizationMemberships?.[0]?.organization?.id ||
@@ -414,7 +414,7 @@ export default function OnboardingPage() {
 
       if (nameChanged || emailChanged) {
         try {
-          // Update name in Clerk only if it actually changed
+          // Update name in WorkOS only if it actually changed
           if (nameChanged) {
             await user.update({
               firstName: formData.firstName.trim(),

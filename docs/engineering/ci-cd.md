@@ -132,7 +132,7 @@ CONVEX_DEPLOYMENT: 'https://example.invalid'
 FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
 STATSIG_SERVER_SECRET_KEY: 'test_server_key'
 STATSIG_SERVER_API_KEY: 'test_server_key'
-CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+WORKOS_CLIENT_ID: 'test_webhook_secret'
 WEBHOOK_SECRET: 'test_webhook_secret'
 ```
 

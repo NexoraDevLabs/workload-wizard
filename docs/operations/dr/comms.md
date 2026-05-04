@@ -281,7 +281,7 @@ Subject: Workload Wizard DR Incident - Technical Details
 **System Status:**
 - **Convex:** [status]
 - **Vercel:** [status]
-- **Clerk:** [status]
+- **WorkOS:** [status]
 - **R2:** [status]
 
 **Lessons Learned:**

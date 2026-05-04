@@ -44,7 +44,7 @@ import { withToast } from '@/lib/utils';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 // Type definitions for course data

@@ -308,7 +308,7 @@ export function AcademicYearProvider({
 }: {
   children: React.ReactNode;
 }) {
-  // Avoid running Clerk-dependent hooks during SSR/prerender
+  // Avoid running WorkOS-dependent hooks during SSR/prerender
   if (typeof window === 'undefined') {
     return (
       <AcademicYearContext.Provider value={fallbackAcademicYearContext}>
@@ -319,7 +319,7 @@ export function AcademicYearProvider({
 
   const env = getEnv();
 
-  // Check if we're in build time to avoid Clerk initialization
+  // Check if we're in build time to avoid WorkOS initialization
   const isBuildTime =
     !env.NEXT_PUBLIC_CONVEX_URL;
 

@@ -67,8 +67,8 @@ The testing suite covers:
 1. **Environment Variables** (required for E2E tests):
 
    ```bash
-   export CLERK_TEST_USER_EMAIL="your-test-email@example.com"
-   export CLERK_TEST_USER_PASSWORD="your-test-password"
+   export WORKOS_TEST_USER_EMAIL="your-test-email@example.com"
+   export WORKOS_TEST_USER_PASSWORD="your-test-password"
    export E2E_ASSUME_ADMIN="true"
    ```
 
