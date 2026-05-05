@@ -1,10 +1,11 @@
 'use client';
 
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import type { Id } from '@/convex/_generated/dataModel';
 import {
   Card,
   CardContent,
@@ -28,24 +29,54 @@ import {
   Save,
   X,
   RefreshCw,
+  Building2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
+
+type UpdatedAccountResponse = {
+  user?: {
+    givenName?: string;
+    familyName?: string;
+    username?: string;
+    email?: string;
+  };
+};
+
+const allowedImageTypes = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+];
+
+const maxImageSizeBytes = 5 * 1024 * 1024;
 
 export default function ProfilePage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
     redirectOnUnauthenticated: true,
   });
+
   const { toast } = useToast();
-  const updateUserAvatar = useMutation(api.users.updateUserAvatar);
-  const convexAvatarUrl = useQuery(
-    api.users.getUserAvatar,
+
+  const accountDetails = useQuery(
+    api.users.getAccountManagementDetails,
     user ? { subject: user.id } : 'skip'
   );
 
-  // Form state
+  const generateUploadUrl = useMutation(
+    api.users.generateProfilePictureUploadUrl
+  );
+  const updateOwnProfilePicture = useMutation(
+    api.users.updateOwnProfilePicture
+  );
+
+  const profilePictureUrl = useQuery(
+    api.users.getOwnProfilePictureUrl,
+    user ? { subject: user.id } : 'skip'
+  );
+
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -55,8 +86,40 @@ export default function ProfilePage() {
     email: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
-  const [avatarRefreshKey, setAvatarRefreshKey] = useState<number>(0);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
+
+  const organisationName =
+    accountDetails?.organisation?.name ?? 'No organisation assigned';
+
+  const userEmail =
+    accountDetails?.user.email || user?.emailAddresses[0]?.emailAddress || '';
+
+  const userName =
+    accountDetails?.user.fullName || user?.fullName || user?.firstName || 'User';
+
+  const userRole = user?.publicMetadata?.role as string | undefined;
+  const workosAvatarUrl = user?.imageUrl || '';
+  const convexAvatarUrlValue = profilePictureUrl || null;
+
+  const avatarUrl = convexAvatarUrlValue
+    ? `${convexAvatarUrlValue}?r=${avatarRefreshKey}`
+    : workosAvatarUrl
+      ? `${workosAvatarUrl}?r=${avatarRefreshKey}`
+      : '';
+
+  const createdAt = user?.createdAt ?? null;
+
+  useEffect(() => {
+    if (!user || !accountDetails?.user || isEditing) return;
+
+    setFormData({
+      firstName: accountDetails.user.givenName || user.firstName || '',
+      lastName: accountDetails.user.familyName || user.lastName || '',
+      username: accountDetails.user.username || '',
+      email: accountDetails.user.email || userEmail,
+    });
+  }, [user, accountDetails, userEmail, isEditing]);
 
   if (!isLoaded) {
     return null;
@@ -66,33 +129,6 @@ export default function ProfilePage() {
     return null;
   }
 
-  const userName = user.fullName || user.firstName || 'User';
-  const userEmail = user.emailAddresses[0]?.emailAddress || '';
-  const userRole = user.publicMetadata?.role as string;
-  const workosAvatarUrl = user.imageUrl;
-  const convexAvatarUrlValue = convexAvatarUrl || null;
-
-  // Use WorkOS avatar as priority since it's more up-to-date, fall back to Convex
-  // Add cache-busting parameter to force refresh (only when refresh key changes)
-  const avatarUrl = workosAvatarUrl
-    ? `${workosAvatarUrl}?r=${avatarRefreshKey}`
-    : convexAvatarUrlValue
-      ? `${convexAvatarUrlValue}?r=${avatarRefreshKey}`
-      : '';
-
-  const createdAt = user.createdAt;
-
-  // Initialize form data when user loads
-  if (!isEditing && formData.firstName === '') {
-    setFormData({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || '',
-      email: userEmail,
-    });
-  }
-
-  // Generate initials from name
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -104,6 +140,7 @@ export default function ProfilePage() {
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Unknown';
+
     return new Intl.DateTimeFormat('en-GB', {
       year: 'numeric',
       month: 'long',
@@ -111,7 +148,7 @@ export default function ProfilePage() {
     }).format(date);
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -120,221 +157,145 @@ export default function ProfilePage() {
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const allowedTypes = [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-      ];
-      if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: 'Invalid File Type',
-          description: 'Please select a JPG, PNG, GIF, or WebP image.',
-          variant: 'destructive',
-        });
-        return;
-      }
 
-      // Validate file size (5MB limit)
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        toast({
-          title: 'File Too Large',
-          description: 'Please select an image smaller than 5MB.',
-          variant: 'destructive',
-        });
-        return;
-      }
+    if (!file) return;
 
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.onerror = () => {
-        toast({
-          title: 'File Read Error',
-          description: 'Failed to read the selected file. Please try again.',
-          variant: 'destructive',
-        });
-      };
-      reader.readAsDataURL(file);
+    if (!allowedImageTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select a JPG, PNG, GIF, or WebP image.',
+        variant: 'destructive',
+      });
+      return;
     }
+
+    if (file.size > maxImageSizeBytes) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image smaller than 5 MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAvatarFile(file);
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      setAvatarPreview(e.target?.result as string);
+    };
+
+    reader.onerror = () => {
+      toast({
+        title: 'File read error',
+        description: 'Failed to read the selected file. Please try again.',
+        variant: 'destructive',
+      });
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const uploadProfilePicture = async () => {
+    if (!avatarFile) return null;
+
+    const uploadUrl = await generateUploadUrl({
+      subject: user.id,
+    });
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': avatarFile.type,
+      },
+      body: avatarFile,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error('Failed to upload profile picture');
+    }
+
+    const { storageId } = (await uploadResponse.json()) as {
+      storageId: string;
+    };
+
+    return await updateOwnProfilePicture({
+      subject: user.id,
+      storageId: storageId as Id<'_storage'>,
+    });
+  };
+
+  const updateAccount = async (pictureUrl?: string | null) => {
+    const response = await fetch('/api/account/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        givenName: formData.firstName,
+        familyName: formData.lastName,
+        username: formData.username,
+        email: formData.email,
+        ...(pictureUrl ? { pictureUrl } : {}),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = (await response.json()) as { error?: string };
+      throw new Error(errorData.error || 'Failed to update account');
+    }
+
+    return (await response.json()) as UpdatedAccountResponse;
   };
 
   const handleSave = async () => {
     setIsLoading(true);
+
     try {
-      // Ensure user is authenticated
-      if (!user || !user.id) {
+      if (!user.id) {
         toast({
-          title: 'Authentication Error',
-          description: 'Please sign in again to update your profile.',
+          title: 'Authentication error',
+          description: 'Please sign in again to update your account.',
           variant: 'destructive',
         });
         return;
       }
 
-      // Update user data
-      await user.update({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        username: formData.username,
-      });
+      let pictureUrl: string | null = null;
 
-      // Update email if changed
-      if (formData.email !== userEmail) {
-        try {
-          const response = await fetch('/api/update-user-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              newEmail: formData.email.trim(),
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = (await response.json()) as { error?: string };
-            throw new Error(errorData.error || 'Failed to update email');
-          }
-
-          toast({
-            title: 'Email Updated',
-            description: 'Your email address has been updated successfully.',
-            variant: 'success',
-          });
-
-          // Reload user data to get updated email
-          await user.reload();
-        } catch (emailError) {
-          toast({
-            title: 'Email Update Failed',
-            description:
-              emailError instanceof Error
-                ? emailError.message
-                : 'Failed to update email. Please try again.',
-            variant: 'destructive',
-          });
-          return;
-        }
+      if (avatarFile) {
+        pictureUrl = await uploadProfilePicture();
       }
 
-      // Update avatar if selected
-      if (avatarFile && avatarFile.size > 0) {
-        try {
-          // Validate file type
-          const allowedTypes = [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-          ];
-          if (!allowedTypes.includes(avatarFile.type)) {
-            toast({
-              title: 'Invalid File Type',
-              description: 'Please select a JPG, PNG, GIF, or WebP image.',
-              variant: 'destructive',
-            });
-            return;
-          }
-
-          // Validate file size (5MB limit)
-          const maxSize = 5 * 1024 * 1024; // 5MB
-          if (avatarFile.size > maxSize) {
-            toast({
-              title: 'File Too Large',
-              description: 'Please select an image smaller than 5MB.',
-              variant: 'destructive',
-            });
-            return;
-          }
-
-          // Upload to WorkOS first
-          try {
-            await user.setProfileImage({ file: avatarFile });
-          } catch (workosError) {
-            throw new Error(
-              `WorkOS upload failed: ${workosError instanceof Error ? workosError.message : 'Unknown error'}`
-            );
-          }
-
-          // Wait a moment for WorkOS to process the image and update the URL
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          // Get the updated image URL from WorkOS
-          const updatedImageUrl = user.imageUrl;
-
-          // Sync the new avatar URL to Convex
-          if (updatedImageUrl && updatedImageUrl !== avatarUrl) {
-            await updateUserAvatar({
-              subject: user.id,
-              pictureUrl: updatedImageUrl,
-            });
-
-            toast({
-              title: 'Avatar Updated',
-              description:
-                'Your profile picture has been updated successfully.',
-              variant: 'success',
-            });
-
-            // Force a refresh of the user data to get the updated avatar
-            await user.reload();
-
-            // Increment refresh key to force avatar re-render
-            setAvatarRefreshKey((prev) => prev + 1);
-          } else {
-            toast({
-              title: 'Avatar Update',
-              description:
-                'Avatar uploaded to WorkOS. It may take a moment to appear.',
-              variant: 'success',
-            });
-          }
-        } catch (avatarError) {
-          // Provide more specific error messages
-          let errorMessage = 'Failed to update avatar. Please try again.';
-          if (avatarError instanceof Error) {
-            if (avatarError.message.includes('network')) {
-              errorMessage =
-                'Network error. Please check your connection and try again.';
-            } else if (avatarError.message.includes('unauthorized')) {
-              errorMessage = 'Authentication error. Please sign in again.';
-            } else if (avatarError.message.includes('file')) {
-              errorMessage = 'Invalid file. Please select a valid image file.';
-            }
-          }
-
-          toast({
-            title: 'Avatar Update Failed',
-            description: errorMessage,
-            variant: 'destructive',
-          });
-        }
-      }
-
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been successfully updated.',
-        variant: 'success',
-      });
+      const updatedAccount = await updateAccount(pictureUrl);
 
       setIsEditing(false);
       setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        username: user.username || '',
-        email: userEmail,
+        firstName: updatedAccount.user?.givenName || formData.firstName,
+        lastName: updatedAccount.user?.familyName || formData.lastName,
+        username: updatedAccount.user?.username || formData.username,
+        email: updatedAccount.user?.email || formData.email,
       });
       setAvatarFile(null);
       setAvatarPreview('');
-    } catch {
+
+      if (pictureUrl) {
+        setAvatarRefreshKey((prev) => prev + 1);
+      }
+
       toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
+        title: pictureUrl ? 'Changes saved' : 'Account updated',
+        description: pictureUrl
+          ? 'Your account and profile picture have been updated.'
+          : 'Your account has been successfully updated.',
+        variant: 'success',
+      });
+    } catch (error) {
+      toast({
+        title: 'Update failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update account. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -345,54 +306,45 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setIsEditing(false);
     setFormData({
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      username: user.username || '',
-      email: userEmail,
+      firstName: accountDetails?.user.givenName || user.firstName || '',
+      lastName: accountDetails?.user.familyName || user.lastName || '',
+      username: accountDetails?.user.username || '',
+      email: accountDetails?.user.email || userEmail,
     });
     setAvatarFile(null);
     setAvatarPreview('');
   };
 
-  const handleRefreshAvatar = async () => {
-    try {
-      await user.reload();
-      setAvatarRefreshKey((prev) => prev + 1);
-      toast({
-        title: 'Avatar Refreshed',
-        description: 'Profile picture has been refreshed.',
-        variant: 'success',
-      });
-    } catch {
-      toast({
-        title: 'Refresh Failed',
-        description: 'Failed to refresh avatar. Please try again.',
-        variant: 'destructive',
-      });
-    }
+  const handleRefreshAvatar = () => {
+    setAvatarRefreshKey((prev) => prev + 1);
+
+    toast({
+      title: 'Profile picture refreshed',
+      description: 'Your profile picture has been refreshed.',
+      variant: 'success',
+    });
   };
 
   const breadcrumbs = [
     { label: 'Home', href: '/' },
     { label: 'Account', href: '/account' },
-    { label: 'Profile' },
+    { label: 'Overview' },
   ];
 
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
-      title="Profile Management"
-      subtitle="Manage your profile information and password"
+      title="Account Management"
+      subtitle="Manage your account information"
     >
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Overview Card */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Profile Overview
+              Account Overview
             </CardTitle>
-            <CardDescription>Your current profile information</CardDescription>
+            <CardDescription>Your current account information</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
@@ -437,24 +389,26 @@ export default function ProfilePage() {
                 <span className="text-muted-foreground">Member since:</span>
                 <span className="font-medium">{formatDate(createdAt)}</span>
               </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Organisation:</span>
+                <span>{organisationName}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Profile Management Card */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Profile Management
+              Account Management
             </CardTitle>
-            <CardDescription>
-              Update your profile information, password, and settings
-            </CardDescription>
+            <CardDescription>Update your account information</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Avatar Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
@@ -466,10 +420,12 @@ export default function ProfilePage() {
                       {getInitials(userName)}
                     </AvatarFallback>
                   </Avatar>
+
                   <div className="space-y-2">
                     <Label htmlFor="avatar" className="text-sm font-medium">
-                      Profile Picture
+                      Profile picture
                     </Label>
+
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -477,11 +433,12 @@ export default function ProfilePage() {
                         onClick={() =>
                           document.getElementById('avatar')?.click()
                         }
-                        disabled={!isEditing}
+                        disabled={!isEditing || isLoading}
                       >
                         <Camera className="h-4 w-4 mr-2" />
-                        Change Photo
+                        Change photo
                       </Button>
+
                       {avatarFile && (
                         <Button
                           variant="outline"
@@ -490,11 +447,13 @@ export default function ProfilePage() {
                             setAvatarFile(null);
                             setAvatarPreview('');
                           }}
+                          disabled={isLoading}
                         >
                           <X className="h-4 w-4 mr-2" />
                           Remove
                         </Button>
                       )}
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -505,16 +464,18 @@ export default function ProfilePage() {
                         Refresh
                       </Button>
                     </div>
+
                     <input
                       id="avatar"
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarChange}
                       className="hidden"
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading}
                     />
+
                     <p className="text-xs text-muted-foreground">
-                      JPG, PNG or GIF. Max size 5MB.
+                      JPG, PNG, GIF or WebP. Max size 5 MB.
                     </p>
                   </div>
                 </div>
@@ -522,32 +483,34 @@ export default function ProfilePage() {
 
               <Separator />
 
-              {/* Personal Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Personal Information</h3>
+                <h3 className="text-lg font-medium">Personal information</h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
+                    <Label htmlFor="firstName">First name</Label>
                     <Input
                       id="firstName"
                       value={formData.firstName}
                       onChange={(e) =>
                         handleInputChange('firstName', e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading}
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
+                    <Label htmlFor="lastName">Last name</Label>
                     <Input
                       id="lastName"
                       value={formData.lastName}
                       onChange={(e) =>
                         handleInputChange('lastName', e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading}
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
                     <Input
@@ -556,9 +519,10 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         handleInputChange('username', e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading}
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -568,13 +532,12 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         handleInputChange('email', e.target.value)
                       }
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex items-center justify-end gap-2 pt-4">
                 {isEditing ? (
                   <>
@@ -594,7 +557,7 @@ export default function ProfilePage() {
                       ) : (
                         <>
                           <Save className="h-4 w-4 mr-2" />
-                          Save Changes
+                          Save changes
                         </>
                       )}
                     </Button>
@@ -602,7 +565,7 @@ export default function ProfilePage() {
                 ) : (
                   <Button onClick={() => setIsEditing(true)}>
                     <Settings className="h-4 w-4 mr-2" />
-                    Edit Profile
+                    Edit account
                   </Button>
                 )}
               </div>

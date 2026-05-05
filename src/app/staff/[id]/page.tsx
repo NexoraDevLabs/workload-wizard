@@ -18,7 +18,6 @@ import {
   AlertTriangle,
   User,
   Link2,
-  RefreshCw,
   Edit,
   Shield,
 } from 'lucide-react';
@@ -112,7 +111,6 @@ export default function LecturerProfilePage() {
 
   const editMutation = useMutation(api.staff.edit);
   const deactivateMutation = useMutation(api.staff.edit);
-  const updateUserAvatarMutation = useMutation(api.users.updateUserAvatar);
 
   const handleEdit = async (
     formData: Partial<{
@@ -171,27 +169,6 @@ export default function LecturerProfilePage() {
     } catch (e) {
       toast({
         title: 'Link failed',
-        description: e instanceof Error ? e.message : 'An error occurred',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleSyncAvatar = async () => {
-    if (!workosUser?.subject || !workosUser?.pictureUrl) return;
-    try {
-      // call users.updateUserAvatar to sync from WorkOS
-      await updateUserAvatarMutation({
-        subject: workosUser.subject,
-        pictureUrl: workosUser.pictureUrl,
-      });
-      toast({
-        title: 'Avatar synced',
-        description: 'Profile picture synced from WorkOS.',
-      });
-    } catch (e) {
-      toast({
-        title: 'Avatar sync failed',
         description: e instanceof Error ? e.message : 'An error occurred',
         variant: 'destructive',
       });
@@ -315,16 +292,6 @@ export default function LecturerProfilePage() {
                 </Button>
               </>
             )
-          )}
-          {workosUser?.pictureUrl && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSyncAvatar}
-              title="Sync avatar from WorkOS"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" /> Sync Avatar
-            </Button>
           )}
 
           <PermissionGate permission="staff.edit" fallback={null}>

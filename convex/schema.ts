@@ -49,7 +49,7 @@ export default defineSchema({
     department: v.optional(v.string()),
     phone: v.optional(v.string()),
     organisationId: v.optional(v.id('organisations')),
-    pictureUrl: v.optional(v.string()),
+    pictureUrl: v.optional(v.id('_storage')),
     subject: v.string(), // WorkOS ID
     tokenIdentifier: v.optional(v.string()),
     isActive: v.boolean(),
@@ -82,7 +82,8 @@ export default defineSchema({
     updatedAt: v.float64(),
   })
     .index('by_subject', ['subject'])
-    .index('by_email', ['email']),
+    .index('by_email', ['email'])
+    .index('by_username', ['username']),
 
   // 👤 User Preferences (per user per organisation)
   user_preferences: defineTable({
@@ -274,7 +275,10 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }),
+  })
+  .index('by_profile', ['profileId'])
+  .index('by_year', ['academicYearId'])
+  .index('by_profile_year', ['profileId', 'academicYearId']),
 
   // 👥 Group Allocations (lecturer ↔ group for AY)
   group_allocations: defineTable({

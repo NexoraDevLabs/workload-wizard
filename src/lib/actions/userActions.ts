@@ -117,7 +117,6 @@ export async function createUser(data: CreateUserData) {
     fullName: `${data.firstName} ${data.lastName}`,
     systemRoles: data.roles,
     organisationId,
-    pictureUrl: '',
     subject,
     tokenIdentifier: `db:${subject}`,
     userId: authUser.id,
