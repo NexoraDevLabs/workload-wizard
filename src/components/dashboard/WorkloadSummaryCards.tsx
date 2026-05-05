@@ -58,13 +58,14 @@ function SummaryCard({
 }
 
 export function WorkloadSummaryCards() {
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser();
   const { currentYear } = useAcademicYear();
 
-  // Find the linked lecturer profile for the current user
+  const hasOrganisation = Boolean(user?.organisationId);
+
   const staffList = useQuery(
     api.staff.list,
-    user?.id ? { userId: user.id } : 'skip'
+    user?.id && hasOrganisation ? { userId: user.id } : 'skip'
   ) as
     | Array<{
         _id: string;
@@ -103,9 +104,45 @@ export function WorkloadSummaryCards() {
       : 'skip'
   ) as Array<{ allocation?: { hours?: number } }> | undefined;
 
-  const isLoadingProfile = staffList === undefined;
-  const isLoadingTotals = linkedProfile && totals === undefined;
-  const isLoading = isLoadingProfile || !!isLoadingTotals;
+  if (!isLoaded) {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          'Teaching Hours',
+          'Admin Hours',
+          'Total Allocated',
+          'Teaching Remaining',
+        ].map((label) => (
+          <SummaryCard
+            key={label}
+            label={label}
+            value="—"
+            icon={Clock}
+            iconBg="bg-secondary"
+            iconColor="text-secondary-foreground"
+            isLoading
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!hasOrganisation) {
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+        Your account is signed in but has not been assigned to an organisation
+        yet. Ask an admin to assign your account before using the dashboard.
+      </div>
+    );
+  }
+
+  const isLoadingProfile = hasOrganisation && staffList === undefined;
+  const isLoadingTotals = Boolean(linkedProfile && totals === undefined);
+  const isLoading = isLoadingProfile || isLoadingTotals;
 
   const teaching = totals?.allocatedTeaching ?? 0;
   const adminStandalone = (adminAllocations || []).reduce(

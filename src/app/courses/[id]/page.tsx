@@ -226,7 +226,9 @@ export default function CourseDetailPage() {
   const courseId = params?.id;
   const { toast } = useToast();
   const { currentYear } = useAcademicYear();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   const course = useQuery(
     api.courses.getById,
@@ -250,10 +252,7 @@ export default function CourseDetailPage() {
   const settings = useQuery(
     api.organisationSettings.getForActor,
     user?.id ? { userId: user.id } : 'skip'
-  ) as
-    | OrganisationSettings
-    | null
-    | undefined;
+  ) as OrganisationSettings | null | undefined;
 
   const updateCourse = useMutation(api.courses.update);
   const initialiseSplit = useMutation(api.courses.initialiseRecommendedGroups);
@@ -322,6 +321,22 @@ export default function CourseDetailPage() {
     }
     setStudentsOpen(true);
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout
@@ -631,7 +646,9 @@ function CourseYearModules({
   recommendedList?: Array<{ campus: string; groups: number; count: number }>;
 }) {
   const { toast } = useToast();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const attached = useQuery(api.modules.listForCourseYear, {
     courseYearId: yearId as Id<'course_years'>,
   });
@@ -659,6 +676,22 @@ function CourseYearModules({
     );
     return (allModules || []).filter((m: Module) => !used.has(String(m._id)));
   }, [attached, allModules]);
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4" data-testid="module-attachment-form">
@@ -824,7 +857,9 @@ function ModuleIterationAndGroupsAndAllocations({
 }) {
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,
@@ -910,6 +945,22 @@ function ModuleIterationAndGroupsAndAllocations({
 
   if (!currentYear)
     return <span className="text-muted-foreground">Select AY</span>;
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <div

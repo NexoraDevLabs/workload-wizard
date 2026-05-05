@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Shield, Settings, Database } from 'lucide-react';
 import Link from 'next/link';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 const devTools = [
   {
@@ -22,15 +23,27 @@ const breadcrumbs = [
   { label: 'Dev', href: '/dev' },
 ];
 
-const categories = [
-  'All',
-  'Features',
-  'UI',
-  'Database',
-  'Security',
-];
+const categories = ['All', 'Features', 'UI', 'Database', 'Security'];
 
 export default function DevPage() {
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}

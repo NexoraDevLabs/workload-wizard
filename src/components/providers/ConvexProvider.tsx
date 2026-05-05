@@ -19,7 +19,7 @@ export function ConvexClientProvider({
   children: React.ReactNode;
 }) {
   const env = getEnv();
-  const isBuildTime = !env.NEXT_PUBLIC_CONVEX_URL
+  const isBuildTime = !env.NEXT_PUBLIC_CONVEX_URL;
 
   if (isBuildTime) {
     return <>{children}</>;

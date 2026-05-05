@@ -10,7 +10,6 @@ export type WorkOSAuthUser = {
   roles: string[];
 };
 
-const WORKOS_SESSION_COOKIE_NAMES = ['wos-session', 'workos_session'];
 export const WORKOS_SESSION_COOKIE_NAME = 'wos-session';
 
 let workosClient: WorkOS | null = null;
@@ -46,16 +45,19 @@ export async function getAuthUserFromWorkOS(): Promise<WorkOSAuthUser | null> {
   if (!workos) return null;
 
   const cookieStore = await cookies();
-  const sessionData = WORKOS_SESSION_COOKIE_NAMES.map(
-    (name) => cookieStore.get(name)?.value
-  ).find(Boolean);
+
+  const sessionData =
+    cookieStore.get('wos-session')?.value ||
+    cookieStore.get('workos_session')?.value;
 
   if (!sessionData) return null;
 
-  const cookiePassword = getWorkOSCookiePassword();
+  const cookiePassword = process.env.WORKOS_COOKIE_PASSWORD;
+  if (!cookiePassword) return null; // enforce this
+
   const session = await workos.userManagement.authenticateWithSessionCookie({
     sessionData,
-    ...(cookiePassword ? { cookiePassword } : {}),
+    cookiePassword,
   });
 
   if (!session.authenticated) return null;
@@ -63,12 +65,12 @@ export async function getAuthUserFromWorkOS(): Promise<WorkOSAuthUser | null> {
   return {
     id: session.user.id,
     email: session.user.email,
-    firstName: session.user.firstName,
-    lastName: session.user.lastName,
-    organisationId:
-      session.organizationId ??
-      session.user.metadata.organisationId ??
-      session.user.metadata.organizationId,
+    firstName: session.user.firstName ?? null,
+    lastName: session.user.lastName ?? null,
+
+    // IMPORTANT: don't over-assume org here
+    organisationId: session.organizationId ?? undefined,
+
     roles: session.roles ?? [],
   };
 }

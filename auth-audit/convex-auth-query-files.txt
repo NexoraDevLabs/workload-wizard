@@ -1,0 +1,9 @@
+src/app/courses/[id]/iterations/[iterationId]/page.tsx
+src/app/courses/[id]/page.tsx
+src/app/staff/page.tsx
+src/app/modules/page.tsx
+src/components/dashboard/WorkloadStatusPanel.tsx
+src/components/dashboard/WorkloadSummaryCards.tsx
+src/components/domain/EditModuleForm.tsx
+src/hooks/useAuthUser.ts
+src/lib/authz.ts

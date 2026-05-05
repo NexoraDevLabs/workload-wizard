@@ -62,7 +62,9 @@ interface LecturerAllocationDetail {
 }
 
 export default function LecturerProfilePage() {
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const params = useParams();
   const { toast } = useToast();
   const profileId = params.id as string;
@@ -246,6 +248,22 @@ export default function LecturerProfilePage() {
       >
         <div className="text-sm text-muted-foreground">Loading…</div>
       </StandardizedSidebarLayout>
+    );
+  }
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
     );
   }
 

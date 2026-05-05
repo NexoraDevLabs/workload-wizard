@@ -15,6 +15,7 @@ import { headers } from 'next/headers';
 import { LoadingOverlayServer } from '@/components/loading-overlay-server';
 import { Suspense } from 'react';
 import { RouteLoadingOverlay } from '@/components/RouteLoadingOverlay';
+import { AuthUserProvider } from '@/components/providers/AuthUserProvider';
 
 const dmSans = DM_Sans({
   variable: '--font-sans',
@@ -63,34 +64,36 @@ export default async function RootLayout({
   }
 
   return (
+    <html lang="en" suppressHydrationWarning>
+    <body
+      className={`${dmSans.variable} ${jetBrainsMono.variable} app-shell antialiased`}
+    >
     <WorkOSWrapper>
       <ConvexClientProvider>
-        <html lang="en" suppressHydrationWarning>
-          <body
-            className={`${dmSans.variable} ${jetBrainsMono.variable} app-shell antialiased`}
-          >
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <AcademicYearProvider>
-                <BreadcrumbProvider>
-                  <Suspense fallback={<LoadingOverlayServer />}>
-                    {children}
-                    <RouteLoadingOverlay />
-                  </Suspense>
-                  <FeaturebaseMessenger />
-                  <Toaster />
-                  <Analytics />
-                  <SpeedInsights />
-                </BreadcrumbProvider>
-              </AcademicYearProvider>
-            </ThemeProvider>
-          </body>
-        </html>
+        <AuthUserProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <AcademicYearProvider>
+                  <BreadcrumbProvider>
+                    <Suspense fallback={<LoadingOverlayServer />}>
+                      {children}
+                      <RouteLoadingOverlay />
+                    </Suspense>
+                    <FeaturebaseMessenger />
+                    <Toaster />
+                    <Analytics />
+                    <SpeedInsights />
+                  </BreadcrumbProvider>
+                </AcademicYearProvider>
+              </ThemeProvider>
+        </AuthUserProvider>
       </ConvexClientProvider>
     </WorkOSWrapper>
+    </body>
+    </html>
   );
 }

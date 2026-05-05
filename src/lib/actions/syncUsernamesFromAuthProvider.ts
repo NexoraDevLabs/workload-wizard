@@ -12,7 +12,8 @@ export async function syncUsernamesFromAuthProvider() {
 
   return {
     success: true,
-    message: 'WorkOS username sync has been removed. Usernames are managed in the database.',
+    message:
+      'WorkOS username sync has been removed. Usernames are managed in the database.',
     updatedCount: 0,
     skippedCount: 0,
     errorCount: 0,

@@ -827,7 +827,9 @@ export const upsertOrganisationAdminCategory = mutation({
     if (args.id) {
       const existing = await ctx.db.get(args.id);
       if (!existing) throw new Error('Category not found');
-      if (String(existing.organisationId) !== String(authContext.organisationId))
+      if (
+        String(existing.organisationId) !== String(authContext.organisationId)
+      )
         throw new Error('Cannot modify other organisation categories');
       await ctx.db.patch(args.id, {
         name: args.name,
@@ -888,7 +890,10 @@ export const upsertOrganisationAdminCategory = mutation({
 });
 
 export const removeOrganisationAdminCategory = mutation({
-  args: { userId: v.string(), id: v.id('organisation_admin_allocation_categories') },
+  args: {
+    userId: v.string(),
+    id: v.id('organisation_admin_allocation_categories'),
+  },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db

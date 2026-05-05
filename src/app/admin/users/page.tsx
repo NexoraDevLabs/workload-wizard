@@ -13,6 +13,7 @@ import {
 } from '@/components/common/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
 import { handleClientPermissionError } from '@/lib/permission-errors';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 // Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,9 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const usersListRef = useRef<{ handleCreateUser: () => void }>(null);
   const permissions = usePermissions();
-
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   useEffect(() => {
     if (!permissions.canViewUsers()) {
       router.replace('/unauthorised');
@@ -72,6 +75,14 @@ export default function AdminUsersPage() {
       </UsersCreateGate>
     </div>
   );
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
 
   return (
     <StandardizedSidebarLayout

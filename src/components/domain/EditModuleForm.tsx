@@ -77,8 +77,7 @@ export function EditModuleForm({
   const lecturers = (useQuery(
     api.staff.listForActor,
     user?.id ? { userId: user.id } : 'skip'
-  ) ||
-    []) as LecturerProfileOption[];
+  ) || []) as LecturerProfileOption[];
   const orgSettings = useQuery(
     api.organisationSettings.getForActor,
     user?.id ? { userId: user.id } : 'skip'

@@ -16,10 +16,10 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
 export function usePermissions(organisationId?: string) {
-  const { user } = useAuthUser();
+  const { user, isLoaded } = useAuthUser();
   const convexUser = useQuery(
     api.users.getBySubject,
-    user?.id ? { subject: user.id } : 'skip'
+    isLoaded && user?.id && user?.organisationId ? { subject: user.id } : 'skip'
   ) as { systemRoles?: string[] } | undefined;
 
   // Derive an effective role from publicMetadata.role or roles[] (prefer strongest)

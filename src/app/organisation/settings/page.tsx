@@ -53,7 +53,9 @@ export default function OrganisationSettingsPage() {
     { label: 'Settings' },
   ];
 
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const settings = useQuery(api.organisationSettings.getOrganisationSettings, {
     userId: user?.id || '',
   });
@@ -158,6 +160,22 @@ export default function OrganisationSettingsPage() {
     if (!user?.id) return;
     await upsert({ userId: user.id, ...effective });
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

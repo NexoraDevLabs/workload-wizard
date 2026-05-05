@@ -9,7 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { syncUsersFromAuthProvider, getSyncStatus } from '@/lib/actions/syncUsers';
+import {
+  syncUsersFromAuthProvider,
+  getSyncStatus,
+} from '@/lib/actions/syncUsers';
 import { RefreshCw, CheckCircle, AlertCircle, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 

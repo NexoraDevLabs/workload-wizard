@@ -37,7 +37,9 @@ interface OrganisationSettings {
 }
 
 export default function CreateLecturerProfilePage() {
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const { toast } = useToast();
   const create = useMutation(api.staff.create);
   const [isLoading, setIsLoading] = useState(false);
@@ -174,6 +176,22 @@ export default function CreateLecturerProfilePage() {
       setIsLoading(false);
     }
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

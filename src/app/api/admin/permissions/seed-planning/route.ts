@@ -16,13 +16,19 @@ function getConvexClient() {
 export async function POST() {
   try {
     const user = await getAuthUser();
-    await getConvexClient().mutation(api.permissions.seedPlanningMvpPermissions, {
-      performedBy: user.id,
-    });
+    await getConvexClient().mutation(
+      api.permissions.seedPlanningMvpPermissions,
+      {
+        performedBy: user.id,
+      }
+    );
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to seed permissions' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to seed permissions',
+      },
       { status: 500 }
     );
   }

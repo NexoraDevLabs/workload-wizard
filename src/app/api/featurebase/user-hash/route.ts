@@ -10,7 +10,10 @@ export async function GET() {
     }
     const secret = process.env.FEATUREBASE_SSO_KEY;
     if (!secret) return NextResponse.json({ hash: null });
-    const hash = crypto.createHmac('sha256', secret).update(user.userId).digest('hex');
+    const hash = crypto
+      .createHmac('sha256', secret)
+      .update(user.userId)
+      .digest('hex');
     return NextResponse.json({ hash, userId: user.userId, email: user.email });
   } catch {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });

@@ -297,7 +297,11 @@ export const remove = mutation({
 
 // Check if a module code is available within the actor's organisation
 export const isCodeAvailable = query({
-  args: { userId: v.string(), code: v.string(), excludeId: v.optional(v.id('modules')) },
+  args: {
+    userId: v.string(),
+    code: v.string(),
+    excludeId: v.optional(v.id('modules')),
+  },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
 
@@ -572,7 +576,11 @@ export const createIterationForYear = mutation({
 
 // Convenience: create iteration for the organisation's default academic year
 export const createIterationForDefaultYear = mutation({
-  args: { userId: v.string(), moduleId: v.id('modules'), totalHours: v.optional(v.number()) },
+  args: {
+    userId: v.string(),
+    moduleId: v.id('modules'),
+    totalHours: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db

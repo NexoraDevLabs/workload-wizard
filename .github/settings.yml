@@ -5,7 +5,7 @@ repository:
   name: workload-wizard
   description: A comprehensive workload management application for educational institutions
   homepage: https://workload-wizard.vercel.app
-  topics: nextjs, react, typescript, convex, clerk, education, workload-management
+  topics: nextjs, react, typescript, convex, education, workload-management
   private: true
   has_issues: true
   has_projects: true

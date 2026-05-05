@@ -149,6 +149,8 @@ export const syncUser = mutation({
   args: {
     userId: v.string(),
     email: v.string(),
+    givenName: v.optional(v.string()),
+    familyName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     if (!args.userId) {
@@ -159,6 +161,15 @@ export const syncUser = mutation({
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
+
+    // Build names (WorkOS first, fallback to email)
+    const fallback = splitEmailName(args.email);
+
+    const givenName = args.givenName || fallback.givenName;
+    const familyName = args.familyName || fallback.familyName;
+
+    const fullName =
+      [givenName, familyName].filter(Boolean).join(' ') || fallback.fullName;
 
     let userDoc;
 
@@ -171,6 +182,16 @@ export const syncUser = mutation({
         updates.email = args.email;
       }
 
+      // ✅ update names if changed (important)
+      if (
+        existing.givenName !== givenName ||
+        existing.familyName !== familyName
+      ) {
+        updates.givenName = givenName;
+        updates.familyName = familyName;
+        updates.fullName = fullName;
+      }
+
       if (!existing.isActive) {
         updates.isActive = true;
       }
@@ -179,13 +200,12 @@ export const syncUser = mutation({
       userDoc = await ctx.db.get(existing._id);
     } else {
       const now = Date.now();
-      const names = splitEmailName(args.email);
 
       const insertedId = await ctx.db.insert('users', {
         email: args.email,
-        givenName: names.givenName,
-        familyName: names.familyName,
-        fullName: names.fullName,
+        givenName,
+        familyName,
+        fullName,
         systemRoles: ['user'],
         subject: args.userId,
         isActive: true,
@@ -196,13 +216,16 @@ export const syncUser = mutation({
       userDoc = await ctx.db.get(insertedId);
     }
 
-    // IMPORTANT: check membership but DO NOT create it
     const membership = await ctx.db
       .query('user_organisations')
       .withIndex('by_user', (q) => q.eq('userId', args.userId))
       .first();
 
-    return { user: userDoc, needsOrganisation: !membership };
+    return { 
+      user: userDoc, 
+      needsOrganisation: !membership,
+      onboardingCompleted: Boolean(userDoc?.onboardingCompleted) 
+    };
   },
 });
 
@@ -558,7 +581,9 @@ export const list = query({
           ? await ctx.db
               .query('user_role_assignments')
               .withIndex('by_user_org', (q) =>
-                q.eq('userId', user.subject).eq('organisationId', organisationId)
+                q
+                  .eq('userId', user.subject)
+                  .eq('organisationId', organisationId)
               )
               .filter((q) => q.eq(q.field('isActive'), true))
               .collect()
@@ -959,6 +984,153 @@ export const updateByWebhook = mutation({
     }
 
     return user._id;
+  },
+});
+
+export const completeOnboardingAndCreateProfile = mutation({
+  args: {
+    subject: v.string(), // WorkOS user id / users.subject
+    organisationId: v.id('organisations'),
+    givenName: v.string(),
+    familyName: v.string(),
+    email: v.string(),
+    jobRole: v.optional(v.string()),
+    department: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const organisation = await ctx.db.get(args.organisationId);
+    if (!organisation || !organisation.isActive) {
+      throw new Error('Organisation not found or inactive');
+    }
+
+    const givenName = args.givenName.trim() || user.givenName || 'User';
+    const familyName = args.familyName.trim();
+    const fullName = [givenName, familyName].filter(Boolean).join(' ');
+
+    const onboardingData: NonNullable<Doc<'users'>['onboardingData']> = {
+      firstName: givenName,
+      lastName: familyName,
+      email: args.email,
+      ...(args.phone ? { phone: args.phone } : {}),
+      ...(args.department ? { department: args.department } : {}),
+      ...(args.jobRole ? { role: args.jobRole } : {}),
+    };
+    
+    const userUpdates: Partial<Doc<'users'>> = {
+      email: args.email,
+      givenName,
+      familyName,
+      fullName,
+      organisationId: args.organisationId,
+      onboardingCompleted: true,
+      onboardingCompletedAt: now,
+      onboardingData,
+      updatedAt: now,
+    };
+    
+    if (args.jobRole) {
+      userUpdates.jobRole = args.jobRole;
+    }
+    
+    if (args.department) {
+      userUpdates.department = args.department;
+    }
+    
+    if (args.phone) {
+      userUpdates.phone = args.phone;
+    }
+    
+    await ctx.db.patch(user._id, userUpdates);
+
+    await ensureMembershipDocument(ctx, args.subject, args.organisationId, true);
+
+    const existingProfile = await ctx.db
+      .query('lecturer_profiles')
+      .withIndex('by_user_subject', (q) => q.eq('userSubject', args.subject))
+      .first();
+
+    let lecturerProfileId: Id<'lecturer_profiles'>;
+
+    if (existingProfile) {
+      await ctx.db.patch(existingProfile._id, {
+        fullName,
+        email: args.email,
+        organisationId: args.organisationId,
+        ...(args.jobRole ? { role: args.jobRole } : {}),
+        ...(args.department ? { teamName: args.department } : {}),
+        isActive: true,
+        updatedAt: now,
+      });
+
+      lecturerProfileId = existingProfile._id;
+    } else {
+      const lecturerProfileBase = {
+        fullName,
+        email: args.email,
+        contract: 'FT',
+        fte: 1,
+        maxTeachingHours: 0,
+        totalContract: 0,
+        userSubject: args.subject,
+        organisationId: args.organisationId,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const lecturerProfileOptional = {
+        ...(args.jobRole ? { role: args.jobRole } : {}),
+        ...(args.department ? { teamName: args.department } : {}),
+      };
+      
+      lecturerProfileId = await ctx.db.insert('lecturer_profiles', {
+        ...lecturerProfileBase,
+        ...lecturerProfileOptional,
+      });
+    }
+
+    const updatedUser = await ctx.db.get(user._id);
+
+    try {
+      await writeAudit(ctx, {
+        action: 'user.onboarding_completed',
+        entityType: 'user',
+        entityId: String(user._id),
+        entityName: fullName,
+        performedBy: args.subject,
+        performedByName: fullName,
+        organisationId: args.organisationId,
+        details: 'User completed onboarding and lecturer profile was created or updated',
+        metadata: JSON.stringify({
+          lecturerProfileId,
+          email: args.email,
+          jobRole: args.jobRole,
+          department: args.department,
+        }),
+        severity: 'info',
+        type: 'org',
+      });
+    } catch {
+      // Ignore audit write errors silently
+    }
+
+    return {
+      user: updatedUser,
+      lecturerProfileId,
+      organisationId: args.organisationId,
+    };
   },
 });
 

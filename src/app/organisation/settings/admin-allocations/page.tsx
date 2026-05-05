@@ -25,7 +25,9 @@ interface AdminCategory {
 
 export default function OrganisationAdminAllocationsSettingsPage() {
   const { toast } = useToast();
-  const { isLoaded, user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const categories = useQuery(
     api.allocations.listOrganisationAdminCategories,
     isLoaded && user?.id ? { userId: user.id } : 'skip'
@@ -160,6 +162,22 @@ export default function OrganisationAdminAllocationsSettingsPage() {
       setIsRemoving(null);
     }
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <PermissionGate permission="organisations.manage" fallback={null}>

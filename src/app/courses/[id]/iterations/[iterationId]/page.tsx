@@ -82,7 +82,9 @@ export default function IterationDetailsPage() {
   const iterationId = params?.iterationId;
 
   const { currentYear: _currentYear } = useAcademicYear();
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   // Fetch course and module data
   const course = useQuery(
@@ -275,6 +277,22 @@ export default function IterationDetailsPage() {
           Please select an academic year to view iteration details.
         </div>
       </StandardizedSidebarLayout>
+    );
+  }
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
     );
   }
 
@@ -516,7 +534,8 @@ export default function IterationDetailsPage() {
                         )
                       ) {
                         await withToast(
-                          () => deleteGroup({ userId: user!.id, id: group._id }),
+                          () =>
+                            deleteGroup({ userId: user!.id, id: group._id }),
                           {
                             success: {
                               title: 'Group deleted',
@@ -1223,13 +1242,13 @@ function BulkGroupsForm({
     }>
   ) => Promise<void> | void;
 }) {
-  const { user } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const settings = useQuery(
     api.organisationSettings.getForActor,
     user?.id ? { userId: user.id } : 'skip'
-  ) as
-    | { campusOptions?: string[]; maxClassSizePerGroup?: number }
-    | undefined;
+  ) as { campusOptions?: string[]; maxClassSizePerGroup?: number } | undefined;
   const [entries, setEntries] = useState<
     Array<{ campus: string; students: string }>
   >((campuses || []).map((c) => ({ campus: c, students: '' })));
@@ -1263,6 +1282,22 @@ function BulkGroupsForm({
       })),
     };
   });
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <DialogContent>

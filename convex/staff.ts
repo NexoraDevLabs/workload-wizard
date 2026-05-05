@@ -188,17 +188,36 @@ export const edit = mutation({
 export const list = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
-    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
-    if (!actor) throw new Error('Actor not found');
+
+    if (!actor || !actor.isActive) {
+      return [];
+    }
+
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .collect();
+
+    const primaryMembership =
+      memberships.find((membership) => membership.isPrimary) ??
+      memberships[0] ??
+      null;
+
+    const organisationId =
+      actor.organisationId ?? primaryMembership?.organisationId ?? null;
+
+    if (!organisationId) {
+      return [];
+    }
 
     return await ctx.db
       .query('lecturer_profiles')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', authContext.organisationId)
+        q.eq('organisationId', organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();

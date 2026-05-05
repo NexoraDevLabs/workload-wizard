@@ -76,7 +76,9 @@ export async function createUser(data: CreateUserData) {
       throw new Error('Unauthorised: User must be assigned to an organisation');
     }
     if (organisationId && organisationId !== authUser.orgId) {
-      throw new Error('Unauthorised: Can only create users in your own organisation');
+      throw new Error(
+        'Unauthorised: Can only create users in your own organisation'
+      );
     }
     organisationId = authUser.orgId as Id<'organisations'>;
   }
@@ -84,7 +86,9 @@ export async function createUser(data: CreateUserData) {
   if (!organisationId) {
     const organisations = await getConvexClient().query(api.organisations.list);
     if ((organisations?.length || 0) === 0) {
-      throw new Error('No organisations found in Convex. Please create an organisation first.');
+      throw new Error(
+        'No organisations found in Convex. Please create an organisation first.'
+      );
     }
     organisationId = organisations[0]!._id;
   }
@@ -94,10 +98,15 @@ export async function createUser(data: CreateUserData) {
   });
   const existing = existingUsers.find((user: any) => user.email === data.email);
   if (existing) {
-    return { success: true, userId: existing.subject, message: 'User already exists' };
+    return {
+      success: true,
+      userId: existing.subject,
+      message: 'User already exists',
+    };
   }
 
-  const password = data.password || `${randomBytes(12).toString('base64url')}!1aA`;
+  const password =
+    data.password || `${randomBytes(12).toString('base64url')}!1aA`;
   const subject = `db_${randomBytes(16).toString('hex')}`;
 
   await getConvexClient().mutation(api.users.create, {
@@ -123,21 +132,27 @@ export async function createUser(data: CreateUserData) {
         lastName: data.lastName,
         username: data.username,
         temporaryPassword: password,
-        signInUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://workload-wiz.xyz/sign-in',
+        signInUrl:
+          process.env.NEXT_PUBLIC_APP_URL || 'https://workload-wiz.xyz/sign-in',
         adminName: authUser.email ?? authUser.id,
       });
       emailSent = emailResult.success;
     } catch {}
   }
 
-  const roleIds = data.organisationalRoleIds ?? (data.organisationalRoleId ? [data.organisationalRoleId] : []);
+  const roleIds =
+    data.organisationalRoleIds ??
+    (data.organisationalRoleId ? [data.organisationalRoleId] : []);
   if (roleIds.length > 0) {
     try {
-      await getConvexClient().mutation(api.organisationalRoles.assignMultipleToUser, {
-        userId: subject,
-        roleIds: roleIds.map((roleId) => roleId as Id<'user_roles'>),
-        assignedBy: authUser.id,
-      });
+      await getConvexClient().mutation(
+        api.organisationalRoles.assignMultipleToUser,
+        {
+          userId: subject,
+          roleIds: roleIds.map((roleId) => roleId as Id<'user_roles'>),
+          assignedBy: authUser.id,
+        }
+      );
     } catch {}
   }
 
@@ -151,9 +166,12 @@ export async function createUser(data: CreateUserData) {
   return {
     success: true,
     userId: subject,
-    message: emailSent ? 'User created and invitation email sent' : 'User created',
+    message: emailSent
+      ? 'User created and invitation email sent'
+      : 'User created',
     emailSent,
-    temporaryPassword: data.sendEmailInvitation === false ? password : undefined,
+    temporaryPassword:
+      data.sendEmailInvitation === false ? password : undefined,
   };
 }
 
@@ -171,9 +189,15 @@ export async function deleteUser(userId: string) {
   if (!can(authUser, 'users.delete')) {
     throw new Error('Unauthorised: Admin access required');
   }
-  const existing = await getConvexClient().query(api.users.getBySubject, { subject: userId });
+  const existing = await getConvexClient().query(api.users.getBySubject, {
+    subject: userId,
+  });
   await getConvexClient().mutation(api.users.remove, { userId });
-  await logUserDeleted(userId, existing?.email ?? 'unknown', `User deleted by admin: ${authUser.email ?? authUser.id}`);
+  await logUserDeleted(
+    userId,
+    existing?.email ?? 'unknown',
+    `User deleted by admin: ${authUser.email ?? authUser.id}`
+  );
   revalidatePath('/admin/users');
   return { success: true };
 }
@@ -192,11 +216,18 @@ export async function updateUser(
   }
 ) {
   const authUser = await requireUserAdmin();
-  const existing = await getConvexClient().query(api.users.getBySubject, { subject: userId });
+  const existing = await getConvexClient().query(api.users.getBySubject, {
+    subject: userId,
+  });
   if (!existing) throw new Error('User not found');
 
-  if (hasRole(authUser, 'org_admin') && existing.organisationId !== authUser.orgId) {
-    throw new Error('Unauthorised: Can only update users in your own organisation');
+  if (
+    hasRole(authUser, 'org_admin') &&
+    existing.organisationId !== authUser.orgId
+  ) {
+    throw new Error(
+      'Unauthorised: Can only update users in your own organisation'
+    );
   }
 
   await getConvexClient().mutation(api.users.update, {
@@ -204,14 +235,23 @@ export async function updateUser(
     ...(updates.email ? { email: updates.email } : {}),
     ...(updates.firstName ? { givenName: updates.firstName } : {}),
     ...(updates.lastName ? { familyName: updates.lastName } : {}),
-    ...(updates.firstName && updates.lastName ? { fullName: `${updates.firstName} ${updates.lastName}` } : {}),
+    ...(updates.firstName && updates.lastName
+      ? { fullName: `${updates.firstName} ${updates.lastName}` }
+      : {}),
     ...(updates.roles ? { systemRoles: updates.roles } : {}),
-    ...(updates.organisationId ? { organisationId: updates.organisationId as Id<'organisations'> } : {}),
+    ...(updates.organisationId
+      ? { organisationId: updates.organisationId as Id<'organisations'> }
+      : {}),
     ...(updates.isActive !== undefined ? { isActive: updates.isActive } : {}),
     currentUserId: authUser.id,
   });
 
-  await logUserUpdated(userId, updates.email ?? existing.email ?? 'unknown', updates, 'User updated');
+  await logUserUpdated(
+    userId,
+    updates.email ?? existing.email ?? 'unknown',
+    updates,
+    'User updated'
+  );
   revalidatePath('/admin/users');
   return { success: true };
 }
@@ -241,15 +281,21 @@ export async function reactivateUser(userId: string) {
 
 export async function updateLastSignInForCurrentUser() {
   const authUser = await getAuthUser();
-  await getConvexClient().mutation(api.users.updateLastSignIn, { userId: authUser.id });
+  await getConvexClient().mutation(api.users.updateLastSignIn, {
+    userId: authUser.id,
+  });
   return { success: true };
 }
 
-export async function getUsersByOrganisationIdWithOverride(organisationId: string) {
+export async function getUsersByOrganisationIdWithOverride(
+  organisationId: string
+) {
   return getUsersByOrganisationId(organisationId);
 }
 
-export async function getAllUsersByOrganisationIdWithOverride(organisationId: string) {
+export async function getAllUsersByOrganisationIdWithOverride(
+  organisationId: string
+) {
   const authUser = await getAuthUser();
   if (!can(authUser, 'users.list')) {
     throw new Error('Unauthorised: Admin access required');

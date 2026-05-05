@@ -26,7 +26,9 @@ import {
 export default function AdminOrganisationOverviewPage() {
   const params = useParams();
   const organisationId = params?.id as Id<'organisations'>;
-  const { user, isLoaded } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
 
   // Authorisation: only sysadmin or developer
@@ -61,6 +63,22 @@ export default function AdminOrganisationOverviewPage() {
     { label: 'Organisations', href: '/admin/organisations' },
     { label: organisation?.name || 'Overview' },
   ];
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

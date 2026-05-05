@@ -157,7 +157,6 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.convex);
   }
 
-
   if (env.NEXT_PUBLIC_SENTRY_DSN) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
   }

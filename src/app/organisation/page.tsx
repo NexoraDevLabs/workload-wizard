@@ -31,7 +31,9 @@ import { Badge } from '@/components/ui/badge';
 export const dynamic = 'force-dynamic';
 
 export default function OrganisationAdminPage() {
-  const { user, isLoaded } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
 
   const convexUser = useQuery(
@@ -75,6 +77,22 @@ export default function OrganisationAdminPage() {
   const organisationId = (user?.publicMetadata?.organisationId as string) || '';
 
   const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Organisation' }];
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

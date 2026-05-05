@@ -16,7 +16,9 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
 export default function AdminOrganisationsPage() {
-  const { user, isLoaded } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
   const convexUser = useQuery(
     api.users.getBySubject,
@@ -61,6 +63,22 @@ export default function AdminOrganisationsPage() {
       </Button>
     </div>
   );
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

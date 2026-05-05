@@ -11,7 +11,6 @@ import {
   LifeBuoy,
 } from 'lucide-react';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,9 +33,21 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export function NavUser() {
   const { user, isLoaded } = useAuthUser();
-  const { signOut } = useAuthUser();
   const { isMobile } = useSidebar();
-  const router = useRouter();
+
+  const handleLogout = () => {
+    window.location.assign('/api/auth/logout');
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   if (!isLoaded) {
     return (
@@ -60,22 +71,15 @@ export function NavUser() {
 
   const userName = user.fullName || user.firstName || 'User';
   const userEmail = user.emailAddresses[0]?.emailAddress || '';
-  const userRole = user.publicMetadata?.role as string;
+  const userRole =
+    typeof user.publicMetadata?.role === 'string'
+      ? user.publicMetadata.role
+      : '';
   const avatarUrl = user.imageUrl;
 
-  // Generate initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const handleLogout = async () => {
-    await signOut(() => router.push('/sign-in'));
-  };
+  const formattedRole = userRole
+    ? userRole.charAt(0).toUpperCase() + userRole.slice(1)
+    : '';
 
   return (
     <SidebarMenu>
@@ -92,17 +96,18 @@ export function NavUser() {
                   {getInitials(userName)}
                 </AvatarFallback>
               </Avatar>
+
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{userName}</span>
                 <span className="truncate text-xs text-sidebar-foreground/65">
-                  {userRole
-                    ? userRole.charAt(0).toUpperCase() + userRole.slice(1)
-                    : userEmail}
+                  {formattedRole || userEmail}
                 </span>
               </div>
+
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? 'bottom' : 'right'}
@@ -117,6 +122,7 @@ export function NavUser() {
                     {getInitials(userName)}
                   </AvatarFallback>
                 </Avatar>
+
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{userName}</span>
                   <span className="truncate text-xs text-muted-foreground">
@@ -125,7 +131,9 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <Link href="/account">
@@ -133,24 +141,28 @@ export function NavUser() {
                   Account
                 </Link>
               </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <Link href="/support">
                   <LifeBuoy className="mr-2 h-4 w-4" />
                   Support
                 </Link>
               </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <Link href="/account/profile">
                   <Settings className="mr-2 h-4 w-4" />
                   Profile Settings
                 </Link>
               </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <Link href="/account/security">
                   <Shield className="mr-2 h-4 w-4" />
                   Security & Privacy
                 </Link>
               </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <div className="flex items-center justify-between w-full cursor-pointer">
                   <div className="flex items-center">
@@ -160,14 +172,17 @@ export function NavUser() {
                   <ThemeToggle />
                 </div>
               </DropdownMenuItem>
-              {userRole && (
+
+              {formattedRole && (
                 <DropdownMenuItem disabled>
                   <BadgeCheck className="mr-2 h-4 w-4" />
-                  Role: {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                  Role: {formattedRole}
                 </DropdownMenuItem>
               )}
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem
               onClick={handleLogout}
               className="text-red-600 focus:text-red-600"

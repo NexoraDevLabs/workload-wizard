@@ -35,7 +35,9 @@ import { useToast } from '@/hooks/use-toast';
 export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
-  const { user, isLoaded } = useAuthUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const { toast } = useToast();
   const updateUserAvatar = useMutation(api.users.updateUserAvatar);
   const convexAvatarUrl = useQuery(
@@ -57,19 +59,11 @@ export default function ProfilePage() {
   const [avatarRefreshKey, setAvatarRefreshKey] = useState<number>(0);
 
   if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Loading...</p>
-      </div>
-    );
+    return null;
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>Please sign in to view your account.</p>
-      </div>
-    );
+  if (!isSignedIn || !user) {
+    return null;
   }
 
   const userName = user.fullName || user.firstName || 'User';
