@@ -2,7 +2,7 @@
 
 ## Purpose & Scope
 
-This Standard Operating Procedure (SOP) defines the process for rotating secrets, API keys, and credentials across all WorkloadWizard services. This includes Vercel environment variables, Convex deployment keys, Clerk authentication secrets, Upstash/Redis tokens, Statsig API keys, and GitHub Actions secrets.
+This Standard Operating Procedure (SOP) defines the process for rotating secrets, API keys, and credentials across all WorkloadWizard services. This includes Vercel environment variables, Convex deployment keys, WorkOS authentication secrets, Upstash/Redis tokens, Statsig API keys, and GitHub Actions secrets.
 
 ## Definitions
 
@@ -47,7 +47,7 @@ This Standard Operating Procedure (SOP) defines the process for rotating secrets
 
 - **Vercel**: Project settings, environment variables, deployment controls
 - **Convex**: Dashboard, environment configuration, deployment keys
-- **Clerk**: Dashboard, API keys, webhook secrets
+- **WorkOS**: Dashboard, API keys, webhook secrets
 - **Upstash/Redis**: Console, REST API tokens, connection URLs
 - **Statsig**: Dashboard, server/API keys
 - **GitHub**: Actions secrets, environment secrets, repository settings
@@ -62,7 +62,7 @@ This Standard Operating Procedure (SOP) defines the process for rotating secrets
 - [ ] **Identify all affected systems**:
   - [ ] Vercel environment variables
   - [ ] Convex deployment keys
-  - [ ] Clerk API keys and webhooks
+  - [ ] WorkOS API keys and webhooks
   - [ ] Upstash/Redis tokens
   - [ ] Statsig server/API keys
   - [ ] GitHub Actions secrets
@@ -89,7 +89,7 @@ This Standard Operating Procedure (SOP) defines the process for rotating secrets
   - [ ] Update environment variables in Convex dashboard
   - [ ] Redeploy staging deployment
 - [ ] **Update other staging services**:
-  - [ ] Clerk staging keys
+  - [ ] WorkOS staging keys
   - [ ] Upstash staging tokens
   - [ ] Statsig staging keys
 - [ ] **Validate staging functionality**:
@@ -109,7 +109,7 @@ This Standard Operating Procedure (SOP) defines the process for rotating secrets
   - [ ] Update environment variables in Convex dashboard
   - [ ] Redeploy production deployment
 - [ ] **Update other production services**:
-  - [ ] Clerk production keys
+  - [ ] WorkOS production keys
   - [ ] Upstash production tokens
   - [ ] Statsig production keys
   - [ ] GitHub Actions secrets

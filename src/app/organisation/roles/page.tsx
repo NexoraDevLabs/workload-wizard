@@ -1,9 +1,9 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useState } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -80,7 +80,9 @@ interface RoleWithPermissions extends Role {
 }
 
 export default function OrganisationRolesPage() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -95,11 +97,10 @@ export default function OrganisationRolesPage() {
     api.users.getBySubject,
     user?.id ? { subject: user.id } : 'skip'
   );
-
   // Get organisation roles (server derives org from actor)
   const organisationRoles = useQuery(
     api.permissions.getOrganisationRoles,
-    currentUser?.organisationId ? {} : 'skip'
+    currentUser?.organisationId && user?.id ? { userId: user.id } : 'skip'
   );
 
   // Get system permissions
@@ -126,6 +127,7 @@ export default function OrganisationRolesPage() {
 
     try {
       await createRole({
+        userId: user!.id,
         name: roleName.trim(),
         ...(roleDescription.trim()
           ? { description: roleDescription.trim() }
@@ -175,6 +177,7 @@ export default function OrganisationRolesPage() {
 
     try {
       await updateRole({
+        userId: user!.id,
         roleId: editingRole._id as unknown as Id<'user_roles'>,
         name: roleName.trim(),
         ...(roleDescription.trim()
@@ -216,6 +219,7 @@ export default function OrganisationRolesPage() {
   const handleDeleteRole = async (roleId: string) => {
     try {
       await deleteRole({
+        userId: user!.id,
         roleId: roleId as unknown as Id<'user_roles'>,
         ...(user?.id ? { performedBy: user.id } : {}),
         ...(user?.fullName || user?.emailAddresses?.[0]?.emailAddress
@@ -251,6 +255,7 @@ export default function OrganisationRolesPage() {
   ) => {
     try {
       await updateRolePermissions({
+        userId: user!.id,
         roleId: roleId as unknown as Id<'user_roles'>,
         permissionId,
         isGranted,
@@ -346,6 +351,22 @@ export default function OrganisationRolesPage() {
       </Button>
     </div>
   );
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

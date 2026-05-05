@@ -2,6 +2,7 @@ import { mutation, type MutationCtx } from '../_generated/server';
 import { v } from 'convex/values';
 import type { Id } from '../_generated/dataModel';
 import { writeAudit } from '../audit';
+import { getAuthContext } from '../lib/auth';
 import {
   PLANNING_MVP_PERMISSIONS,
   ACADEMIC_YEAR_PERMISSIONS,
@@ -989,6 +990,7 @@ export const pushPermissionsToOrganisations = mutation({
  */
 export const createOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     permissions: v.array(v.string()),
@@ -999,8 +1001,8 @@ export const createOrganisationRole = mutation({
     const now = Date.now();
 
     // Determine organisation from actor (performedBy or authenticated identity)
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1014,7 +1016,7 @@ export const createOrganisationRole = mutation({
       isDefault: false,
       isSystem: false,
       permissions: args.permissions,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -1031,12 +1033,12 @@ export const createOrganisationRole = mutation({
         ...(args.performedByName
           ? { performedByName: args.performedByName }
           : {}),
-        organisationId: actor.organisationId,
+        organisationId: authContext.organisationId,
         details: `Role "${args.name}" created with ${args.permissions.length} permission(s)`,
         metadata: JSON.stringify({
           description: args.description,
           permissions: args.permissions,
-          organisationId: actor.organisationId,
+          organisationId: authContext.organisationId,
         }),
         severity: 'info',
       });
@@ -1051,6 +1053,7 @@ export const createOrganisationRole = mutation({
  */
 export const updateOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     name: v.string(),
     description: v.optional(v.string()),
@@ -1065,8 +1068,8 @@ export const updateOrganisationRole = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation can modify
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1080,7 +1083,7 @@ export const updateOrganisationRole = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot modify roles outside your organisation'
@@ -1135,6 +1138,7 @@ export const updateOrganisationRole = mutation({
  */
 export const deleteOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     performedBy: v.optional(v.string()),
     performedByName: v.optional(v.string()),
@@ -1165,8 +1169,8 @@ export const deleteOrganisationRole = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation can delete
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1180,7 +1184,7 @@ export const deleteOrganisationRole = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot delete roles outside your organisation'
@@ -1226,6 +1230,7 @@ export const deleteOrganisationRole = mutation({
  */
 export const updateRolePermissions = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     permissionId: v.string(),
     isGranted: v.boolean(),
@@ -1240,8 +1245,8 @@ export const updateRolePermissions = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1255,7 +1260,7 @@ export const updateRolePermissions = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot modify roles outside your organisation'

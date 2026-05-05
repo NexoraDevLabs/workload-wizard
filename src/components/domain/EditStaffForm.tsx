@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 
@@ -81,7 +81,7 @@ export function EditStaffForm({
   onSave,
   onCancel,
 }: EditStaffFormProps) {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const orgSettings = useQuery(
     api.organisationSettings.getOrganisationSettings,
     user?.id ? { userId: user.id } : 'skip'

@@ -180,10 +180,10 @@ async headers() {
 
 ### Middleware Integration
 
-HTTPS redirect is integrated into the existing Clerk authentication middleware to ensure it runs first:
+HTTPS redirect is integrated into the existing WorkOS authentication middleware to ensure it runs first:
 
 ```typescript
-export default clerkMiddleware(async (auth, req) => {
+export default workosMiddleware(async (auth, req) => {
   // HTTPS redirect runs before auth checks
   const proto = req.headers.get('x-forwarded-proto');
   if (proto && proto !== 'https') {

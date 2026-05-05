@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { withToast } from '@/lib/utils';
 import { z } from 'zod';
 import { PermissionGate } from '@/components/common/PermissionGate';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface AdminCategory {
   _id: Id<'organisation_admin_allocation_categories'>;
@@ -25,10 +25,12 @@ interface AdminCategory {
 
 export default function OrganisationAdminAllocationsSettingsPage() {
   const { toast } = useToast();
-  const { isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const categories = useQuery(
     api.allocations.listOrganisationAdminCategories,
-    isLoaded ? {} : 'skip'
+    isLoaded && user?.id ? { userId: user.id } : 'skip'
   ) as AdminCategory[] | undefined;
   const upsert = useMutation(api.allocations.upsertOrganisationAdminCategory);
   const remove = useMutation(api.allocations.removeOrganisationAdminCategory);
@@ -110,6 +112,7 @@ export default function OrganisationAdminAllocationsSettingsPage() {
       await withToast(
         () =>
           upsert({
+            userId: user!.id,
             ...(parsed.data.id
               ? {
                   id: parsed.data
@@ -145,7 +148,10 @@ export default function OrganisationAdminAllocationsSettingsPage() {
     try {
       await withToast(
         () =>
-          remove({ id: id as Id<'organisation_admin_allocation_categories'> }),
+          remove({
+            userId: user!.id,
+            id: id as Id<'organisation_admin_allocation_categories'>,
+          }),
         {
           success: { title: 'Category deleted' },
           error: { title: 'Delete failed' },
@@ -156,6 +162,22 @@ export default function OrganisationAdminAllocationsSettingsPage() {
       setIsRemoving(null);
     }
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <PermissionGate permission="organisations.manage" fallback={null}>

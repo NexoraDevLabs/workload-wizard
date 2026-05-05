@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -122,7 +122,7 @@ function CapacityBar({
 }
 
 export function WorkloadStatusPanel() {
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { currentYear } = useAcademicYear();
 
   const staffList = useQuery(

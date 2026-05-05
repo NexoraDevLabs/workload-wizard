@@ -1,64 +1,90 @@
 import { z } from 'zod';
-import { logger } from '@/lib/logger';
 
-const EnvSchema = z.object({
-  NEXT_PUBLIC_CONVEX_URL: z.string().url(),
-  NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
-  NEXT_PUBLIC_STATSIG_CLIENT_KEY: z.string().optional(),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional(),
-  NEXT_PUBLIC_APP_VERSION: z.string().optional(),
+const OptionalUrlSchema = z
+  .string()
+  .url()
+  .optional()
+  .or(z.literal('').transform(() => undefined));
+
+const PublicEnvSchema = z.object({
+  NEXT_PUBLIC_CONVEX_URL: z
+    .string()
+    .url('NEXT_PUBLIC_CONVEX_URL must be a URL'),
+  NEXT_PUBLIC_APP_URL: z.string().url('NEXT_PUBLIC_APP_URL must be a URL'),
+  NEXT_PUBLIC_SENTRY_DSN: OptionalUrlSchema,
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
-  // Add missing environment variables
-  FEATFLAG_STATSIG_SERVER_API_KEY: z.string().optional(),
-  CLERK_SECRET_KEY: z.string().optional(),
-  CLERK_ISSUER_URL: z.string().optional(),
-  CLERK_JWT_ISSUER_DOMAIN: z.string().optional(),
-  CONVEX_DEPLOY_KEY: z.string().optional(),
-  RESEND_API_KEY: z.string().optional(),
-  // CSP Configuration
-  CSP_MODE: z
-    .enum(['report-only', 'enforce'])
-    .optional()
-    .default('report-only'),
 });
 
-type Env = z.infer<typeof EnvSchema>;
+const ServerEnvSchema = PublicEnvSchema.extend({
+  CONVEX_DEPLOYMENT: z.string().min(1, 'CONVEX_DEPLOYMENT is required'),
+  WORKOS_API_KEY: z.string().min(1, 'WORKOS_API_KEY is required'),
+  WORKOS_CLIENT_ID: z.string().min(1, 'WORKOS_CLIENT_ID is required'),
+  WORKOS_COOKIE_PASSWORD: z
+    .string()
+    .min(32, 'WORKOS_COOKIE_PASSWORD must be at least 32 characters'),
+  WORKOS_REDIRECT_URI: z.string().url('WORKOS_REDIRECT_URI must be a URL'),
+});
 
-let parsed: Env | null = null;
+type PublicEnv = z.infer<typeof PublicEnvSchema>;
+type ServerEnv = z.infer<typeof ServerEnvSchema>;
 
-export function getEnv(): Env {
-  if (!parsed) {
-    parsed = EnvSchema.parse({
-      NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL,
-      NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
-      NEXT_PUBLIC_STATSIG_CLIENT_KEY:
-        process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY,
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-      NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
-      NODE_ENV: process.env.NODE_ENV,
-      // Parse missing environment variables
-      FEATFLAG_STATSIG_SERVER_API_KEY:
-        process.env.FEATFLAG_STATSIG_SERVER_API_KEY,
-      CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
-      CLERK_ISSUER_URL: process.env.CLERK_ISSUER_URL,
-      CLERK_JWT_ISSUER_DOMAIN: process.env.CLERK_JWT_ISSUER_DOMAIN,
-      CONVEX_DEPLOY_KEY: process.env.CONVEX_DEPLOY_KEY,
-      RESEND_API_KEY: process.env.RESEND_API_KEY,
-      CSP_MODE: process.env.CSP_MODE,
-    });
-  }
-  return parsed;
+let parsedPublicEnv: PublicEnv | null = null;
+let parsedServerEnv: ServerEnv | null = null;
+
+function readPublicEnv() {
+  return {
+    NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    NODE_ENV: process.env.NODE_ENV,
+  };
 }
 
-// Parse eagerly at import time to fail fast in production builds
-// Safe in dev/test too, but allow builds to continue if env validation fails
-try {
-  void getEnv();
-} catch (error) {
-  if (process.env.NODE_ENV === 'production') {
-    logger.warn('Environment validation failed during build:', error);
+function formatEnvError(error: z.ZodError): Error {
+  const missing = error.issues
+    .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+    .join(', ');
+
+  return new Error(`Missing or invalid environment variables: ${missing}`);
+}
+
+export function getEnv(): PublicEnv {
+  if (!parsedPublicEnv) {
+    const result = PublicEnvSchema.safeParse(readPublicEnv());
+
+    if (!result.success) {
+      throw formatEnvError(result.error);
+    }
+
+    parsedPublicEnv = result.data;
   }
+
+  return parsedPublicEnv;
+}
+
+export function getServerEnv(): ServerEnv {
+  if (!parsedServerEnv) {
+    const result = ServerEnvSchema.safeParse({
+      ...readPublicEnv(),
+      CONVEX_DEPLOYMENT: process.env.CONVEX_DEPLOYMENT,
+      WORKOS_API_KEY: process.env.WORKOS_API_KEY,
+      WORKOS_CLIENT_ID: process.env.WORKOS_CLIENT_ID,
+      WORKOS_COOKIE_PASSWORD: process.env.WORKOS_COOKIE_PASSWORD,
+      WORKOS_REDIRECT_URI: process.env.WORKOS_REDIRECT_URI,
+    });
+
+    if (!result.success) {
+      throw formatEnvError(result.error);
+    }
+
+    parsedServerEnv = result.data;
+  }
+
+  return parsedServerEnv;
+}
+
+export function validateServerEnv(): void {
+  void getServerEnv();
 }

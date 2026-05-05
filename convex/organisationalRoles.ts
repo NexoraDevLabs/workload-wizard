@@ -3,6 +3,7 @@ import { mutation, query } from './_generated/server';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
 import { makeLoaders } from '../src/lib/convex/loaders';
+import { getAuthContext } from './lib/auth';
 
 // Get all roles for an organisation
 export const listByOrganisation = query({
@@ -28,7 +29,7 @@ export const listByOrganisation = query({
 
 // Get a specific role by ID
 export const getById = query({
-  args: { roleId: v.id('user_roles') },
+  args: { userId: v.string(), roleId: v.id('user_roles') },
   handler: async (ctx, args) => {
     const role = await ctx.db.get(args.roleId);
     return role;
@@ -38,6 +39,7 @@ export const getById = query({
 // Create a new organisational role
 export const create = mutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     description: v.string(),
     permissions: v.array(v.string()),
@@ -45,8 +47,8 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
 
     // Derive organisation from actor
@@ -61,13 +63,13 @@ export const create = mutation({
       ctx,
       subject,
       'permissions.manage',
-      String(actorUser.organisationId)
+      String(authContext.organisationId)
     );
 
     const roleId = await ctx.db.insert('user_roles', {
       name: args.name,
       description: args.description,
-      organisationId: actorUser.organisationId,
+      organisationId: authContext.organisationId,
       permissions: args.permissions,
       isDefault: args.isDefault || false,
       isSystem: false, // Organisational roles are never system roles
@@ -83,7 +85,7 @@ export const create = mutation({
       entityId: String(roleId),
       entityName: args.name,
       performedBy: subject,
-      organisationId: actorUser.organisationId,
+      organisationId: authContext.organisationId,
       details: `Created role "${args.name}" with ${args.permissions.length} permission(s)`,
       metadata: JSON.stringify({
         permissions: args.permissions,
@@ -99,6 +101,7 @@ export const create = mutation({
 // Update an organisational role
 export const update = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -109,8 +112,8 @@ export const update = mutation({
     const { roleId, ...updates } = args;
     const now = Date.now();
 
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
 
     const existing = await ctx.db.get(roleId);
@@ -146,11 +149,11 @@ export const update = mutation({
 
 // Delete an organisational role (soft delete)
 export const remove = mutation({
-  args: { roleId: v.id('user_roles') },
+  args: { userId: v.string(), roleId: v.id('user_roles') },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
 
     const existing = await ctx.db.get(args.roleId);

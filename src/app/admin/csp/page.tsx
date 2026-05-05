@@ -37,8 +37,12 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 export default function CSPDashboard() {
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const [timeRange, setTimeRange] = useState(24);
   const [searchTerm, setSearchTerm] = useState('');
   const [directiveFilter, setDirectiveFilter] = useState('all');
@@ -183,6 +187,14 @@ export default function CSPDashboard() {
         </div>
       </div>
     );
+  }
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
   }
 
   return (

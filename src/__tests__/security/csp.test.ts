@@ -6,10 +6,8 @@ vi.mock('@/lib/env', () => ({
   getEnv: vi.fn(() => ({
     NODE_ENV: 'test',
     NEXT_PUBLIC_CONVEX_URL: 'https://test-convex.convex.cloud',
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-    NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
-    NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
-    CSP_MODE: 'report-only',
+    WORKOS_CLIENT_ID: 'pk_test_123',
+    NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
   })),
 }));
 
@@ -39,19 +37,9 @@ describe('CSP Builder', () => {
       expect(mode).toBe('report-only');
     });
 
-    it('should return enforce when configured', async () => {
-      const { getEnv } = vi.mocked(await import('@/lib/env'));
-      getEnv.mockReturnValue({
-        CSP_MODE: 'enforce',
-        NODE_ENV: 'test',
-        NEXT_PUBLIC_CONVEX_URL: 'https://test-convex.convex.cloud',
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-        NEXT_PUBLIC_STATSIG_CLIENT_KEY: 'client-key-123',
-        NEXT_PUBLIC_POSTHOG_KEY: 'phc_test_123',
-      });
-
+    it('should ignore removed CSP env configuration', () => {
       const mode = getCSPMode();
-      expect(mode).toBe('enforce');
+      expect(mode).toBe('report-only');
     });
   });
 
@@ -123,25 +111,17 @@ describe('CSP Builder', () => {
       expect(policy).toContain('*.convex.cloud');
       expect(policy).toContain('*.convex.dev');
 
-      // Clerk
-      expect(policy).toContain('*.clerk.accounts.dev');
-      expect(policy).toContain('*.clerk.com');
+      // WorkOS
+      expect(policy).toContain('*.workos.accounts.dev');
+      expect(policy).toContain('*.workos.com');
 
       // Sentry
       expect(policy).toContain('*.sentry.io');
       expect(policy).toContain('*.sentry-cdn.com');
 
-      // Statsig
-      expect(policy).toContain('*.statsig.com');
-      expect(policy).toContain('*.statsigapi.net');
-
       // Vercel
       expect(policy).toContain('vitals.vercel-insights.com');
       expect(policy).toContain('va.vercel-scripts.com');
-
-      // PostHog
-      expect(policy).toContain('eu.i.posthog.com');
-      expect(policy).toContain('eu-assets.i.posthog.com');
 
       // Sanity
       expect(policy).toContain('cdn.sanity.io');

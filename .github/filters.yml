@@ -15,7 +15,7 @@ app:
   - 'vercel.json'
   - '.vercelignore'
   - 'package.json'
-  - 'pnpm-lock.yaml'
+  - 'package-lock.json'
   - '.nvmrc'
 
 tests:
@@ -44,7 +44,7 @@ lint:
 sec:
   - '**/*.{ts,tsx,js,jsx,cts,mts,cjs,mjs}'
   - 'package.json'
-  - 'pnpm-lock.yaml'
+  - 'package-lock.json'
   - 'yarn.lock'
   - 'npm-shrinkwrap.json'
   - '.nvmrc'
@@ -65,11 +65,9 @@ infra:
 
 deps:
   - '**/package.json'
-  - '**/pnpm-lock.yaml'
   - '**/package-lock.json'
   - '**/yarn.lock'
   - '**/npm-shrinkwrap.json'
-  - '**/pnpm-workspace.yaml'
   - '.nvmrc'
   - '.npmrc'
 
@@ -86,7 +84,7 @@ build:
   - '.vercelignore'
   - 'public/**'
   - 'package.json'
-  - 'pnpm-lock.yaml'
+  - 'package-lock.json'
   - '.nvmrc'
   - 'convex/**'
   - 'app/**'

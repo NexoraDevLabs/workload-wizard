@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
@@ -18,7 +18,6 @@ import {
   AlertTriangle,
   User,
   Link2,
-  RefreshCw,
   Edit,
   Shield,
 } from 'lucide-react';
@@ -35,7 +34,7 @@ import { EditStaffForm } from '@/components/domain/EditStaffForm';
 import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
 import type { Doc } from '@/convex/_generated/dataModel';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 interface AdminAllocation {
@@ -62,7 +61,9 @@ interface LecturerAllocationDetail {
 }
 
 export default function LecturerProfilePage() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const params = useParams();
   const { toast } = useToast();
   const profileId = params.id as string;
@@ -102,15 +103,14 @@ export default function LecturerProfilePage() {
     permissionId: 'staff.edit', // Using edit permission for deactivate
   });
 
-  // Check if email matches Clerk user
-  const clerkUser = useQuery(
+  // Check if email matches WorkOS user
+  const workosUser = useQuery(
     api.users.getByEmail,
     profile?.email ? { email: profile.email } : 'skip'
   );
 
   const editMutation = useMutation(api.staff.edit);
   const deactivateMutation = useMutation(api.staff.edit);
-  const updateUserAvatarMutation = useMutation(api.users.updateUserAvatar);
 
   const handleEdit = async (
     formData: Partial<{
@@ -153,11 +153,11 @@ export default function LecturerProfilePage() {
   };
 
   const handleLinkUser = async () => {
-    if (!profile || !clerkUser) return;
+    if (!profile || !workosUser) return;
     try {
       await editMutation({
         profileId: profileId as Id<'lecturer_profiles'>,
-        userSubject: clerkUser.subject,
+        userSubject: workosUser.subject,
         userId: user?.id || '',
       });
       toast({
@@ -169,27 +169,6 @@ export default function LecturerProfilePage() {
     } catch (e) {
       toast({
         title: 'Link failed',
-        description: e instanceof Error ? e.message : 'An error occurred',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleSyncAvatar = async () => {
-    if (!clerkUser?.subject || !clerkUser?.pictureUrl) return;
-    try {
-      // call users.updateUserAvatar to sync from Clerk
-      await updateUserAvatarMutation({
-        subject: clerkUser.subject,
-        pictureUrl: clerkUser.pictureUrl,
-      });
-      toast({
-        title: 'Avatar synced',
-        description: 'Profile picture synced from Clerk.',
-      });
-    } catch (e) {
-      toast({
-        title: 'Avatar sync failed',
         description: e instanceof Error ? e.message : 'An error occurred',
         variant: 'destructive',
       });
@@ -249,6 +228,22 @@ export default function LecturerProfilePage() {
     );
   }
 
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
+
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[
@@ -275,17 +270,17 @@ export default function LecturerProfilePage() {
             <Badge
               variant="outline"
               className="flex items-center gap-1 border-emerald-300 bg-emerald-100 text-emerald-700"
-              title="Profile is linked to a Clerk user"
+              title="Profile is linked to a WorkOS user"
             >
               <CheckCircle className="h-3 w-3" />
-              Linked to Clerk
+              Linked to WorkOS
             </Badge>
           ) : (
-            clerkUser && (
+            workosUser && (
               <>
                 <Badge variant="outline" className="flex items-center gap-1">
                   <User className="h-3 w-3" />
-                  Clerk User
+                  WorkOS User
                 </Badge>
                 <Button
                   variant="outline"
@@ -297,16 +292,6 @@ export default function LecturerProfilePage() {
                 </Button>
               </>
             )
-          )}
-          {clerkUser?.pictureUrl && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSyncAvatar}
-              title="Sync avatar from Clerk"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" /> Sync Avatar
-            </Button>
           )}
 
           <PermissionGate permission="staff.edit" fallback={null}>
@@ -415,19 +400,19 @@ export default function LecturerProfilePage() {
       <Dialog open={showLinkConfirm} onOpenChange={setShowLinkConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Link Profile to Clerk User</DialogTitle>
+            <DialogTitle>Link Profile to WorkOS User</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 text-sm">
             <div>
-              This will link this lecturer profile to the Clerk account:
+              This will link this lecturer profile to the WorkOS account:
             </div>
             <div className="rounded border p-2 text-xs">
               <div>
                 <span className="font-medium">Name:</span>{' '}
-                {clerkUser?.givenName} {clerkUser?.familyName}
+                {workosUser?.givenName} {workosUser?.familyName}
               </div>
               <div>
-                <span className="font-medium">Email:</span> {clerkUser?.email}
+                <span className="font-medium">Email:</span> {workosUser?.email}
               </div>
             </div>
             <div className="text-muted-foreground">
@@ -608,11 +593,11 @@ function AdminAllocationsTable({
   lecturerId: Id<'lecturer_profiles'>;
 }) {
   const { currentYear } = useAcademicYear();
-  const { user } = useUser();
+  const { user } = useAuthUser();
   const { toast } = useToast();
   const orgCategories = useQuery(
     api.allocations.listOrganisationAdminCategories,
-    user?.id ? {} : 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   );
   const sysCategories = useQuery(api.allocations.listAdminCategories, {});
   const categories =
@@ -663,6 +648,7 @@ function AdminAllocationsTable({
       await withToast(
         () =>
           upsert({
+            userId: user!.id,
             lecturerId: lecturerId,
             academicYearId: currentYear!._id,
             ...(formOpen.isCustom
@@ -694,7 +680,7 @@ function AdminAllocationsTable({
     setIsRemoving(allocationId);
     try {
       await withToast(
-        () => remove({ allocationId: allocationId }),
+        () => remove({ userId: user!.id, allocationId: allocationId }),
         {
           success: { title: 'Allocation removed' },
           error: { title: 'Remove failed' },

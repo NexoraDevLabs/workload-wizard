@@ -32,7 +32,7 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 
 - **Purpose**: Compile and build the application
 - **Runtime**: ~5-10 minutes
-- **Dependencies**: Node.js 22, pnpm 10
+- **Dependencies**: Node.js 22, npm 10
 - **Environment**: Includes dummy environment variables for server code
 - **Artifacts**: Built application (not persisted)
 
@@ -41,13 +41,13 @@ All workflows are designed to be fast, reliable, and provide clear feedback thro
 - **Purpose**: Run unit tests with Vitest
 - **Runtime**: ~2-5 minutes
 - **Dependencies**: Same as build
-- **Command**: `pnpm test -- --ci`
+- **Command**: `npm test -- --ci`
 
 ##### `audit`
 
 - **Purpose**: Check for known security vulnerabilities in dependencies
 - **Runtime**: ~1-3 minutes
-- **Command**: `pnpm audit --audit-level=high || npm audit --audit-level=high`
+- **Command**: `npm audit --audit-level=high || npm audit --audit-level=high`
 - **Threshold**: High-severity vulnerabilities will fail the build
 
 ### 2. CodeQL Workflow (`codeql.yml`)
@@ -103,14 +103,14 @@ Every job publishes a Job Summary card that includes:
 
 - ✅ Job completion status
 - 🔧 Workflow and reference information
-- 📊 Key outputs (Node/pnpm versions, etc.)
+- 📊 Key outputs (Node/npm versions, etc.)
 - 🎯 Job-specific metrics
 - 🔗 Links to results (for security scans)
 
 Example summary sections:
 
 - **Workflow details**: Name, ref, commit SHA
-- **Environment**: Runner OS, Node version, pnpm version
+- **Environment**: Runner OS, Node version, npm version
 - **Results**: Status, specific outputs, links to dashboards
 
 ## Environment Variables
@@ -132,7 +132,7 @@ CONVEX_DEPLOYMENT: 'https://example.invalid'
 FEATFLAG_STATSIG_SERVER_API_KEY: 'test_server_key'
 STATSIG_SERVER_SECRET_KEY: 'test_server_key'
 STATSIG_SERVER_API_KEY: 'test_server_key'
-CLERK_WEBHOOK_SECRET: 'test_webhook_secret'
+WORKOS_CLIENT_ID: 'test_webhook_secret'
 WEBHOOK_SECRET: 'test_webhook_secret'
 ```
 
@@ -242,17 +242,17 @@ branches:
 
 ```bash
 # Local reproduction
-pnpm install --frozen-lockfile
-pnpm typecheck
-pnpm build
+npm install --frozen-lockfile
+npm run typecheck
+npm run build
 
 # Check for type errors
-pnpm typecheck
+npm run typecheck
 
 # Clear cache and rebuild
 rm -rf .next node_modules
-pnpm install
-pnpm build
+npm install
+npm run build
 ```
 
 #### 2. Test Failures
@@ -268,13 +268,13 @@ pnpm build
 
 ```bash
 # Run tests locally
-pnpm test
+npm test
 
 # Run in watch mode for debugging
-pnpm test:watch
+npm test:watch
 
 # Update snapshots if needed
-pnpm test -- --update-snapshots
+npm test -- --update-snapshots
 ```
 
 #### 3. Audit Failures
@@ -289,15 +289,15 @@ pnpm test -- --update-snapshots
 
 ```bash
 # Check for vulnerabilities
-pnpm audit
+npm audit
 npm audit
 
 # Fix automatically where possible
-pnpm audit --fix
+npm audit --fix
 npm audit fix
 
 # Manual review and updates
-pnpm update
+npm update
 ```
 
 #### 4. CodeQL/Semgrep Issues
@@ -339,7 +339,7 @@ pnpm update
 1. **Check Job Summary** - Every job provides detailed output
 2. **Review logs** - Click on failed jobs for detailed logs
 3. **Compare with main** - Check if issue exists on main branch
-4. **Reproduce locally** - Use same Node/pnpm versions
+4. **Reproduce locally** - Use same Node/npm versions
 5. **Check recent changes** - Look at files changed in PR
 6. **Verify environment** - Ensure all required secrets are set
 
@@ -348,7 +348,7 @@ pnpm update
 #### Cache Strategy
 
 - **Node modules**: Cached by `actions/setup-node@v4`
-- **pnpm store**: Global cache across runs
+- **npm store**: Global cache across runs
 - **Build output**: Not cached (builds are fast)
 
 #### Parallelization

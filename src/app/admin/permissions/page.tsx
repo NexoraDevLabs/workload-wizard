@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
@@ -74,11 +74,13 @@ interface SystemRoleTemplate {
 
 // Use the original component directly
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function AdminPermissionsPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
   const { toast } = useToast();
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -137,7 +139,7 @@ export default function AdminPermissionsPage() {
     useState<SystemRoleTemplate | null>(null);
   const [isRunningTests, setIsRunningTests] = useState(false);
 
-  const hasByClerk =
+  const hasByWorkOS =
     hasAnyRole(user, ['sysadmin', 'developer']) ||
     (user?.publicMetadata as Record<string, unknown> | undefined)?.[
       'devLoginSession'
@@ -150,14 +152,14 @@ export default function AdminPermissionsPage() {
     );
 
   useEffect(() => {
-    if (isLoaded && !(hasByClerk || hasByConvex)) {
+    if (isLoaded && !(hasByWorkOS || hasByConvex)) {
       router.replace('/unauthorised');
     }
-  }, [isLoaded, hasByClerk, hasByConvex, router]);
+  }, [isLoaded, hasByWorkOS, hasByConvex, router]);
 
   if (!isLoaded) return <p>Loading...</p>;
 
-  if (!(hasByClerk || hasByConvex)) {
+  if (!(hasByWorkOS || hasByConvex)) {
     return null;
   }
 
@@ -603,6 +605,22 @@ export default function AdminPermissionsPage() {
       </Button>
     </div>
   );
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

@@ -49,7 +49,7 @@ Dashboards provide a shared view of system health for developers and stakeholder
 - Error Rate > 2% (P1), > 1% (P2)
 - Convex P95 > 200ms (P1), > 100ms (P2)
 
-### Auth (Clerk) Dashboard
+### Auth (WorkOS) Dashboard
 
 **Purpose**: Monitor authentication service health
 
@@ -60,7 +60,7 @@ Dashboards provide a shared view of system health for developers and stakeholder
 - **Session Duration**: Average user session length
 - **Geographic Distribution**: Auth performance by region
 
-**Access**: [TODO: Add Clerk dashboard link]
+**Access**: [TODO: Add WorkOS dashboard link]
 
 **Alert Thresholds**:
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { WorkloadSummaryCards } from '@/components/dashboard/WorkloadSummaryCards';
 import { WorkloadStatusPanel } from '@/components/dashboard/WorkloadStatusPanel';
@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarDays } from 'lucide-react';
 
 export function DashboardContent() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const { currentYear } = useAcademicYear();
 
   const greeting = () => {
@@ -21,7 +23,13 @@ export function DashboardContent() {
   };
 
   const firstName = user?.firstName ?? user?.username ?? 'there';
+  if (!isLoaded) {
+    return null;
+  }
 
+  if (!isSignedIn || !user) {
+    return null;
+  }
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[{ label: 'Dashboard' }]}

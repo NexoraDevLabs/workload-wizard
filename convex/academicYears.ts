@@ -20,6 +20,21 @@ async function getActor(ctx: QueryCtx | MutationCtx, userId: string) {
   return user;
 }
 
+async function getActorOrganisationId(
+  ctx: QueryCtx | MutationCtx,
+  userId: string
+): Promise<Id<'organisations'> | null> {
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+  return (
+    memberships.find((membership) => membership.isPrimary)?.organisationId ??
+    memberships[0]?.organisationId ??
+    null
+  );
+}
+
 function isSystemUser(user: Doc<'users'>): boolean {
   const systemRoleIds = ['sysadmin', 'developer', 'dev']; // do not treat 'admin' as system-wide
   return (
@@ -54,7 +69,8 @@ export async function canViewYear(
 ) {
   const user = await getActor(ctx, userId);
   if (isSystemUser(user)) return true;
-  if (String(user.organisationId) !== String(year.organisationId)) return false;
+  const actorOrganisationId = await getActorOrganisationId(ctx, userId);
+  if (String(actorOrganisationId) !== String(year.organisationId)) return false;
   const orgId = year.organisationId as Id<'organisations'>;
   if (year.status === 'archived') {
     return hasOrgPermission(ctx, userId, 'year.view.archived', orgId);
@@ -77,7 +93,8 @@ export async function canEditYear(
     typeof yearOrOrgId === 'string'
       ? (yearOrOrgId as unknown as Id<'organisations'>)
       : yearOrOrgId.organisationId;
-  if (String(user.organisationId) !== String(organisationId)) return false;
+  const actorOrganisationId = await getActorOrganisationId(ctx, userId);
+  if (String(actorOrganisationId) !== String(organisationId)) return false;
   return hasOrgPermission(ctx, userId, 'year.edit', organisationId);
 }
 
@@ -89,7 +106,8 @@ export const listForOrganisation = query({
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
     if (!user) return [];
-    const orgId = user.organisationId as Id<'organisations'>;
+    const orgId = await getActorOrganisationId(ctx, args.userId);
+    if (!orgId) return [];
     // Live (published and not staged) should be visible to all org members
     const canLive = true;
     const canStaging =
@@ -104,9 +122,7 @@ export const listForOrganisation = query({
 
     const rows = await ctx.db
       .query('academic_years')
-      .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', user.organisationId)
-      )
+      .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
       .filter((q) => {
         const liveCond = q.and(
           q.eq(q.field('status'), 'published'),
@@ -163,23 +179,18 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await getActor(ctx, args.userId);
+    const orgId = await getActorOrganisationId(ctx, args.userId);
+    if (!orgId) throw new Error('Organisation context required');
     const now = Date.now();
     const canCreateStaged =
       isSystemUser(user) ||
-      (await hasOrgPermission(
-        ctx,
-        args.userId,
-        'year.edit.staging',
-        user.organisationId as Id<'organisations'>
-      ));
+      (await hasOrgPermission(ctx, args.userId, 'year.edit.staging', orgId));
     if (!canCreateStaged) throw new Error('Permission denied');
     const status: YearStatus = (args.status ?? 'draft') as YearStatus;
     if (args.isDefaultForOrg) {
       const existingDefaults = await ctx.db
         .query('academic_years')
-        .withIndex('by_organisation', (q) =>
-          q.eq('organisationId', user.organisationId)
-        )
+        .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
         .filter((q) => q.eq(q.field('isDefaultForOrg'), true))
         .collect();
       for (const row of existingDefaults) {
@@ -206,7 +217,7 @@ export const create = mutation({
       endDate: args.endDate ?? (computedEndDate as string),
       isActive: true,
       staging: true,
-      organisationId: user.organisationId,
+      organisationId: orgId,
       status,
       isDefaultForOrg: !!args.isDefaultForOrg,
       createdAt: now,
@@ -219,7 +230,7 @@ export const create = mutation({
         entityId: String(id),
         entityName: args.name,
         performedBy: args.userId,
-        organisationId: user.organisationId as Id<'organisations'>,
+        organisationId: orgId,
         details: `Academic year created (${args.name})`,
         severity: 'info',
         type: 'org',
@@ -511,10 +522,12 @@ export const getPreferences = query({
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
     if (!user) return null;
+    const orgId = await getActorOrganisationId(ctx, args.userId);
+    if (!orgId) return null;
     const pref = await ctx.db
       .query('user_preferences')
       .withIndex('by_user_org', (q) =>
-        q.eq('userId', args.userId).eq('organisationId', user.organisationId)
+        q.eq('userId', args.userId).eq('organisationId', orgId)
       )
       .first();
     return pref || null;
@@ -528,12 +541,14 @@ export const setPreferences = mutation({
     includeDrafts: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const user = await getActor(ctx, args.userId);
+    await getActor(ctx, args.userId);
+    const orgId = await getActorOrganisationId(ctx, args.userId);
+    if (!orgId) throw new Error('Organisation context required');
     const now = Date.now();
     const existing = await ctx.db
       .query('user_preferences')
       .withIndex('by_user_org', (q) =>
-        q.eq('userId', args.userId).eq('organisationId', user.organisationId)
+        q.eq('userId', args.userId).eq('organisationId', orgId)
       )
       .first();
 
@@ -542,10 +557,7 @@ export const setPreferences = mutation({
       // Validate belongs to same org if provided
       if (args.selectedAcademicYearId) {
         const year = await ctx.db.get(args.selectedAcademicYearId);
-        if (
-          year &&
-          String(year.organisationId) !== String(user.organisationId)
-        ) {
+        if (year && String(year.organisationId) !== String(orgId)) {
           throw new Error('Selected academic year is not in your organisation');
         }
       }
@@ -568,7 +580,7 @@ export const setPreferences = mutation({
         updatedAt: number;
       } = {
         userId: args.userId,
-        organisationId: user.organisationId,
+        organisationId: orgId,
         createdAt: now,
         updatedAt: now,
       };

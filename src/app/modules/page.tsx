@@ -11,13 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { EditModuleForm } from '@/components/domain/EditModuleForm';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import { withToast } from '@/lib/utils';
 import { Edit, Trash2 } from 'lucide-react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 interface Module {
@@ -41,20 +42,21 @@ interface Lecturer {
 
 export default function ModulesPage() {
   const { toast } = useToast();
-  const modules = useQuery(api.modules.listByOrganisation) as
-    | Module[]
-    | undefined;
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
+  const modules = useQuery(
+    api.modules.listByOrganisation,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as Module[] | undefined;
   const { currentYear } = useAcademicYear();
   const create = useMutation(api.modules.create);
   const deleteModule = useMutation(api.modules.remove);
   const me = useQuery(
     api.users.getBySubject,
-    typeof window !== 'undefined' &&
-      (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id
+    user?.id
       ? {
-          subject:
-            (window as { Clerk?: { user?: { id: string } } }).Clerk?.user?.id ||
-            '',
+          subject: user.id,
         }
       : 'skip'
   ) as { systemRoles?: string[] } | undefined;
@@ -72,10 +74,15 @@ export default function ModulesPage() {
     markingHours: '',
   });
 
-  const lecturers = (useQuery(api.staff.listForActor) || []) as Lecturer[];
+  const lecturers = (useQuery(
+    api.staff.listForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) || []) as Lecturer[];
   const codeAvailability = useQuery(
     api.modules.isCodeAvailable,
-    form.code.trim() ? { code: form.code.trim() } : 'skip'
+    user?.id && form.code.trim()
+      ? { userId: user.id, code: form.code.trim() }
+      : 'skip'
   ) as { available: boolean } | undefined;
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [deletingModule, setDeletingModule] = useState<Module | null>(null);
@@ -96,6 +103,7 @@ export default function ModulesPage() {
     e.preventDefault();
     try {
       await create({
+        userId: user!.id,
         code: form.code.trim(),
         name: form.name.trim(),
         ...(form.credits.trim() ? { credits: Number(form.credits) } : {}),
@@ -152,7 +160,7 @@ export default function ModulesPage() {
         return next;
       });
       await withToast(
-        () => deleteModule({ id: toDelete._id }),
+        () => deleteModule({ userId: user!.id, id: toDelete._id }),
         {
           success: {
             title: 'Module deleted',
@@ -185,6 +193,22 @@ export default function ModulesPage() {
   const handleModuleUpdated = () => {
     setEditingModule(null);
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

@@ -70,7 +70,7 @@ This document describes the alerting configuration for WorkloadWizard and provid
    - Check external API dependencies
 
 3. **Resolution**:
-   - If authentication issue: Check Clerk service status
+   - If authentication issue: Check WorkOS service status
    - If database issue: Check Convex service status
    - If external API issue: Check service health, implement fallbacks
    - If code issue: Review recent deployments, consider rollback
@@ -123,7 +123,7 @@ export SENTRY_PROJECT=your_project_slug
 export SENTRY_AUTH_TOKEN=your_api_token
 
 # Create alerts
-pnpm alerts:sentry
+npm alerts:sentry
 ```
 
 #### Manual Setup

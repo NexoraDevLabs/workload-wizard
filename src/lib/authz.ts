@@ -1,11 +1,30 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { hasPermission, type PermissionId } from './permissions';
 import { redirect } from 'next/navigation';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+import { getAuthContext } from './auth';
 
 export type SessionUser = {
   userId: string;
   organisationId: string;
-  role: string;
+  role: AuthRole;
+};
+
+export type AuthRole = 'sysadmin' | 'org_admin' | 'member';
+
+export type AuthUser = {
+  id: string;
+  email: string | undefined;
+  orgId: string | null;
+  role: AuthRole;
+  systemRoles: string[];
+  organisationRoles: string[];
+  memberships: Array<{
+    userId: string;
+    orgId: string;
+    role: AuthRole;
+    isPrimary: boolean;
+  }>;
 };
 
 // Define proper error type with status code
@@ -13,39 +32,138 @@ export interface AuthError extends Error {
   statusCode: number;
 }
 
-function extractFromUnknown<T>(value: unknown, key: string): T | undefined {
-  if (
-    value &&
-    typeof value === 'object' &&
-    key in (value as Record<string, unknown>)
-  ) {
-    return (value as Record<string, unknown>)[key] as T;
+export function normalizeRole(role: string | undefined): AuthRole {
+  switch (role) {
+    case 'sysadmin':
+    case 'developer':
+    case 'dev':
+    case 'systemadmin':
+    case 'admin':
+      return 'sysadmin';
+    case 'org_admin':
+    case 'orgadmin':
+      return 'org_admin';
+    default:
+      return 'member';
   }
-  return undefined;
+}
+
+function toLegacyPermissionRole(role: AuthRole): string {
+  if (role === 'org_admin') return 'orgadmin';
+  return role;
+}
+
+let convexClient: ConvexHttpClient | null = null;
+
+function getConvexClient(): ConvexHttpClient {
+  if (!convexClient) {
+    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!url) {
+      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
+    }
+    convexClient = new ConvexHttpClient(url);
+  }
+  return convexClient;
+}
+
+function normalizeOrgRole(role: string | undefined): AuthRole {
+  const normalized = role
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+  if (
+    normalized === 'org_admin' ||
+    normalized === 'orgadmin' ||
+    normalized === 'organisation_admin' ||
+    normalized === 'admin'
+  ) {
+    return 'org_admin';
+  }
+  return 'member';
+}
+
+function getHighestRole(
+  systemRoles: string[],
+  organisationRoles: string[],
+  membershipRole: AuthRole
+): AuthRole {
+  if (systemRoles.some((role) => normalizeRole(role) === 'sysadmin')) {
+    return 'sysadmin';
+  }
+  if (
+    systemRoles.some((role) => normalizeRole(role) === 'org_admin') ||
+    organisationRoles.some((role) => normalizeOrgRole(role) === 'org_admin') ||
+    membershipRole === 'org_admin'
+  ) {
+    return 'org_admin';
+  }
+  return 'member';
 }
 
 export async function getSessionUser(): Promise<SessionUser> {
-  const session = await auth();
-  if (!session?.userId) throw new Error('Unauthenticated');
-  const user = await currentUser();
+  const user = await getAuthUser();
+  if (!user.orgId) throw new Error('Missing organisationId');
+  return {
+    userId: user.id,
+    organisationId: user.orgId,
+    role: user.role,
+  };
+}
 
-  const organisationId =
-    extractFromUnknown<string>(
-      session.sessionClaims as unknown,
-      'organisationId'
-    ) ||
-    extractFromUnknown<string>(
-      user?.publicMetadata as unknown,
-      'organisationId'
-    );
+export async function getAuthUser(): Promise<AuthUser> {
+  const session = await getAuthContext();
+  if (!session) throw new Error('Unauthenticated');
 
-  const role =
-    extractFromUnknown<string>(session.sessionClaims as unknown, 'role') ||
-    extractFromUnknown<string>(user?.publicMetadata as unknown, 'role') ||
-    'user';
+  let dbUser = await getConvexClient().query(api.users.getAuthContext, {
+    subject: session.userId,
+  });
 
-  if (!organisationId) throw new Error('Missing organisationId');
-  return { userId: session.userId, organisationId, role };
+  if (!dbUser) {
+    try {
+      await getConvexClient().mutation(api.users.syncUser, {
+        userId: session.userId,
+        email: session.email,
+      });
+      dbUser = await getConvexClient().query(api.users.getAuthContext, {
+        subject: session.userId,
+      });
+    } catch {
+      dbUser = null;
+    }
+  }
+
+  const systemRoles = dbUser?.systemRoles ?? [];
+  const organisationRoles = dbUser?.organisationRoles ?? [];
+  const memberships = (dbUser?.memberships ?? []).map((membership) => ({
+    userId: membership.userId,
+    orgId: String(membership.orgId),
+    role: normalizeOrgRole(membership.role),
+    isPrimary: membership.isPrimary,
+  }));
+  const primaryMembership =
+    memberships.find((membership) => membership.isPrimary) ??
+    memberships[0] ??
+    null;
+  const orgId =
+    primaryMembership?.orgId ??
+    (dbUser?.organisationId ? String(dbUser.organisationId) : undefined) ??
+    session.organisationId ??
+    null;
+  const role = getHighestRole(
+    systemRoles,
+    organisationRoles,
+    primaryMembership?.role ?? normalizeOrgRole(dbUser?.role)
+  );
+
+  return {
+    id: session.userId,
+    email: dbUser?.email ?? session.email,
+    orgId,
+    role,
+    systemRoles,
+    organisationRoles,
+    memberships,
+  };
 }
 
 export async function getOrganisationIdFromSession(): Promise<string> {
@@ -54,7 +172,9 @@ export async function getOrganisationIdFromSession(): Promise<string> {
 
 export async function requireSystemPermission(permissionId: PermissionId) {
   const { role } = await getSessionUser();
-  if (!hasPermission(role, permissionId, undefined, true)) {
+  if (
+    !hasPermission(toLegacyPermissionRole(role), permissionId, undefined, true)
+  ) {
     const error = new Error('Forbidden') as AuthError;
     error.statusCode = 403;
     throw error;
@@ -69,7 +189,14 @@ export async function requireOrgPermission(
   const { role, organisationId: userOrgId } = await getSessionUser();
   const targetOrgId = organisationId || userOrgId;
 
-  if (!hasPermission(role, permissionId, targetOrgId, false)) {
+  if (
+    !hasPermission(
+      toLegacyPermissionRole(role),
+      permissionId,
+      targetOrgId,
+      false
+    )
+  ) {
     const error = new Error('Forbidden') as AuthError;
     error.statusCode = 403;
     throw error;
@@ -86,7 +213,12 @@ export async function checkPermission(
   try {
     const { role, organisationId: userOrgId } = await getSessionUser();
     const targetOrgId = organisationId || userOrgId;
-    return hasPermission(role, permissionId, targetOrgId, isSystemAction);
+    return hasPermission(
+      toLegacyPermissionRole(role),
+      permissionId,
+      targetOrgId,
+      isSystemAction
+    );
   } catch {
     return false;
   }

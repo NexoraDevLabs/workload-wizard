@@ -2,22 +2,22 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
+import { getAuthContext } from './lib/auth';
 
 // List courses for an organisation
 export const listByOrganisation = query({
-  args: { organisationId: v.id('organisations') },
+  args: { userId: v.string(), organisationId: v.id('organisations') },
   handler: async (ctx, args) => {
     // Only allow listing courses in your own organisation (or system roles)
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return [];
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) return [];
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.view',
       args.organisationId
     );
@@ -34,25 +34,24 @@ export const listByOrganisation = query({
 
 // List courses for the authenticated actor's organisation (no args)
 export const listForActor = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return [];
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) return [];
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.view',
-      actor.organisationId
+      authContext.organisationId
     );
     const courses = await ctx.db
       .query('courses')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .order('asc')
       .collect();
@@ -72,6 +71,7 @@ export const getById = query({
 // Create a new course in the actor's organisation
 export const create = mutation({
   args: {
+    userId: v.string(),
     code: v.string(),
     name: v.string(),
     leaderProfileId: v.optional(v.id('lecturer_profiles')),
@@ -83,28 +83,27 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
 
     // derive organisation from actor
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
 
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.create',
-      actor.organisationId
+      authContext.organisationId
     );
 
     // Check uniqueness of code within organisation
     const existing = await ctx.db
       .query('courses')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('code'), args.code))
       .first();
@@ -115,7 +114,7 @@ export const create = mutation({
     const id = await ctx.db.insert('courses', {
       code: args.code,
       name: args.name,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       ...(args.leaderProfileId
         ? { leaderProfileId: args.leaderProfileId }
         : {}),
@@ -138,8 +137,8 @@ export const create = mutation({
         entityType: 'course',
         entityId: String(id),
         entityName: `${args.code} ${args.name}`,
-        performedBy: identity.subject,
-        organisationId: actor.organisationId,
+        performedBy: authContext.userId,
+        organisationId: authContext.organisationId,
         details: `Course created (${args.code})`,
         severity: 'info',
         type: 'org',
@@ -157,6 +156,7 @@ export const create = mutation({
 // Update course
 export const update = mutation({
   args: {
+    userId: v.string(),
     id: v.id('courses'),
     code: v.string(),
     name: v.string(),
@@ -168,14 +168,13 @@ export const update = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const course = await ctx.db.get(args.id);
     if (!course) throw new Error('Course not found');
 
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.edit',
       course.organisationId
     );
@@ -214,7 +213,7 @@ export const update = mutation({
         entityType: 'course',
         entityId: String(args.id),
         entityName: `${args.code} ${args.name}`,
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         organisationId: course.organisationId,
         details: `Course updated (${args.code})`,
         severity: 'info',
@@ -232,16 +231,15 @@ export const update = mutation({
 
 // Delete course
 export const remove = mutation({
-  args: { id: v.id('courses') },
+  args: { userId: v.string(), id: v.id('courses') },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const existing = await ctx.db.get(args.id);
     if (!existing) return args.id;
 
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.delete',
       existing.organisationId
     );
@@ -254,7 +252,7 @@ export const remove = mutation({
         entityType: 'course',
         entityId: String(args.id),
         entityName: existing.name,
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         organisationId: existing.organisationId,
         details: `Course deleted (${existing.code})`,
         severity: 'warning',
@@ -274,16 +272,15 @@ export const remove = mutation({
 
 // List years for a course
 export const listYears = query({
-  args: { courseId: v.id('courses') },
+  args: { userId: v.string(), courseId: v.id('courses') },
   handler: async (ctx, args) => {
     const course = await ctx.db.get(args.courseId);
     if (!course) return [];
     // Permission: courses.view (same org as course)
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return [];
+    const authContext = await getAuthContext(ctx, args);
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.view',
       course.organisationId
     );
@@ -298,22 +295,25 @@ export const listYears = query({
 
 // Check if a course code is available within the actor's organisation
 export const isCodeAvailable = query({
-  args: { code: v.string(), excludeId: v.optional(v.id('courses')) },
+  args: {
+    userId: v.string(),
+    code: v.string(),
+    excludeId: v.optional(v.id('courses')),
+  },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return { available: false };
+    const authContext = await getAuthContext(ctx, args);
 
     // Derive organisation from actor
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) return { available: false };
 
     const existing = await ctx.db
       .query('courses')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('code'), args.code))
       .first();
@@ -328,16 +328,19 @@ export const isCodeAvailable = query({
 
 // Add a year to a course
 export const addYear = mutation({
-  args: { courseId: v.id('courses'), yearNumber: v.number() },
+  args: {
+    userId: v.string(),
+    courseId: v.id('courses'),
+    yearNumber: v.number(),
+  },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const course = await ctx.db.get(args.courseId);
     if (!course) throw new Error('Course not found');
 
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'courses.years.add',
       course.organisationId
     );
@@ -364,7 +367,7 @@ export const addYear = mutation({
         entityType: 'course_year',
         entityId: String(id),
         entityName: `${course.code} Y${args.yearNumber}`,
-        performedBy: identity.subject,
+        performedBy: authContext.userId,
         organisationId: course.organisationId,
         details: `Year ${args.yearNumber} added to course ${course.code}`,
         severity: 'info',
@@ -384,18 +387,18 @@ export const addYear = mutation({
 // Creates N groups per module iteration campus split is not yet module-aware; this is per-course/year helper.
 export const initialiseRecommendedGroups = mutation({
   args: {
+    userId: v.string(),
     courseId: v.id('courses'),
     academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+    const authContext = await getAuthContext(ctx, args);
     const course = await ctx.db.get(args.courseId);
     if (!course) throw new Error('Course not found');
 
     await requireOrgPermission(
       ctx,
-      identity.subject,
+      authContext.userId,
       'groups.create',
       course.organisationId
     );

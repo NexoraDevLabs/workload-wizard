@@ -37,13 +37,8 @@
     }
   },
   "dependencies": {
-    "@clerk/backend": "^2.33.3",
-    "@clerk/nextjs": "^6.39.3",
-    "@flags-sdk/statsig": "^0.2.5",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.74.0",
-    "@opentelemetry/sdk-node": "^0.216.0",
-    "@opentelemetry/semantic-conventions": "^1.37.0",
+    "@opentelemetry/instrumentation": "^0.216.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -73,12 +68,9 @@
     "@sanity/image-url": "^1.2.0",
     "@sanity/vision": "^4.22.0",
     "@sentry/nextjs": "^10.51.0",
-    "@statsig/react-bindings": "^3.24.4",
-    "@upstash/ratelimit": "^2.0.6",
-    "@upstash/redis": "^1.35.3",
     "@vercel/analytics": "^1.5.0",
-    "@vercel/kv": "^3.0.0",
     "@vercel/speed-insights": "^1.2.0",
+    "@workos-inc/node": "^9.1.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -91,7 +83,6 @@
     "next": "15.5.15",
     "next-sanity": "^10.1.4",
     "next-themes": "^0.4.6",
-    "posthog-js": "^1.372.6",
     "react": "19.1.1",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.1.1",
@@ -108,7 +99,6 @@
     "zod": "^4.1.5"
   },
   "devDependencies": {
-    "@clerk/types": "^4.101.20",
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
     "@emnapi/core": "^1.10.0",
@@ -148,50 +138,5 @@
     "typescript-eslint": "^8.59.1",
     "vitest": "^4.1.5",
     "webpack": "^5.106.2"
-  },
-  "pnpm": {
-    "overrides": {
-      "brace-expansion": "1.1.14",
-      "esbuild": ">=0.25.0",
-      "cookie": ">=0.7.0",
-      "diff": "4.0.4",
-      "flatted": "3.4.2",
-      "js-yaml": "4.1.1",
-      "lodash": "4.18.1",
-      "lodash-es": "4.18.1",
-      "minimatch": "3.1.5",
-      "picomatch": "4.0.4",
-      "postcss": "8.5.13",
-      "rollup": "4.60.2",
-      "smol-toml": "1.6.1",
-      "srvx": "0.11.13",
-      "tar-fs": "2.1.4",
-      "tar": "7.5.13",
-      "path-to-regexp": "8.4.0",
-      "undici": "6.24.0",
-      "@tootallnate/once": "3.0.1",
-      "@vercel/static-config>ajv": "8.20.0",
-      "webpack": "5.106.2"
-    },
-    "onlyBuiltDependencies": [
-      "@clerk/shared",
-      "@sentry/cli",
-      "@tailwindcss/oxide",
-      "@vercel/speed-insights",
-      "core-js",
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ],
-    "trustedDependencies": [
-      "@sentry/cli",
-      "@vercel/speed-insights"
-    ],
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "react": "19",
-        "react-dom": "19"
-      }
-    }
   }
 }

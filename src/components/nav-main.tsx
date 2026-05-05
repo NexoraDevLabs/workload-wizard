@@ -3,7 +3,6 @@
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
-import posthog from 'posthog-js';
 
 import {
   Collapsible,
@@ -74,12 +73,6 @@ export function NavMain({
   }, [openItems]);
 
   const handleMainItemClick = (item: (typeof items)[0]) => {
-    posthog.capture('main-nav-item-clicked', {
-      item_title: item.title,
-      item_url: item.url,
-      has_sub_items: !!item.items && item.items.length > 0,
-      sidebar_state: state,
-    });
     // If sidebar is collapsed, navigate directly to the URL
     if (state === 'collapsed') {
       router.push(item.url);
@@ -153,16 +146,7 @@ export function NavMain({
                           asChild
                           isActive={pathname === subItem.url}
                         >
-                          <a
-                            href={subItem.url}
-                            onClick={() => {
-                              posthog.capture('sub-nav-item-clicked', {
-                                sub_item_title: subItem.title,
-                                sub_item_url: subItem.url,
-                                parent_item_title: item.title,
-                              });
-                            }}
-                          >
+                          <a href={subItem.url}>
                             <span>{subItem.title}</span>
                           </a>
                         </SidebarMenuSubButton>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
@@ -27,11 +27,13 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Badge } from '@/components/ui/badge';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function OrganisationAdminPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
 
   const convexUser = useQuery(
@@ -41,7 +43,7 @@ export default function OrganisationAdminPage() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    const hasByClerk =
+    const hasByWorkOS =
       hasAnyRole(user, ['orgadmin', 'sysadmin', 'developer']) ||
       (user?.publicMetadata as Record<string, unknown> | undefined)?.[
         'devLoginSession'
@@ -52,14 +54,14 @@ export default function OrganisationAdminPage() {
       convexUser.systemRoles.some((r: string) =>
         ['sysadmin', 'developer'].includes(r)
       );
-    if (!(hasByClerk || hasByConvex)) {
+    if (!(hasByWorkOS || hasByConvex)) {
       router.replace('/unauthorised');
     }
   }, [isLoaded, user, convexUser, router]);
 
   if (!isLoaded) return <p>Loading...</p>;
 
-  const hasByClerk =
+  const hasByWorkOS =
     hasAnyRole(user, ['orgadmin', 'sysadmin', 'developer']) ||
     (user?.publicMetadata as Record<string, unknown> | undefined)?.[
       'devLoginSession'
@@ -70,11 +72,27 @@ export default function OrganisationAdminPage() {
     convexUser.systemRoles.some((r: string) =>
       ['sysadmin', 'developer'].includes(r)
     );
-  if (!(hasByClerk || hasByConvex)) return null; // redirect in effect
+  if (!(hasByWorkOS || hasByConvex)) return null; // redirect in effect
 
   const organisationId = (user?.publicMetadata?.organisationId as string) || '';
 
   const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Organisation' }];
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

@@ -137,10 +137,10 @@ Run performance benchmarks:
 
 ```bash
 # Run benchmark (after phase)
-BENCH_PHASE=after pnpm bench:listing
+BENCH_PHASE=after npm bench:listing
 
 # Run benchmark (before phase)
-BENCH_PHASE=before pnpm bench:listing
+BENCH_PHASE=before npm bench:listing
 ```
 
 Results are written to `.bench/convex-listing-{phase}.json`.

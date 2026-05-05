@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -27,7 +27,7 @@ import { api } from '@/convex/_generated/api';
 import { ConvexHttpClient } from 'convex/browser';
 import { hasAnyRole } from '@/lib/utils';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 // Lazy client creation to avoid build-time issues
@@ -45,7 +45,9 @@ function getConvexClient(): ConvexHttpClient {
 }
 
 export default function AdminDashboardPage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -149,6 +151,14 @@ export default function AdminDashboardPage() {
       </Button>
     </div>
   );
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
 
   return (
     <StandardizedSidebarLayout

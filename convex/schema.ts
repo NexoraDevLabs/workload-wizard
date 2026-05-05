@@ -48,9 +48,9 @@ export default defineSchema({
     jobRole: v.optional(v.string()), // User's job role from onboarding
     department: v.optional(v.string()),
     phone: v.optional(v.string()),
-    organisationId: v.id('organisations'),
-    pictureUrl: v.optional(v.string()),
-    subject: v.string(), // Clerk ID
+    organisationId: v.optional(v.id('organisations')),
+    pictureUrl: v.optional(v.id('_storage')),
+    subject: v.string(), // WorkOS ID
     tokenIdentifier: v.optional(v.string()),
     isActive: v.boolean(),
     lastSignInAt: v.optional(v.float64()),
@@ -82,11 +82,12 @@ export default defineSchema({
     updatedAt: v.float64(),
   })
     .index('by_subject', ['subject'])
-    .index('by_email', ['email']),
+    .index('by_email', ['email'])
+    .index('by_username', ['username']),
 
   // 👤 User Preferences (per user per organisation)
   user_preferences: defineTable({
-    userId: v.string(), // Clerk subject ID
+    userId: v.string(), // WorkOS subject ID
     organisationId: v.id('organisations'),
     selectedAcademicYearId: v.optional(v.id('academic_years')),
     includeDrafts: v.optional(v.boolean()),
@@ -248,7 +249,7 @@ export default defineSchema({
     fte: v.float64(),
     maxTeachingHours: v.float64(),
     totalContract: v.float64(),
-    userSubject: v.optional(v.string()), // Optional link to Clerk subject / users.subject
+    userSubject: v.optional(v.string()), // Optional link to WorkOS subject / users.subject
     role: v.optional(v.string()),
     teamName: v.optional(v.string()),
     contractFamily: v.optional(v.string()),
@@ -262,7 +263,9 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index('by_organisation', ['organisationId']),
+  })
+  .index('by_organisation', ['organisationId'])
+  .index('by_user_subject', ['userSubject']),
 
   // 🧑‍🏫 Lecturer Instances
   lecturers: defineTable({
@@ -272,7 +275,10 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }),
+  })
+  .index('by_profile', ['profileId'])
+  .index('by_year', ['academicYearId'])
+  .index('by_profile_year', ['profileId', 'academicYearId']),
 
   // 👥 Group Allocations (lecturer ↔ group for AY)
   group_allocations: defineTable({
@@ -425,9 +431,9 @@ export default defineSchema({
     .index('by_role_permission', ['roleId', 'permissionId'])
     .index('by_organisation', ['organisationId']),
 
-  // 🧪 Early Access Features (Admin-managed metadata)
+  // Legacy early access metadata retained for data compatibility.
   feature_flags: defineTable({
-    key: v.string(), // Statsig gate key
+    key: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     stage: v.union(
@@ -441,10 +447,10 @@ export default defineSchema({
     updatedAt: v.float64(),
   }).index('by_key', ['key']),
 
-  // 🧪 Per-user feature enrollments (drives Statsig user custom props)
+  // Legacy per-user feature enrollments retained for data compatibility.
   feature_enrollments: defineTable({
-    userId: v.string(), // Clerk subject
-    featureKey: v.string(), // matches feature_flags.key / Statsig gate key
+    userId: v.string(), // WorkOS subject
+    featureKey: v.string(),
     enabled: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
@@ -454,7 +460,7 @@ export default defineSchema({
 
   // ⭐ Per-user Quick Access preferences
   quick_access_prefs: defineTable({
-    userId: v.string(), // Clerk subject
+    userId: v.string(), // WorkOS subject
     links: v.array(v.object({ name: v.string(), url: v.string() })),
     showNames: v.boolean(),
     createdAt: v.float64(),

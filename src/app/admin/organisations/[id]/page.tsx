@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -26,7 +26,9 @@ import {
 export default function AdminOrganisationOverviewPage() {
   const params = useParams();
   const organisationId = params?.id as Id<'organisations'>;
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const router = useRouter();
 
   // Authorisation: only sysadmin or developer
@@ -46,12 +48,14 @@ export default function AdminOrganisationOverviewPage() {
   const users = useQuery(api.users.listByOrganisation, {
     organisationId,
   });
-  const courses = useQuery(api.courses.listByOrganisation, {
-    organisationId,
-  });
-  const modules = useQuery(api.modules.listForOrganisation, {
-    organisationId,
-  });
+  const courses = useQuery(
+    api.courses.listByOrganisation,
+    user?.id ? { userId: user.id, organisationId } : 'skip'
+  );
+  const modules = useQuery(
+    api.modules.listForOrganisation,
+    user?.id ? { userId: user.id, organisationId } : 'skip'
+  );
 
   const breadcrumbs = [
     { label: 'Home', href: '/' },
@@ -59,6 +63,22 @@ export default function AdminOrganisationOverviewPage() {
     { label: 'Organisations', href: '/admin/organisations' },
     { label: organisation?.name || 'Overview' },
   ];
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

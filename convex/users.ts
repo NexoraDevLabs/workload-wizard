@@ -1,11 +1,331 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 
 import { requirePermission } from './permissions';
 import { writeAudit } from './audit';
 import type { Id, Doc } from './_generated/dataModel';
 import { requireOrgPermission } from './permissions';
 import { makeLoaders } from '../src/lib/convex/loaders';
+
+type DbAuthRole = 'sysadmin' | 'org_admin' | 'member';
+
+function normalizeDbSystemRole(role: string | undefined): DbAuthRole {
+  const normalized = role
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+
+  switch (normalized) {
+    case 'sysadmin':
+    case 'developer':
+    case 'dev':
+    case 'systemadmin':
+    case 'admin':
+      return 'sysadmin';
+    case 'org_admin':
+    case 'orgadmin':
+    case 'organisation_admin':
+      return 'org_admin';
+    default:
+      return 'member';
+  }
+}
+
+function normalizeDbOrgRole(role: string | undefined): DbAuthRole {
+  const normalized = role
+    ?.trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+
+  if (
+    normalized === 'org_admin' ||
+    normalized === 'orgadmin' ||
+    normalized === 'organisation_admin' ||
+    normalized === 'admin'
+  ) {
+    return 'org_admin';
+  }
+
+  return 'member';
+}
+
+function resolveDbAuthRole(
+  systemRoles: string[] | undefined,
+  organisationRoles: string[]
+): DbAuthRole {
+  if (systemRoles?.some((role) => normalizeDbSystemRole(role) === 'sysadmin')) {
+    return 'sysadmin';
+  }
+  if (
+    systemRoles?.some((role) => normalizeDbSystemRole(role) === 'org_admin') ||
+    organisationRoles.some((role) => normalizeDbOrgRole(role) === 'org_admin')
+  ) {
+    return 'org_admin';
+  }
+  return 'member';
+}
+
+async function ensureMembershipDocument(
+  ctx: MutationCtx,
+  userId: string,
+  organisationId: Id<'organisations'>,
+  isPrimary?: boolean
+) {
+  const existing = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user_org', (q) =>
+      q.eq('userId', userId).eq('organisationId', organisationId)
+    )
+    .first();
+
+  const now = Date.now();
+  if (!existing) {
+    await ctx.db.insert('user_organisations', {
+      userId,
+      organisationId,
+      isPrimary: isPrimary ?? true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else if (isPrimary !== undefined && existing.isPrimary !== isPrimary) {
+    await ctx.db.patch(existing._id, {
+      isPrimary,
+      updatedAt: now,
+    });
+  }
+
+  if (isPrimary) {
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect();
+
+    for (const membership of memberships) {
+      if (
+        String(membership.organisationId) !== String(organisationId) &&
+        membership.isPrimary
+      ) {
+        await ctx.db.patch(membership._id, {
+          isPrimary: false,
+          updatedAt: now,
+        });
+      }
+    }
+  }
+}
+
+async function getPrimaryUserOrganisationId(
+  ctx: QueryCtx | MutationCtx,
+  userId: string
+): Promise<Id<'organisations'> | null> {
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+  return (
+    memberships.find((membership) => membership.isPrimary)?.organisationId ??
+    memberships[0]?.organisationId ??
+    null
+  );
+}
+
+function splitEmailName(email: string) {
+  const localPart = email.split('@')[0] || 'User';
+  const normalised = localPart
+    .replace(/[._-]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+  const name = normalised || 'User';
+
+  return {
+    givenName: name.split(' ')[0] || 'User',
+    familyName: name.split(' ').slice(1).join(' '),
+    fullName: name,
+  };
+  
+}
+
+function makeUsernameFromEmail(email: string) {
+  const localPart = email.split('@')[0] ?? 'user';
+
+  const username = localPart
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return username || 'user';
+}
+
+export const generateProfilePictureUploadUrl = mutation({
+  args: {
+    subject: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const updateOwnProfilePicture = mutation({
+  args: {
+    subject: v.string(),
+    storageId: v.id('_storage'),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    await ctx.db.patch(user._id, {
+      pictureUrl: args.storageId,
+      updatedAt: Date.now(),
+    });
+
+    try {
+      await writeAudit(ctx, {
+        action: 'update',
+        entityType: 'user',
+        entityId: String(user._id),
+        entityName: user.fullName,
+        performedBy: args.subject,
+        performedByName: user.fullName,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
+        details: 'Updated profile picture',
+        metadata: JSON.stringify({
+          storageId: String(args.storageId),
+        }),
+        severity: 'info',
+        type: 'sys',
+      });
+    } catch {
+      // Ignore audit write errors silently
+    }
+
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
+export const getOwnProfilePictureUrl = query({
+  args: {
+    subject: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user?.pictureUrl) {
+      return null;
+    }
+
+    return await ctx.storage.getUrl(user.pictureUrl);
+  },
+});
+
+export const syncUser = mutation({
+  args: {
+    userId: v.string(),
+    email: v.string(),
+    givenName: v.optional(v.string()),
+    familyName: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (!args.userId) {
+      throw new Error('userId is required');
+    }
+
+    const existing = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
+      .first();
+
+    // Build names (WorkOS first, fallback to email)
+    const fallback = splitEmailName(args.email);
+
+    const givenName = args.givenName || fallback.givenName;
+    const familyName = args.familyName || fallback.familyName;
+
+    const fullName =
+      [givenName, familyName].filter(Boolean).join(' ') || fallback.fullName;
+
+    let userDoc;
+
+    if (existing) {
+      const updates: Partial<Doc<'users'>> = {
+        updatedAt: Date.now(),
+      };
+
+      if (existing.email !== args.email) {
+        updates.email = args.email;
+      }
+
+      if (!existing.username) {
+        updates.username = makeUsernameFromEmail(args.email);
+      }
+
+      // ✅ update names if changed (important)
+      if (
+        existing.givenName !== givenName ||
+        existing.familyName !== familyName
+      ) {
+        updates.givenName = givenName;
+        updates.familyName = familyName;
+        updates.fullName = fullName;
+      }
+
+      if (!existing.isActive) {
+        updates.isActive = true;
+      }
+
+      await ctx.db.patch(existing._id, updates);
+      userDoc = await ctx.db.get(existing._id);
+    } else {
+      const now = Date.now();
+
+      const insertedId = await ctx.db.insert('users', {
+        email: args.email,
+        username: makeUsernameFromEmail(args.email),
+        givenName,
+        familyName,
+        fullName,
+        systemRoles: ['user'],
+        subject: args.userId,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      userDoc = await ctx.db.get(insertedId);
+    }
+
+    const membership = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .first();
+
+    return { 
+      user: userDoc, 
+      needsOrganisation: !membership,
+      onboardingCompleted: Boolean(userDoc?.onboardingCompleted) 
+    };
+  },
+});
 
 export const create = mutation({
   args: {
@@ -18,7 +338,7 @@ export const create = mutation({
     // Do not trust client org; derive from actor when userId is present.
     // Keep optional to allow webhook/system calls to provide it explicitly.
     organisationId: v.optional(v.id('organisations')),
-    pictureUrl: v.optional(v.string()),
+    pictureUrl: v.optional(v.id('_storage')),
     subject: v.optional(v.string()),
     tokenIdentifier: v.optional(v.string()),
     password: v.optional(v.string()),
@@ -71,7 +391,7 @@ export const create = mutation({
     } as const;
     const optional: {
       username?: string;
-      pictureUrl?: string;
+      pictureUrl?: Id<'_storage'>;
       tokenIdentifier?: string;
     } = {
       ...(args.username ? { username: args.username } : {}),
@@ -81,6 +401,14 @@ export const create = mutation({
         : {}),
     };
     const userId = await ctx.db.insert('users', { ...base, ...optional });
+    if (base.subject) {
+      await ensureMembershipDocument(
+        ctx,
+        base.subject,
+        base.organisationId,
+        true
+      );
+    }
 
     // Audit invite/create when initiated by an authenticated actor
     if (args.userId) {
@@ -195,6 +523,14 @@ export const update = mutation({
     }
 
     await ctx.db.patch(id, updates);
+    if (updates.organisationId && targetUser.subject) {
+      await ensureMembershipDocument(
+        ctx,
+        targetUser.subject,
+        updates.organisationId,
+        true
+      );
+    }
 
     // Audit update
     try {
@@ -217,7 +553,7 @@ export const update = mutation({
 // Ensure a user has a membership row for an organisation (optionally set as primary)
 export const ensureMembership = mutation({
   args: {
-    userId: v.string(), // Clerk subject
+    userId: v.string(), // WorkOS subject
     organisationId: v.id('organisations'),
     isPrimary: v.optional(v.boolean()),
   },
@@ -228,47 +564,12 @@ export const ensureMembership = mutation({
       .first();
     if (!user) throw new Error('User not found');
 
-    const existing = await ctx.db
-      .query('user_organisations')
-      .withIndex('by_user_org', (q) =>
-        q.eq('userId', args.userId).eq('organisationId', args.organisationId)
-      )
-      .first();
-
-    const now = Date.now();
-    if (!existing) {
-      await ctx.db.insert('user_organisations', {
-        userId: args.userId,
-        organisationId: args.organisationId,
-        isPrimary: args.isPrimary ?? true,
-        createdAt: now,
-        updatedAt: now,
-      });
-    } else if (
-      args.isPrimary !== undefined &&
-      existing.isPrimary !== args.isPrimary
-    ) {
-      await ctx.db.patch(existing._id, {
-        isPrimary: args.isPrimary,
-        updatedAt: now,
-      });
-    }
-
-    // If setting primary, mark other memberships as non-primary
-    if (args.isPrimary) {
-      const others = await ctx.db
-        .query('user_organisations')
-        .withIndex('by_user', (q) => q.eq('userId', args.userId))
-        .collect();
-      for (const m of others) {
-        if (
-          String(m.organisationId) !== String(args.organisationId) &&
-          m.isPrimary
-        ) {
-          await ctx.db.patch(m._id, { isPrimary: false, updatedAt: now });
-        }
-      }
-    }
+    await ensureMembershipDocument(
+      ctx,
+      args.userId,
+      args.organisationId,
+      args.isPrimary
+    );
 
     return { ensured: true };
   },
@@ -366,21 +667,25 @@ export const list = query({
     // Get organisation details for each user using bulk batching
     const usersWithOrganisations = await Promise.all(
       users.map(async (user) => {
-        const organisation = await loaders.orgsById.load(
-          ctx,
-          user.organisationId
-        );
+        const organisationId =
+          user.organisationId ??
+          (await getPrimaryUserOrganisationId(ctx, user.subject));
+        const organisation = organisationId
+          ? await loaders.orgsById.load(ctx, organisationId)
+          : null;
 
         // Get all current organisational role assignments for this user in their org (support multiple)
-        const assignments = await ctx.db
-          .query('user_role_assignments')
-          .withIndex('by_user_org', (q) =>
-            q
-              .eq('userId', user.subject)
-              .eq('organisationId', user.organisationId)
-          )
-          .filter((q) => q.eq(q.field('isActive'), true))
-          .collect();
+        const assignments = organisationId
+          ? await ctx.db
+              .query('user_role_assignments')
+              .withIndex('by_user_org', (q) =>
+                q
+                  .eq('userId', user.subject)
+                  .eq('organisationId', organisationId)
+              )
+              .filter((q) => q.eq(q.field('isActive'), true))
+              .collect()
+          : [];
 
         // Use bulk batching for role lookups instead of N+1 queries
         const organisationalRoles: Array<{
@@ -444,6 +749,98 @@ export const getBySubject = query({
   },
 });
 
+export const getAuthContext = query({
+  args: { subject: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user || !user.isActive) return null;
+
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.subject))
+      .collect();
+    const membershipsWithOrganisations = await Promise.all(
+      memberships.map(async (membership) => ({
+        membership,
+        organisation: await ctx.db.get(membership.organisationId),
+      }))
+    );
+    const activeMemberships = membershipsWithOrganisations.filter(
+      ({ organisation }) => organisation?.isActive
+    );
+    const primaryMembership =
+      activeMemberships.find(({ membership }) => membership.isPrimary) ??
+      activeMemberships[0] ??
+      null;
+
+    if (!primaryMembership) {
+      return {
+        id: user._id,
+        subject: user.subject,
+        email: user.email,
+        fullName: user.fullName,
+        organisationId: null,
+        systemRoles: user.systemRoles,
+        organisationRoles: [] as string[],
+        role: resolveDbAuthRole(user.systemRoles, []),
+        memberships: [],
+        isActive: user.isActive,
+      };
+    }
+
+    const organisationId = primaryMembership.membership.organisationId;
+
+    async function getOrganisationRoles(orgId: Id<'organisations'>) {
+      const assignments = await ctx.db
+        .query('user_role_assignments')
+        .withIndex('by_user_org', (q) =>
+          q.eq('userId', args.subject).eq('organisationId', orgId)
+        )
+        .filter((q) => q.eq(q.field('isActive'), true))
+        .collect();
+
+      const roles = await Promise.all(
+        assignments.map((assignment) => ctx.db.get(assignment.roleId))
+      );
+
+      return roles
+        .filter((role): role is NonNullable<typeof role> => role !== null)
+        .filter((role) => role.isActive)
+        .map((role) => role.name);
+    }
+
+    const organisationRoles = await getOrganisationRoles(organisationId);
+    const membershipContexts = await Promise.all(
+      activeMemberships.map(async ({ membership }) => {
+        const roles = await getOrganisationRoles(membership.organisationId);
+        return {
+          userId: args.subject,
+          orgId: membership.organisationId,
+          role: resolveDbAuthRole(user.systemRoles, roles),
+          isPrimary: membership.isPrimary,
+        };
+      })
+    );
+
+    return {
+      id: user._id,
+      subject: user.subject,
+      email: user.email,
+      fullName: user.fullName,
+      organisationId,
+      systemRoles: user.systemRoles,
+      organisationRoles,
+      role: resolveDbAuthRole(user.systemRoles, organisationRoles),
+      memberships: membershipContexts,
+      isActive: user.isActive,
+    };
+  },
+});
+
 export const getByEmail = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
@@ -481,7 +878,7 @@ export const remove = mutation({
         entityId: user.subject,
         entityName: user.fullName,
         performedBy: user.subject,
-        organisationId: user.organisationId,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
         details: 'User deactivated',
         severity: 'warning',
         type: 'sys',
@@ -518,7 +915,7 @@ export const hardDelete = mutation({
         entityId: user.subject,
         entityName: user.fullName,
         performedBy: user.subject,
-        organisationId: user.organisationId,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
         details: 'User hard deleted',
         severity: 'critical',
         type: 'sys',
@@ -583,7 +980,7 @@ export const updateLastSignIn = mutation({
 // Webhook-specific mutation to update user data (no permission check)
 export const updateByWebhook = mutation({
   args: {
-    userId: v.string(), // Clerk user ID (subject)
+    userId: v.string(), // WorkOS user ID (subject)
     email: v.optional(v.string()),
     username: v.optional(v.string()),
     givenName: v.optional(v.string()),
@@ -591,7 +988,6 @@ export const updateByWebhook = mutation({
     fullName: v.optional(v.string()),
     systemRoles: v.optional(v.array(v.string())),
     organisationId: v.optional(v.string()), // Can be empty string for webhook calls
-    pictureUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -620,8 +1016,6 @@ export const updateByWebhook = mutation({
       processedUpdates.fullName = updates.fullName;
     if (updates.systemRoles !== undefined)
       processedUpdates.systemRoles = updates.systemRoles;
-    if (updates.pictureUrl !== undefined)
-      processedUpdates.pictureUrl = updates.pictureUrl;
 
     // Handle organisation ID conversion
     if (updates.organisationId && updates.organisationId !== '') {
@@ -653,16 +1047,28 @@ export const updateByWebhook = mutation({
     processedUpdates.updatedAt = Date.now();
 
     await ctx.db.patch(user._id, processedUpdates);
+    if (processedUpdates.organisationId) {
+      await ensureMembershipDocument(
+        ctx,
+        args.userId,
+        processedUpdates.organisationId as Id<'organisations'>,
+        true
+      );
+    }
 
     // Audit webhook update (system)
     try {
+      const auditOrganisationId =
+        processedUpdates.organisationId || user.organisationId;
       await writeAudit(ctx, {
         action: 'update',
         entityType: 'user',
         entityId: String(user._id),
         entityName: user.fullName || user.email,
         performedBy: 'system',
-        organisationId: processedUpdates.organisationId || user.organisationId,
+        ...(auditOrganisationId
+          ? { organisationId: auditOrganisationId as Id<'organisations'> }
+          : {}),
         details: 'User updated via webhook',
         metadata: JSON.stringify(processedUpdates),
         severity: 'info',
@@ -676,9 +1082,235 @@ export const updateByWebhook = mutation({
   },
 });
 
+async function getDefaultAcademicYearId(
+  ctx: MutationCtx,
+  organisationId: Id<'organisations'>
+): Promise<Id<'academic_years'> | null> {
+  const defaultYear = await ctx.db
+    .query('academic_years')
+    .withIndex('by_organisation', (q) => q.eq('organisationId', organisationId))
+    .filter((q) =>
+      q.and(
+        q.eq(q.field('isActive'), true),
+        q.eq(q.field('isDefaultForOrg'), true)
+      )
+    )
+    .first();
+
+  if (defaultYear) return defaultYear._id;
+
+  const activeYear = await ctx.db
+    .query('academic_years')
+    .withIndex('by_organisation', (q) => q.eq('organisationId', organisationId))
+    .filter((q) => q.eq(q.field('isActive'), true))
+    .first();
+
+  return activeYear?._id ?? null;
+}
+
+async function ensureLecturerYearInstance(
+  ctx: MutationCtx,
+  profileId: Id<'lecturer_profiles'>,
+  organisationId: Id<'organisations'>
+): Promise<Id<'lecturers'> | null> {
+  const academicYearId = await getDefaultAcademicYearId(ctx, organisationId);
+
+  if (!academicYearId) {
+    return null;
+  }
+
+  const existing = await ctx.db
+  .query('lecturers')
+  .withIndex('by_profile_year', (q) =>
+    q.eq('profileId', profileId).eq('academicYearId', academicYearId)
+  )
+  .first();
+
+  const now = Date.now();
+
+  if (existing) {
+    if (!existing.isActive) {
+      await ctx.db.patch(existing._id, {
+        isActive: true,
+        updatedAt: now,
+      });
+    }
+
+    return existing._id;
+  }
+
+  return await ctx.db.insert('lecturers', {
+    profileId,
+    academicYearId,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+export const completeOnboardingAndCreateProfile = mutation({
+  args: {
+    subject: v.string(), // WorkOS user id / users.subject
+    organisationId: v.id('organisations'),
+    givenName: v.string(),
+    familyName: v.string(),
+    email: v.string(),
+    jobRole: v.optional(v.string()),
+    department: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const organisation = await ctx.db.get(args.organisationId);
+    if (!organisation || !organisation.isActive) {
+      throw new Error('Organisation not found or inactive');
+    }
+
+    const givenName = args.givenName.trim() || user.givenName || 'User';
+    const familyName = args.familyName.trim();
+    const fullName = [givenName, familyName].filter(Boolean).join(' ');
+
+    const onboardingData: NonNullable<Doc<'users'>['onboardingData']> = {
+      firstName: givenName,
+      lastName: familyName,
+      email: args.email,
+      ...(args.phone ? { phone: args.phone } : {}),
+      ...(args.department ? { department: args.department } : {}),
+      ...(args.jobRole ? { role: args.jobRole } : {}),
+    };
+    
+    const userUpdates: Partial<Doc<'users'>> = {
+      email: args.email,
+      givenName,
+      familyName,
+      fullName,
+      organisationId: args.organisationId,
+      onboardingCompleted: true,
+      onboardingCompletedAt: now,
+      onboardingData,
+      updatedAt: now,
+    };
+
+    if (!user.username) {
+      userUpdates.username = makeUsernameFromEmail(args.email);
+    }
+    
+    if (args.jobRole) {
+      userUpdates.jobRole = args.jobRole;
+    }
+    
+    if (args.department) {
+      userUpdates.department = args.department;
+    }
+    
+    if (args.phone) {
+      userUpdates.phone = args.phone;
+    }
+    
+    await ctx.db.patch(user._id, userUpdates);
+
+    await ensureMembershipDocument(ctx, args.subject, args.organisationId, true);
+
+    const existingProfile = await ctx.db
+      .query('lecturer_profiles')
+      .withIndex('by_user_subject', (q) => q.eq('userSubject', args.subject))
+      .first();
+
+    let lecturerProfileId: Id<'lecturer_profiles'>;
+
+    if (existingProfile) {
+      await ctx.db.patch(existingProfile._id, {
+        fullName,
+        email: args.email,
+        organisationId: args.organisationId,
+        ...(args.jobRole ? { role: args.jobRole } : {}),
+        ...(args.department ? { teamName: args.department } : {}),
+        isActive: true,
+        updatedAt: now,
+      });
+
+      lecturerProfileId = existingProfile._id;
+    } else {
+      const lecturerProfileBase = {
+        fullName,
+        email: args.email,
+        contract: 'FT',
+        fte: 1,
+        maxTeachingHours: 0,
+        totalContract: 0,
+        userSubject: args.subject,
+        organisationId: args.organisationId,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const lecturerProfileOptional = {
+        ...(args.jobRole ? { role: args.jobRole } : {}),
+        ...(args.department ? { teamName: args.department } : {}),
+      };
+      
+      lecturerProfileId = await ctx.db.insert('lecturer_profiles', {
+        ...lecturerProfileBase,
+        ...lecturerProfileOptional,
+      });
+
+    }
+
+    const lecturerId = await ensureLecturerYearInstance(
+      ctx,
+      lecturerProfileId,
+      args.organisationId
+    );
+
+    const updatedUser = await ctx.db.get(user._id);
+
+    try {
+      await writeAudit(ctx, {
+        action: 'user.onboarding_completed',
+        entityType: 'user',
+        entityId: String(user._id),
+        entityName: fullName,
+        performedBy: args.subject,
+        performedByName: fullName,
+        organisationId: args.organisationId,
+        details: 'User completed onboarding and lecturer profile was created or updated',
+        metadata: JSON.stringify({
+          lecturerProfileId,
+          lecturerId,
+          email: args.email,
+          jobRole: args.jobRole,
+          department: args.department,
+        }),
+        severity: 'info',
+        type: 'org',
+      });
+    } catch {
+      // Ignore audit write errors silently
+    }
+
+    return {
+      user: updatedUser,
+      lecturerProfileId,
+      lecturerId,
+      organisationId: args.organisationId,
+    };
+  },
+});
+
 export const completeOnboarding = mutation({
   args: {
-    subject: v.string(), // Clerk user ID
+    subject: v.string(), // WorkOS user ID
     onboardingData: v.object({
       firstName: v.optional(v.string()),
       lastName: v.optional(v.string()),
@@ -756,7 +1388,7 @@ export const completeOnboarding = mutation({
         entityId: String(user._id),
         entityName: updates.fullName || user.fullName || user.email,
         performedBy: user.subject,
-        organisationId: user.organisationId,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
         details: 'Onboarding completed',
         metadata: JSON.stringify(updates),
         severity: 'info',
@@ -770,64 +1402,103 @@ export const completeOnboarding = mutation({
   },
 });
 
-export const updateUserAvatar = mutation({
-  args: {
-    subject: v.string(), // Clerk user ID
-    pictureUrl: v.string(), // New avatar URL from Clerk
-  },
+export const getAccountManagementDetails = query({
+  args: { subject: v.string() },
   handler: async (ctx, args) => {
-    const { subject, pictureUrl } = args;
-
-    // Find the user by Clerk subject ID
     const user = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', subject))
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
 
-    if (!user) {
-      throw new Error('User not found');
+    if (!user || !user.isActive) {
+      return null;
     }
 
-    // Update the user's picture URL
-    const updatedUser = await ctx.db.patch(user._id, {
-      pictureUrl,
-      updatedAt: Date.now(),
-    });
+    const membership = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.subject))
+      .collect();
 
-    // Log the avatar update
-    await writeAudit(ctx, {
-      action: 'update',
-      entityType: 'user',
-      entityId: String(user._id),
-      entityName: user.fullName,
-      performedBy: subject,
-      performedByName: user.fullName,
-      organisationId: user.organisationId,
-      details: 'Updated profile picture',
-      metadata: JSON.stringify({
-        previousPictureUrl: user.pictureUrl,
-        newPictureUrl: pictureUrl,
-      }),
-      severity: 'info',
-      type: 'sys',
-    });
+    const primaryMembership =
+      membership.find((item) => item.isPrimary) ?? membership[0] ?? null;
 
-    return updatedUser;
+    const organisation = primaryMembership
+      ? await ctx.db.get(primaryMembership.organisationId)
+      : user.organisationId
+        ? await ctx.db.get(user.organisationId)
+        : null;
+
+    return {
+      user,
+      organisation,
+    };
   },
 });
 
-export const getUserAvatar = query({
+export const updateOwnAccount = mutation({
   args: {
-    subject: v.string(), // Clerk user ID
+    subject: v.string(),
+    givenName: v.string(),
+    familyName: v.string(),
+    username: v.optional(v.string()),
+    email: v.string(),
   },
   handler: async (ctx, args) => {
-    const { subject } = args;
-
     const user = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', subject))
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
 
-    return user?.pictureUrl || null;
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    const fullName = [args.givenName.trim(), args.familyName.trim()]
+      .filter(Boolean)
+      .join(' ');
+
+      const username = args.username
+      ?.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    
+    if (!username) {
+      throw new Error('Username is required');
+    }
+    
+    const existingUsername = await ctx.db
+      .query('users')
+      .withIndex('by_username', (q) => q.eq('username', username))
+      .first();
+    
+    if (existingUsername && existingUsername._id !== user._id) {
+      throw new Error('Username is already taken');
+    }
+
+    await ctx.db.patch(user._id, {
+      givenName: args.givenName.trim(),
+      familyName: args.familyName.trim(),
+      fullName,
+      username: username || user.username || makeUsernameFromEmail(args.email),
+      email: args.email.trim().toLowerCase(),
+      updatedAt: Date.now(),
+    });
+
+    const lecturerProfile = await ctx.db
+      .query('lecturer_profiles')
+      .withIndex('by_user_subject', (q) => q.eq('userSubject', args.subject))
+      .first();
+
+    if (lecturerProfile) {
+      await ctx.db.patch(lecturerProfile._id, {
+        fullName,
+        email: args.email.trim().toLowerCase(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    return await ctx.db.get(user._id);
   },
 });

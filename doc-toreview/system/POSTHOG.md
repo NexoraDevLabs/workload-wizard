@@ -44,9 +44,9 @@ Add to `.env.local` as needed:
 # Required for Convex
 NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
 
-# Clerk (required for auth)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
-CLERK_SECRET_KEY=sk_test_your_key
+# WorkOS (required for auth)
+WORKOS_CLIENT_ID=pk_test_your_key
+WORKOS_API_KEY=sk_test_your_key
 
 # PostHog (optional; enables flags and analytics)
 NEXT_PUBLIC_POSTHOG_KEY=phc_your_api_key_here
@@ -64,7 +64,7 @@ Quick test page: `/dev/feature-flags-test`
 
 ## Early Access Features (EAF)
 
-Create an EAF in PostHog with key `beta_features`. The dev page `/dev/posthog-test` can help verify.
+Create an EAF in PostHog with key `beta_features` and verify it in a local development environment.
 
 Minimal usage:
 
@@ -86,7 +86,7 @@ export function BetaBanner() {
 
 ### Optional developer proxy test steps (previous `test-proxy.js`)
 
-1. Start the dev server (`pnpm dev`).
+1. Start the dev server (`npm run dev`).
 2. Visit any page, then verify:
    - `/e/capture/` responds (proxy endpoint)
    - `/e/static/` serves assets (static proxy)

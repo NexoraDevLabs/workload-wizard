@@ -1,6 +1,5 @@
 'use client';
 
-import posthog from 'posthog-js';
 import { analytics } from '@/lib/analytics';
 import { useToast } from '@/hooks/use-toast';
 import { toastError } from '@/lib/utils';
@@ -35,7 +34,7 @@ interface User {
   roles?: string[];
   organisationId: string;
   isActive: boolean;
-  subject?: string; // Clerk user ID
+  subject?: string; // WorkOS user ID
   organisationalRoles?: {
     id: string;
     name: string;
@@ -123,7 +122,7 @@ export function EditUserForm({
     };
 
     try {
-      // Update user details in both Clerk and Convex
+      // Update user details in both WorkOS and Convex
       const updatePromises = [];
 
       // Check if email has changed
@@ -174,12 +173,6 @@ export function EditUserForm({
         }
       }
 
-      posthog.capture('user-details-updated', {
-        user_id: user.subject,
-        email_changed: emailChanged,
-        is_sysadmin: isSysadmin,
-      });
-
       const successMessage = emailChanged
         ? 'User updated successfully! Email has been updated and verified.'
         : 'User updated successfully!';
@@ -210,7 +203,7 @@ export function EditUserForm({
     if (!user.subject) {
       setMessage({
         type: 'error',
-        text: 'Cannot reset password: User not found in Clerk',
+        text: 'Cannot reset password: User not found in WorkOS',
       });
       return;
     }
@@ -233,10 +226,6 @@ export function EditUserForm({
         throw new Error('Failed to send password reset email');
       }
 
-      posthog.capture('user-password-reset-initiated', {
-        user_id: user.subject,
-        is_sysadmin: isSysadmin,
-      });
       analytics.track('user.passwordResetInitiated', {
         userId: user.subject,
         isSysadmin,

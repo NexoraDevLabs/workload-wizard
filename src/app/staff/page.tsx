@@ -1,9 +1,9 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useState } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 import { useMemo } from 'react';
@@ -68,7 +68,9 @@ interface UserData {
 
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   const convexUser = useQuery(
     api.users.getBySubject,
@@ -93,6 +95,22 @@ export default function StaffCapacityPage() {
     'teaching'
   );
   const [openCreate, setOpenCreate] = useState(false);
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout

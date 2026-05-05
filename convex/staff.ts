@@ -2,6 +2,7 @@ import { mutation, query } from './_generated/server';
 import { v } from 'convex/values';
 import { requireOrgPermission } from './permissions';
 import { writeAudit } from './audit';
+import { getAuthContext } from './lib/auth';
 
 // Create a new lecturer profile
 export const create = mutation({
@@ -24,6 +25,7 @@ export const create = mutation({
     userId: v.string(), // Current user ID for permission check
   },
   handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     // Derive organisationId from the actor's user record
     const actor = await ctx.db
       .query('users')
@@ -36,7 +38,7 @@ export const create = mutation({
       ctx,
       args.userId,
       'staff.create',
-      actor.organisationId
+      authContext.organisationId
     );
 
     const now = Date.now();
@@ -59,7 +61,7 @@ export const create = mutation({
         : {}),
       ...(args.prefSpecialism ? { prefSpecialism: args.prefSpecialism } : {}),
       ...(args.prefNotes ? { prefNotes: args.prefNotes } : {}),
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -72,7 +74,7 @@ export const create = mutation({
       entityId: String(profileId),
       entityName: args.fullName,
       performedBy: args.userId,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       details: `Created lecturer profile (${args.contract})`,
       metadata: JSON.stringify({
         email: args.email,
@@ -190,12 +192,32 @@ export const list = query({
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', args.userId))
       .first();
-    if (!actor) throw new Error('Actor not found');
+
+    if (!actor || !actor.isActive) {
+      return [];
+    }
+
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .collect();
+
+    const primaryMembership =
+      memberships.find((membership) => membership.isPrimary) ??
+      memberships[0] ??
+      null;
+
+    const organisationId =
+      actor.organisationId ?? primaryMembership?.organisationId ?? null;
+
+    if (!organisationId) {
+      return [];
+    }
 
     return await ctx.db
       .query('lecturer_profiles')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
@@ -204,19 +226,18 @@ export const list = query({
 
 // List lecturer profiles for the current actor (derives organisation from auth)
 export const listForActor = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return [];
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) return [];
     return await ctx.db
       .query('lecturer_profiles')
       .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', actor.organisationId)
+        q.eq('organisationId', authContext.organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();

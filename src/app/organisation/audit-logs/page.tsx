@@ -11,7 +11,9 @@ export default async function OrganisationAuditLogsPage() {
   ];
   const user = await getUserOrgOrThrow();
   const orgId = user.organisationId;
-  // Hard block non-orgadmins here to avoid rendering the viewer
+  if (!orgId) {
+    throw new Error('Unauthorised: User must be assigned to an organisation');
+  }
 
   return (
     <AuditViewGate
