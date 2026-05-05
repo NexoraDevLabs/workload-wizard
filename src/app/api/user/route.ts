@@ -27,9 +27,9 @@ async function handleGet() {
     const familyName = authUser.lastName ?? '';
 
     const sync = await getConvexClient().mutation(api.users.syncUser, {
-      userId: authUser.id, // WorkOS user.id → your Convex userId/subject
+      userId: authUser.id,
       email: authUser.email,
-      givenName, // now supported by your updated syncUser
+      givenName,
       familyName,
     });
 
@@ -38,22 +38,19 @@ async function handleGet() {
         userId: authUser.id,
         email: authUser.email,
         fullName:
-          [givenName, familyName].filter(Boolean).join(' ') || authUser.email,
-        givenName,
-        familyName,
-        organisationId: authUser.organisationId ?? null,
-        needsOrganisation: sync?.needsOrganisation ?? false,
+          sync.user?.fullName ??
+          [givenName, familyName].filter(Boolean).join(' ') ??
+          authUser.email,
+        givenName: sync.user?.givenName ?? givenName,
+        familyName: sync.user?.familyName ?? familyName,
+        organisationId: sync.user?.organisationId ?? null,
+        needsOrganisation: sync.needsOrganisation,
+        onboardingCompleted: sync.onboardingCompleted,
       },
       { status: 200 }
     );
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Unauthorised',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 401 }
-    );
+  } catch {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 }
 

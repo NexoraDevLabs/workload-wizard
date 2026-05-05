@@ -20,6 +20,7 @@ type AuthUserResponse = {
   familyName?: string;
   organisationId?: string | null;
   needsOrganisation?: boolean;
+  onboardingCompleted?: boolean;
 };
 
 type ConvexAuthContext = {
@@ -38,6 +39,8 @@ type CompatUser = {
   imageUrl: string;
   createdAt: Date;
   isActive: boolean;
+  needsOrganisation: boolean;
+  onboardingCompleted: boolean;
   organisationId: string | null;
   organizationMemberships: Array<{ organization?: { id?: string } }>;
   publicMetadata: Record<string, unknown>;
@@ -97,6 +100,8 @@ function toCompatUser(
     imageUrl: '',
     createdAt: new Date(),
     isActive: true,
+    needsOrganisation: Boolean(user.needsOrganisation),
+    onboardingCompleted: Boolean(user.onboardingCompleted),
     organisationId,
     organizationMemberships: organisationId
       ? [{ organization: { id: organisationId } }]
