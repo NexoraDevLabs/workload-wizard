@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import Link from 'next/link';
-
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -34,6 +35,11 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 export function NavUser() {
   const { user, isLoaded } = useAuthUser();
   const { isMobile } = useSidebar();
+  
+  const profilePictureUrl = useQuery(
+    api.users.getOwnProfilePictureUrl,
+    user ? { subject: user.id } : 'skip'
+  );
 
   const handleLogout = () => {
     window.location.assign('/api/auth/logout');
@@ -75,7 +81,7 @@ export function NavUser() {
     typeof user.publicMetadata?.role === 'string'
       ? user.publicMetadata.role
       : '';
-  const avatarUrl = user.imageUrl;
+  const avatarUrl = profilePictureUrl || user.imageUrl || '';
 
   const formattedRole = userRole
     ? userRole.charAt(0).toUpperCase() + userRole.slice(1)

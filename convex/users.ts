@@ -143,7 +143,100 @@ function splitEmailName(email: string) {
     familyName: name.split(' ').slice(1).join(' '),
     fullName: name,
   };
+  
 }
+
+function makeUsernameFromEmail(email: string) {
+  const localPart = email.split('@')[0] ?? 'user';
+
+  const username = localPart
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return username || 'user';
+}
+
+export const generateProfilePictureUploadUrl = mutation({
+  args: {
+    subject: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const updateOwnProfilePicture = mutation({
+  args: {
+    subject: v.string(),
+    storageId: v.id('_storage'),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    await ctx.db.patch(user._id, {
+      pictureUrl: args.storageId,
+      updatedAt: Date.now(),
+    });
+
+    try {
+      await writeAudit(ctx, {
+        action: 'update',
+        entityType: 'user',
+        entityId: String(user._id),
+        entityName: user.fullName,
+        performedBy: args.subject,
+        performedByName: user.fullName,
+        ...(user.organisationId ? { organisationId: user.organisationId } : {}),
+        details: 'Updated profile picture',
+        metadata: JSON.stringify({
+          storageId: String(args.storageId),
+        }),
+        severity: 'info',
+        type: 'sys',
+      });
+    } catch {
+      // Ignore audit write errors silently
+    }
+
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
+export const getOwnProfilePictureUrl = query({
+  args: {
+    subject: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user?.pictureUrl) {
+      return null;
+    }
+
+    return await ctx.storage.getUrl(user.pictureUrl);
+  },
+});
 
 export const syncUser = mutation({
   args: {
@@ -182,6 +275,10 @@ export const syncUser = mutation({
         updates.email = args.email;
       }
 
+      if (!existing.username) {
+        updates.username = makeUsernameFromEmail(args.email);
+      }
+
       // ✅ update names if changed (important)
       if (
         existing.givenName !== givenName ||
@@ -203,6 +300,7 @@ export const syncUser = mutation({
 
       const insertedId = await ctx.db.insert('users', {
         email: args.email,
+        username: makeUsernameFromEmail(args.email),
         givenName,
         familyName,
         fullName,
@@ -240,7 +338,7 @@ export const create = mutation({
     // Do not trust client org; derive from actor when userId is present.
     // Keep optional to allow webhook/system calls to provide it explicitly.
     organisationId: v.optional(v.id('organisations')),
-    pictureUrl: v.optional(v.string()),
+    pictureUrl: v.optional(v.id('_storage')),
     subject: v.optional(v.string()),
     tokenIdentifier: v.optional(v.string()),
     password: v.optional(v.string()),
@@ -293,7 +391,7 @@ export const create = mutation({
     } as const;
     const optional: {
       username?: string;
-      pictureUrl?: string;
+      pictureUrl?: Id<'_storage'>;
       tokenIdentifier?: string;
     } = {
       ...(args.username ? { username: args.username } : {}),
@@ -890,7 +988,6 @@ export const updateByWebhook = mutation({
     fullName: v.optional(v.string()),
     systemRoles: v.optional(v.array(v.string())),
     organisationId: v.optional(v.string()), // Can be empty string for webhook calls
-    pictureUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db
@@ -919,8 +1016,6 @@ export const updateByWebhook = mutation({
       processedUpdates.fullName = updates.fullName;
     if (updates.systemRoles !== undefined)
       processedUpdates.systemRoles = updates.systemRoles;
-    if (updates.pictureUrl !== undefined)
-      processedUpdates.pictureUrl = updates.pictureUrl;
 
     // Handle organisation ID conversion
     if (updates.organisationId && updates.organisationId !== '') {
@@ -987,6 +1082,72 @@ export const updateByWebhook = mutation({
   },
 });
 
+async function getDefaultAcademicYearId(
+  ctx: MutationCtx,
+  organisationId: Id<'organisations'>
+): Promise<Id<'academic_years'> | null> {
+  const defaultYear = await ctx.db
+    .query('academic_years')
+    .withIndex('by_organisation', (q) => q.eq('organisationId', organisationId))
+    .filter((q) =>
+      q.and(
+        q.eq(q.field('isActive'), true),
+        q.eq(q.field('isDefaultForOrg'), true)
+      )
+    )
+    .first();
+
+  if (defaultYear) return defaultYear._id;
+
+  const activeYear = await ctx.db
+    .query('academic_years')
+    .withIndex('by_organisation', (q) => q.eq('organisationId', organisationId))
+    .filter((q) => q.eq(q.field('isActive'), true))
+    .first();
+
+  return activeYear?._id ?? null;
+}
+
+async function ensureLecturerYearInstance(
+  ctx: MutationCtx,
+  profileId: Id<'lecturer_profiles'>,
+  organisationId: Id<'organisations'>
+): Promise<Id<'lecturers'> | null> {
+  const academicYearId = await getDefaultAcademicYearId(ctx, organisationId);
+
+  if (!academicYearId) {
+    return null;
+  }
+
+  const existing = await ctx.db
+  .query('lecturers')
+  .withIndex('by_profile_year', (q) =>
+    q.eq('profileId', profileId).eq('academicYearId', academicYearId)
+  )
+  .first();
+
+  const now = Date.now();
+
+  if (existing) {
+    if (!existing.isActive) {
+      await ctx.db.patch(existing._id, {
+        isActive: true,
+        updatedAt: now,
+      });
+    }
+
+    return existing._id;
+  }
+
+  return await ctx.db.insert('lecturers', {
+    profileId,
+    academicYearId,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
 export const completeOnboardingAndCreateProfile = mutation({
   args: {
     subject: v.string(), // WorkOS user id / users.subject
@@ -1039,6 +1200,10 @@ export const completeOnboardingAndCreateProfile = mutation({
       onboardingData,
       updatedAt: now,
     };
+
+    if (!user.username) {
+      userUpdates.username = makeUsernameFromEmail(args.email);
+    }
     
     if (args.jobRole) {
       userUpdates.jobRole = args.jobRole;
@@ -1099,7 +1264,14 @@ export const completeOnboardingAndCreateProfile = mutation({
         ...lecturerProfileBase,
         ...lecturerProfileOptional,
       });
+
     }
+
+    const lecturerId = await ensureLecturerYearInstance(
+      ctx,
+      lecturerProfileId,
+      args.organisationId
+    );
 
     const updatedUser = await ctx.db.get(user._id);
 
@@ -1115,6 +1287,7 @@ export const completeOnboardingAndCreateProfile = mutation({
         details: 'User completed onboarding and lecturer profile was created or updated',
         metadata: JSON.stringify({
           lecturerProfileId,
+          lecturerId,
           email: args.email,
           jobRole: args.jobRole,
           department: args.department,
@@ -1129,6 +1302,7 @@ export const completeOnboardingAndCreateProfile = mutation({
     return {
       user: updatedUser,
       lecturerProfileId,
+      lecturerId,
       organisationId: args.organisationId,
     };
   },
@@ -1228,64 +1402,103 @@ export const completeOnboarding = mutation({
   },
 });
 
-export const updateUserAvatar = mutation({
-  args: {
-    subject: v.string(), // WorkOS user ID
-    pictureUrl: v.string(), // New avatar URL from WorkOS
-  },
+export const getAccountManagementDetails = query({
+  args: { subject: v.string() },
   handler: async (ctx, args) => {
-    const { subject, pictureUrl } = args;
-
-    // Find the user by WorkOS subject ID
     const user = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', subject))
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
 
-    if (!user) {
-      throw new Error('User not found');
+    if (!user || !user.isActive) {
+      return null;
     }
 
-    // Update the user's picture URL
-    const updatedUser = await ctx.db.patch(user._id, {
-      pictureUrl,
-      updatedAt: Date.now(),
-    });
+    const membership = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.subject))
+      .collect();
 
-    // Log the avatar update
-    await writeAudit(ctx, {
-      action: 'update',
-      entityType: 'user',
-      entityId: String(user._id),
-      entityName: user.fullName,
-      performedBy: subject,
-      performedByName: user.fullName,
-      ...(user.organisationId ? { organisationId: user.organisationId } : {}),
-      details: 'Updated profile picture',
-      metadata: JSON.stringify({
-        previousPictureUrl: user.pictureUrl,
-        newPictureUrl: pictureUrl,
-      }),
-      severity: 'info',
-      type: 'sys',
-    });
+    const primaryMembership =
+      membership.find((item) => item.isPrimary) ?? membership[0] ?? null;
 
-    return updatedUser;
+    const organisation = primaryMembership
+      ? await ctx.db.get(primaryMembership.organisationId)
+      : user.organisationId
+        ? await ctx.db.get(user.organisationId)
+        : null;
+
+    return {
+      user,
+      organisation,
+    };
   },
 });
 
-export const getUserAvatar = query({
+export const updateOwnAccount = mutation({
   args: {
-    subject: v.string(), // WorkOS user ID
+    subject: v.string(),
+    givenName: v.string(),
+    familyName: v.string(),
+    username: v.optional(v.string()),
+    email: v.string(),
   },
   handler: async (ctx, args) => {
-    const { subject } = args;
-
     const user = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', subject))
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
 
-    return user?.pictureUrl || null;
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    const fullName = [args.givenName.trim(), args.familyName.trim()]
+      .filter(Boolean)
+      .join(' ');
+
+      const username = args.username
+      ?.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    
+    if (!username) {
+      throw new Error('Username is required');
+    }
+    
+    const existingUsername = await ctx.db
+      .query('users')
+      .withIndex('by_username', (q) => q.eq('username', username))
+      .first();
+    
+    if (existingUsername && existingUsername._id !== user._id) {
+      throw new Error('Username is already taken');
+    }
+
+    await ctx.db.patch(user._id, {
+      givenName: args.givenName.trim(),
+      familyName: args.familyName.trim(),
+      fullName,
+      username: username || user.username || makeUsernameFromEmail(args.email),
+      email: args.email.trim().toLowerCase(),
+      updatedAt: Date.now(),
+    });
+
+    const lecturerProfile = await ctx.db
+      .query('lecturer_profiles')
+      .withIndex('by_user_subject', (q) => q.eq('userSubject', args.subject))
+      .first();
+
+    if (lecturerProfile) {
+      await ctx.db.patch(lecturerProfile._id, {
+        fullName,
+        email: args.email.trim().toLowerCase(),
+        updatedAt: Date.now(),
+      });
+    }
+
+    return await ctx.db.get(user._id);
   },
 });
