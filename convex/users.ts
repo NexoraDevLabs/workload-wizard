@@ -221,7 +221,11 @@ export const syncUser = mutation({
       .withIndex('by_user', (q) => q.eq('userId', args.userId))
       .first();
 
-    return { user: userDoc, needsOrganisation: !membership };
+    return { 
+      user: userDoc, 
+      needsOrganisation: !membership,
+      onboardingCompleted: Boolean(userDoc?.onboardingCompleted) 
+    };
   },
 });
 
@@ -980,6 +984,153 @@ export const updateByWebhook = mutation({
     }
 
     return user._id;
+  },
+});
+
+export const completeOnboardingAndCreateProfile = mutation({
+  args: {
+    subject: v.string(), // WorkOS user id / users.subject
+    organisationId: v.id('organisations'),
+    givenName: v.string(),
+    familyName: v.string(),
+    email: v.string(),
+    jobRole: v.optional(v.string()),
+    department: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const organisation = await ctx.db.get(args.organisationId);
+    if (!organisation || !organisation.isActive) {
+      throw new Error('Organisation not found or inactive');
+    }
+
+    const givenName = args.givenName.trim() || user.givenName || 'User';
+    const familyName = args.familyName.trim();
+    const fullName = [givenName, familyName].filter(Boolean).join(' ');
+
+    const onboardingData: NonNullable<Doc<'users'>['onboardingData']> = {
+      firstName: givenName,
+      lastName: familyName,
+      email: args.email,
+      ...(args.phone ? { phone: args.phone } : {}),
+      ...(args.department ? { department: args.department } : {}),
+      ...(args.jobRole ? { role: args.jobRole } : {}),
+    };
+    
+    const userUpdates: Partial<Doc<'users'>> = {
+      email: args.email,
+      givenName,
+      familyName,
+      fullName,
+      organisationId: args.organisationId,
+      onboardingCompleted: true,
+      onboardingCompletedAt: now,
+      onboardingData,
+      updatedAt: now,
+    };
+    
+    if (args.jobRole) {
+      userUpdates.jobRole = args.jobRole;
+    }
+    
+    if (args.department) {
+      userUpdates.department = args.department;
+    }
+    
+    if (args.phone) {
+      userUpdates.phone = args.phone;
+    }
+    
+    await ctx.db.patch(user._id, userUpdates);
+
+    await ensureMembershipDocument(ctx, args.subject, args.organisationId, true);
+
+    const existingProfile = await ctx.db
+      .query('lecturer_profiles')
+      .withIndex('by_user_subject', (q) => q.eq('userSubject', args.subject))
+      .first();
+
+    let lecturerProfileId: Id<'lecturer_profiles'>;
+
+    if (existingProfile) {
+      await ctx.db.patch(existingProfile._id, {
+        fullName,
+        email: args.email,
+        organisationId: args.organisationId,
+        ...(args.jobRole ? { role: args.jobRole } : {}),
+        ...(args.department ? { teamName: args.department } : {}),
+        isActive: true,
+        updatedAt: now,
+      });
+
+      lecturerProfileId = existingProfile._id;
+    } else {
+      const lecturerProfileBase = {
+        fullName,
+        email: args.email,
+        contract: 'FT',
+        fte: 1,
+        maxTeachingHours: 0,
+        totalContract: 0,
+        userSubject: args.subject,
+        organisationId: args.organisationId,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const lecturerProfileOptional = {
+        ...(args.jobRole ? { role: args.jobRole } : {}),
+        ...(args.department ? { teamName: args.department } : {}),
+      };
+      
+      lecturerProfileId = await ctx.db.insert('lecturer_profiles', {
+        ...lecturerProfileBase,
+        ...lecturerProfileOptional,
+      });
+    }
+
+    const updatedUser = await ctx.db.get(user._id);
+
+    try {
+      await writeAudit(ctx, {
+        action: 'user.onboarding_completed',
+        entityType: 'user',
+        entityId: String(user._id),
+        entityName: fullName,
+        performedBy: args.subject,
+        performedByName: fullName,
+        organisationId: args.organisationId,
+        details: 'User completed onboarding and lecturer profile was created or updated',
+        metadata: JSON.stringify({
+          lecturerProfileId,
+          email: args.email,
+          jobRole: args.jobRole,
+          department: args.department,
+        }),
+        severity: 'info',
+        type: 'org',
+      });
+    } catch {
+      // Ignore audit write errors silently
+    }
+
+    return {
+      user: updatedUser,
+      lecturerProfileId,
+      organisationId: args.organisationId,
+    };
   },
 });
 

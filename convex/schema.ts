@@ -262,7 +262,9 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index('by_organisation', ['organisationId']),
+  })
+  .index('by_organisation', ['organisationId'])
+  .index('by_user_subject', ['userSubject']),
 
   // 🧑‍🏫 Lecturer Instances
   lecturers: defineTable({

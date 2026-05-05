@@ -20,6 +20,24 @@ export const list = query({
   },
 });
 
+export const listForOnboarding = query({
+  args: {},
+  handler: async (ctx) => {
+    const organisations = await ctx.db
+      .query('organisations')
+      .filter((q) => q.eq(q.field('isActive'), true))
+      .collect();
+
+    return organisations
+      .map((organisation) => ({
+        _id: organisation._id,
+        name: organisation.name,
+        code: organisation.code,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+});
+
 // Reseed defaults for a specific organisation
 export const reseedDefaultsForOrg = mutation({
   args: { userId: v.string(), organisationId: v.id('organisations') },

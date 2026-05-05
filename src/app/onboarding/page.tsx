@@ -29,9 +29,6 @@ import {
   Settings,
   BookOpen,
   LogOut,
-  Shield,
-  Eye,
-  EyeOff,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
@@ -46,10 +43,7 @@ interface OnboardingFormData {
   email: string;
   phone: string;
   department: string;
-  organization: string;
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
+  organisationId: string;
   notifications: boolean;
   newsletter: boolean;
 }
@@ -74,12 +68,6 @@ const onboardingSteps = [
     icon: Building,
   },
   {
-    id: 'security',
-    title: 'Security',
-    description: 'Secure your account',
-    icon: Shield,
-  },
-  {
     id: 'preferences',
     title: 'Preferences',
     description: 'Customise your experience',
@@ -94,7 +82,7 @@ const onboardingSteps = [
 ];
 
 export default function OnboardingPage() {
-  const { user, signOut } = useAuthUser({
+  const { user, isLoaded: authLoaded, isSignedIn, session } = useAuthUser({
     redirectOnUnauthenticated: true,
   });
   const router = useRouter();
@@ -102,32 +90,8 @@ export default function OnboardingPage() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [progressRestored, setProgressRestored] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string>('');
-
-  // Query current user from Convex using their WorkOS ID (subject)
-  const currentUserData = useQuery(
-    api.users.getBySubject,
-    user?.id ? { subject: user.id } : 'skip'
-  );
-
-  // Get org ID from Convex user data or fallback to WorkOS
-  const orgId =
-    currentUserData?.organisationId ||
-    user?.organizationMemberships?.[0]?.organization?.id ||
-    user?.publicMetadata?.orgId ||
-    (user as { orgId?: string })?.orgId ||
-    null;
-
-  // Query organization name from Convex using the org ID
-  const organization = useQuery(
-    api.organisations.getById,
-    orgId && typeof orgId === 'string'
-      ? { id: orgId as string & { __tableName: 'organisations' } }
-      : 'skip'
-  );
+  const organisations = useQuery(api.organisations.listForOnboarding);
 
   const [formData, setFormData] = useState<OnboardingFormData>({
     firstName: '',
@@ -137,76 +101,35 @@ export default function OnboardingPage() {
     email: '',
     phone: '',
     department: '',
-    organization: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    organisationId: '',
     notifications: true,
     newsletter: false,
   });
   const [missingFields, setMissingFields] = useState<string[]>([]);
 
-  // Password strength calculation function
-  const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: '', color: '' };
-
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    const strengthMap = [
-      { strength: 0, label: 'Very Weak', color: 'text-red-500' },
-      { strength: 1, label: 'Weak', color: 'text-orange-500' },
-      { strength: 2, label: 'Fair', color: 'text-yellow-500' },
-      { strength: 3, label: 'Good', color: 'text-blue-500' },
-      { strength: 4, label: 'Strong', color: 'text-green-500' },
-      { strength: 5, label: 'Very Strong', color: 'text-green-600' },
-    ];
-
-    return strengthMap[Math.min(score, 5)];
-  };
-
   // Pre-populate form data from user information
   useEffect(() => {
-    if (user) {
-      const userFirstName = user.firstName || '';
-      const userLastName = user.lastName || '';
-      const userEmail = user.emailAddresses?.[0]?.emailAddress || '';
-
-      // Get organisation name from Convex query result
-      const userOrganization = organization?.name || '';
-
-      // Pre-populate available data
-      setFormData({
-        firstName: userFirstName,
-        lastName: userLastName,
-        role: '',
-        customRole: '',
-        email: userEmail,
-        phone: '',
-        department: '',
-        organization: userOrganization,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-        notifications: true,
-        newsletter: false,
-      });
-
-      // Identify missing required fields for Step 1 only
-      const missing = [];
-      if (!userFirstName) missing.push('firstName');
-      if (!userLastName) missing.push('lastName');
-      if (!userEmail) missing.push('email');
-      // Role is always missing initially for Step 1 (department and organization are on later steps)
-      missing.push('role');
-
-      setMissingFields(missing);
-    }
-  }, [user, organization, currentUserData, orgId]);
+    if (!user) return;
+  
+    const userFirstName = user.firstName || '';
+    const userLastName = user.lastName || '';
+    const userEmail = user.emailAddresses?.[0]?.emailAddress || '';
+  
+    setFormData((previous) => ({
+      ...previous,
+      firstName: previous.firstName || userFirstName,
+      lastName: previous.lastName || userLastName,
+      email: previous.email || userEmail,
+    }));
+  
+    const missing = [];
+    if (!userFirstName) missing.push('firstName');
+    if (!userLastName) missing.push('lastName');
+    if (!userEmail) missing.push('email');
+    missing.push('role');
+  
+    setMissingFields(missing);
+  }, [user]);
 
   // Save progress to localStorage
   const saveProgress = useCallback(() => {
@@ -284,11 +207,25 @@ export default function OnboardingPage() {
       setFormData((prevData) => ({
         ...prevData,
         ...savedProgress.formData,
-        // Keep pre-populated organisation if it exists
-        organization:
-          prevData.organization ||
-          (typeof savedProgress.formData.organization === 'string'
-            ? savedProgress.formData.organization
+        firstName:
+          prevData.firstName ||
+          (typeof savedProgress.formData.firstName === 'string'
+            ? savedProgress.formData.firstName
+            : ''),
+        lastName:
+          prevData.lastName ||
+          (typeof savedProgress.formData.lastName === 'string'
+            ? savedProgress.formData.lastName
+            : ''),
+        email:
+          prevData.email ||
+          (typeof savedProgress.formData.email === 'string'
+            ? savedProgress.formData.email
+            : ''),
+        organisationId:
+          prevData.organisationId ||
+          (typeof savedProgress.formData.organisationId === 'string'
+            ? savedProgress.formData.organisationId
             : ''),
       }));
       setCurrentStep(savedProgress.currentStep);
@@ -301,70 +238,49 @@ export default function OnboardingPage() {
     setIsLoaded(true);
   }, [user?.id, loadProgress, isLoaded]);
 
+  useEffect(() => {
+    if (!authLoaded || !isSignedIn || !user) return;
+  
+    if (!user.needsOrganisation && user.onboardingCompleted) {
+      router.replace('/dashboard');
+    }
+  }, [authLoaded, isSignedIn, user, router]);
+
   // Get required fields for current step
   const getRequiredFieldsForStep = useCallback(
     (step: number) => {
       switch (step) {
         case 0: {
-          // Personal Information
           const requiredFields = ['firstName', 'lastName', 'email', 'role'];
-          // Add customRole if "other" is selected
+  
           if (formData.role === 'other') {
             requiredFields.push('customRole');
           }
-          // Add email validation if email is provided
+  
           if (
             formData.email &&
             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
           ) {
             requiredFields.push('invalidEmail');
           }
+  
           return requiredFields;
         }
-        case 1: {
-          // Work Information
-          const workFields = ['department'];
-          // Only require organisation if it's not pre-populated
-          if (!formData.organization) {
-            workFields.push('organization');
-          }
-          return workFields;
-        }
-        case 2: {
-          // Security
-          const securityFields = [
-            'currentPassword',
-            'newPassword',
-            'confirmPassword',
-          ];
-          // Additional validation: passwords must match and meet strength requirements
-          if (
-            formData.newPassword &&
-            formData.confirmPassword &&
-            formData.newPassword !== formData.confirmPassword
-          ) {
-            return [...securityFields, 'passwordMismatch'];
-          }
-          if (formData.newPassword && formData.newPassword.length < 8) {
-            return [...securityFields, 'passwordTooWeak'];
-          }
-          return securityFields;
-        }
-        case 3: // Preferences
+  
+        case 1:
+          return ['organisationId', 'department'];
+  
+        case 2:
           return [];
-        case 4: // Complete
+  
+        case 3:
           return [];
+  
         default:
           return [];
       }
     },
-    [
-      formData.role,
-      formData.organization,
-      formData.newPassword,
-      formData.confirmPassword,
-      formData.email,
-    ]
+    [formData.role, formData.email]
   );
 
   // Update missing fields when step changes
@@ -398,183 +314,83 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     if (!user) return;
-
+  
+    if (!formData.organisationId) {
+      setError('Please select your organisation.');
+      setCurrentStep(1);
+      return;
+    }
+  
     setIsCompleting(true);
-
+    setError('');
+  
     try {
-      // First, update user profile information (name, email) if changed
-      const userFirstName = user.firstName || '';
-      const userLastName = user.lastName || '';
-      const userEmail = user.emailAddresses?.[0]?.emailAddress || '';
-
-      // Check if name or email has actually changed (trim whitespace for comparison)
-      const nameChanged =
-        formData.firstName.trim() !== userFirstName ||
-        formData.lastName.trim() !== userLastName;
-      const emailChanged = formData.email.trim() !== userEmail;
-
-      if (nameChanged || emailChanged) {
-        try {
-          // Update name in WorkOS only if it actually changed
-          if (nameChanged) {
-            await user.update({
-              firstName: formData.firstName.trim(),
-              lastName: formData.lastName.trim(),
-            });
-          }
-
-          // Update email only if it actually changed
-          if (emailChanged) {
-            try {
-              const response = await fetch('/api/update-user-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  userId: user.id,
-                  newEmail: formData.email.trim(),
-                }),
-              });
-
-              if (!response.ok) {
-                const errorData = (await response.json()) as { error?: string };
-                throw new Error(errorData.error || 'Failed to update email');
-              }
-
-              // Reload user data to get updated email
-              await user.reload();
-            } catch (emailError) {
-              setError(
-                emailError instanceof Error
-                  ? emailError.message
-                  : 'Failed to update email. Please try again.'
-              );
-              return;
-            }
-          }
-        } catch {
-          setError('Failed to update profile information. Please try again.');
-          return;
-        }
-      }
-
-      // Update the password if provided in the security step
-      if (
-        formData.currentPassword &&
-        formData.newPassword &&
-        formData.confirmPassword
-      ) {
-        // Validate password match
-        if (formData.newPassword !== formData.confirmPassword) {
-          setError('New password and confirm password do not match.');
-          return;
-        }
-
-        // Validate password strength
-        if (formData.newPassword.length < 8) {
-          setError('Password must be at least 8 characters long.');
-          return;
-        }
-
-        try {
-          await user.updatePassword({
-            currentPassword: formData.currentPassword,
-            newPassword: formData.newPassword,
-          });
-        } catch (passwordError) {
-          // Provide specific error messages for password issues
-          let errorMessage =
-            'Failed to update password. Please check your current password.';
-          if (passwordError instanceof Error) {
-            if (passwordError.message.includes('current password')) {
-              errorMessage = 'Current password is incorrect. Please try again.';
-            } else if (passwordError.message.includes('weak')) {
-              errorMessage =
-                'Password is too weak. Please choose a stronger password.';
-            } else if (passwordError.message.includes('recent')) {
-              errorMessage =
-                'Cannot reuse a recent password. Please choose a different password.';
-            } else if (
-              passwordError.message.includes('breach') ||
-              passwordError.message.includes('compromised')
-            ) {
-              errorMessage =
-                'This password has been found in online breaches. Please choose a different, more secure password.';
-            } else if (passwordError.message.includes('_baseFetch')) {
-              errorMessage =
-                'Network error occurred. Please check your connection and try again.';
-            }
-          }
-          setError(errorMessage);
-          return;
-        }
-      }
-
-      // Filter out sensitive password data before sending to API
-      const {
-        currentPassword: _currentPassword,
-        newPassword: _newPassword,
-        confirmPassword: _confirmPassword,
-        ...safeOnboardingData
-      } = formData;
-
-      // Update user metadata to mark onboarding as complete via API
+      const jobRole =
+        formData.role === 'other'
+          ? formData.customRole.trim()
+          : formData.role.trim();
+  
       const response = await fetch('/api/complete-onboarding', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          onboardingData: safeOnboardingData,
+          organisationId: formData.organisationId,
+          givenName: formData.firstName.trim(),
+          familyName: formData.lastName.trim(),
+          jobRole,
+          department: formData.department.trim(),
+          phone: formData.phone.trim(),
         }),
       });
-
+  
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+  
         try {
           const errorData = (await response.json()) as { error?: string };
           errorMessage = errorData.error || errorMessage;
         } catch {
-          // Response is not JSON, get text instead
-          const errorText = await response.text();
-          errorMessage = `Server error: ${errorText.slice(0, 100)}...`;
+          // Ignore invalid JSON
         }
+  
         throw new Error(errorMessage);
       }
-
-      await response.json(); // Consume the response
-
-      // Clear progress since onboarding completed successfully on server
+  
+      await response.json();
+  
       clearProgress();
-
-      // Redirect to success page which will handle the final redirect
-      // This gives time for the session to update
-      window.location.replace('/onboarding-success');
-    } catch {
-      setError('Failed to complete onboarding. Please try again.');
+      await session.reload();
+  
+      router.replace('/onboarding-success');
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to complete onboarding. Please try again.'
+      );
     } finally {
       setIsCompleting(false);
     }
   };
 
-  const handleLogout = async () => {
-    await signOut(() => router.push('/sign-in'));
+  const handleLogout = () => {
+    window.location.assign('/api/auth/logout');
   };
 
   // Check if current step is valid
   const isCurrentStepValid = () => {
+    if (currentStep === 1 && organisations === undefined) {
+      return false;
+    }
+  
     const requiredFields = getRequiredFieldsForStep(currentStep);
     return requiredFields.every((field) => {
-      // Special handling for password validation
-      if (field === 'passwordMismatch') {
-        return formData.newPassword === formData.confirmPassword;
-      }
-      if (field === 'passwordTooWeak') {
-        return formData.newPassword && formData.newPassword.length >= 8;
-      }
       if (field === 'invalidEmail') {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       }
-
+  
       const value = formData[field as keyof OnboardingFormData];
       return typeof value === 'string' && value.trim() !== '';
     });
@@ -613,8 +429,12 @@ export default function OnboardingPage() {
     setMissingFields(missing);
   };
 
+  if (authLoaded && (!isSignedIn || !user)) {
+    return null;
+  }
+
   // Show loading state while progress is being loaded
-  if (!isLoaded) {
+  if (!authLoaded || !isLoaded) {
     return (
       <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="w-full max-w-2xl mx-auto p-8">
@@ -793,6 +613,7 @@ export default function OnboardingPage() {
                     id="email"
                     type="email"
                     value={formData.email}
+                    readOnly
                     onChange={(e) => updateFormData('email', e.target.value)}
                     placeholder="Enter your email address"
                     className={
@@ -827,305 +648,90 @@ export default function OnboardingPage() {
           </div>
         );
 
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold">Organisation Details</h2>
-              <p className="text-muted-foreground mt-2">
-                Tell us about your institution
-              </p>
-              {formData.organization && (
-                <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <p className="text-sm text-green-700 dark:text-green-300">
-                    <strong>Great!</strong> We found your organisation
-                    information from your account.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="organization"
-                  className={
-                    missingFields.includes('organization')
-                      ? 'text-orange-600'
-                      : ''
-                  }
-                >
-                  Organisation/Institution{' '}
-                  {missingFields.includes('organization') && (
-                    <span className="text-orange-500">*</span>
-                  )}
-                  {formData.organization && (
-                    <span className="text-xs text-muted-foreground ml-2">
-                      (pre-filled from your account)
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  id="organization"
-                  value={formData.organization}
-                  onChange={(e) =>
-                    updateFormData('organization', e.target.value)
-                  }
-                  placeholder="Enter your organisation name"
-                  className={`${missingFields.includes('organization') ? 'border-orange-300 focus:border-orange-500' : ''} ${formData.organization ? 'bg-muted' : ''}`}
-                  readOnly={!!formData.organization}
-                />
-                {formData.organization && (
-                  <p className="text-xs text-muted-foreground">
-                    This information was retrieved from your account. If
-                    incorrect, please contact support.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="department"
-                  className={
-                    missingFields.includes('department')
-                      ? 'text-orange-600'
-                      : ''
-                  }
-                >
-                  Department/Faculty{' '}
-                  {missingFields.includes('department') && (
-                    <span className="text-orange-500">*</span>
-                  )}
-                </Label>
-                <Input
-                  id="department"
-                  value={formData.department}
-                  onChange={(e) => updateFormData('department', e.target.value)}
-                  placeholder="Enter your department"
-                  className={
-                    missingFields.includes('department')
-                      ? 'border-orange-300 focus:border-orange-500'
-                      : ''
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold">Security</h2>
-              <p className="text-muted-foreground mt-2">
-                Update your password to secure your account
-              </p>
-              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  <strong>Password Change Required:</strong> For security
-                  purposes, please change your password during setup.
+        case 1:
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold">Organisation Details</h2>
+                <p className="text-muted-foreground mt-2">
+                  Select your institution and department
                 </p>
               </div>
-            </div>
-
-            <div className="grid gap-6">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="currentPassword"
-                  className={
-                    missingFields.includes('currentPassword')
-                      ? 'text-orange-600'
-                      : ''
-                  }
-                >
-                  Current Password{' '}
-                  {missingFields.includes('currentPassword') && (
-                    <span className="text-orange-500">*</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="currentPassword"
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    value={formData.currentPassword}
-                    onChange={(e) =>
-                      updateFormData('currentPassword', e.target.value)
+        
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="organisationId"
+                    className={
+                      missingFields.includes('organisationId')
+                        ? 'text-orange-600'
+                        : ''
                     }
-                    placeholder="Enter your current password"
-                    className={`pr-10 ${missingFields.includes('currentPassword') ? 'border-orange-300 focus:border-orange-500' : ''}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
-                    {showCurrentPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
+                    Organisation/Institution{' '}
+                    {missingFields.includes('organisationId') && (
+                      <span className="text-orange-500">*</span>
                     )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="newPassword"
-                  className={
-                    missingFields.includes('newPassword')
-                      ? 'text-orange-600'
-                      : ''
-                  }
-                >
-                  New Password{' '}
-                  {missingFields.includes('newPassword') && (
-                    <span className="text-orange-500">*</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={formData.newPassword}
-                    onChange={(e) =>
-                      updateFormData('newPassword', e.target.value)
-                    }
-                    placeholder="Enter your new password"
-                    className={`pr-10 ${missingFields.includes('newPassword') ? 'border-orange-300 focus:border-orange-500' : ''}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  </Label>
+        
+                  <Select
+                    value={formData.organisationId}
+                    onValueChange={(value) => updateFormData('organisationId', value)}
                   >
-                    {showNewPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-
-                {/* Password validation feedback */}
-                {formData.newPassword && (
-                  <div className="space-y-2">
-                    {/* Password strength indicator */}
-                    <div className="space-y-1">
-                      {(() => {
-                        const s = getPasswordStrength(formData.newPassword);
-                        return (
-                          <p className={`text-sm ${s?.color || ''}`}>
-                            Password strength: {s?.label || ''}
-                          </p>
-                        );
-                      })()}
-                      {(() => {
-                        const s = getPasswordStrength(formData.newPassword);
-                        return (
-                          <div className="flex space-x-1">
-                            {[1, 2, 3, 4, 5].map((level) => (
-                              <div
-                                key={level}
-                                className={`h-1 flex-1 rounded ${
-                                  level <= (s?.strength || 0)
-                                    ? s?.color?.replace('text-', 'bg-') ||
-                                      'bg-gray-200'
-                                    : 'bg-gray-200'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Validation messages */}
-                    {formData.newPassword.length < 8 && (
-                      <p className="text-sm text-red-600">
-                        Password must be at least 8 characters long
-                      </p>
-                    )}
-                    {formData.newPassword &&
-                      formData.confirmPassword &&
-                      formData.newPassword !== formData.confirmPassword && (
-                        <p className="text-sm text-red-600">
-                          Passwords do not match
-                        </p>
-                      )}
-                    {formData.newPassword &&
-                      formData.confirmPassword &&
-                      formData.newPassword === formData.confirmPassword &&
-                      formData.newPassword.length >= 8 && (
-                        <p className="text-sm text-green-600">
-                          ✓ Password is valid
-                        </p>
-                      )}
-                  </div>
-                )}
-
-                <p className="text-xs text-muted-foreground">
-                  Password must be at least 8 characters long and include
-                  uppercase, lowercase, number, and special character.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label
-                  htmlFor="confirmPassword"
-                  className={
-                    missingFields.includes('confirmPassword')
-                      ? 'text-orange-600'
-                      : ''
-                  }
-                >
-                  Confirm New Password{' '}
-                  {missingFields.includes('confirmPassword') && (
-                    <span className="text-orange-500">*</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      updateFormData('confirmPassword', e.target.value)
-                    }
-                    placeholder="Confirm your new password"
-                    className={`pr-10 ${missingFields.includes('confirmPassword') ? 'border-orange-300 focus:border-orange-500' : ''}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                {formData.newPassword &&
-                  formData.confirmPassword &&
-                  formData.newPassword !== formData.confirmPassword && (
-                    <p className="text-xs text-red-600">
-                      Passwords do not match
+                    <SelectTrigger
+                      className={`w-full ${
+                        missingFields.includes('organisationId')
+                          ? 'border-orange-300 focus:border-orange-500'
+                          : ''
+                      }`}
+                    >
+                      <SelectValue placeholder="Select your organisation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(organisations ?? []).map((organisation) => (
+                        <SelectItem key={organisation._id} value={organisation._id}>
+                          {organisation.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+        
+                  {organisations === undefined && (
+                    <p className="text-xs text-muted-foreground">
+                      Loading organisations...
                     </p>
                   )}
+                </div>
+        
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="department"
+                    className={
+                      missingFields.includes('department') ? 'text-orange-600' : ''
+                    }
+                  >
+                    Department/Faculty{' '}
+                    {missingFields.includes('department') && (
+                      <span className="text-orange-500">*</span>
+                    )}
+                  </Label>
+                  <Input
+                    id="department"
+                    value={formData.department}
+                    onChange={(e) => updateFormData('department', e.target.value)}
+                    placeholder="Enter your department"
+                    className={
+                      missingFields.includes('department')
+                        ? 'border-orange-300 focus:border-orange-500'
+                        : ''
+                    }
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        );
+          );
 
-      case 3:
+      case 2:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -1184,7 +790,7 @@ export default function OnboardingPage() {
           </div>
         );
 
-      case 4:
+      case 3:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
