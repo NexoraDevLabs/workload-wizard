@@ -144,7 +144,7 @@ export function NavUser() {
               <DropdownMenuItem asChild>
                 <Link href="/account">
                   <User className="mr-2 h-4 w-4" />
-                  Account
+                  Account hub
                 </Link>
               </DropdownMenuItem>
 
@@ -156,16 +156,16 @@ export function NavUser() {
               </DropdownMenuItem>
 
               <DropdownMenuItem asChild>
-                <Link href="/account/profile">
+                <Link href="/account">
                   <Settings className="mr-2 h-4 w-4" />
-                  Profile Settings
+                  Profile settings
                 </Link>
               </DropdownMenuItem>
 
               <DropdownMenuItem asChild>
                 <Link href="/account/security">
                   <Shield className="mr-2 h-4 w-4" />
-                  Security & Privacy
+                  Security &amp; Privacy
                 </Link>
               </DropdownMenuItem>
 
