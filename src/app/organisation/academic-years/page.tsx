@@ -68,7 +68,7 @@ export default function AcademicYearsAdminPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

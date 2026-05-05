@@ -24,14 +24,14 @@ export default function middleware(req: NextRequest) {
 
   const hasWorkOSSession = Boolean(
     req.cookies.get('wos-session')?.value ??
-      req.cookies.get('workos_session')?.value
+    req.cookies.get('workos_session')?.value
   );
 
   if (!hasWorkOSSession) {
     const loginUrl = new URL('/api/auth/login', req.url);
     loginUrl.searchParams.set('returnTo', pathname);
     return NextResponse.redirect(loginUrl);
-  };
+  }
 
   return NextResponse.next();
 }
@@ -42,4 +42,3 @@ export const config = {
     '/(api|trpc)(.*)',
   ],
 };
-

@@ -67,7 +67,7 @@ export default function AdminOrganisationsPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

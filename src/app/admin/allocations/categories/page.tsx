@@ -149,7 +149,7 @@ export default function AdminAllocationCategoriesPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

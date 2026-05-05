@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

@@ -101,7 +101,10 @@ export function OrganisationForm() {
     try {
       await withToast(
         async () => {
-          const result = await createOrganisation({ userId: user!.id, ...data });
+          const result = await createOrganisation({
+            userId: user!.id,
+            ...data,
+          });
           return result;
         },
         {

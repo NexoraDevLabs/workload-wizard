@@ -609,7 +609,7 @@ export default function AdminPermissionsPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

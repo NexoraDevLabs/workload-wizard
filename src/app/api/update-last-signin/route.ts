@@ -19,9 +19,14 @@ export async function POST() {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
     }
-    await getConvexClient().mutation(api.users.updateLastSignIn, { userId: user.userId });
+    await getConvexClient().mutation(api.users.updateLastSignIn, {
+      userId: user.userId,
+    });
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Failed to update last sign-in' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update last sign-in' },
+      { status: 500 }
+    );
   }
 }

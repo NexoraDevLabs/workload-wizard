@@ -166,7 +166,7 @@ export default function OrganisationAdminAllocationsSettingsPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

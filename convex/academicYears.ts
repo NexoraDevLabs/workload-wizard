@@ -122,9 +122,7 @@ export const listForOrganisation = query({
 
     const rows = await ctx.db
       .query('academic_years')
-      .withIndex('by_organisation', (q) =>
-        q.eq('organisationId', orgId)
-      )
+      .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
       .filter((q) => {
         const liveCond = q.and(
           q.eq(q.field('status'), 'published'),
@@ -186,20 +184,13 @@ export const create = mutation({
     const now = Date.now();
     const canCreateStaged =
       isSystemUser(user) ||
-      (await hasOrgPermission(
-        ctx,
-        args.userId,
-        'year.edit.staging',
-        orgId
-      ));
+      (await hasOrgPermission(ctx, args.userId, 'year.edit.staging', orgId));
     if (!canCreateStaged) throw new Error('Permission denied');
     const status: YearStatus = (args.status ?? 'draft') as YearStatus;
     if (args.isDefaultForOrg) {
       const existingDefaults = await ctx.db
         .query('academic_years')
-        .withIndex('by_organisation', (q) =>
-          q.eq('organisationId', orgId)
-        )
+        .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))
         .filter((q) => q.eq(q.field('isDefaultForOrg'), true))
         .collect();
       for (const row of existingDefaults) {
@@ -566,10 +557,7 @@ export const setPreferences = mutation({
       // Validate belongs to same org if provided
       if (args.selectedAcademicYearId) {
         const year = await ctx.db.get(args.selectedAcademicYearId);
-        if (
-          year &&
-          String(year.organisationId) !== String(orgId)
-        ) {
+        if (year && String(year.organisationId) !== String(orgId)) {
           throw new Error('Selected academic year is not in your organisation');
         }
       }

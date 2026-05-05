@@ -30,9 +30,7 @@ export function QuickAccessBeta() {
   const { user, isLoaded } = useAuthUser();
   const prefs = useQuery(
     api.quickAccess.getForCurrentUser,
-    isLoaded && user?.id && user?.organisationId
-    ? { userId: user.id }
-    : 'skip'
+    isLoaded && user?.id && user?.organisationId ? { userId: user.id } : 'skip'
   );
   const savePrefs = useMutation(api.quickAccess.saveForCurrentUser);
   const [links, setLinks] = React.useState<QuickLink[]>([]);
@@ -50,12 +48,14 @@ export function QuickAccessBeta() {
     if (!draft.name || !draft.url) return;
     const next = [...links, draft];
     setLinks(next);
-    if (user?.id) savePrefs({ userId: user.id, links: next, showNames }).catch(() => {});
+    if (user?.id)
+      savePrefs({ userId: user.id, links: next, showNames }).catch(() => {});
     setDraft({ name: '', url: '' });
   };
   const clearAll = () => {
     setLinks([]);
-    if (user?.id) savePrefs({ userId: user.id, links: [], showNames }).catch(() => {});
+    if (user?.id)
+      savePrefs({ userId: user.id, links: [], showNames }).catch(() => {});
   };
 
   return (
@@ -127,16 +127,16 @@ export function QuickAccessBeta() {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={showNames}
-	                    onCheckedChange={(v) => {
-	                      setShowNames(v);
-	                      if (user?.id) {
-	                        savePrefs({
-	                          userId: user.id,
-	                          links,
-	                          showNames: v,
-	                        }).catch(() => {});
-	                      }
-	                    }}
+                    onCheckedChange={(v) => {
+                      setShowNames(v);
+                      if (user?.id) {
+                        savePrefs({
+                          userId: user.id,
+                          links,
+                          showNames: v,
+                        }).catch(() => {});
+                      }
+                    }}
                     id="qa-show-names"
                   />
                   <Label htmlFor="qa-show-names">Show names in sidebar</Label>

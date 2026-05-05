@@ -355,7 +355,7 @@ export default function OrganisationRolesPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

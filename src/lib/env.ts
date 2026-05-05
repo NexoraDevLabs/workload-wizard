@@ -24,9 +24,7 @@ const ServerEnvSchema = PublicEnvSchema.extend({
   WORKOS_COOKIE_PASSWORD: z
     .string()
     .min(32, 'WORKOS_COOKIE_PASSWORD must be at least 32 characters'),
-  WORKOS_REDIRECT_URI: z
-    .string()
-    .url('WORKOS_REDIRECT_URI must be a URL'),
+  WORKOS_REDIRECT_URI: z.string().url('WORKOS_REDIRECT_URI must be a URL'),
 });
 
 type PublicEnv = z.infer<typeof PublicEnvSchema>;

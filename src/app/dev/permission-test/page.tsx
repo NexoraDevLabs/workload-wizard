@@ -35,7 +35,7 @@ export default function PermissionTestsPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

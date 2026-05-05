@@ -12,7 +12,8 @@ export async function syncUsersFromAuthProvider() {
 
   return {
     totalUsers: 0,
-    message: 'WorkOS sync has been removed. Users are managed from the application database.',
+    message:
+      'WorkOS sync has been removed. Users are managed from the application database.',
     results: [],
   };
 }

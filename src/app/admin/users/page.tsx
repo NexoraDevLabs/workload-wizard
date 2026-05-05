@@ -15,7 +15,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { handleClientPermissionError } from '@/lib/permission-errors';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
-
 // Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +79,7 @@ export default function AdminUsersPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

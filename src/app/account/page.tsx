@@ -118,10 +118,9 @@ export default function AccountPage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
     redirectOnUnauthenticated: true,
   });
-  
+
   if (!isLoaded) return <LoadingOverlay delayMs={0} />;
   if (!isSignedIn || !user) return null;
-
 
   if (!user) {
     return (

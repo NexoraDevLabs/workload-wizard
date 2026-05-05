@@ -25,17 +25,11 @@ export class AnalyticsService {
     return undefined;
   }
 
-  trackError(
-    _error: Error | string,
-    _properties?: AnalyticsProperties
-  ): void {
+  trackError(_error: Error | string, _properties?: AnalyticsProperties): void {
     return undefined;
   }
 
-  trackUserAction(
-    _action: string,
-    _properties?: AnalyticsProperties
-  ): void {
+  trackUserAction(_action: string, _properties?: AnalyticsProperties): void {
     return undefined;
   }
 

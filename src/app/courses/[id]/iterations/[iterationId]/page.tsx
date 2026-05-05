@@ -283,7 +283,7 @@ export default function IterationDetailsPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }
@@ -534,7 +534,8 @@ export default function IterationDetailsPage() {
                         )
                       ) {
                         await withToast(
-                          () => deleteGroup({ userId: user!.id, id: group._id }),
+                          () =>
+                            deleteGroup({ userId: user!.id, id: group._id }),
                           {
                             success: {
                               title: 'Group deleted',
@@ -1247,9 +1248,7 @@ function BulkGroupsForm({
   const settings = useQuery(
     api.organisationSettings.getForActor,
     user?.id ? { userId: user.id } : 'skip'
-  ) as
-    | { campusOptions?: string[]; maxClassSizePerGroup?: number }
-    | undefined;
+  ) as { campusOptions?: string[]; maxClassSizePerGroup?: number } | undefined;
   const [entries, setEntries] = useState<
     Array<{ campus: string; students: string }>
   >((campuses || []).map((c) => ({ campus: c, students: '' })));
@@ -1287,7 +1286,7 @@ function BulkGroupsForm({
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

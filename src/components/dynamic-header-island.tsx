@@ -119,7 +119,9 @@ export default function DynamicIslandHeader() {
                   className="text-white hover:text-white hover:bg-white/10 rounded-full px-4 py-2 h-8"
                   asChild
                 >
-                  <Link href="/api/auth/login?returnTo=/dashboard">Sign In</Link>
+                  <Link href="/api/auth/login?returnTo=/dashboard">
+                    Sign In
+                  </Link>
                 </Button>
               ))}
           </div>

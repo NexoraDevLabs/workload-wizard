@@ -36,7 +36,10 @@ async function handlePost(request: NextRequest) {
     );
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Failed to complete onboarding' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to complete onboarding' },
+      { status: 500 }
+    );
   }
 }
 

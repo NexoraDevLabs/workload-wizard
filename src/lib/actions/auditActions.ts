@@ -99,7 +99,6 @@ export async function logAuditEvent(data: AuditLogData) {
     const authUser = await getAuthUser();
     const requestInfo = await getRequestInfo();
 
-
     // Normalize core fields
     const action = normalizeAction(data.action);
     const entityType = normalizeEntityType(data.entityType);

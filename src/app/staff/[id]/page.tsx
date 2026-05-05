@@ -254,7 +254,7 @@ export default function LecturerProfilePage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

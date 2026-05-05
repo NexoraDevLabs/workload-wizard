@@ -32,7 +32,8 @@ export async function getAuthContext(
     memberships[0] ??
     null;
 
-  const organisationId = args.organisationId ?? primaryMembership?.organisationId;
+  const organisationId =
+    args.organisationId ?? primaryMembership?.organisationId;
 
   if (!organisationId) {
     throw new Error('Organisation context required');

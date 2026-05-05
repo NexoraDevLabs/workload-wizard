@@ -61,7 +61,7 @@ export default function ProfilePage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

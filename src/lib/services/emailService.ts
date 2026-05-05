@@ -14,8 +14,7 @@ const EMAIL_CONFIG = {
 
   // Sign-in URL
   SIGN_IN_URL:
-    process.env.NEXT_PUBLIC_APP_URL ||
-    'https://workload-wiz.xyz/sign-in',
+    process.env.NEXT_PUBLIC_APP_URL || 'https://workload-wiz.xyz/sign-in',
 
   // Dashboard URL
   DASHBOARD_URL:

@@ -23,13 +23,7 @@ const breadcrumbs = [
   { label: 'Dev', href: '/dev' },
 ];
 
-const categories = [
-  'All',
-  'Features',
-  'UI',
-  'Database',
-  'Security',
-];
+const categories = ['All', 'Features', 'UI', 'Database', 'Security'];
 
 export default function DevPage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
@@ -38,7 +32,7 @@ export default function DevPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

@@ -55,11 +55,10 @@ export async function getAuthUserFromWorkOS(): Promise<WorkOSAuthUser | null> {
   const cookiePassword = process.env.WORKOS_COOKIE_PASSWORD;
   if (!cookiePassword) return null; // enforce this
 
-  const session =
-    await workos.userManagement.authenticateWithSessionCookie({
-      sessionData,
-      cookiePassword,
-    });
+  const session = await workos.userManagement.authenticateWithSessionCookie({
+    sessionData,
+    cookiePassword,
+  });
 
   if (!session.authenticated) return null;
 

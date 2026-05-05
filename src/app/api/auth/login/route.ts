@@ -13,8 +13,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const returnTo =
-    request.nextUrl.searchParams.get('returnTo') || '/dashboard';
+  const returnTo = request.nextUrl.searchParams.get('returnTo') || '/dashboard';
   const url = workos.userManagement.getAuthorizationUrl({
     provider: 'authkit',
     clientId,

@@ -295,7 +295,11 @@ export const listYears = query({
 
 // Check if a course code is available within the actor's organisation
 export const isCodeAvailable = query({
-  args: { userId: v.string(), code: v.string(), excludeId: v.optional(v.id('courses')) },
+  args: {
+    userId: v.string(),
+    code: v.string(),
+    excludeId: v.optional(v.id('courses')),
+  },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
 
@@ -324,7 +328,11 @@ export const isCodeAvailable = query({
 
 // Add a year to a course
 export const addYear = mutation({
-  args: { userId: v.string(), courseId: v.id('courses'), yearNumber: v.number() },
+  args: {
+    userId: v.string(),
+    courseId: v.id('courses'),
+    yearNumber: v.number(),
+  },
   handler: async (ctx, args) => {
     const authContext = await getAuthContext(ctx, args);
     const course = await ctx.db.get(args.courseId);

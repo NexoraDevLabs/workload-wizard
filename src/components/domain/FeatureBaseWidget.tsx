@@ -230,8 +230,7 @@ export default function FeaturebaseMessenger() {
   const env = getEnv();
 
   // Check if we're in build time to avoid WorkOS initialization
-  const isBuildTime =
-    !env.NEXT_PUBLIC_CONVEX_URL;
+  const isBuildTime = !env.NEXT_PUBLIC_CONVEX_URL;
 
   // If in build time, don't render anything
   if (isBuildTime) {

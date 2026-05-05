@@ -152,7 +152,7 @@ export default function CoursesPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }
@@ -261,13 +261,13 @@ export default function CoursesPage() {
                     }}
                   >
                     <option value="">Add campus…</option>
-                    {(
-                      organisationSettings?.campusOptions || []
-                    ).map((c: string) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
+                    {(organisationSettings?.campusOptions || []).map(
+                      (c: string) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
               </div>

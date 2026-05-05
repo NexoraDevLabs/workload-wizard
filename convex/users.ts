@@ -169,8 +169,7 @@ export const syncUser = mutation({
     const familyName = args.familyName || fallback.familyName;
 
     const fullName =
-      [givenName, familyName].filter(Boolean).join(' ') ||
-      fallback.fullName;
+      [givenName, familyName].filter(Boolean).join(' ') || fallback.fullName;
 
     let userDoc;
 
@@ -578,7 +577,9 @@ export const list = query({
           ? await ctx.db
               .query('user_role_assignments')
               .withIndex('by_user_org', (q) =>
-                q.eq('userId', user.subject).eq('organisationId', organisationId)
+                q
+                  .eq('userId', user.subject)
+                  .eq('organisationId', organisationId)
               )
               .filter((q) => q.eq(q.field('isActive'), true))
               .collect()

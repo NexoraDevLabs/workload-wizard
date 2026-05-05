@@ -146,9 +146,7 @@ export function NavMain({
                           asChild
                           isActive={pathname === subItem.url}
                         >
-                          <a
-                            href={subItem.url}
-                          >
+                          <a href={subItem.url}>
                             <span>{subItem.title}</span>
                           </a>
                         </SidebarMenuSubButton>

@@ -180,7 +180,7 @@ export default function CreateLecturerProfilePage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

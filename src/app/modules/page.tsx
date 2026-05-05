@@ -48,9 +48,7 @@ export default function ModulesPage() {
   const modules = useQuery(
     api.modules.listByOrganisation,
     user?.id ? { userId: user.id } : 'skip'
-  ) as
-    | Module[]
-    | undefined;
+  ) as Module[] | undefined;
   const { currentYear } = useAcademicYear();
   const create = useMutation(api.modules.create);
   const deleteModule = useMutation(api.modules.remove);
@@ -199,7 +197,7 @@ export default function ModulesPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

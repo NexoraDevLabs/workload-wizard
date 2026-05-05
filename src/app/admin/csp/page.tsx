@@ -192,7 +192,7 @@ export default function CSPDashboard() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

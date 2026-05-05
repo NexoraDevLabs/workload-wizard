@@ -18,10 +18,9 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   let organisationId: string | null = null;
 
   try {
-    organisationId = await fetchQuery(
-      api.organisations.getUserOrganisation,
-      { userId: user.id }
-    );
+    organisationId = await fetchQuery(api.organisations.getUserOrganisation, {
+      userId: user.id,
+    });
   } catch {
     organisationId = null;
   }

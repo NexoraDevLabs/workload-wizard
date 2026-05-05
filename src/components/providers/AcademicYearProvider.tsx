@@ -66,9 +66,7 @@ function AcademicYearProviderInternal({
   // Management detection from convex user.systemRoles
   const convexUser = useQuery(
     api.users.getBySubject,
-    isLoaded && user?.id && user?.organisationId
-    ? { subject: user.id }
-    : 'skip'
+    isLoaded && user?.id && user?.organisationId ? { subject: user.id } : 'skip'
   ) as
     | { systemRoles?: string[]; organisationId?: Id<'organisations'> }
     | undefined;
@@ -91,17 +89,13 @@ function AcademicYearProviderInternal({
   // Fetch academic years for organisation, server decides visibility based on permissions
   const allYears = useQuery(
     api.academicYears.listForOrganisation,
-    isLoaded && user?.id && user?.organisationId
-    ? { userId: user.id }
-    : 'skip'
+    isLoaded && user?.id && user?.organisationId ? { userId: user.id } : 'skip'
   ) as AcademicYear[] | undefined;
 
   // Load server preferences (selected year + includeDrafts)
   const preferences = useQuery(
     api.academicYears.getPreferences,
-    isLoaded && user?.id && user?.organisationId
-    ? { userId: user.id }
-    : 'skip'
+    isLoaded && user?.id && user?.organisationId ? { userId: user.id } : 'skip'
   ) as
     | {
         _id: string;
@@ -326,8 +320,7 @@ export function AcademicYearProvider({
   const env = getEnv();
 
   // Check if we're in build time to avoid WorkOS initialization
-  const isBuildTime =
-    !env.NEXT_PUBLIC_CONVEX_URL;
+  const isBuildTime = !env.NEXT_PUBLIC_CONVEX_URL;
 
   // If in build time, render children without context
   if (isBuildTime) {

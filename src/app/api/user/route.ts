@@ -27,9 +27,9 @@ async function handleGet() {
     const familyName = authUser.lastName ?? '';
 
     const sync = await getConvexClient().mutation(api.users.syncUser, {
-      userId: authUser.id,           // WorkOS user.id → your Convex userId/subject
+      userId: authUser.id, // WorkOS user.id → your Convex userId/subject
       email: authUser.email,
-      givenName,                    // now supported by your updated syncUser
+      givenName, // now supported by your updated syncUser
       familyName,
     });
 
@@ -38,8 +38,7 @@ async function handleGet() {
         userId: authUser.id,
         email: authUser.email,
         fullName:
-          [givenName, familyName].filter(Boolean).join(' ') ||
-          authUser.email,
+          [givenName, familyName].filter(Boolean).join(' ') || authUser.email,
         givenName,
         familyName,
         organisationId: authUser.organisationId ?? null,

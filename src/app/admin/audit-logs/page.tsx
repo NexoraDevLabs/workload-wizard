@@ -5,7 +5,6 @@ import { AuditLogsViewer } from '@/components/domain/AuditLogsViewer';
 import { AuditViewGate } from '@/components/common/PermissionGate';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
-
 // Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +24,7 @@ export default function AdminAuditLogsPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

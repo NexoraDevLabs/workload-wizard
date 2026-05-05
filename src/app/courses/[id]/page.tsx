@@ -252,10 +252,7 @@ export default function CourseDetailPage() {
   const settings = useQuery(
     api.organisationSettings.getForActor,
     user?.id ? { userId: user.id } : 'skip'
-  ) as
-    | OrganisationSettings
-    | null
-    | undefined;
+  ) as OrganisationSettings | null | undefined;
 
   const updateCourse = useMutation(api.courses.update);
   const initialiseSplit = useMutation(api.courses.initialiseRecommendedGroups);
@@ -328,7 +325,7 @@ export default function CourseDetailPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }
@@ -683,7 +680,7 @@ function CourseYearModules({
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }
@@ -952,7 +949,7 @@ function ModuleIterationAndGroupsAndAllocations({
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

@@ -99,7 +99,7 @@ export default function StaffCapacityPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }
@@ -111,7 +111,7 @@ export default function StaffCapacityPage() {
       </div>
     );
   }
-  
+
   return (
     <StandardizedSidebarLayout
       breadcrumbs={[

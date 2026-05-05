@@ -26,7 +26,7 @@ export function DashboardContent() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

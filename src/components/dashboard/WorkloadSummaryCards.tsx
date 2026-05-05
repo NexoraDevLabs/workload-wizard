@@ -107,19 +107,22 @@ export function WorkloadSummaryCards() {
   if (!isLoaded) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {['Teaching Hours', 'Admin Hours', 'Total Allocated', 'Teaching Remaining'].map(
-          (label) => (
-            <SummaryCard
-              key={label}
-              label={label}
-              value="—"
-              icon={Clock}
-              iconBg="bg-secondary"
-              iconColor="text-secondary-foreground"
-              isLoading
-            />
-          )
-        )}
+        {[
+          'Teaching Hours',
+          'Admin Hours',
+          'Total Allocated',
+          'Teaching Remaining',
+        ].map((label) => (
+          <SummaryCard
+            key={label}
+            label={label}
+            value="—"
+            icon={Clock}
+            iconBg="bg-secondary"
+            iconColor="text-secondary-foreground"
+            isLoading
+          />
+        ))}
       </div>
     );
   }

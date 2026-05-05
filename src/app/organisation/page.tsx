@@ -81,7 +81,7 @@ export default function OrganisationAdminPage() {
   if (!isLoaded) {
     return null;
   }
-  
+
   if (!isSignedIn || !user) {
     return null;
   }

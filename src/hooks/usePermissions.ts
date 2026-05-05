@@ -19,9 +19,7 @@ export function usePermissions(organisationId?: string) {
   const { user, isLoaded } = useAuthUser();
   const convexUser = useQuery(
     api.users.getBySubject,
-    isLoaded && user?.id && user?.organisationId
-    ? { subject: user.id }
-    : 'skip'
+    isLoaded && user?.id && user?.organisationId ? { subject: user.id } : 'skip'
   ) as { systemRoles?: string[] } | undefined;
 
   // Derive an effective role from publicMetadata.role or roles[] (prefer strongest)
