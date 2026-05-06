@@ -1,8 +1,8 @@
 'use client';
 
 import { ChevronRight, type LucideIcon } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 import {
   Collapsible,
@@ -18,120 +18,46 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
-export function NavMain({
-  items,
-}: {
-  items: {
+export type NavItem = {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  items?: {
     title: string;
     url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
   }[];
-}) {
-  const { state } = useSidebar();
-  const router = useRouter();
+};
+
+export function NavMain({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-  // Synchronously initialize from localStorage to avoid flicker
-  const initialisedFromStorageRef = useRef(false);
-  const [openItems, setOpenItems] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const saved = localStorage.getItem('sidebar-nav-state');
-      if (saved) {
-        const parsed = JSON.parse(saved) as string[];
-        initialisedFromStorageRef.current = true;
-        return new Set(parsed);
-      }
-    } catch {
-      // Failed to read sidebar state
-    }
-    return new Set();
-  });
-
-  // When items load and there was no saved state, open any default active groups
-  useEffect(() => {
-    if (initialisedFromStorageRef.current) return;
-    const defaults = items.filter((i) => i.isActive).map((i) => i.title);
-    if (defaults.length > 0) setOpenItems(new Set(defaults));
-  }, [items]);
-
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    if (openItems.size > 0 || localStorage.getItem('sidebar-nav-state')) {
-      localStorage.setItem(
-        'sidebar-nav-state',
-        JSON.stringify(Array.from(openItems))
-      );
-    }
-  }, [openItems]);
-
-  const handleMainItemClick = (item: (typeof items)[0]) => {
-    // If sidebar is collapsed, navigate directly to the URL
-    if (state === 'collapsed') {
-      router.push(item.url);
-      return;
-    }
-
-    // If sidebar is expanded and item has children, toggle the collapsible
-    if (item.items && item.items.length > 0) {
-      setOpenItems((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(item.title)) {
-          newSet.delete(item.title);
-        } else {
-          newSet.add(item.title);
-        }
-        return newSet;
-      });
-    } else {
-      // If no children, navigate to the URL
-      router.push(item.url);
-    }
-  };
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Navigation</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.title}>
-            {item.items && item.items.length > 0 ? (
-              <Collapsible
-                open={openItems.has(item.title)}
-                onOpenChange={(open) => {
-                  setOpenItems((prev) => {
-                    const newSet = new Set(prev);
-                    if (open) {
-                      newSet.add(item.title);
-                    } else {
-                      newSet.delete(item.title);
-                    }
-                    return newSet;
-                  });
-                }}
-                className="group/collapsible"
-              >
+        {items.map((item) =>
+          item.items && item.items.length > 0 ? (
+            <Collapsible
+              key={item.title}
+              asChild
+              defaultOpen={
+                item.isActive ||
+                pathname === item.url ||
+                item.items.some((sub) => pathname.startsWith(sub.url))
+              }
+              className="group/collapsible"
+            >
+              <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     tooltip={item.title}
                     isActive={
                       pathname === item.url ||
-                      !!item.items?.some((subItem) => pathname === subItem.url)
+                      item.items.some((sub) => pathname === sub.url)
                     }
-                    onClick={(e) => {
-                      // Prevent default collapsible behavior when collapsed
-                      if (state === 'collapsed') {
-                        e.preventDefault();
-                        handleMainItemClick(item);
-                      }
-                    }}
                   >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
@@ -146,27 +72,31 @@ export function NavMain({
                           asChild
                           isActive={pathname === subItem.url}
                         >
-                          <a href={subItem.url}>
+                          <Link href={subItem.url}>
                             <span>{subItem.title}</span>
-                          </a>
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
                   </SidebarMenuSub>
                 </CollapsibleContent>
-              </Collapsible>
-            ) : (
+              </SidebarMenuItem>
+            </Collapsible>
+          ) : (
+            <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 tooltip={item.title}
                 isActive={pathname === item.url}
-                onClick={() => handleMainItemClick(item)}
+                asChild
               >
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
+                <Link href={item.url}>
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </Link>
               </SidebarMenuButton>
-            )}
-          </SidebarMenuItem>
-        ))}
+            </SidebarMenuItem>
+          )
+        )}
       </SidebarMenu>
     </SidebarGroup>
   );

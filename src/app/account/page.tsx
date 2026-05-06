@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -23,13 +24,39 @@ type TabValue = 'overview' | 'details' | 'picture' | 'security' | 'preferences';
 
 const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Account' }];
 
+const VALID_TABS: TabValue[] = ['overview', 'details', 'picture', 'security', 'preferences'];
+
 export default function AccountPage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
     redirectOnUnauthenticated: true,
   });
 
-  const [activeTab, setActiveTab] = useState<TabValue>('overview');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Get initial tab from URL or default to 'overview'
+  const tabFromUrl = searchParams.get('tab') as TabValue | null;
+  const initialTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview';
+  
+  const [activeTab, setActiveTab] = useState<TabValue>(initialTab);
   const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
+  
+  // Sync tab state with URL
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabValue | null;
+    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, activeTab]);
+  
+  // Update URL when tab changes
+  const handleTabChange = useCallback((newTab: string) => {
+    const tab = newTab as TabValue;
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.replace(`/account?${params.toString()}`, { scroll: false });
+  }, [searchParams, router]);
 
   const accountDetails = useQuery(
     api.users.getAccountManagementDetails,
@@ -46,8 +73,8 @@ export default function AccountPage() {
   }, []);
 
   const handleGoToTab = useCallback((tab: string) => {
-    setActiveTab(tab as TabValue);
-  }, []);
+    handleTabChange(tab);
+  }, [handleTabChange]);
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   if (!isLoaded) return <LoadingOverlay delayMs={0} />;
@@ -113,7 +140,7 @@ export default function AccountPage() {
         {/* ── Tabs ────────────────────────────────────────────────────────── */}
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as TabValue)}
+          onValueChange={handleTabChange}
         >
           <TabsList className="flex h-auto flex-wrap gap-1 p-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>

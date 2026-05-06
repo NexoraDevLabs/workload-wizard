@@ -4,36 +4,31 @@ import * as React from 'react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { getUserRoles } from '@/lib/utils';
 import {
-  Building2,
   Home,
   Shield,
   Users,
-  FileText,
   Building,
-  Zap,
   User,
   Code,
-  Database,
-  Bug,
-  Terminal,
+  Settings,
+  LifeBuoy,
 } from 'lucide-react';
 
-import { NavMain } from '@/components/nav-main';
+import { NavMain, type NavItem } from '@/components/nav-main';
+import { NavSecondary } from '@/components/nav-secondary';
 import { NavUser } from '@/components/nav-user';
 import { TeamSwitcher } from '@/components/team-switcher';
-import { YearSwitcher } from '@/components/common/YearSwitcher';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
-// Generate role-based navigation data
-const getNavigationData = (userRoles?: string[]) => {
-  const baseNav = [
+// Generate role-based main navigation
+function getNavMain(userRoles?: string[]): NavItem[] {
+  const base: NavItem[] = [
     {
       title: 'Dashboard',
       url: '/dashboard',
@@ -45,102 +40,53 @@ const getNavigationData = (userRoles?: string[]) => {
       url: '/account',
       icon: User,
     },
-    // Staff entries are injected below based on role
   ];
 
-  // Add role-specific navigation
-  const roleNav = [];
+  const roleNav: NavItem[] = [];
 
-  // Admin navigation (for both sysadmin and developer)
-  if (userRoles?.some((role) => role === 'sysadmin' || role === 'developer')) {
+  // Admin navigation (sysadmin or developer)
+  if (userRoles?.some((r) => r === 'sysadmin' || r === 'developer')) {
     roleNav.push({
       title: 'Admin',
       url: '/admin',
       icon: Shield,
       items: [
-        {
-          title: 'Dashboard',
-          url: '/admin',
-        },
-        {
-          title: 'Users Management',
-          url: '/admin/users',
-        },
-        {
-          title: 'Organisations',
-          url: '/admin/organisations',
-        },
-        {
-          title: 'Allocation Categories',
-          url: '/admin/allocations/categories',
-        },
-        ...// Show Permissions page to sysadmin or developer (support both single and array roles via getUserRoles)
-        (userRoles?.some((r) => r === 'sysadmin' || r === 'developer')
-          ? [{ title: 'Permissions', url: '/admin/permissions' }]
-          : []),
-        {
-          title: 'Audit Logs',
-          url: '/admin/audit-logs',
-        },
+        { title: 'Dashboard', url: '/admin' },
+        { title: 'Users Management', url: '/admin/users' },
+        { title: 'Organisations', url: '/admin/organisations' },
+        { title: 'Allocation Categories', url: '/admin/allocations/categories' },
+        { title: 'Permissions', url: '/admin/permissions' },
+        { title: 'Audit Logs', url: '/admin/audit-logs' },
       ],
     });
   }
 
-  // Developer-specific tools (only for developer role)
+  // Developer-only tools
   if (userRoles?.includes('developer')) {
-    // Add developer-specific tools
     roleNav.push({
       title: 'Dev Tools',
       url: '/dev',
       icon: Code,
       items: [
-        {
-          title: 'Dashboard',
-          url: '/dev',
-        },
-        {
-          title: 'Dev Tools',
-          url: '/dev/tools',
-        },
-        {
-          title: 'Permission Tests',
-          url: '/dev/permission-test',
-        },
+        { title: 'Dashboard', url: '/dev' },
+        { title: 'Permission Tests', url: '/dev/permission-test' },
       ],
     });
   }
 
-  // Orgadmin navigation
-  if (userRoles?.some((role) => role === 'orgadmin')) {
+  // Organisation admin
+  if (userRoles?.some((r) => r === 'orgadmin')) {
     roleNav.push({
       title: 'Organisation',
       url: '/organisation',
       icon: Building,
       items: [
-        {
-          title: 'Dashboard',
-          url: '/organisation',
-        },
-        {
-          title: 'Users',
-          url: '/organisation/users',
-        },
-        {
-          title: 'Roles',
-          url: '/organisation/roles',
-        },
-        {
-          title: 'Settings',
-          url: '/organisation/settings',
-        },
-        {
-          title: 'Academic Years',
-          url: '/organisation/academic-years',
-        },
-        {
-          title: 'Courses',
-          url: '/courses',
-        },
+        { title: 'Dashboard', url: '/organisation' },
+        { title: 'Users', url: '/organisation/users' },
+        { title: 'Roles', url: '/organisation/roles' },
+        { title: 'Settings', url: '/organisation/settings' },
+        { title: 'Academic Years', url: '/organisation/academic-years' },
+        { title: 'Courses', url: '/courses' },
         { title: 'Modules', url: '/modules' },
         { title: 'Staff', url: '/staff' },
         { title: 'Audit Logs', url: '/organisation/audit-logs' },
@@ -152,9 +98,9 @@ const getNavigationData = (userRoles?: string[]) => {
     });
   }
 
-  // For non-admin users, show only Staff -> My Profile
+  // Regular staff (non-admin)
   const isAdminLike = userRoles?.some(
-    (role) => role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
+    (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
   );
   if (!isAdminLike) {
     roleNav.push({
@@ -165,114 +111,37 @@ const getNavigationData = (userRoles?: string[]) => {
     });
   }
 
-  return {
-    user: {
-      name: 'Admin User',
-      email: 'admin@workload.com',
-      avatar: '/avatars/admin.jpg',
-    },
-    teams: [
-      {
-        name: 'WorkloadWizard',
-        logo: Zap,
-        plan: 'Enterprise',
-      },
-    ],
-    navMain: [...baseNav, ...roleNav],
-    projects: getProjectsData(userRoles),
-  };
-};
+  return [...base, ...roleNav];
+}
 
-// Generate role-based projects data
-const getProjectsData = (userRoles?: string[]) => {
-  const projects = [];
-
-  // Admin projects (for both sysadmin and developer)
-  if (userRoles?.some((role) => role === 'sysadmin' || role === 'developer')) {
-    projects.push(
-      {
-        name: 'User Management',
-        url: '/admin/users',
-        icon: Users,
-      },
-      {
-        name: 'Organisation Setup',
-        url: '/admin/organisations',
-        icon: Building2,
-      },
-      {
-        name: 'Audit & Compliance',
-        url: '/admin/audit-logs',
-        icon: FileText,
-      }
-    );
-  }
-
-  // Developer-specific projects (only for developer role)
-  if (userRoles?.includes('developer')) {
-    projects.push(
-      {
-        name: 'Database Tools',
-        url: '/dev/database',
-        icon: Database,
-      },
-      {
-        name: 'API Testing',
-        url: '/dev/api',
-        icon: Terminal,
-      },
-      {
-        name: 'Debug Console',
-        url: '/dev/debug',
-        icon: Bug,
-      }
-    );
-  }
-
-  // Orgadmin projects
-  if (userRoles?.includes('orgadmin')) {
-    projects.push(
-      {
-        name: 'Team Management',
-        url: '/organisation/users',
-        icon: Users,
-      },
-      {
-        name: 'Role Configuration',
-        url: '/organisation/roles',
-        icon: Shield,
-      },
-      {
-        name: 'Organisation Settings',
-        url: '/organisation/settings',
-        icon: Building2,
-      }
-    );
-  }
-
-  return projects;
-};
+// Secondary navigation items (Settings, Support at bottom)
+const secondaryNavItems = [
+  {
+    title: 'Settings',
+    url: '/account?tab=preferences',
+    icon: Settings,
+  },
+  {
+    title: 'Support',
+    url: '/support',
+    icon: LifeBuoy,
+  },
+];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthUser();
   const userRoles = getUserRoles(user);
-  const { state } = useSidebar();
 
-  // Get role-based navigation data
-  const data = getNavigationData(userRoles);
+  const navMain = getNavMain(userRoles);
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
-        {state === 'expanded' && (
-          <div className="px-2">
-            <YearSwitcher compact />
-          </div>
-        )}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
+        <NavSecondary items={secondaryNavItems} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

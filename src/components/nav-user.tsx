@@ -2,16 +2,17 @@
 
 import {
   BadgeCheck,
+  Bell,
   ChevronsUpDown,
   LogOut,
-  Settings,
-  User,
   Palette,
+  Settings,
   Shield,
-  LifeBuoy,
+  Sparkles,
+  User,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuthUser } from '@/hooks/useAuthUser';
-import Link from 'next/link';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,11 +32,13 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function NavUser() {
   const { user, isLoaded } = useAuthUser();
   const { isMobile } = useSidebar();
-  
+  const router = useRouter();
+
   const profilePictureUrl = useQuery(
     api.users.getOwnProfilePictureUrl,
     user ? { subject: user.id } : 'skip'
@@ -43,6 +46,10 @@ export function NavUser() {
 
   const handleLogout = () => {
     window.location.assign('/api/auth/logout');
+  };
+
+  const navigateTo = (path: string) => {
+    router.push(path);
   };
 
   const getInitials = (name: string) => {
@@ -60,10 +67,10 @@ export function NavUser() {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg">
-            <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
+            <Skeleton className="size-8 rounded-lg" />
             <div className="grid flex-1 gap-1">
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-3 bg-muted rounded animate-pulse" />
+              <Skeleton className="h-4 rounded" />
+              <Skeleton className="h-3 rounded" />
             </div>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -71,9 +78,7 @@ export function NavUser() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const userName = user.fullName || user.firstName || 'User';
   const userEmail = user.emailAddresses[0]?.emailAddress || '';
@@ -82,7 +87,6 @@ export function NavUser() {
       ? user.publicMetadata.role
       : '';
   const avatarUrl = profilePictureUrl || user.imageUrl || '';
-
   const formattedRole = userRole
     ? userRole.charAt(0).toUpperCase() + userRole.slice(1)
     : '';
@@ -94,22 +98,20 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="rounded-2xl data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
+              <Avatar className="size-8 rounded-lg">
                 <AvatarImage src={avatarUrl} alt={userName} />
                 <AvatarFallback className="rounded-lg">
                   {getInitials(userName)}
                 </AvatarFallback>
               </Avatar>
-
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{userName}</span>
                 <span className="truncate text-xs text-sidebar-foreground/65">
                   {formattedRole || userEmail}
                 </span>
               </div>
-
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -120,15 +122,15 @@ export function NavUser() {
             align="end"
             sideOffset={4}
           >
+            {/* User identity header */}
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="size-8 rounded-lg">
                   <AvatarImage src={avatarUrl} alt={userName} />
                   <AvatarFallback className="rounded-lg">
                     {getInitials(userName)}
                   </AvatarFallback>
                 </Avatar>
-
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{userName}</span>
                   <span className="truncate text-xs text-muted-foreground">
@@ -140,48 +142,69 @@ export function NavUser() {
 
             <DropdownMenuSeparator />
 
+            {/* Quick upgrade / pro prompt */}
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link href="/account">
-                  <User className="mr-2 h-4 w-4" />
-                  Account hub
-                </Link>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=overview')}
+                className="gap-2"
+              >
+                <Sparkles />
+                Account hub
               </DropdownMenuItem>
+            </DropdownMenuGroup>
 
-              <DropdownMenuItem asChild>
-                <Link href="/support">
-                  <LifeBuoy className="mr-2 h-4 w-4" />
-                  Support
-                </Link>
+            <DropdownMenuSeparator />
+
+            {/* Account navigation — each maps to a specific tab */}
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=details')}
+                className="gap-2"
+              >
+                <User />
+                Account details
               </DropdownMenuItem>
-
-              <DropdownMenuItem asChild>
-                <Link href="/account">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Profile settings
-                </Link>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=security')}
+                className="gap-2"
+              >
+                <Shield />
+                Security &amp; privacy
               </DropdownMenuItem>
-
-              <DropdownMenuItem asChild>
-                <Link href="/account/security">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Security &amp; Privacy
-                </Link>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=preferences')}
+                className="gap-2"
+              >
+                <Settings />
+                Preferences
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/support')}
+                className="gap-2"
+              >
+                <Bell />
+                Support
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
 
-              <DropdownMenuItem asChild>
-                <div className="flex items-center justify-between w-full cursor-pointer">
-                  <div className="flex items-center">
-                    <Palette className="mr-2 h-4 w-4" />
-                    Theme
-                  </div>
-                  <ThemeToggle />
+            <DropdownMenuSeparator />
+
+            {/* Theme toggle */}
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                className="flex items-center justify-between gap-2 cursor-default"
+              >
+                <div className="flex items-center gap-2">
+                  <Palette />
+                  <span>Theme</span>
                 </div>
+                <ThemeToggle />
               </DropdownMenuItem>
 
               {formattedRole && (
-                <DropdownMenuItem disabled>
-                  <BadgeCheck className="mr-2 h-4 w-4" />
+                <DropdownMenuItem disabled className="gap-2">
+                  <BadgeCheck />
                   Role: {formattedRole}
                 </DropdownMenuItem>
               )}
@@ -191,9 +214,9 @@ export function NavUser() {
 
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-red-600 focus:text-red-600"
+              className="gap-2 text-destructive focus:text-destructive"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
