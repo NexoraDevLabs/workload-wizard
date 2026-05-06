@@ -4,17 +4,12 @@ import * as React from 'react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { getUserRoles } from '@/lib/utils';
 import {
-  Building2,
   Home,
   Shield,
   Users,
-  FileText,
   Building,
   User,
   Code,
-  Database,
-  Bug,
-  Terminal,
   Settings,
   LifeBuoy,
 } from 'lucide-react';
