@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ChevronsUpDown, GraduationCap, Plus, WandSparkles } from 'lucide-react';
+import { ChevronsUpDown, GraduationCap, WandSparkles } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useAuthUser } from '@/hooks/useAuthUser';
