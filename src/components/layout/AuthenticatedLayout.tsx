@@ -33,35 +33,19 @@ export function AuthenticatedLayout({
     if (needsOnboarding && !isOnboardingRoute) {
       router.replace('/onboarding');
     }
-  }, [
-    isLoaded,
-    isSignedIn,
-    user,
-    needsOnboarding,
-    isOnboardingRoute,
-    router,
-  ]);
+  }, [isLoaded, isSignedIn, user, needsOnboarding, isOnboardingRoute, router]);
 
-  if (!isLoaded) {
-    return <LoadingOverlay delayMs={300} />;
-  }
-
-  if (!isSignedIn || !user) {
-    return <LoadingOverlay delayMs={300} />;
-  }
-
-  if (needsOnboarding && !isOnboardingRoute) {
-    return <LoadingOverlay delayMs={300} />;
-  }
-
-  if (isOnboardingRoute) {
-    return <>{children}</>;
-  }
+  if (!isLoaded) return <LoadingOverlay delayMs={300} />;
+  if (!isSignedIn || !user) return <LoadingOverlay delayMs={300} />;
+  if (needsOnboarding && !isOnboardingRoute) return <LoadingOverlay delayMs={300} />;
+  if (isOnboardingRoute) return <>{children}</>;
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset data-testid="page-ready">{children}</SidebarInset>
+      <SidebarInset data-testid="page-ready">
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }

@@ -2,7 +2,7 @@
 
 import {
   StandardizedSidebarLayout,
-  type BreadcrumbItem,
+  type BreadcrumbItemType,
 } from '@/components/layout/StandardizedSidebarLayout';
 import {
   Card,
@@ -23,7 +23,7 @@ import {
 import Link from 'next/link';
 
 interface PlaceholderPageProps {
-  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbs?: BreadcrumbItemType[];
   title?: string;
   subtitle?: string;
   description?: string;
