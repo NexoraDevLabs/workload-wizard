@@ -373,7 +373,10 @@ export default function LecturerProfilePage() {
             <CardTitle>Admin Allocations</CardTitle>
           </CardHeader>
           <CardContent>
-            <AdminAllocationsTable lecturerId={profile._id} />
+            <AdminAllocationsTable
+              lecturerId={profile._id}
+              canManageAllocations={Boolean(canEdit)}
+            />
           </CardContent>
         </Card>
       </div>
@@ -589,8 +592,10 @@ function ModuleAllocationsTable({
 
 function AdminAllocationsTable({
   lecturerId,
+  canManageAllocations,
 }: {
   lecturerId: Id<'lecturer_profiles'>;
+  canManageAllocations: boolean;
 }) {
   const { currentYear } = useAcademicYear();
   const { user } = useAuthUser();
@@ -633,6 +638,7 @@ function AdminAllocationsTable({
     comment?: string;
   }>(null);
   const handleSave = async () => {
+    if (!canManageAllocations) return;
     if (!formOpen) return;
     const hours = Number(formOpen.hours);
     if (!Number.isFinite(hours) || hours < 0 || hours > 1000) {
@@ -676,6 +682,7 @@ function AdminAllocationsTable({
   };
 
   const handleRemove = async (allocationId: Id<'admin_allocations'>) => {
+    if (!canManageAllocations) return;
     if (!confirm('Remove allocation?')) return;
     setIsRemoving(allocationId);
     try {
@@ -713,19 +720,21 @@ function AdminAllocationsTable({
             Admin total: {totalAdminHours}h
           </Badge>
         </div>
-        <Button
-          size="sm"
-          onClick={() =>
-            setFormOpen({
-              categoryId: categories?.[0]?._id ? String(categories[0]._id) : '',
-              hours: '',
-              isCustom: false,
-            })
-          }
-          disabled={isSaving !== null}
-        >
-          Add
-        </Button>
+        {canManageAllocations && (
+          <Button
+            size="sm"
+            onClick={() =>
+              setFormOpen({
+                categoryId: categories?.[0]?._id ? String(categories[0]._id) : '',
+                hours: '',
+                isCustom: false,
+              })
+            }
+            disabled={isSaving !== null}
+          >
+            Add
+          </Button>
+        )}
       </div>
       {!Array.isArray(rows) ? (
         <div className="text-sm text-muted-foreground">Loading…</div>
@@ -760,30 +769,32 @@ function AdminAllocationsTable({
                   {allocation.hours}h
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={isSaving !== null}
-                  onClick={() =>
-                    setFormOpen({
-                      id: allocation._id,
-                      categoryId: String(allocation.categoryId),
-                      hours: String(allocation.hours),
-                    })
-                  }
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  disabled={isRemoving === String(allocation._id)}
-                  onClick={() => handleRemove(allocation._id)}
-                >
-                  Remove
-                </Button>
-              </div>
+              {canManageAllocations && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isSaving !== null}
+                    onClick={() =>
+                      setFormOpen({
+                        id: allocation._id,
+                        categoryId: String(allocation.categoryId),
+                        hours: String(allocation.hours),
+                      })
+                    }
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={isRemoving === String(allocation._id)}
+                    onClick={() => handleRemove(allocation._id)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>

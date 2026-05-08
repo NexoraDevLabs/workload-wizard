@@ -244,6 +244,55 @@ export const listForActor = query({
   },
 });
 
+// Get the lecturer profile linked to the current user subject
+export const getMine = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const actor = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.userId))
+      .first();
+
+    if (!actor || !actor.isActive) {
+      return null;
+    }
+
+    const memberships = await ctx.db
+      .query('user_organisations')
+      .withIndex('by_user', (q) => q.eq('userId', args.userId))
+      .collect();
+
+    const primaryMembership =
+      memberships.find((membership) => membership.isPrimary) ??
+      memberships[0] ??
+      null;
+
+    const organisationId =
+      actor.organisationId ?? primaryMembership?.organisationId ?? null;
+
+    if (!organisationId) {
+      return null;
+    }
+
+    const profiles = await ctx.db
+      .query('lecturer_profiles')
+      .withIndex('by_organisation', (q) =>
+        q.eq('organisationId', organisationId)
+      )
+      .filter((q) =>
+        q.and(
+          q.eq(q.field('userSubject'), args.userId),
+          q.eq(q.field('isActive'), true)
+        )
+      )
+      .collect();
+
+    return profiles[0] ?? null;
+  },
+});
+
 // Get a single lecturer profile
 export const get = query({
   args: {
