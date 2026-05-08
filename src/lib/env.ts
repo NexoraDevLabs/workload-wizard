@@ -10,7 +10,11 @@ const PublicEnvSchema = z.object({
   NEXT_PUBLIC_CONVEX_URL: z
     .string()
     .url('NEXT_PUBLIC_CONVEX_URL must be a URL'),
-  NEXT_PUBLIC_APP_URL: z.string().url('NEXT_PUBLIC_APP_URL must be a URL'),
+  NEXT_PUBLIC_APP_URL: z
+    .string()
+    .url('NEXT_PUBLIC_APP_URL must be a URL')
+    .optional()
+    .default('http://localhost:3000'),
   NEXT_PUBLIC_SENTRY_DSN: OptionalUrlSchema,
   NODE_ENV: z
     .enum(['development', 'test', 'production'])

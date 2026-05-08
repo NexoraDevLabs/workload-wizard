@@ -67,8 +67,8 @@ export function NavUser() {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg">
-            <Skeleton className="size-8 rounded-lg" />
-            <div className="grid flex-1 gap-1">
+            <Skeleton className="size-8 shrink-0 rounded-lg" />
+            <div className="grid flex-1 gap-1 group-data-[collapsible=icon]:hidden">
               <Skeleton className="h-4 rounded" />
               <Skeleton className="h-3 rounded" />
             </div>
@@ -99,20 +99,21 @@ export function NavUser() {
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              tooltip={userName}
             >
-              <Avatar className="size-8 rounded-lg">
+              <Avatar className="size-8 shrink-0 rounded-lg">
                 <AvatarImage src={avatarUrl} alt={userName} />
                 <AvatarFallback className="rounded-lg">
                   {getInitials(userName)}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium">{userName}</span>
                 <span className="truncate text-xs text-sidebar-foreground/65">
                   {formattedRole || userEmail}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
