@@ -54,7 +54,7 @@ export default function TrustBar() {
               {item.hint ? (
                 <TooltipContent
                   sideOffset={6}
-                  className="max-w-xs rounded-md border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 shadow-lg backdrop-blur-sm"
+                  className="max-w-xs rounded-md border border-white/10 bg-white/10 px-3 py-2 text-center text-sm leading-relaxed text-white/90 shadow-lg backdrop-blur-sm"
                 >
                   {item.hint}
                 </TooltipContent>

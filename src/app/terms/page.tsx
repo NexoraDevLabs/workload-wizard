@@ -38,7 +38,7 @@ export default function TermsOfServicePage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <CardTitle>Agreement to Terms</CardTitle>
-                  <Badge variant="outline">Version 1.0</Badge>
+                  <Badge variant="outline" className="badge-subtle">Version 1.0</Badge>
                 </div>
                 <CardDescription>
                   By accessing and using WorkloadWizard, you accept and agree to

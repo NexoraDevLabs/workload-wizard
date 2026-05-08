@@ -191,15 +191,31 @@ export function NavUser() {
 
             {/* Theme toggle */}
             <DropdownMenuGroup>
-              <DropdownMenuItem
-                onSelect={(e) => e.preventDefault()}
-                className="flex items-center justify-between gap-2 cursor-default"
-              >
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              className="
+                flex items-center justify-between gap-2
+                cursor-default
+                focus:bg-transparent
+                data-[highlighted]:bg-transparent
+              "
+            >
                 <div className="flex items-center gap-2">
                   <Palette />
                   <span>Theme</span>
                 </div>
-                <ThemeToggle />
+                <div
+                  className="
+                    flex h-9 w-9 items-center justify-center
+                    rounded-full
+                    border border-border/70
+                    bg-background/80
+                    shadow-sm
+                    backdrop-blur-md
+                  "
+                >
+                  <ThemeToggle />
+                </div>
               </DropdownMenuItem>
 
               {formattedRole && (
