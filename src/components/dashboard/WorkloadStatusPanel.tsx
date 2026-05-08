@@ -112,8 +112,15 @@ function CapacityBar({
           </div>
         </TooltipTrigger>
         {tooltip && (
-          <TooltipContent>
-            <p className="text-xs">{tooltip}</p>
+          <TooltipContent
+            side="top"
+            align="center"
+            sideOffset={8}
+            className="z-50 max-w-xs rounded-md border border-border bg-popover px-3 py-2 text-center text-sm font-medium leading-snug text-popover-foreground shadow-md"
+          >
+            <p className="m-0 text-center text-sm font-medium leading-snug text-popover-foreground">
+              {tooltip}
+            </p>
           </TooltipContent>
         )}
       </Tooltip>
@@ -144,8 +151,9 @@ export function WorkloadStatusPanel() {
 
   const totals = useQuery(
     api.allocations.computeLecturerTotals,
-    linkedProfile?._id && currentYear?._id
+    user?.id && linkedProfile?._id && currentYear?._id
       ? {
+          userId: user.id,
           lecturerId: linkedProfile._id as Id<'lecturer_profiles'>,
           academicYearId: currentYear._id as Id<'academic_years'>,
         }

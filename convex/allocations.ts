@@ -168,14 +168,22 @@ export const listForLecturer = query({
 // Compute basic totals for a lecturer in a year (MVP)
 export const computeLecturerTotals = query({
   args: {
+    userId: v.string(),
     lecturerId: v.id('lecturer_profiles'),
     academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
+
     // Permission: allocations.view within lecturer's org (derive via lecturer profile)
     const lecturer = await ctx.db.get(args.lecturerId);
-    const authContext = await getAuthContext(ctx, args);
-    if (lecturer && authContext.userId) {
+    if (!lecturer) {
+      return computeTotals([]);
+    }
+
+    const isOwnProfile = lecturer.userSubject === authContext.userId;
+
+    if (!isOwnProfile) {
       await requireOrgPermission(
         ctx,
         authContext.userId,

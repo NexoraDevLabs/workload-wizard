@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -19,6 +20,26 @@ interface SummaryCardProps {
   isLoading?: boolean;
 }
 
+type StaffListItem = {
+  _id: Id<'lecturer_profiles'>;
+  fullName: string;
+  userSubject?: string;
+  maxTeachingHours?: number;
+  totalContract?: number;
+};
+
+type LecturerTotals = {
+  allocatedTeaching: number;
+  allocatedAdmin: number;
+  allocatedTotal: number;
+};
+
+type AdminAllocationRow = {
+  allocation?: {
+    hours?: number;
+  };
+};
+
 function SummaryCard({
   label,
   value,
@@ -32,10 +53,11 @@ function SummaryCard({
     <Card className="relative overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium leading-relaxed text-muted-foreground">
               {label}
             </p>
+
             {isLoading ? (
               <Skeleton className="mt-2 h-8 w-20" />
             ) : (
@@ -43,11 +65,16 @@ function SummaryCard({
                 {value}
               </p>
             )}
-            {sublabel && !isLoading && (
+
+            {sublabel && !isLoading ? (
               <p className="mt-1 text-xs text-muted-foreground">{sublabel}</p>
-            )}
-            {sublabel && isLoading && <Skeleton className="mt-1 h-3 w-24" />}
+            ) : null}
+
+            {sublabel && isLoading ? (
+              <Skeleton className="mt-1 h-3 w-24" />
+            ) : null}
           </div>
+
           <div className={`flex-shrink-0 rounded-xl p-2.5 ${iconBg}`}>
             <Icon className={`h-5 w-5 ${iconColor}`} />
           </div>
@@ -57,77 +84,72 @@ function SummaryCard({
   );
 }
 
+function LoadingCards() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[
+        'Teaching Hours',
+        'Admin Hours',
+        'Total Allocated',
+        'Teaching Remaining',
+      ].map((label) => (
+        <SummaryCard
+          key={label}
+          label={label}
+          value="—"
+          icon={Clock}
+          iconBg="bg-secondary"
+          iconColor="text-secondary-foreground"
+          isLoading
+        />
+      ))}
+    </div>
+  );
+}
+
 export function WorkloadSummaryCards() {
   const { user, isLoaded, isSignedIn } = useAuthUser();
   const { currentYear } = useAcademicYear();
 
+  const userId = user?.id;
   const hasOrganisation = Boolean(user?.organisationId);
 
   const staffList = useQuery(
     api.staff.list,
-    user?.id && hasOrganisation ? { userId: user.id } : 'skip'
-  ) as
-    | Array<{
-        _id: string;
-        fullName: string;
-        userSubject?: string;
-        maxTeachingHours?: number;
-        totalContract?: number;
-      }>
-    | undefined;
+    userId && hasOrganisation ? { userId } : 'skip'
+  ) as StaffListItem[] | undefined;
 
-  const linkedProfile = staffList?.find((s) => s.userSubject === user?.id);
+  const linkedProfile = React.useMemo(
+    () => staffList?.find((staff) => staff.userSubject === userId),
+    [staffList, userId]
+  );
 
   const totals = useQuery(
     api.allocations.computeLecturerTotals,
-    linkedProfile?._id && currentYear?._id
+    userId && linkedProfile?._id && currentYear?._id
       ? {
-          lecturerId: linkedProfile._id as Id<'lecturer_profiles'>,
+          userId,
+          lecturerId: linkedProfile._id,
           academicYearId: currentYear._id as Id<'academic_years'>,
         }
       : 'skip'
-  ) as
-    | {
-        allocatedTeaching: number;
-        allocatedAdmin: number;
-        allocatedTotal: number;
-      }
-    | undefined;
+  ) as LecturerTotals | undefined;
 
   const adminAllocations = useQuery(
     api.allocations.listAdminAllocations,
     linkedProfile?._id && currentYear?._id
       ? {
-          lecturerId: linkedProfile._id as Id<'lecturer_profiles'>,
+          lecturerId: linkedProfile._id,
           academicYearId: currentYear._id as Id<'academic_years'>,
         }
       : 'skip'
-  ) as Array<{ allocation?: { hours?: number } }> | undefined;
+  ) as AdminAllocationRow[] | undefined;
 
   if (!isLoaded) {
-    return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          'Teaching Hours',
-          'Admin Hours',
-          'Total Allocated',
-          'Teaching Remaining',
-        ].map((label) => (
-          <SummaryCard
-            key={label}
-            label={label}
-            value="—"
-            icon={Clock}
-            iconBg="bg-secondary"
-            iconColor="text-secondary-foreground"
-            isLoading
-          />
-        ))}
-      </div>
-    );
+    return <LoadingCards />;
   }
 
-  if (!isSignedIn || !user) {
+  if (!isSignedIn || !userId) {
     return null;
   }
 
@@ -140,23 +162,52 @@ export function WorkloadSummaryCards() {
     );
   }
 
-  const isLoadingProfile = hasOrganisation && staffList === undefined;
-  const isLoadingTotals = Boolean(linkedProfile && totals === undefined);
-  const isLoading = isLoadingProfile || isLoadingTotals;
+  if (!currentYear) {
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+        No published academic year is available. Create and publish an academic
+        year before using the dashboard.
+      </div>
+    );
+  }
+
+  const isLoadingProfile = staffList === undefined;
+
+  if (!linkedProfile && isLoadingProfile) {
+    return <LoadingCards />;
+  }
+
+  if (!linkedProfile) {
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+        No linked staff profile found. Ask an admin to link your account to a
+        lecturer profile to see your workload summary.
+      </div>
+    );
+  }
+
+  const isLoadingTotals = totals === undefined;
+  const isLoadingAdminAllocations = adminAllocations === undefined;
+  const isLoading = isLoadingTotals || isLoadingAdminAllocations;
 
   const teaching = totals?.allocatedTeaching ?? 0;
-  const adminStandalone = (adminAllocations || []).reduce(
-    (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
+
+  const adminStandalone = (adminAllocations ?? []).reduce(
+    (acc, row) => acc + (Number(row?.allocation?.hours) || 0),
     0
   );
+
   const admin = (totals?.allocatedAdmin ?? 0) + adminStandalone;
   const total = teaching + admin;
-  const maxTeaching = Number(linkedProfile?.maxTeachingHours) || 0;
-  const maxTotal = Number(linkedProfile?.totalContract) || 0;
+
+  const maxTeaching = Number(linkedProfile.maxTeachingHours) || 0;
+  const maxTotal = Number(linkedProfile.totalContract) || 0;
   const remaining = Math.max(0, maxTeaching - teaching);
 
   const teachingPct =
     maxTeaching > 0 ? Math.round((teaching / maxTeaching) * 100) : 0;
+
+  const totalPct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
 
   const cards: SummaryCardProps[] = [
     {
@@ -183,7 +234,7 @@ export function WorkloadSummaryCards() {
       label: 'Total Allocated',
       value: `${total}h`,
       sublabel: maxTotal
-        ? `of ${maxTotal}h contract (${maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0}% used)`
+        ? `of ${maxTotal}h contract (${totalPct}% used)`
         : 'No contract limit set',
       icon: TrendingUp,
       iconBg: 'bg-emerald-100 dark:bg-emerald-900/30',
@@ -208,15 +259,6 @@ export function WorkloadSummaryCards() {
       isLoading,
     },
   ];
-
-  if (!linkedProfile && !isLoadingProfile) {
-    return (
-      <div className="rounded-xl border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-        No linked staff profile found. Ask an admin to link your account to a
-        lecturer profile to see your workload summary.
-      </div>
-    );
-  }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
