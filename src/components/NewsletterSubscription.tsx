@@ -126,7 +126,7 @@ export default function NewsletterSubscription({
         >
           <DialogHeader className="space-y-1.5">
             <DialogTitle className="text-2xl font-semibold text-white">
-              Subscribe to Blog Updates
+              Subscribe to WorkloadWizard Updates
             </DialogTitle>
             <p className="text-sm text-white/60">
               Stay informed about{' '}
