@@ -59,8 +59,8 @@ export function NavMain({ items }: { items: NavItem[] }) {
                     item.items.some((sub) => pathname === sub.url)
                   }
                 >
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                  {item.icon && <item.icon className="shrink-0" />}
+                  <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
 
                   <ChevronRight
                     className="
@@ -99,8 +99,8 @@ export function NavMain({ items }: { items: NavItem[] }) {
                 asChild
               >
                 <Link href={item.url}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                  {item.icon && <item.icon className="shrink-0" />}
+                  <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
