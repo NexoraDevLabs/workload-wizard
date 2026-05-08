@@ -63,10 +63,12 @@ export default function JoinWaitlist({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim() || undefined,
           name: `${firstName} ${lastName}`.trim(),
           source,
-          organisation: organisation?.trim() || undefined,
+          organisation: organisation.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error('Request failed');
