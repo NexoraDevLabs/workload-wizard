@@ -71,38 +71,38 @@
 }
 
 :root {
-  --background: #f6f8fb;
-  --foreground: #10233f;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #10233f;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #10233f;
-  --primary: #1d5cff;
+  --popover-foreground: #0f172a;
+  --primary: #245bff;
   --primary-foreground: #ffffff;
-  --secondary: #dde8ff;
-  --secondary-foreground: #16315c;
-  --muted: #edf2f7;
-  --muted-foreground: #52637c;
-  --accent: #e7f1ff;
-  --accent-foreground: #16315c;
+  --secondary: #edf3ff;
+  --secondary-foreground: #16337a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #e8f0ff;
+  --accent-foreground: #16337a;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #d7e2f0;
-  --input: #d7e2f0;
-  --ring: #1d5cff;
-  --chart-1: #1d5cff;
-  --chart-2: #4e89ff;
-  --chart-3: #0ea5a8;
-  --chart-4: #f59e0b;
-  --chart-5: #16a34a;
-  --sidebar: #f3f7fc;
-  --sidebar-foreground: #10233f;
-  --sidebar-primary: #1d5cff;
+  --border: #e2e8f0;
+  --input: #dbe4f0;
+  --ring: #245bff;
+  --chart-1: #245bff;
+  --chart-2: #5b7fff;
+  --chart-3: #7aa2ff;
+  --chart-4: #93b7ff;
+  --chart-5: #b6cbff;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #245bff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e7f1ff;
-  --sidebar-accent-foreground: #16315c;
-  --sidebar-border: #d7e2f0;
-  --sidebar-ring: #1d5cff;
+  --sidebar-accent: #edf3ff;
+  --sidebar-accent-foreground: #16337a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #245bff;
   --font-sans: 'DM Sans', ui-sans-serif, sans-serif;
   --font-serif: 'Source Serif 4', ui-serif, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -128,9 +128,9 @@
   --page-background:
     radial-gradient(circle at top, rgb(231 241 255 / 0.95), transparent 32%),
     linear-gradient(180deg, #fbfdff 0%, #f6f8fb 56%, #eef3f9 100%);
-  --surface-elevated: rgb(255 255 255 / 0.84);
-  --surface-strong: rgb(255 255 255 / 0.94);
-  --surface-subtle: rgb(255 255 255 / 0.68);
+  --surface-elevated: rgb(255 255 255 / 0.78);
+  --surface-strong: rgb(255 255 255 / 0.92);
+  --surface-subtle: rgb(255 255 255 / 0.6);
   --surface-border: rgb(215 226 240 / 0.92);
   --surface-shadow: 0 24px 80px -36px rgb(16 35 63 / 0.2);
   --focus-ring: 0 0 0 4px rgb(29 92 255 / 0.16);
@@ -157,38 +157,38 @@
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f9fafb;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #3764ff;
+  --background: #081120;
+  --foreground: #f8fafc;
+  --card: #0f1b2e;
+  --card-foreground: #f8fafc;
+  --popover: #0f1b2e;
+  --popover-foreground: #f8fafc;
+  --primary: #4d7cff;
   --primary-foreground: #ffffff;
-  --secondary: #91acff;
-  --secondary-foreground: #0f172a;
-  --muted: #334155;
-  --muted-foreground: #cbd5e1;
-  --accent: #1e293b;
-  --accent-foreground: #e2e8f0;
-  --destructive: #dc2626;
+  --secondary: #162848;
+  --secondary-foreground: #dbe7ff;
+  --muted: #132238;
+  --muted-foreground: #94a3b8;
+  --accent: #1a315d;
+  --accent-foreground: #dbe7ff;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #334155;
-  --input: #334155;
-  --ring: #3764ff;
-  --chart-1: #91acff;
-  --chart-2: #5c7cfa;
-  --chart-3: #3bc9db;
-  --chart-4: #ffd43b;
-  --chart-5: #51cf66;
-  --sidebar: #1e293b;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #3764ff;
+  --border: #22324d;
+  --input: #22324d;
+  --ring: #4d7cff;
+  --chart-1: #245bff;
+  --chart-2: #5b7fff;
+  --chart-3: #7aa2ff;
+  --chart-4: #93b7ff;
+  --chart-5: #b6cbff;
+  --sidebar: #0d1728;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #4d7cff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #334155;
-  --sidebar-accent-foreground: #e2e8f0;
-  --sidebar-border: #334155;
-  --sidebar-ring: #3764ff;
+  --sidebar-accent: #162848;
+  --sidebar-accent-foreground: #dbe7ff;
+  --sidebar-border: #22324d;
+  --sidebar-ring: #4d7cff;
   --font-sans: 'DM Sans', ui-sans-serif, sans-serif;
   --font-serif: 'Source Serif 4', ui-serif, serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -211,6 +211,9 @@
     2px 2px 10px 4px hsl(0 0% 10.1961% / 0.22),
     2px 8px 10px 3px hsl(0 0% 10.1961% / 0.22);
   --shadow-2xl: 2px 2px 10px 4px hsl(0 0% 10.1961% / 0.55);
+  --surface-elevated: rgb(15 27 46 / 0.72);
+  --surface-strong: rgb(15 27 46 / 0.9);
+  --surface-subtle: rgb(15 27 46 / 0.56);
 
   /* Preserve existing custom variables */
   --color-smooth-50: oklch(20.02% 0 0);
@@ -367,31 +370,50 @@
     scrollbar-width: none;
   }
 
+  .hero-muted {
+    color: rgb(255 255 255 / 0.82);
+  }
+
   :root {
     /* Standalone gradient colours to avoid coupling to --primary/--secondary */
-    --hero-start: 210 78% 52%;
-    --hero-end: 190 82% 42%;
+    --hero-start: 223 100% 58%;
+    --hero-end: 228 92% 52%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(
-      135deg,
-      hsl(var(--hero-start)),
-      hsl(var(--hero-end))
-    );
+    --gradient-hero:
+      radial-gradient(circle at top, rgb(255 255 255 / 0.14), transparent 34%),
+      linear-gradient(
+        180deg,
+        hsl(var(--hero-start)) 0%,
+        hsl(var(--hero-end)) 100%
+      );
+
     --gradient-primary: linear-gradient(
       135deg,
       hsl(var(--hero-start)),
       hsl(var(--hero-end))
     );
+
     --gradient-subtle: linear-gradient(
       180deg,
-      hsl(var(--hero-start) / 0.1),
-      hsl(var(--hero-end) / 0.05)
+      rgb(255 255 255 / 0.12),
+      rgb(255 255 255 / 0.04)
     );
 
     /* Shadows */
-    --shadow-glow: 0 10px 40px -10px hsl(var(--hero-start) / 0.3);
-    --shadow-elegant: 0 25px 50px -12px hsl(var(--hero-start) / 0.25);
+    --shadow-glow: 0 12px 40px -12px rgb(36 91 255 / 0.35);
+
+    --page-background: var(--gradient-hero);
+
+    --surface-elevated: rgb(255 255 255 / 0.12);
+    --surface-strong: rgb(255 255 255 / 0.16);
+    --surface-subtle: rgb(255 255 255 / 0.08);
+
+    --surface-border: rgb(255 255 255 / 0.16);
+
+    --surface-shadow: 0 20px 60px -20px rgb(0 0 0 / 0.25);
+
+    --focus-ring: 0 0 0 4px rgb(255 255 255 / 0.16);
 
     /* Motion */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -399,30 +421,30 @@
   }
 
   .dark {
-    /* Dark mode adjustments for landing gradients - darker and more muted */
-    --hero-start: 212 68% 38%;
-    --hero-end: 190 74% 32%;
+    --hero-start: 223 82% 56%;
+    --hero-end: 228 78% 42%;
 
-    /* Dark mode gradients with adjusted opacity */
-    --gradient-hero: linear-gradient(
-      135deg,
-      hsl(var(--hero-start)),
-      hsl(var(--hero-end))
-    );
+    --gradient-hero:
+      radial-gradient(circle at top, rgb(255 255 255 / 0.04), transparent 28%),
+      linear-gradient(
+        180deg,
+        hsl(var(--hero-start)) 0%,
+        hsl(var(--hero-end)) 100%
+      );
+
     --gradient-primary: linear-gradient(
       135deg,
       hsl(var(--hero-start)),
       hsl(var(--hero-end))
     );
+
     --gradient-subtle: linear-gradient(
       180deg,
-      hsl(var(--hero-start) / 0.15),
-      hsl(var(--hero-end) / 0.08)
+      rgb(255 255 255 / 0.06),
+      rgb(255 255 255 / 0.02)
     );
 
-    /* Dark mode shadows with adjusted opacity */
-    --shadow-glow: 0 10px 40px -10px hsl(var(--hero-start) / 0.4);
-    --shadow-elegant: 0 25px 50px -12px hsl(var(--hero-start) / 0.35);
+    --shadow-glow: 0 12px 40px -12px rgb(77 124 255 / 0.4);
   }
 }
 
@@ -478,9 +500,59 @@
 
   /* Waitlist button styling to match original design */
   .btn-waitlist {
-    @apply bg-white/15 backdrop-blur-sm border border-white/30 text-white rounded-2xl px-8 py-6 text-lg font-semibold;
-    @apply hover:bg-white/20 hover:border-white/40 transition-all duration-300;
-    @apply shadow-lg hover:shadow-xl;
+    background: #ffffff !important;
+    color: #1d4fff !important;
+
+    border: 1px solid rgb(255 255 255 / 0.9) !important;
+
+    border-radius: 1rem;
+
+    padding: 0.95rem 1.7rem;
+
+    font-size: 0.95rem;
+    font-weight: 700;
+
+    backdrop-filter: blur(16px);
+
+    box-shadow:
+      0 14px 40px -18px rgb(0 0 0 / 0.28),
+      0 4px 10px rgb(255 255 255 / 0.18);
+
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      background 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  .btn-waitlist:hover {
+    background: rgb(255 255 255 / 0.94) !important;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+      0 20px 50px -20px rgb(0 0 0 / 0.34),
+      0 6px 14px rgb(255 255 255 / 0.22);
+  }
+
+  .btn-waitlist:active {
+    transform: translateY(0);
+  }
+
+  .dark .btn-waitlist {
+    background: rgb(255 255 255 / 0.14) !important;
+
+    color: white !important;
+
+    border: 1px solid rgb(255 255 255 / 0.18) !important;
+
+    box-shadow:
+      0 12px 30px -14px rgb(0 0 0 / 0.5),
+      inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .dark .btn-waitlist:hover {
+    background: rgb(255 255 255 / 0.2) !important;
   }
 
   /* Component NumberFlow */
@@ -675,4 +747,92 @@
   backdrop-blur: none !important;
   filter: none !important;
   transform: none !important;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+footer,
+footer p,
+footer span,
+footer a {
+  color: rgb(255 255 255 / 0.72);
+}
+
+footer a:hover {
+  color: rgb(255 255 255 / 0.96);
+}
+
+.badge-subtle {
+  background: rgb(255 255 255 / 0.14);
+  color: rgb(255 255 255 / 0.92);
+
+  border: 1px solid rgb(255 255 255 / 0.16);
+
+  backdrop-filter: blur(10px);
+
+  font-weight: 600;
+
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 2px 10px rgb(0 0 0 / 0.12);
+}
+
+.waitlist-dialog button[data-dialog-close],
+.waitlist-dialog button[aria-label='Close'] {
+  position: absolute;
+
+  top: 1rem;
+  right: 1rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 2rem;
+  height: 2rem;
+
+  border-radius: 9999px;
+
+  background: rgb(255 255 255 / 0.12);
+
+  border: 1px solid rgb(255 255 255 / 0.12);
+
+  color: rgb(255 255 255 / 0.72);
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.waitlist-dialog button[data-dialog-close]:hover,
+.waitlist-dialog button[aria-label='Close']:hover {
+  background: rgb(255 255 255 / 0.18);
+
+  border-color: rgb(255 255 255 / 0.18);
+
+  color: white;
+
+  transform: scale(1.03);
+}
+
+.waitlist-dialog button[data-dialog-close] svg,
+.waitlist-dialog button[aria-label='Close'] svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.newsletter-dialog > button:not([aria-label='Close dialog']) {
+  display: none;
 }
