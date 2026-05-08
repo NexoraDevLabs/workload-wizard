@@ -23,6 +23,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type OrgItem = {
   _id: string;
@@ -31,7 +36,7 @@ type OrgItem = {
 };
 
 export function TeamSwitcher() {
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
   const { user } = useAuthUser();
   const {
     years,
@@ -77,25 +82,36 @@ export function TeamSwitcher() {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <WandSparkles className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="truncate font-semibold">
+                      {activeOrg?.name ?? 'WorkloadWizard'}
+                    </span>
+                    <span className="truncate text-xs text-sidebar-foreground/70">
+                      {currentYear?.name ?? (activeOrg?.code ?? 'No year selected')}
+                    </span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto group-data-[collapsible=icon]:hidden" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              align="center"
+              hidden={state !== 'collapsed' || isMobile}
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <WandSparkles className="size-4" />
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">
-                  {activeOrg?.name ?? 'WorkloadWizard'}
-                </span>
-                <span className="truncate text-xs text-sidebar-foreground/70">
-                  {currentYear?.name ?? (activeOrg?.code ?? 'No year selected')}
-                </span>
-              </div>
-              <ChevronsUpDown className="ml-auto" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
+              {activeOrg?.name ?? 'WorkloadWizard'}
+            </TooltipContent>
+          </Tooltip>
 
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-64 rounded-lg"
