@@ -141,10 +141,10 @@ export type NavigationContext = {
       icon: Home,
     },
     {
-        title: 'My Profile',
-        url: '/staff/me',
-        icon: User,
-        hiddenForRoles: ['orgadmin', 'systemadmin', 'sysadmin', 'admin', 'developer', 'dev'],
+      title: 'My Profile',
+      url: '/staff/me',
+      icon: User,
+      hiddenForRoles: ['orgadmin', 'systemadmin', 'sysadmin', 'admin', 'developer', 'dev'],
     },
     {
       title: 'Admin',
