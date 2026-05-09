@@ -1,20 +1,120 @@
 import type { Id } from '../../convex/_generated/dataModel';
 
-// Define PermissionId as a type alias based on the PERMISSIONS object keys
-export type PermissionId = `${string}.${string}`;
+export type PermissionScope = 'system' | 'org' | 'team' | 'self' | 'ui' | 'both';
 
-// Centralized permission constants for consistent usage
+/**
+ * App role model:
+ *
+ * user:
+ * - default for all new users
+ * - basic dashboard/profile access only
+ *
+ * lecturer:
+ * - linked to an organisation/staff profile/academic year
+ * - can view own workload allocation
+ *
+ * manager:
+ * - manages workloading for their own team
+ * - server-side checks must restrict this to team scope
+ *
+ * workloadadmin:
+ * - manages workloading for all staff in their organisation
+ *
+ * orgadmin:
+ * - manages organisation settings, users, roles and permissions
+ */
+
+export type PermissionId =
+  // Navigation visibility - UI only
+  | 'nav.dashboard'
+  | 'nav.profile'
+  | 'nav.staff'
+  | 'nav.courses'
+  | 'nav.modules'
+  | 'nav.organisation'
+  | 'nav.admin'
+  | 'nav.dev'
+  | 'nav.notifications'
+  | 'nav.support'
+  | 'nav.settings'
+
+  // Users
+  | 'users.view'
+  | 'users.create'
+  | 'users.edit'
+  | 'users.delete'
+
+  // Staff / lecturer profiles
+  | 'staff.view.self'
+  | 'staff.view.team'
+  | 'staff.view.org'
+  | 'staff.create'
+  | 'staff.edit'
+  | 'staff.delete'
+
+  // Workload allocations
+  | 'allocations.view.self'
+  | 'allocations.view.team'
+  | 'allocations.view.org'
+  | 'allocations.manage.team'
+  | 'allocations.manage.org'
+  | 'allocations.assign'
+  | 'allocations.bulk'
+
+  // Permissions / admin
+  | 'permissions.manage'
+  | 'organisations.manage'
+  | 'audit.view'
+
+  // Courses
+  | 'courses.view'
+  | 'courses.create'
+  | 'courses.edit'
+  | 'courses.delete'
+  | 'courses.years.add'
+
+  // Modules
+  | 'modules.view'
+  | 'modules.create'
+  | 'modules.edit'
+  | 'modules.delete'
+  | 'modules.link'
+  | 'modules.unlink'
+
+  // Iterations / groups
+  | 'iterations.view'
+  | 'iterations.create'
+  | 'groups.view'
+  | 'groups.create'
+  | 'groups.delete';
+
+export type PermissionMeta = {
+  label: string;
+  group: string;
+  description: string;
+  scope: PermissionScope;
+};
+
 export const PERMISSION_GROUPS = {
+  NAVIGATION: 'navigation',
   USERS: 'users',
+  STAFF: 'staff',
   ADMIN: 'admin',
   AUDIT: 'audit',
   ORGANISATIONS: 'organisations',
-  // Feature flags removed
+  COURSES: 'courses',
+  MODULES: 'modules',
+  ITERATIONS: 'iterations',
+  GROUPS: 'groups',
+  ALLOCATIONS: 'allocations',
 } as const;
 
 export const PERMISSION_SCOPES = {
   SYSTEM: 'system',
   ORG: 'org',
+  TEAM: 'team',
+  SELF: 'self',
+  UI: 'ui',
   BOTH: 'both',
 } as const;
 
@@ -22,150 +122,439 @@ export const USER_ROLES = {
   SYSTEM_ADMIN: 'systemadmin',
   SYS_ADMIN: 'sysadmin',
   ADMIN: 'admin',
+  DEVELOPER: 'developer',
+  DEV: 'dev',
   ORG_ADMIN: 'orgadmin',
+  WORKLOAD_ADMIN: 'workloadadmin',
+  MANAGER: 'manager',
   LECTURER: 'lecturer',
+  USER: 'user',
 } as const;
 
-export const PERMISSIONS: Record<
-  PermissionId,
-  { group: string; description: string; scope: 'system' | 'org' | 'both' }
-> = {
+export const SYSTEM_ADMIN_ROLES = [
+  USER_ROLES.SYSTEM_ADMIN,
+  USER_ROLES.SYS_ADMIN,
+  USER_ROLES.ADMIN,
+  USER_ROLES.DEVELOPER,
+  USER_ROLES.DEV,
+] as const;
+
+export const PERMISSIONS: Record<PermissionId, PermissionMeta> = {
+  // Navigation
+  'nav.dashboard': {
+    label: 'Dashboard navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Dashboard in the sidebar',
+    scope: 'ui',
+  },
+  'nav.profile': {
+    label: 'Profile navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show My Profile in the sidebar',
+    scope: 'ui',
+  },
+  'nav.staff': {
+    label: 'Staff navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Staff in the sidebar',
+    scope: 'ui',
+  },
+  'nav.courses': {
+    label: 'Courses navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Courses in the sidebar',
+    scope: 'ui',
+  },
+  'nav.modules': {
+    label: 'Modules navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Modules in the sidebar',
+    scope: 'ui',
+  },
+  'nav.organisation': {
+    label: 'Organisation navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Organisation in the sidebar',
+    scope: 'ui',
+  },
+  'nav.admin': {
+    label: 'Admin navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Admin in the sidebar',
+    scope: 'ui',
+  },
+  'nav.dev': {
+    label: 'Developer navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Dev Tools in the sidebar',
+    scope: 'ui',
+  },
+  'nav.notifications': {
+    label: 'Notifications navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Notifications in secondary navigation',
+    scope: 'ui',
+  },
+  'nav.support': {
+    label: 'Support navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Support in secondary navigation',
+    scope: 'ui',
+  },
+  'nav.settings': {
+    label: 'Settings navigation',
+    group: PERMISSION_GROUPS.NAVIGATION,
+    description: 'Show Settings in secondary navigation',
+    scope: 'ui',
+  },
+
+  // Users
   'users.view': {
-    group: 'users',
+    label: 'View users',
+    group: PERMISSION_GROUPS.USERS,
     description: 'View users in your organisation',
     scope: 'org',
   },
   'users.create': {
-    group: 'users',
+    label: 'Create users',
+    group: PERMISSION_GROUPS.USERS,
     description: 'Create users in your organisation',
     scope: 'org',
   },
   'users.edit': {
-    group: 'users',
+    label: 'Edit users',
+    group: PERMISSION_GROUPS.USERS,
     description: 'Edit users in your organisation',
     scope: 'org',
   },
   'users.delete': {
-    group: 'users',
+    label: 'Delete users',
+    group: PERMISSION_GROUPS.USERS,
     description: 'Delete users in your organisation',
     scope: 'org',
   },
+
+  // Staff
+  'staff.view.self': {
+    label: 'View own staff profile',
+    group: PERMISSION_GROUPS.STAFF,
+    description: 'View your own staff profile and workload data',
+    scope: 'self',
+  },
+  'staff.view.team': {
+    label: 'View team staff',
+    group: PERMISSION_GROUPS.STAFF,
+    description: 'View staff profiles and workload data for your managed team',
+    scope: 'team',
+  },
+  'staff.view.org': {
+    label: 'View organisation staff',
+    group: PERMISSION_GROUPS.STAFF,
+    description: 'View staff profiles and workload data across your organisation',
+    scope: 'org',
+  },
+  'staff.create': {
+    label: 'Create staff',
+    group: PERMISSION_GROUPS.STAFF,
+    description: 'Create lecturer or staff profiles',
+    scope: 'org',
+  },
+  'staff.edit': {
+    label: 'Edit staff',
+    group: PERMISSION_GROUPS.STAFF,
+    description: 'Edit lecturer or staff profiles',
+    scope: 'org',
+  },
+  'staff.delete': {
+    label: 'Delete staff',
+    group: PERMISSION_GROUPS.STAFF,
+    description: 'Delete lecturer or staff profiles',
+    scope: 'org',
+  },
+
+  // Allocations
+  'allocations.view.self': {
+    label: 'View own allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'View your own workload allocations',
+    scope: 'self',
+  },
+  'allocations.view.team': {
+    label: 'View team allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'View workload allocations for your managed team',
+    scope: 'team',
+  },
+  'allocations.view.org': {
+    label: 'View organisation allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'View workload allocations across your organisation',
+    scope: 'org',
+  },
+  'allocations.manage.team': {
+    label: 'Manage team allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'Manage workload allocations for your managed team',
+    scope: 'team',
+  },
+  'allocations.manage.org': {
+    label: 'Manage organisation allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'Manage workload allocations across your organisation',
+    scope: 'org',
+  },
+  'allocations.assign': {
+    label: 'Assign allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'Assign workload to staff',
+    scope: 'org',
+  },
+  'allocations.bulk': {
+    label: 'Bulk manage allocations',
+    group: PERMISSION_GROUPS.ALLOCATIONS,
+    description: 'Bulk manage workload allocations',
+    scope: 'org',
+  },
+
+  // Admin / audit / organisations
   'permissions.manage': {
-    group: 'admin',
+    label: 'Manage permissions',
+    group: PERMISSION_GROUPS.ADMIN,
     description: 'Manage roles and permissions',
     scope: 'both',
   },
-  // Feature flags removed
   'organisations.manage': {
-    group: 'admin',
+    label: 'Manage organisations',
+    group: PERMISSION_GROUPS.ORGANISATIONS,
     description: 'Manage organisations',
     scope: 'system',
   },
   'audit.view': {
-    group: 'admin',
+    label: 'View audit logs',
+    group: PERMISSION_GROUPS.AUDIT,
     description: 'View audit logs',
     scope: 'both',
   },
-  // Planning MVP permissions (org-scoped)
+
+  // Courses
+  'courses.view': {
+    label: 'View courses',
+    group: PERMISSION_GROUPS.COURSES,
+    description: 'View courses',
+    scope: 'org',
+  },
   'courses.create': {
-    group: 'courses',
+    label: 'Create courses',
+    group: PERMISSION_GROUPS.COURSES,
     description: 'Create courses',
     scope: 'org',
   },
   'courses.edit': {
-    group: 'courses',
+    label: 'Edit courses',
+    group: PERMISSION_GROUPS.COURSES,
     description: 'Edit courses',
     scope: 'org',
   },
   'courses.delete': {
-    group: 'courses',
+    label: 'Delete courses',
+    group: PERMISSION_GROUPS.COURSES,
     description: 'Delete courses',
     scope: 'org',
   },
   'courses.years.add': {
-    group: 'courses',
+    label: 'Add course years',
+    group: PERMISSION_GROUPS.COURSES,
     description: 'Add course years',
     scope: 'org',
   },
+
+  // Modules
+  'modules.view': {
+    label: 'View modules',
+    group: PERMISSION_GROUPS.MODULES,
+    description: 'View modules',
+    scope: 'org',
+  },
   'modules.create': {
-    group: 'modules',
+    label: 'Create modules',
+    group: PERMISSION_GROUPS.MODULES,
     description: 'Create modules',
     scope: 'org',
   },
   'modules.edit': {
-    group: 'modules',
+    label: 'Edit modules',
+    group: PERMISSION_GROUPS.MODULES,
     description: 'Edit modules',
     scope: 'org',
   },
   'modules.delete': {
-    group: 'modules',
+    label: 'Delete modules',
+    group: PERMISSION_GROUPS.MODULES,
     description: 'Delete modules',
     scope: 'org',
   },
   'modules.link': {
-    group: 'modules',
+    label: 'Link modules',
+    group: PERMISSION_GROUPS.MODULES,
     description: 'Attach module to course year',
     scope: 'org',
   },
   'modules.unlink': {
-    group: 'modules',
+    label: 'Unlink modules',
+    group: PERMISSION_GROUPS.MODULES,
     description: 'Detach module from course year',
     scope: 'org',
   },
+
+  // Iterations / groups
+  'iterations.view': {
+    label: 'View iterations',
+    group: PERMISSION_GROUPS.ITERATIONS,
+    description: 'View module iterations',
+    scope: 'org',
+  },
   'iterations.create': {
-    group: 'iterations',
+    label: 'Create iterations',
+    group: PERMISSION_GROUPS.ITERATIONS,
     description: 'Create module iterations for an academic year',
     scope: 'org',
   },
+  'groups.view': {
+    label: 'View groups',
+    group: PERMISSION_GROUPS.GROUPS,
+    description: 'View groups',
+    scope: 'org',
+  },
   'groups.create': {
-    group: 'groups',
+    label: 'Create groups',
+    group: PERMISSION_GROUPS.GROUPS,
     description: 'Create groups',
     scope: 'org',
   },
   'groups.delete': {
-    group: 'groups',
+    label: 'Delete groups',
+    group: PERMISSION_GROUPS.GROUPS,
     description: 'Delete groups',
     scope: 'org',
   },
-  'staff.create': {
-    group: 'staff',
-    description: 'Create lecturer profiles',
-    scope: 'org',
-  },
-  'staff.edit': {
-    group: 'staff',
-    description: 'Edit lecturer profiles',
-    scope: 'org',
-  },
-  'allocations.assign': {
-    group: 'allocations',
-    description: 'Assign lecturer to group',
-    scope: 'org',
-  },
-  'allocations.bulk': {
-    group: 'allocations',
-    description: 'Bulk manage group allocations',
-    scope: 'org',
-  },
 };
+
+export function isPermissionId(value: string): value is PermissionId {
+  return value in PERMISSIONS;
+}
+
+const BASIC_USER_PERMISSIONS: PermissionId[] = [
+  'nav.dashboard',
+  'nav.profile',
+  'staff.view.self',
+];
+
+const SECONDARY_NAVIGATION_PERMISSIONS: PermissionId[] = [
+  'nav.support',
+  'nav.settings',
+];
+
+const LECTURER_PERMISSIONS: PermissionId[] = [
+  ...BASIC_USER_PERMISSIONS,
+  ...SECONDARY_NAVIGATION_PERMISSIONS,
+  'allocations.view.self',
+];
+
+const MANAGER_PERMISSIONS: PermissionId[] = [
+  ...LECTURER_PERMISSIONS,
+  'nav.staff',
+  'nav.courses',
+  'nav.modules',
+  'staff.view.team',
+  'allocations.view.team',
+  'allocations.manage.team',
+  'courses.view',
+  'modules.view',
+  'iterations.view',
+  'groups.view',
+];
+
+const WORKLOAD_ADMIN_PERMISSIONS: PermissionId[] = [
+  ...MANAGER_PERMISSIONS,
+  'nav.organisation',
+  'staff.view.org',
+  'staff.create',
+  'staff.edit',
+  'users.view',
+  'courses.create',
+  'courses.edit',
+  'courses.years.add',
+  'modules.create',
+  'modules.edit',
+  'modules.link',
+  'modules.unlink',
+  'iterations.create',
+  'groups.create',
+  'groups.delete',
+  'allocations.view.org',
+  'allocations.manage.org',
+  'allocations.assign',
+  'allocations.bulk',
+];
+
+const ORG_ADMIN_PERMISSIONS: PermissionId[] = [
+  ...WORKLOAD_ADMIN_PERMISSIONS,
+  'users.create',
+  'users.edit',
+  'users.delete',
+  'staff.delete',
+  'courses.delete',
+  'modules.delete',
+  'permissions.manage',
+  'audit.view',
+];
 
 export const DEFAULT_ROLES: Record<string, PermissionId[]> = {
-  systemadmin: Object.keys(PERMISSIONS) as PermissionId[],
-  dev: Object.keys(PERMISSIONS) as PermissionId[],
-  developer: Object.keys(PERMISSIONS) as PermissionId[],
-  orgadmin: [
-    // Seeded granular permissions for Org Admins. No implicit bypass.
-    'users.view',
-    'users.create',
-    'users.edit',
-    'permissions.manage',
+  user: BASIC_USER_PERMISSIONS,
 
-    'audit.view',
-  ],
-  lecturer: ['users.view'],
+  lecturer: LECTURER_PERMISSIONS,
+
+  manager: MANAGER_PERMISSIONS,
+
+  workloadadmin: WORKLOAD_ADMIN_PERMISSIONS,
+
+  orgadmin: ORG_ADMIN_PERMISSIONS,
+
+  systemadmin: Object.keys(PERMISSIONS) as PermissionId[],
+  sysadmin: Object.keys(PERMISSIONS) as PermissionId[],
+  admin: Object.keys(PERMISSIONS) as PermissionId[],
+  developer: Object.keys(PERMISSIONS) as PermissionId[],
+  dev: Object.keys(PERMISSIONS) as PermissionId[],
 };
 
-// Enhanced permission checking with better scope handling
+export function isSystemAdminRole(userRole: string | undefined): boolean {
+  if (!userRole) return false;
+
+  return SYSTEM_ADMIN_ROLES.includes(
+    userRole as (typeof SYSTEM_ADMIN_ROLES)[number]
+  );
+}
+
+export function getPermissionsForRole(
+  userRole: string | undefined
+): PermissionId[] {
+  if (!userRole) return [];
+
+  return DEFAULT_ROLES[userRole] ?? [];
+}
+
+export function getPermissionsForRoles(userRoles: string[]): PermissionId[] {
+  const permissions = new Set<PermissionId>();
+
+  for (const role of userRoles) {
+    for (const permission of getPermissionsForRole(role)) {
+      permissions.add(permission);
+    }
+  }
+
+  return [...permissions].sort();
+}
+
 export function hasPermission(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -175,58 +564,74 @@ export function hasPermission(
   if (!userRole) return false;
 
   const permission = PERMISSIONS[permissionId];
+
   if (!permission) return false;
 
-  // System-level permissions (no org context needed)
   if (isSystemAction || permission.scope === 'system') {
-    return (
-      userRole === 'systemadmin' ||
-      userRole === 'sysadmin' ||
-      userRole === 'admin' ||
-      userRole === 'developer' ||
-      userRole === 'dev'
-    );
+    return isSystemAdminRole(userRole);
   }
 
-  // Organization-level permissions
-  if (organisationId || permission.scope === 'org') {
-    // System admins have access to all orgs
-    if (
-      userRole === 'systemadmin' ||
-      userRole === 'sysadmin' ||
-      userRole === 'admin' ||
-      userRole === 'developer' ||
-      userRole === 'dev'
-    ) {
-      return true;
-    }
-    // Org admins do NOT bypass; they must have seeded permission
-    const userPermissions = DEFAULT_ROLES[userRole] || [];
-    return userPermissions.includes(permissionId);
+  if (isSystemAdminRole(userRole)) {
+    return true;
   }
 
-  // Both scope permissions - check based on context
+  if (permission.scope === 'ui' || permission.scope === 'self') {
+    return getPermissionsForRole(userRole).includes(permissionId);
+  }
+
+  if (permission.scope === 'team') {
+    return getPermissionsForRole(userRole).includes(permissionId);
+  }
+
+  if (permission.scope === 'org') {
+    if (!organisationId) return false;
+
+    return getPermissionsForRole(userRole).includes(permissionId);
+  }
+
   if (permission.scope === 'both') {
-    if (
-      userRole === 'systemadmin' ||
-      userRole === 'sysadmin' ||
-      userRole === 'admin' ||
-      userRole === 'developer' ||
-      userRole === 'dev'
-    ) {
-      return true;
-    }
-
-    const userPermissions = DEFAULT_ROLES[userRole] || [];
-    return userPermissions.includes(permissionId);
+    return getPermissionsForRole(userRole).includes(permissionId);
   }
 
-  // Fallback to role-based check
-  const userPermissions = DEFAULT_ROLES[userRole] || [];
-  return userPermissions.includes(permissionId);
+  return false;
 }
 
-// Enhanced UI state management for permission-aware components
+export function hasAnyPermission(
+  userRole: string | undefined,
+  permissionIds: PermissionId[],
+  organisationId?: string,
+  isSystemAction: boolean = false
+): boolean {
+  return permissionIds.some((permissionId) =>
+    hasPermission(userRole, permissionId, organisationId, isSystemAction)
+  );
+}
+
+export function hasAllPermissions(
+  userRole: string | undefined,
+  permissionIds: PermissionId[],
+  organisationId?: string,
+  isSystemAction: boolean = false
+): boolean {
+  return permissionIds.every((permissionId) =>
+    hasPermission(userRole, permissionId, organisationId, isSystemAction)
+  );
+}
+
+export function explainPermissionsForRole(userRole: string | undefined) {
+  return getPermissionsForRole(userRole).map((permissionId) => ({
+    id: permissionId,
+    ...PERMISSIONS[permissionId],
+  }));
+}
+
+export function explainPermissionsForRoles(userRoles: string[]) {
+  return getPermissionsForRoles(userRoles).map((permissionId) => ({
+    id: permissionId,
+    ...PERMISSIONS[permissionId],
+  }));
+}
+
 export interface UIGateOptions {
   organisationId?: string | undefined;
   isSystemAction?: boolean | undefined;
@@ -245,11 +650,10 @@ export interface UIGateResult {
   disabled: boolean;
   disabledText?: string;
   errorMessage?: string;
-  scope: 'system' | 'org' | 'both';
+  scope: PermissionScope;
   requiresOrgContext: boolean;
 }
 
-// Centralized gating utility for UI states with enhanced options
 export function gateUIState(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -265,13 +669,15 @@ export function gateUIState(
   } = options;
 
   const permission = PERMISSIONS[permissionId];
+  const scope = permission?.scope ?? 'org';
+
   const hasAccess = hasPermission(
     userRole,
     permissionId,
     organisationId,
     isSystemAction
   );
-  const scope = permission?.scope || 'org';
+
   const requiresOrgContext = scope === 'org' && !isSystemAction;
 
   const result: UIGateResult = {
@@ -291,7 +697,6 @@ export function gateUIState(
   return result;
 }
 
-// Enhanced button state gating with better UX
 export function gateButtonState(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -300,7 +705,7 @@ export function gateButtonState(
   disabled: boolean;
   disabledText?: string;
   tooltip?: string;
-  scope: string;
+  scope: PermissionScope;
 } {
   const {
     organisationId,
@@ -309,19 +714,20 @@ export function gateButtonState(
   } = options;
 
   const permission = PERMISSIONS[permissionId];
+  const scope = permission?.scope ?? 'org';
+
   const hasAccess = hasPermission(
     userRole,
     permissionId,
     organisationId,
     isSystemAction
   );
-  const scope = permission?.scope || 'org';
 
   const result: {
     disabled: boolean;
     disabledText?: string;
     tooltip?: string;
-    scope: string;
+    scope: PermissionScope;
   } = {
     disabled: !hasAccess,
     scope,
@@ -335,7 +741,6 @@ export function gateButtonState(
   return result;
 }
 
-// Enhanced action state gating with better error messages
 export function gateActionState(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -344,7 +749,7 @@ export function gateActionState(
   canPerform: boolean;
   errorMessage?: string | undefined;
   shouldShowError?: boolean | undefined;
-  scope: string;
+  scope: PermissionScope;
 } {
   const {
     organisationId,
@@ -353,13 +758,14 @@ export function gateActionState(
   } = options;
 
   const permission = PERMISSIONS[permissionId];
+  const scope = permission?.scope ?? 'org';
+
   const hasAccess = hasPermission(
     userRole,
     permissionId,
     organisationId,
     isSystemAction
   );
-  const scope = permission?.scope || 'org';
 
   return {
     canPerform: hasAccess,
@@ -371,7 +777,6 @@ export function gateActionState(
   };
 }
 
-// Form field gating for permission-aware forms
 export function gateFormField(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -381,7 +786,7 @@ export function gateFormField(
   disabled: boolean;
   helperText?: string | undefined;
   errorMessage?: string | undefined;
-  scope: string;
+  scope: PermissionScope;
 } {
   const {
     organisationId,
@@ -390,13 +795,14 @@ export function gateFormField(
   } = options;
 
   const permission = PERMISSIONS[permissionId];
+  const scope = permission?.scope ?? 'org';
+
   const hasAccess = hasPermission(
     userRole,
     permissionId,
     organisationId,
     isSystemAction
   );
-  const scope = permission?.scope || 'org';
 
   return {
     readonly: !hasAccess,
@@ -407,7 +813,6 @@ export function gateFormField(
   };
 }
 
-// Table row gating for permission-aware data tables
 export function gateTableRow(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -417,18 +822,19 @@ export function gateTableRow(
   canEdit: boolean;
   canDelete: boolean;
   rowClassName?: string | undefined;
-  scope: string;
+  scope: PermissionScope;
 } {
   const { organisationId, isSystemAction = false } = options;
 
   const permission = PERMISSIONS[permissionId];
+  const scope = permission?.scope ?? 'org';
+
   const hasAccess = hasPermission(
     userRole,
     permissionId,
     organisationId,
     isSystemAction
   );
-  const scope = permission?.scope || 'org';
 
   return {
     canView: hasAccess,
@@ -439,7 +845,6 @@ export function gateTableRow(
   };
 }
 
-// Enhanced permission context checker
 export function getPermissionContext(
   userRole: string | undefined,
   permissionId: PermissionId,
@@ -447,11 +852,11 @@ export function getPermissionContext(
 ): {
   isSystemAction: boolean;
   hasOrgContext: boolean;
-  scope: 'system' | 'org' | 'both';
+  scope: PermissionScope;
   canAccess: boolean;
 } {
   const permission = PERMISSIONS[permissionId];
-  const scope = permission?.scope || 'org';
+  const scope = permission?.scope ?? 'org';
 
   const isSystemAction = scope === 'system';
   const hasOrgContext = Boolean(organisationId);
@@ -471,7 +876,6 @@ export function getPermissionContext(
   };
 }
 
-// Convenience functions for common permission checks
 export function canViewUsers(
   userRole?: string,
   organisationId?: string
@@ -500,6 +904,41 @@ export function canDeleteUsers(
   return hasPermission(userRole, 'users.delete', organisationId);
 }
 
+export function canViewOwnStaff(
+  userRole?: string,
+  organisationId?: string
+): boolean {
+  return hasPermission(userRole, 'staff.view.self', organisationId);
+}
+
+export function canViewTeamStaff(
+  userRole?: string,
+  organisationId?: string
+): boolean {
+  return hasPermission(userRole, 'staff.view.team', organisationId);
+}
+
+export function canViewOrgStaff(
+  userRole?: string,
+  organisationId?: string
+): boolean {
+  return hasPermission(userRole, 'staff.view.org', organisationId);
+}
+
+export function canManageTeamAllocations(
+  userRole?: string,
+  organisationId?: string
+): boolean {
+  return hasPermission(userRole, 'allocations.manage.team', organisationId);
+}
+
+export function canManageOrgAllocations(
+  userRole?: string,
+  organisationId?: string
+): boolean {
+  return hasPermission(userRole, 'allocations.manage.org', organisationId);
+}
+
 export function canManagePermissions(
   userRole?: string,
   organisationId?: string
@@ -519,45 +958,77 @@ export function canViewAudit(
 }
 
 export async function seedDefaultOrgRoles(organisationId: string) {
-  // Idempotently ensure default roles for an org via Convex helper.
   const { ConvexHttpClient } = await import('convex/browser');
   const { api } = await import('../../convex/_generated/api');
-  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+
+  if (!convexUrl) {
+    throw new Error('NEXT_PUBLIC_CONVEX_URL is not configured');
+  }
+
+  const client = new ConvexHttpClient(convexUrl);
   const res = await client.mutation(
     api.permissions.ensureDefaultRolesForOrganisation,
     {
       organisationId: organisationId as unknown as Id<'organisations'>,
     }
   );
+
   return { organisationId, created: res.created };
 }
 
 export function listPermissionsByGroup(): Record<
   string,
-  Array<{ id: PermissionId; description: string }>
+  Array<{
+    id: PermissionId;
+    label: string;
+    description: string;
+    scope: PermissionScope;
+  }>
 > {
   const entries = Object.entries(PERMISSIONS) as Array<
-    [PermissionId, { group: string; description: string }]
+    [PermissionId, PermissionMeta]
   >;
+
   return entries.reduce<
-    Record<string, Array<{ id: PermissionId; description: string }>>
+    Record<
+      string,
+      Array<{
+        id: PermissionId;
+        label: string;
+        description: string;
+        scope: PermissionScope;
+      }>
+    >
   >((acc, [id, meta]) => {
     const list = acc[meta.group] ?? [];
-    list.push({ id, description: meta.description });
+
+    list.push({
+      id,
+      label: meta.label,
+      description: meta.description,
+      scope: meta.scope,
+    });
+
     acc[meta.group] = list;
+
     return acc;
   }, {});
 }
 
 export function rolesForPermission(permissionId: PermissionId): string[] {
   const roles: string[] = [];
+
   for (const [role, perms] of Object.entries(DEFAULT_ROLES)) {
-    if (perms.includes(permissionId)) roles.push(role);
+    if (perms.includes(permissionId)) {
+      roles.push(role);
+    }
   }
+
   return roles;
 }
 
-// Centralized Permission-Aware UI State Manager
 export class PermissionUIStateManager {
   private userRole: string | undefined;
   private organisationId: string | undefined;
@@ -578,7 +1049,6 @@ export class PermissionUIStateManager {
     this.toastHandler = toastHandlerParam;
   }
 
-  // Centralized method to gate any UI element
   gateElement(
     permissionId: PermissionId,
     options: UIGateOptions = {}
@@ -588,7 +1058,6 @@ export class PermissionUIStateManager {
       ...options,
     });
 
-    // Auto-handle toast notifications if enabled
     if (options.showToast && !result.hasAccess && this.toastHandler) {
       this.toastHandler(result.errorMessage || 'Access denied', 'error');
     }
@@ -596,7 +1065,6 @@ export class PermissionUIStateManager {
     return result;
   }
 
-  // Gate button states
   gateButton(
     permissionId: PermissionId,
     options: UIGateOptions = {}
@@ -607,7 +1075,6 @@ export class PermissionUIStateManager {
     });
   }
 
-  // Gate action states
   gateAction(
     permissionId: PermissionId,
     options: UIGateOptions = {}
@@ -618,7 +1085,6 @@ export class PermissionUIStateManager {
     });
   }
 
-  // Gate form fields
   gateField(
     permissionId: PermissionId,
     options: UIGateOptions = {}
@@ -629,7 +1095,6 @@ export class PermissionUIStateManager {
     });
   }
 
-  // Gate table rows
   gateRow(
     permissionId: PermissionId,
     options: UIGateOptions = {}
@@ -640,7 +1105,6 @@ export class PermissionUIStateManager {
     });
   }
 
-  // Check if user can perform an action with auto-redirect
   canPerformAction(
     permissionId: PermissionId,
     actionName: string,
@@ -653,7 +1117,6 @@ export class PermissionUIStateManager {
     });
 
     if (!result.hasAccess && options.redirectOnDeny) {
-      // Redirect to unauthorized page
       if (typeof window !== 'undefined') {
         window.location.href = '/unauthorised';
       }
@@ -662,9 +1125,7 @@ export class PermissionUIStateManager {
     return result.hasAccess;
   }
 
-  // Get permission context for debugging
   getContext(permissionId: PermissionId) {
-    // getPermissionContext already accepts undefined
     return getPermissionContext(
       this.userRole,
       permissionId,
@@ -672,32 +1133,23 @@ export class PermissionUIStateManager {
     );
   }
 
-  // Check if user has any admin access
   hasAnyAdminAccess(): boolean {
     return (
-      this.userRole === 'systemadmin' ||
-      this.userRole === 'sysadmin' ||
-      this.userRole === 'admin' ||
-      this.userRole === 'orgadmin'
+      isSystemAdminRole(this.userRole) ||
+      this.userRole === USER_ROLES.ORG_ADMIN ||
+      this.userRole === USER_ROLES.WORKLOAD_ADMIN
     );
   }
 
-  // Check if user is system admin
   isSystemAdmin(): boolean {
-    return (
-      this.userRole === 'systemadmin' ||
-      this.userRole === 'sysadmin' ||
-      this.userRole === 'admin'
-    );
+    return isSystemAdminRole(this.userRole);
   }
 
-  // Check if user is org admin
   isOrgAdmin(): boolean {
-    return this.userRole === 'orgadmin';
+    return this.userRole === USER_ROLES.ORG_ADMIN;
   }
 }
 
-// Factory function to create a permission state manager
 export function createPermissionManager(
   userRole: string | undefined,
   organisationId?: string,
