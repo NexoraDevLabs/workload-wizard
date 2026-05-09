@@ -12,8 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { PasswordResetModal } from '@/components/account/PasswordResetModal';
 
-export function SecurityTab() {
+type SecurityTabProps = {
+  userEmail: string;
+};
+
+export function SecurityTab({ userEmail }: SecurityTabProps) {
   return (
     <div className="grid gap-5 lg:grid-cols-3">
       {/* Main security card */}
@@ -31,17 +36,17 @@ export function SecurityTab() {
 
           <CardContent className="space-y-4">
             {/* Password */}
-            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-4 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/10">
               <div className="flex items-start gap-3">
-                <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 <div>
-                  <p className="text-sm font-medium">Password &amp; authentication</p>
+                  <p className="text-sm font-medium text-foreground">Password &amp; authentication</p>
                   <p className="text-xs text-muted-foreground">
-                    Managed securely through WorkOS. Click to open the full security page.
+                    Send a secure reset email to update your password.
                   </p>
                 </div>
               </div>
-              <Badge variant="neutral" className="ml-4 shrink-0">Managed by WorkOS</Badge>
+              <PasswordResetModal email={userEmail} />
             </div>
 
             <Separator />
@@ -74,17 +79,6 @@ export function SecurityTab() {
                 </div>
               </div>
               <Badge variant="warning" className="ml-4 shrink-0">Coming soon</Badge>
-            </div>
-
-            {/* CTA to full security page */}
-            <div className="pt-2">
-              <Button asChild variant="soft" size="sm" className="gap-1.5">
-                <Link href="/account/security">
-                  <Shield className="h-3.5 w-3.5" />
-                  Open Security &amp; Privacy page
-                  <ExternalLink className="h-3 w-3 ml-0.5 opacity-60" />
-                </Link>
-              </Button>
             </div>
           </CardContent>
         </Card>

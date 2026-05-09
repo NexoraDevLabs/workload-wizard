@@ -227,7 +227,7 @@ export default function AccountPage() {
           </TabsContent>
 
           <TabsContent value="security" className="mt-5">
-            <SecurityTab />
+            <SecurityTab userEmail={userEmail} />
           </TabsContent>
 
           <TabsContent value="preferences" className="mt-5">
