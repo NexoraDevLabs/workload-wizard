@@ -42,6 +42,8 @@ export function usePermissions(organisationId?: string) {
       'developer',
       'dev',
       'orgadmin',
+      'workloadadmin',
+      'manager',
       'lecturer',
       'user',
     ];

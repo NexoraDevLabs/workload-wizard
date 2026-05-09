@@ -11,46 +11,86 @@ type PublicMetadata = { role?: string; roles?: string[] } & Record<
   unknown
 >;
 
+const ROLE_ALIASES: Record<string, string> = {
+  member: 'user',
+  basic: 'user',
+  default: 'user',
+};
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function normaliseRole(role: string): string {
+  const cleaned = role.trim().toLowerCase();
+  return ROLE_ALIASES[cleaned] ?? cleaned;
+}
+
+function normaliseRoles(roles: string[]): string[] {
+  const normalised = new Set<string>();
+
+  for (const role of roles) {
+    if (typeof role !== 'string') continue;
+
+    const cleaned = normaliseRole(role);
+
+    if (cleaned.length > 0) {
+      normalised.add(cleaned);
+    }
+  }
+
+  if (normalised.size === 0) {
+    normalised.add('user');
+  }
+
+  return [...normalised];
+}
+
 /**
- * Get user roles from WorkOS metadata, supporting both single role and multiple roles
+ * Get application roles from WorkOS metadata.
+ *
+ * WorkOS/default auth roles are normalised into Workload Wizard app roles.
+ * Example: "member" becomes "user".
  */
 export function getUserRoles(user: unknown): string[] {
-  if (!isObject(user)) return [];
-  const publicMetadata = user.publicMetadata as PublicMetadata | undefined;
-  if (!publicMetadata) return [];
+  if (!isObject(user)) return ['user'];
 
-  if (Array.isArray(publicMetadata.roles)) {
-    return publicMetadata.roles;
+  const publicMetadata = user.publicMetadata as PublicMetadata | undefined;
+
+  const roles: string[] = [];
+
+  if (Array.isArray(publicMetadata?.roles)) {
+    roles.push(...publicMetadata.roles);
   }
 
   if (
-    typeof publicMetadata.role === 'string' &&
+    typeof publicMetadata?.role === 'string' &&
     publicMetadata.role.length > 0
   ) {
-    return [publicMetadata.role];
+    roles.push(publicMetadata.role);
   }
 
-  return [];
+  return normaliseRoles(roles);
 }
 
 /**
- * Check if user has any of the specified roles
+ * Check if user has any of the specified roles.
  */
 export function hasAnyRole(user: unknown, roles: string[]): boolean {
   const userRoles = getUserRoles(user);
-  return userRoles.some((role) => roles.includes(role));
+  const requiredRoles = roles.map(normaliseRole);
+
+  return userRoles.some((role) => requiredRoles.includes(role));
 }
 
 /**
- * Check if user has all of the specified roles
+ * Check if user has all of the specified roles.
  */
 export function hasAllRoles(user: unknown, roles: string[]): boolean {
   const userRoles = getUserRoles(user);
-  return roles.every((role) => userRoles.includes(role));
+  const requiredRoles = roles.map(normaliseRole);
+
+  return requiredRoles.every((role) => userRoles.includes(role));
 }
 
 // Mutation helper: wraps async actions with success/error toasts
@@ -68,18 +108,22 @@ export async function withToast<T>(
 ): Promise<T> {
   try {
     const result = await action();
+
     if (options.success) {
       toast({ ...options.success, variant: 'success' });
     }
+
     return result;
   } catch (e) {
     const desc =
       friendlyErrorMessage(e) ?? options.error.description ?? undefined;
+
     toast({
       title: options.error.title,
       ...(desc ? { description: desc } : {}),
       variant: 'destructive',
     });
+
     throw e;
   }
 }
@@ -95,8 +139,11 @@ export function isZodError(error: unknown): error is ZodError {
 
 export function formatZodError(error: ZodError): string {
   const first = error.issues?.[0];
+
   if (!first) return 'Validation failed';
-  const path = first.path?.length ? String(first.path.join('.')) + ': ' : '';
+
+  const path = first.path?.length ? `${String(first.path.join('.'))}: ` : '';
+
   return path + (first.message || 'Invalid value');
 }
 
@@ -104,6 +151,7 @@ export function errorMessageFromUnknown(error: unknown): string | undefined {
   if (isZodError(error)) return formatZodError(error);
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
+
   try {
     return JSON.stringify(error);
   } catch {
@@ -111,33 +159,53 @@ export function errorMessageFromUnknown(error: unknown): string | undefined {
   }
 }
 
-// Extract a concise, user-friendly message from noisy server errors (e.g., Convex)
+// Extract a concise, user-friendly message from noisy server errors, e.g. Convex.
 export function friendlyErrorMessage(error: unknown): string | undefined {
   const raw = errorMessageFromUnknown(error);
+
   if (!raw) return undefined;
+
   // Convex style: "... Server Error Uncaught Error: <msg> at handler ..."
   const uncaughtIdx = raw.indexOf('Uncaught Error:');
+
   if (uncaughtIdx >= 0) {
     let msg = raw.slice(uncaughtIdx + 'Uncaught Error:'.length).trim();
-    // Cut only if it looks like a stack frame (avoid cutting phrases like "at most")
+
+    // Cut only if it looks like a stack frame - avoid cutting phrases like "at most".
     const stackIdx = msg.search(/\s+at\s+(handler|\.{2}\/|\/|file:|https?:)/);
-    if (stackIdx >= 0) msg = msg.slice(0, stackIdx).trim();
+
+    if (stackIdx >= 0) {
+      msg = msg.slice(0, stackIdx).trim();
+    }
+
     return msg;
   }
-  // Generic "Error: <msg>" pattern
+
+  // Generic "Error: <msg>" pattern.
   const errIdx = raw.indexOf('Error:');
+
   if (errIdx >= 0) {
     let msg = raw.slice(errIdx + 'Error:'.length).trim();
+
     const stackIdx = msg.search(/\s+at\s+(handler|\.{2}\/|\/|file:|https?:)/);
-    if (stackIdx >= 0) msg = msg.slice(0, stackIdx).trim();
+
+    if (stackIdx >= 0) {
+      msg = msg.slice(0, stackIdx).trim();
+    }
+
     return msg;
   }
-  // If multi-line, prefer first non-bracketed, non-technical line
+
+  // If multi-line, prefer first non-bracketed, non-technical line.
   const lines = raw
     .split(/\n+/)
-    .map((l) => l.trim())
+    .map((line) => line.trim())
     .filter(Boolean);
-  const simple = lines.find((l) => !l.startsWith('[') && !l.includes(' at '));
+
+  const simple = lines.find(
+    (line) => !line.startsWith('[') && !line.includes(' at ')
+  );
+
   return simple || raw;
 }
 
@@ -151,6 +219,7 @@ export function toastError(
   title: string = 'Error'
 ): void {
   const desc = errorMessageFromUnknown(error);
+
   toast({
     title,
     ...(desc ? { description: desc } : {}),

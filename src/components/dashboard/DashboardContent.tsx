@@ -8,6 +8,7 @@ import { QuickLinksSection } from '@/components/dashboard/QuickLinksSection';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays } from 'lucide-react';
+import { PermissionDebugCard } from '../dev/PermissionDebugCard';
 
 export function DashboardContent() {
   const { user, isLoaded, isSignedIn } = useAuthUser({

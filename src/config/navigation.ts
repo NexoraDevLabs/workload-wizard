@@ -108,24 +108,30 @@ export type NavigationContext = {
     context: NavigationContext
   ): NavItem[] {
     return items
-      .filter((item) => canSeeNavigationItem(item, context))
       .map((item) => {
         const filteredChildren = item.items
           ? filterNavigationItems(item.items, context)
           : undefined;
+  
+        const canSeeSelf = canSeeNavigationItem(item, context);
+        const hasVisibleChildren =
+          filteredChildren !== undefined && filteredChildren.length > 0;
+  
+        if (!canSeeSelf && !hasVisibleChildren) {
+          return null;
+        }
   
         const navItem: NavItem = {
           title: item.title,
           url: item.url,
           ...(item.icon ? { icon: item.icon } : {}),
           ...(item.isActive ? { isActive: item.isActive } : {}),
-          ...(filteredChildren && filteredChildren.length > 0
-            ? { items: filteredChildren }
-            : {}),
+          ...(hasVisibleChildren ? { items: filteredChildren } : {}),
         };
   
         return navItem;
-      });
+      })
+      .filter((item): item is NavItem => item !== null);
   }
   
   export const mainNavigationItems: NavigationItem[] = [
@@ -201,6 +207,11 @@ export type NavigationContext = {
           title: 'Permission Tests',
           url: '/dev/permission-test',
           requiredRoles: ['developer', 'dev'],
+        },
+        {
+          title: 'Permissions',
+          url: '/dev/permissions',
+          requiredPermissions: ['nav.dev'],
         },
       ],
     },
