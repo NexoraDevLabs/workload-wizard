@@ -78,6 +78,12 @@ export default defineSchema({
       })
     ),
     onboardingCompletedAt: v.optional(v.float64()),
+    accountUiState: v.optional(
+      v.object({
+        profileCompletenessDismissedAt: v.optional(v.float64()),
+        profileCompletenessDismissedVersion: v.optional(v.string()),
+      })
+    ),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })

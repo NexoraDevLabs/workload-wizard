@@ -22,12 +22,10 @@ export function SecurityTab() {
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-base">
               <Shield className="h-4.5 w-4.5" aria-hidden="true" />
-              Security settings
+              Security & Privacy
             </CardTitle>
             <CardDescription>
-              Authentication and security for WorkloadWizard is managed through{' '}
-              <strong>WorkOS AuthKit</strong>. Use the dedicated Security &amp; Privacy
-              page to manage your security options.
+              Authentication and security for WorkloadWizard is managed through this page. Use the options below to manage your security options.
             </CardDescription>
           </CardHeader>
 
@@ -95,7 +93,7 @@ export function SecurityTab() {
       {/* Info card */}
       <div>
         <Card className="border-border/60">
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="text-base">About security</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">

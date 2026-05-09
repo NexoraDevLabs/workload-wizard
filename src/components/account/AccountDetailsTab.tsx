@@ -128,10 +128,9 @@ export function AccountDetailsTab({ initialData, onSaved }: AccountDetailsTabPro
       <div className="lg:col-span-2">
         <Card className="border-border/60">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">Personal information</CardTitle>
+            <CardTitle className="text-base">Personal Information</CardTitle>
             <CardDescription>
-              Update your name, username, and email address. Your email and name are also
-              held in WorkOS and will be synchronised on save.
+              Update your name, username, and email address. Once your email is changed, the new email will need to be used to login.
             </CardDescription>
           </CardHeader>
 
@@ -258,18 +257,17 @@ export function AccountDetailsTab({ initialData, onSaved }: AccountDetailsTabPro
       {/* Right-hand guidance card */}
       <div>
         <Card className="border-border/60">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">About account details</CardTitle>
+          <CardHeader>
+            <CardTitle className="text-base ">About account details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
               Your <strong className="text-foreground">name</strong> and{' '}
-              <strong className="text-foreground">email</strong> are synchronised with
-              WorkOS, which is used for authentication across WorkloadWizard.
+              <strong className="text-foreground">email</strong> can be updated here. This will then adjust the email you use to log in.
             </p>
             <p>
               Your <strong className="text-foreground">username</strong> is your unique
-              in-app identifier and is stored in Convex. It must be lowercase and can
+              in-app identifier. It must be lowercase and can
               include letters, numbers, dots, hyphens, and underscores.
             </p>
             <p>

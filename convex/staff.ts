@@ -90,6 +90,48 @@ export const create = mutation({
   },
 });
 
+export const updateOwnPreferences = mutation({
+  args: {
+    userId: v.string(),
+    profileId: v.id('lecturer_profiles'),
+    prefWorkingLocation: v.optional(v.string()),
+    prefWorkingTime: v.optional(
+      v.union(v.literal('am'), v.literal('pm'), v.literal('all_day'))
+    ),
+    prefSpecialism: v.optional(v.string()),
+    prefNotes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    if (profile.userSubject !== args.userId) {
+      throw new Error('You can only update your own profile preferences');
+    }
+
+    await ctx.db.patch(args.profileId, {
+      ...(args.prefWorkingLocation !== undefined
+        ? { prefWorkingLocation: args.prefWorkingLocation.trim() || undefined }
+        : {}),
+      ...(args.prefWorkingTime !== undefined
+        ? { prefWorkingTime: args.prefWorkingTime }
+        : {}),
+      ...(args.prefSpecialism !== undefined
+        ? { prefSpecialism: args.prefSpecialism.trim() || undefined }
+        : {}),
+      ...(args.prefNotes !== undefined
+        ? { prefNotes: args.prefNotes.trim() || undefined }
+        : {}),
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
 // Update lecturer profile
 export const edit = mutation({
   args: {
