@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { getUserRoles } from '@/lib/utils';
-import { explainUserPermissions } from '@/lib/permission-resolver';
+import { explainPermissionsForRoles } from '@/lib/permissions';
 
 export default function DevPermissionsPage() {
   const { user, isLoaded } = useAuthUser();
@@ -13,7 +13,7 @@ export default function DevPermissionsPage() {
   const roles = useMemo(() => getUserRoles(user), [user]);
 
   const permissions = useMemo(
-    () => explainUserPermissions(roles),
+    () => explainPermissionsForRoles(roles),
     [roles]
   );
 
