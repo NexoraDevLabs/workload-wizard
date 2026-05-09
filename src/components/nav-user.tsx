@@ -10,6 +10,7 @@ import {
   Shield,
   Sparkles,
   User,
+  LifeBuoy,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -150,27 +151,18 @@ export function NavUser() {
                 className="gap-2"
               >
                 <Sparkles />
-                Account hub
+                Account Hub
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
-            <DropdownMenuSeparator />
-
             {/* Account navigation — each maps to a specific tab */}
             <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => navigateTo('/account?tab=details')}
-                className="gap-2"
-              >
-                <User />
-                Account details
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigateTo('/account?tab=security')}
                 className="gap-2"
               >
                 <Shield />
-                Security &amp; privacy
+                Security &amp; Privacy
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => navigateTo('/account?tab=preferences')}
@@ -183,7 +175,7 @@ export function NavUser() {
                 onClick={() => navigateTo('/support')}
                 className="gap-2"
               >
-                <Bell />
+                <LifeBuoy />
                 Support
               </DropdownMenuItem>
             </DropdownMenuGroup>
