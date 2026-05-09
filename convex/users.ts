@@ -1428,9 +1428,15 @@ export const getAccountManagementDetails = query({
         ? await ctx.db.get(user.organisationId)
         : null;
 
+        const linkedStaffProfile = await ctx.db
+        .query('lecturer_profiles')
+        .filter((q) => q.eq(q.field('userSubject'), args.subject))
+        .first();
+
     return {
       user,
       organisation,
+      linkedStaffProfile,
     };
   },
 });
@@ -1500,5 +1506,33 @@ export const updateOwnAccount = mutation({
     }
 
     return await ctx.db.get(user._id);
+  },
+});
+
+export const dismissProfileCompleteness = mutation({
+  args: {
+    subject: v.string(),
+    version: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query('users')
+      .withIndex('by_subject', (q) => q.eq('subject', args.subject))
+      .first();
+
+    if (!user || !user.isActive) {
+      throw new Error('User not found');
+    }
+
+    await ctx.db.patch(user._id, {
+      accountUiState: {
+        ...(user.accountUiState ?? {}),
+        profileCompletenessDismissedAt: Date.now(),
+        profileCompletenessDismissedVersion: args.version,
+      },
+      updatedAt: Date.now(),
+    });
+
+    return { dismissed: true };
   },
 });

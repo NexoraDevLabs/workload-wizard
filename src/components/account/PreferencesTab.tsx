@@ -36,7 +36,7 @@ export function PreferencesTab() {
         {/* Display */}
         <Card className="border-border/60">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">Display &amp; theme</CardTitle>
+            <CardTitle className="text-base">Display &amp; Theme</CardTitle>
             <CardDescription>
               Control how WorkloadWizard looks and feels.
             </CardDescription>

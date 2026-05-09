@@ -2,10 +2,10 @@
 
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
+import type { Doc, Id } from '@/convex/_generated/dataModel';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 import { PermissionGate } from '@/components/common/PermissionGate';
 import {
-  CheckCircle,
   AlertTriangle,
-  User,
-  Link2,
+  CheckCircle,
   Edit,
+  Link2,
   Shield,
+  User,
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,15 +27,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { withToast } from '@/lib/utils';
+import { toDisplayLabel } from '@/lib/formatters';
 import { EditStaffForm } from '@/components/domain/EditStaffForm';
 import { DeactivateConfirmationModal } from '@/components/domain/DeactivateConfirmationModal';
-import type { Doc } from '@/convex/_generated/dataModel';
 
-// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
+
+type PreferredWorkingTime = 'am' | 'pm' | 'all_day';
+
+type OwnStaffPreferencesFormData = {
+  prefWorkingLocation?: string;
+  prefWorkingTime?: PreferredWorkingTime;
+  prefSpecialism?: string;
+  prefNotes?: string;
+};
 
 interface AdminAllocation {
   _id: Id<'admin_allocations'>;
@@ -60,15 +75,57 @@ interface LecturerAllocationDetail {
   module: Doc<'modules'> | null;
 }
 
+function formatPreferredWorkingTime(value?: string) {
+  switch (value) {
+    case 'am':
+      return 'AM';
+    case 'pm':
+      return 'PM';
+    case 'all_day':
+      return 'All day';
+    default:
+      return '—';
+  }
+}
+
+function DetailRow({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={[
+        'grid grid-cols-[7.25rem_1fr] gap-3 border-b border-border/50 py-2 last:border-b-0',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="min-w-0 text-sm font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
 export default function LecturerProfilePage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
     redirectOnUnauthenticated: true,
   });
+
   const params = useParams();
   const { toast } = useToast();
+  const { currentYear } = useAcademicYear();
   const profileId = params.id as string;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingOwnPreferences, setIsEditingOwnPreferences] = useState(false);
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showLinkConfirm, setShowLinkConfirm] = useState(false);
 
@@ -77,7 +134,6 @@ export default function LecturerProfilePage() {
     profileId ? { profileId: profileId as Id<'lecturer_profiles'> } : 'skip'
   );
 
-  const { currentYear } = useAcademicYear();
   const _adminAllocations = useQuery(
     api.allocations.listAdminAllocations,
     profileId && currentYear?._id
@@ -87,12 +143,12 @@ export default function LecturerProfilePage() {
         }
       : 'skip'
   ) as AdminAllocation[] | undefined;
+
   const _groupAllocations = useQuery(
     api.allocations.listForLecturer,
     'skip'
   ) as GroupAllocation[] | undefined;
 
-  // Permission checks
   const canEdit = useQuery(api.permissions.hasPermission, {
     userId: user?.id || '',
     permissionId: 'staff.edit',
@@ -100,10 +156,9 @@ export default function LecturerProfilePage() {
 
   const _canDeactivate = useQuery(api.permissions.hasPermission, {
     userId: user?.id || '',
-    permissionId: 'staff.edit', // Using edit permission for deactivate
+    permissionId: 'staff.edit',
   });
 
-  // Check if email matches WorkOS user
   const workosUser = useQuery(
     api.users.getByEmail,
     profile?.email ? { email: profile.email } : 'skip'
@@ -111,6 +166,46 @@ export default function LecturerProfilePage() {
 
   const editMutation = useMutation(api.staff.edit);
   const deactivateMutation = useMutation(api.staff.edit);
+  const updateOwnPreferencesMutation = useMutation(
+    api.staff.updateOwnPreferences
+  );
+
+  const isOwnLinkedProfile = Boolean(
+    profile?.userSubject && user?.id && profile.userSubject === user.id
+  );
+
+  const handleUpdateOwnPreferences = async (
+    formData: OwnStaffPreferencesFormData
+  ) => {
+    try {
+      await updateOwnPreferencesMutation({
+        profileId: profileId as Id<'lecturer_profiles'>,
+        userId: user?.id || '',
+        prefWorkingLocation: formData.prefWorkingLocation?.trim() ?? '',
+        ...(formData.prefWorkingTime
+          ? { prefWorkingTime: formData.prefWorkingTime }
+          : {}),
+        prefSpecialism: formData.prefSpecialism?.trim() ?? '',
+        prefNotes: formData.prefNotes?.trim() ?? '',
+      });
+
+      setIsEditingOwnPreferences(false);
+
+      toast({
+        title: 'Preferences updated',
+        description: 'Your staff profile preferences have been updated.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Update failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update your profile preferences.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleEdit = async (
     formData: Partial<{
@@ -128,7 +223,7 @@ export default function LecturerProfilePage() {
       prefNotes?: string;
       isActive: boolean;
       contractFamily?: string;
-      prefWorkingTime?: 'am' | 'pm' | 'all_day';
+      prefWorkingTime?: PreferredWorkingTime;
     }>
   ) => {
     try {
@@ -139,13 +234,14 @@ export default function LecturerProfilePage() {
       });
 
       setIsEditing(false);
+
       toast({
-        title: 'Profile Updated',
+        title: 'Profile updated',
         description: 'Lecturer profile has been updated successfully.',
       });
     } catch {
       toast({
-        title: 'Update Failed',
+        title: 'Update failed',
         description: 'Failed to update lecturer profile. Please try again.',
         variant: 'destructive',
       });
@@ -154,22 +250,25 @@ export default function LecturerProfilePage() {
 
   const handleLinkUser = async () => {
     if (!profile || !workosUser) return;
+
     try {
       await editMutation({
         profileId: profileId as Id<'lecturer_profiles'>,
         userSubject: workosUser.subject,
         userId: user?.id || '',
       });
+
       toast({
         title: 'Profile linked',
         description: 'Lecturer profile linked to user account.',
       });
-      // ensure UI shows linked state immediately
+
       window.location.reload();
-    } catch (e) {
+    } catch (error) {
       toast({
         title: 'Link failed',
-        description: e instanceof Error ? e.message : 'An error occurred',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     }
@@ -184,13 +283,14 @@ export default function LecturerProfilePage() {
       });
 
       setShowDeactivateModal(false);
+
       toast({
-        title: 'Profile Deactivated',
+        title: 'Profile deactivated',
         description: 'Lecturer profile has been deactivated.',
       });
     } catch {
       toast({
-        title: 'Deactivation Failed',
+        title: 'Deactivation failed',
         description: 'Failed to deactivate lecturer profile. Please try again.',
         variant: 'destructive',
       });
@@ -206,12 +306,12 @@ export default function LecturerProfilePage() {
       });
 
       toast({
-        title: 'Profile Reactivated',
+        title: 'Profile reactivated',
         description: 'Lecturer profile has been reactivated.',
       });
     } catch {
       toast({
-        title: 'Reactivation Failed',
+        title: 'Reactivation failed',
         description: 'Failed to reactivate lecturer profile. Please try again.',
       });
     }
@@ -228,13 +328,8 @@ export default function LecturerProfilePage() {
     );
   }
 
-  if (!isLoaded) {
-    return null;
-  }
-
-  if (!isSignedIn || !user) {
-    return null;
-  }
+  if (!isLoaded) return null;
+  if (!isSignedIn || !user) return null;
 
   if (!user.organisationId) {
     return (
@@ -266,7 +361,7 @@ export default function LecturerProfilePage() {
             </Badge>
           )}
 
-          {profile?.userSubject ? (
+          {profile.userSubject ? (
             <Badge
               variant="outline"
               className="flex items-center gap-1 border-emerald-300 bg-emerald-100 text-emerald-700"
@@ -282,27 +377,29 @@ export default function LecturerProfilePage() {
                   <User className="h-3 w-3" />
                   WorkOS User
                 </Badge>
+
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowLinkConfirm(true)}
                   title="Link profile to user"
                 >
-                  <Link2 className="h-4 w-4 mr-2" /> Link
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Link
                 </Button>
               </>
             )
           )}
 
           <PermissionGate permission="staff.edit" fallback={null}>
-            {canEdit && (
+            {canEdit ? (
               <>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditing(true)}
                 >
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
 
@@ -312,7 +409,7 @@ export default function LecturerProfilePage() {
                     size="sm"
                     onClick={() => setShowDeactivateModal(true)}
                   >
-                    <Shield className="h-4 w-4 mr-2" />
+                    <Shield className="mr-2 h-4 w-4" />
                     Deactivate
                   </Button>
                 ) : (
@@ -321,48 +418,122 @@ export default function LecturerProfilePage() {
                     size="sm"
                     onClick={handleReactivate}
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="mr-2 h-4 w-4" />
                     Reactivate
                   </Button>
                 )}
               </>
-            )}
+            ) : null}
           </PermissionGate>
         </div>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div>Role: {profile.role || '—'}</div>
-            <div>Team: {profile.teamName || '—'}</div>
-            <div>Contract: {profile.contract}</div>
-            <div>FTE: {profile.fte}</div>
-            <div>Max Teaching: {profile.maxTeachingHours}h</div>
-            <div>Total Contract: {profile.totalContract}h</div>
-            <div>Pref Location: {profile.prefWorkingLocation || '—'}</div>
-            <div>
-              Pref Working Time:{' '}
-              {profile.prefWorkingTime === 'am'
-                ? 'AM'
-                : profile.prefWorkingTime === 'pm'
-                  ? 'PM'
-                  : profile.prefWorkingTime === 'all_day'
-                    ? 'All day'
-                    : '—'}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Card className="md:col-span-1">
+        <CardHeader className="pb-3">
+          <CardTitle>Details</CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          <section aria-labelledby="employment-details-heading">
+            <h3
+              id="employment-details-heading"
+              className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            >
+              Employment details
+            </h3>
+
+            <dl className="rounded-lg border border-border/60 bg-muted/20 px-4 py-2">
+              <DetailRow label="Role" value={toDisplayLabel(profile.role)} />
+              <DetailRow label="Team" value={profile.teamName || '—'} />
+              <DetailRow label="Contract" value={profile.contract || '—'} />
+              <DetailRow label="FTE" value={profile.fte ?? '—'} />
+              <DetailRow
+                label="Max teaching"
+                value={
+                  typeof profile.maxTeachingHours === 'number'
+                    ? `${profile.maxTeachingHours}h`
+                    : '—'
+                }
+              />
+              <DetailRow
+                label="Total contract"
+                value={
+                  typeof profile.totalContract === 'number'
+                    ? `${profile.totalContract}h`
+                    : '—'
+                }
+              />
+            </dl>
+          </section>
+
+          <section aria-labelledby="preferences-heading">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h3
+                id="preferences-heading"
+                className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+              >
+                Preferences
+              </h3>
+
+              {isOwnLinkedProfile ? (
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-full"
+                        onClick={() => setIsEditingOwnPreferences(true)}
+                        aria-label="Edit your staff profile preferences"
+                      >
+                        <Edit className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" align="center">
+                      Edit your preferred location, working time, specialism and notes
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : null}
             </div>
-            <div>Specialism: {profile.prefSpecialism || '—'}</div>
-            <div>Notes: {profile.prefNotes || '—'}</div>
-          </CardContent>
-        </Card>
+
+            <dl className="rounded-lg border border-border/60 bg-background px-4 py-2">
+              <DetailRow
+                label="Location"
+                value={profile.prefWorkingLocation || '—'}
+              />
+              <DetailRow
+                label="Working time"
+                value={formatPreferredWorkingTime(profile.prefWorkingTime)}
+              />
+              <DetailRow
+                label="Specialism"
+                value={profile.prefSpecialism || '—'}
+              />
+              <DetailRow
+                label="Notes"
+                value={
+                  profile.prefNotes ? (
+                    <span className="whitespace-pre-wrap break-words">
+                      {profile.prefNotes}
+                    </span>
+                  ) : (
+                    '—'
+                  )
+                }
+              />
+            </dl>
+          </section>
+        </CardContent>
+      </Card>
 
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Module Allocations (current AY)</CardTitle>
           </CardHeader>
+
           <CardContent>
             <ModuleAllocationsTable lecturerId={profile._id} />
           </CardContent>
@@ -372,6 +543,7 @@ export default function LecturerProfilePage() {
           <CardHeader>
             <CardTitle>Admin Allocations</CardTitle>
           </CardHeader>
+
           <CardContent>
             <AdminAllocationsTable
               lecturerId={profile._id}
@@ -381,34 +553,40 @@ export default function LecturerProfilePage() {
         </Card>
       </div>
 
-      {/* Edit Form Modal */}
-      {isEditing && (
+      {isEditingOwnPreferences ? (
+        <EditOwnStaffPreferencesDialog
+          open={isEditingOwnPreferences}
+          profile={profile}
+          onOpenChange={setIsEditingOwnPreferences}
+          onSave={handleUpdateOwnPreferences}
+        />
+      ) : null}
+
+      {isEditing ? (
         <EditStaffForm
           profile={profile}
           onSave={handleEdit}
           onCancel={() => setIsEditing(false)}
         />
-      )}
+      ) : null}
 
-      {/* Deactivate Confirmation Modal */}
-      {showDeactivateModal && (
+      {showDeactivateModal ? (
         <DeactivateConfirmationModal
           profileName={profile.fullName}
           onConfirm={handleDeactivate}
           onCancel={() => setShowDeactivateModal(false)}
         />
-      )}
+      ) : null}
 
-      {/* Link Confirmation */}
       <Dialog open={showLinkConfirm} onOpenChange={setShowLinkConfirm}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Link Profile to WorkOS User</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-2 text-sm">
-            <div>
-              This will link this lecturer profile to the WorkOS account:
-            </div>
+            <div>This will link this lecturer profile to the WorkOS account:</div>
+
             <div className="rounded border p-2 text-xs">
               <div>
                 <span className="font-medium">Name:</span>{' '}
@@ -418,10 +596,12 @@ export default function LecturerProfilePage() {
                 <span className="font-medium">Email:</span> {workosUser?.email}
               </div>
             </div>
+
             <div className="text-muted-foreground">
               You can change this later by editing the profile.
             </div>
           </div>
+
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
@@ -430,6 +610,7 @@ export default function LecturerProfilePage() {
             >
               Cancel
             </Button>
+
             <Button
               size="sm"
               onClick={async () => {
@@ -452,48 +633,57 @@ function ModuleAllocationsTable({
   lecturerId: Id<'lecturer_profiles'>;
 }) {
   const { currentYear } = useAcademicYear();
+
   const rows = useQuery(
     api.allocations.listForLecturerDetailed,
     currentYear?._id
       ? {
-          lecturerId: lecturerId,
+          lecturerId,
           academicYearId: currentYear._id,
         }
       : 'skip'
   ) as LecturerAllocationDetail[] | undefined;
+
   const [sortBy, setSortBy] = useState<'module' | 'hours' | 'type'>('module');
   const [typeFilter, setTypeFilter] = useState<'all' | 'teaching' | 'admin'>(
     'all'
   );
 
   const data = (rows || [])
-    .filter((r) => typeFilter === 'all' || r.allocation.type === typeFilter)
+    .filter((row) => typeFilter === 'all' || row.allocation.type === typeFilter)
     .sort((a, b) => {
       if (sortBy === 'hours') {
-        const ha =
+        const aHours =
           typeof a.allocation.hoursOverride === 'number'
             ? a.allocation.hoursOverride
             : a.allocation.hoursComputed || 0;
-        const hb =
+        const bHours =
           typeof b.allocation.hoursOverride === 'number'
             ? b.allocation.hoursOverride
             : b.allocation.hoursComputed || 0;
-        return hb - ha;
+
+        return bHours - aHours;
       }
-      if (sortBy === 'type')
+
+      if (sortBy === 'type') {
         return a.allocation.type.localeCompare(b.allocation.type);
-      const ma = (a.module?.code || '') + (a.module?.name || '');
-      const mb = (b.module?.code || '') + (b.module?.name || '');
-      return ma.localeCompare(mb);
+      }
+
+      const aModule = (a.module?.code || '') + (a.module?.name || '');
+      const bModule = (b.module?.code || '') + (b.module?.name || '');
+
+      return aModule.localeCompare(bModule);
     });
 
   const handleExport = () => {
     const headers = ['Module Code', 'Module Name', 'Group', 'Type', 'Hours'];
+
     const rowsCsv = data.map(({ allocation, group, module }) => {
       const hours =
         typeof allocation.hoursOverride === 'number'
           ? allocation.hoursOverride
           : allocation.hoursComputed || 0;
+
       return [
         module?.code || '',
         module?.name || '',
@@ -502,31 +692,38 @@ function ModuleAllocationsTable({
         String(hours),
       ];
     });
+
     const csv = [headers, ...rowsCsv]
-      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .map((row) =>
+        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')
+      )
       .join('\n');
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `module-allocations-${currentYear?.name || 'year'}.csv`;
-    a.click();
+    const anchor = document.createElement('a');
+
+    anchor.href = url;
+    anchor.download = `module-allocations-${currentYear?.name || 'year'}.csv`;
+    anchor.click();
+
     URL.revokeObjectURL(url);
   };
 
   return (
     <div className="space-y-3">
       <div className="flex items-end gap-3">
-        <div className="text-sm text-muted-foreground flex-1">
+        <div className="flex-1 text-sm text-muted-foreground">
           Academic Year: {currentYear?.name}
         </div>
+
         <div className="text-sm">
           <label className="mr-2">Type</label>
           <select
-            className="border rounded px-2 py-1"
+            className="rounded border px-2 py-1"
             value={typeFilter}
-            onChange={(e) =>
-              setTypeFilter(e.target.value as 'all' | 'teaching' | 'admin')
+            onChange={(event) =>
+              setTypeFilter(event.target.value as 'all' | 'teaching' | 'admin')
             }
           >
             <option value="all">All</option>
@@ -534,13 +731,14 @@ function ModuleAllocationsTable({
             <option value="admin">Admin</option>
           </select>
         </div>
+
         <div className="text-sm">
           <label className="mr-2">Sort</label>
           <select
-            className="border rounded px-2 py-1"
+            className="rounded border px-2 py-1"
             value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as 'module' | 'hours' | 'type')
+            onChange={(event) =>
+              setSortBy(event.target.value as 'module' | 'hours' | 'type')
             }
           >
             <option value="module">Module</option>
@@ -548,6 +746,7 @@ function ModuleAllocationsTable({
             <option value="type">Type</option>
           </select>
         </div>
+
         <Button size="sm" onClick={handleExport}>
           Export CSV
         </Button>
@@ -558,25 +757,27 @@ function ModuleAllocationsTable({
       ) : data.length === 0 ? (
         <div className="text-sm text-muted-foreground">No allocations</div>
       ) : (
-        <ul className="divide-y border rounded">
+        <ul className="divide-y rounded border">
           {data.map(({ allocation, group, module }) => {
             const hours =
               typeof allocation.hoursOverride === 'number'
                 ? allocation.hoursOverride
                 : allocation.hoursComputed || 0;
+
             return (
               <li
                 key={String(allocation._id)}
-                className="p-2 flex items-center justify-between text-sm"
+                className="flex items-center justify-between p-2 text-sm"
               >
                 <div>
                   <div className="font-medium">
-                    {module?.code || ''} — {module?.name || ''}
+                    {module?.code || ''} - {module?.name || ''}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     Group: {group?.name || ''}
                   </div>
                 </div>
+
                 <div className="text-right">
                   <div className="capitalize">{allocation.type}</div>
                   <div className="font-medium">{hours}h</div>
@@ -600,18 +801,21 @@ function AdminAllocationsTable({
   const { currentYear } = useAcademicYear();
   const { user } = useAuthUser();
   const { toast } = useToast();
+
   const orgCategories = useQuery(
     api.allocations.listOrganisationAdminCategories,
     user?.id ? { userId: user.id } : 'skip'
   );
+
   const sysCategories = useQuery(api.allocations.listAdminCategories, {});
   const categories =
     orgCategories && orgCategories.length > 0 ? orgCategories : sysCategories;
+
   const rows = useQuery(
     api.allocations.listAdminAllocations,
     currentYear?._id
       ? {
-          lecturerId: lecturerId,
+          lecturerId,
           academicYearId: currentYear._id,
         }
       : 'skip'
@@ -624,8 +828,10 @@ function AdminAllocationsTable({
           | null;
       }>
     | undefined;
+
   const upsert = useMutation(api.allocations.upsertAdminAllocation);
   const remove = useMutation(api.allocations.removeAdminAllocation);
+
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
@@ -637,10 +843,12 @@ function AdminAllocationsTable({
     customLabel?: string;
     comment?: string;
   }>(null);
+
   const handleSave = async () => {
-    if (!canManageAllocations) return;
-    if (!formOpen) return;
+    if (!canManageAllocations || !formOpen || !currentYear || !user) return;
+
     const hours = Number(formOpen.hours);
+
     if (!Number.isFinite(hours) || hours < 0 || hours > 1000) {
       toast({
         title: 'Invalid hours',
@@ -649,14 +857,16 @@ function AdminAllocationsTable({
       });
       return;
     }
+
     setIsSaving(formOpen.id || 'new');
+
     try {
       await withToast(
         () =>
           upsert({
-            userId: user!.id,
-            lecturerId: lecturerId,
-            academicYearId: currentYear!._id,
+            userId: user.id,
+            lecturerId,
+            academicYearId: currentYear._id,
             ...(formOpen.isCustom
               ? {
                   isCustom: true,
@@ -675,6 +885,7 @@ function AdminAllocationsTable({
         },
         toast
       );
+
       setFormOpen(null);
     } finally {
       setIsSaving(null);
@@ -682,12 +893,14 @@ function AdminAllocationsTable({
   };
 
   const handleRemove = async (allocationId: Id<'admin_allocations'>) => {
-    if (!canManageAllocations) return;
+    if (!canManageAllocations || !user) return;
     if (!confirm('Remove allocation?')) return;
+
     setIsRemoving(allocationId);
+
     try {
       await withToast(
-        () => remove({ userId: user!.id, allocationId: allocationId }),
+        () => remove({ userId: user.id, allocationId }),
         {
           success: { title: 'Allocation removed' },
           error: { title: 'Remove failed' },
@@ -699,33 +912,37 @@ function AdminAllocationsTable({
     }
   };
 
-  if (!currentYear)
+  if (!currentYear) {
     return (
       <div className="text-sm text-muted-foreground">
         Select an academic year
       </div>
     );
+  }
 
   const totalAdminHours = (rows || []).reduce(
-    (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
+    (acc, row) => acc + (Number(row?.allocation?.hours) || 0),
     0
   );
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground flex items-center gap-3">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <span>Academic Year: {currentYear.name}</span>
           <Badge variant="outline" className="text-xs">
             Admin total: {totalAdminHours}h
           </Badge>
         </div>
-        {canManageAllocations && (
+
+        {canManageAllocations ? (
           <Button
             size="sm"
             onClick={() =>
               setFormOpen({
-                categoryId: categories?.[0]?._id ? String(categories[0]._id) : '',
+                categoryId: categories?.[0]?._id
+                  ? String(categories[0]._id)
+                  : '',
                 hours: '',
                 isCustom: false,
               })
@@ -734,8 +951,9 @@ function AdminAllocationsTable({
           >
             Add
           </Button>
-        )}
+        ) : null}
       </div>
+
       {!Array.isArray(rows) ? (
         <div className="text-sm text-muted-foreground">Loading…</div>
       ) : rows.length === 0 ? (
@@ -747,7 +965,7 @@ function AdminAllocationsTable({
           {rows.map(({ allocation, category }) => (
             <div
               key={String(allocation._id)}
-              className="flex items-center justify-between border rounded p-2 text-sm"
+              className="flex items-center justify-between rounded border p-2 text-sm"
             >
               <div>
                 <div className="font-medium">
@@ -755,21 +973,25 @@ function AdminAllocationsTable({
                     ? allocation.customLabel
                     : category?.name || allocation.categoryId}
                 </div>
-                {category?.description && (
+
+                {category?.description ? (
                   <div className="text-xs text-muted-foreground">
                     {category.description}
                   </div>
-                )}
-                {allocation.isCustom && allocation.comment && (
+                ) : null}
+
+                {allocation.isCustom && allocation.comment ? (
                   <div className="text-xs text-muted-foreground">
                     {allocation.comment}
                   </div>
-                )}
+                ) : null}
+
                 <div className="text-xs text-muted-foreground">
                   {allocation.hours}h
                 </div>
               </div>
-              {canManageAllocations && (
+
+              {canManageAllocations ? (
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
@@ -785,6 +1007,7 @@ function AdminAllocationsTable({
                   >
                     Edit
                   </Button>
+
                   <Button
                     size="sm"
                     variant="destructive"
@@ -794,82 +1017,112 @@ function AdminAllocationsTable({
                     Remove
                   </Button>
                 </div>
-              )}
+              ) : null}
             </div>
           ))}
         </div>
       )}
-      {formOpen && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-          <div className="bg-background border rounded-md p-4 w-full max-w-md space-y-3">
+
+      {formOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+          <div className="w-full max-w-md space-y-3 rounded-md border bg-background p-4">
             <div className="font-medium">
               {formOpen.id ? 'Edit Admin Allocation' : 'Add Admin Allocation'}
             </div>
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Category</Label>
-                <label className="text-xs inline-flex items-center gap-2">
+                <label className="inline-flex items-center gap-2 text-xs">
                   <input
                     type="checkbox"
                     checked={Boolean(formOpen.isCustom)}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       setFormOpen(
-                        (f) => f && { ...f, isCustom: e.target.checked }
+                        (current) =>
+                          current && {
+                            ...current,
+                            isCustom: event.target.checked,
+                          }
                       )
                     }
                   />
                   Custom
                 </label>
               </div>
+
               {formOpen.isCustom ? (
                 <div className="space-y-2">
                   <Input
                     placeholder="Custom category label"
                     value={formOpen.customLabel || ''}
-                    onChange={(e) =>
+                    onChange={(event) =>
                       setFormOpen(
-                        (f) => f && { ...f, customLabel: e.target.value }
+                        (current) =>
+                          current && {
+                            ...current,
+                            customLabel: event.target.value,
+                          }
                       )
                     }
                   />
+
                   <Input
                     placeholder="Comment (optional)"
                     value={formOpen.comment || ''}
-                    onChange={(e) =>
-                      setFormOpen((f) => f && { ...f, comment: e.target.value })
+                    onChange={(event) =>
+                      setFormOpen(
+                        (current) =>
+                          current && {
+                            ...current,
+                            comment: event.target.value,
+                          }
+                      )
                     }
                   />
                 </div>
               ) : (
                 <select
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded border px-2 py-1"
                   value={formOpen.categoryId}
-                  onChange={(e) =>
+                  onChange={(event) =>
                     setFormOpen(
-                      (f) => f && { ...f, categoryId: e.target.value }
+                      (current) =>
+                        current && {
+                          ...current,
+                          categoryId: event.target.value,
+                        }
                     )
                   }
                 >
-                  {(categories || []).map((c) => (
-                    <option key={String(c._id)} value={String(c._id)}>
-                      {c.name}
+                  {(categories || []).map((category) => (
+                    <option
+                      key={String(category._id)}
+                      value={String(category._id)}
+                    >
+                      {category.name}
                     </option>
                   ))}
                 </select>
               )}
             </div>
+
             <div className="space-y-2">
               <Label>Hours</Label>
               <Input
                 value={formOpen.hours}
-                onChange={(e) =>
-                  setFormOpen((f) => f && { ...f, hours: e.target.value })
+                onChange={(event) =>
+                  setFormOpen(
+                    (current) =>
+                      current && { ...current, hours: event.target.value }
+                  )
                 }
                 type="number"
                 min="0"
                 max="1000"
               />
             </div>
+
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
@@ -878,17 +1131,141 @@ function AdminAllocationsTable({
               >
                 Cancel
               </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving !== null}
-              >
+
+              <Button size="sm" onClick={handleSave} disabled={isSaving !== null}>
                 {isSaving ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
+  );
+}
+
+function EditOwnStaffPreferencesDialog({
+  open,
+  profile,
+  onOpenChange,
+  onSave,
+}: {
+  open: boolean;
+  profile: Doc<'lecturer_profiles'>;
+  onOpenChange: (open: boolean) => void;
+  onSave: (formData: OwnStaffPreferencesFormData) => Promise<void>;
+}) {
+  const [prefWorkingLocation, setPrefWorkingLocation] = useState(
+    profile.prefWorkingLocation ?? ''
+  );
+
+  const initialPrefWorkingTime: '' | PreferredWorkingTime =
+    profile.prefWorkingTime === 'am' ||
+    profile.prefWorkingTime === 'pm' ||
+    profile.prefWorkingTime === 'all_day'
+      ? profile.prefWorkingTime
+      : '';
+
+  const [prefWorkingTime, setPrefWorkingTime] = useState<
+    '' | PreferredWorkingTime
+  >(initialPrefWorkingTime);
+
+  const [prefSpecialism, setPrefSpecialism] = useState(
+    profile.prefSpecialism ?? ''
+  );
+  const [prefNotes, setPrefNotes] = useState(profile.prefNotes ?? '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    try {
+      const formData: OwnStaffPreferencesFormData = {
+        prefWorkingLocation,
+        ...(prefWorkingTime ? { prefWorkingTime } : {}),
+        prefSpecialism,
+        prefNotes,
+      };
+
+      await onSave(formData);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit your preferences</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="prefWorkingLocation">Preferred location</Label>
+            <Input
+              id="prefWorkingLocation"
+              value={prefWorkingLocation}
+              onChange={(event) => setPrefWorkingLocation(event.target.value)}
+              placeholder="e.g. Brentford, Reading, remote"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="prefWorkingTime">Preferred working time</Label>
+            <select
+              id="prefWorkingTime"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={prefWorkingTime}
+              onChange={(event) =>
+                setPrefWorkingTime(
+                  event.target.value as '' | PreferredWorkingTime
+                )
+              }
+            >
+              <option value="">No preference</option>
+              <option value="am">AM</option>
+              <option value="pm">PM</option>
+              <option value="all_day">All day</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="prefSpecialism">Specialism</Label>
+            <Input
+              id="prefSpecialism"
+              value={prefSpecialism}
+              onChange={(event) => setPrefSpecialism(event.target.value)}
+              placeholder="e.g. simulation, paramedicine, assessment"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="prefNotes">Notes</Label>
+            <Textarea
+              id="prefNotes"
+              value={prefNotes}
+              onChange={(event) => setPrefNotes(event.target.value)}
+              rows={4}
+              placeholder="Any relevant working preferences or notes"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
+            Cancel
+          </Button>
+
+          <Button type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving…' : 'Save preferences'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

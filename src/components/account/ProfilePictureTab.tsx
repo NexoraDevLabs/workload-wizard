@@ -146,10 +146,9 @@ export function ProfilePictureTab({
       <div className="lg:col-span-2 flex flex-col gap-5">
         <Card className="border-border/60">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Profile picture</CardTitle>
+            <CardTitle className="text-base">Profile Picture</CardTitle>
             <CardDescription>
-              This is your in-app profile picture, stored in Convex. It is separate from
-              any picture managed by your identity provider.
+              This is your in-app profile picture that is associated with your account. You can upload and remove it here.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -265,18 +264,13 @@ export function ProfilePictureTab({
       {/* Guidance */}
       <div>
         <Card className="border-border/60">
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="text-base">About profile pictures</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              Your profile picture is stored in{' '}
-              <strong className="text-foreground">Convex</strong> and used throughout the
+              Your profile picture is stored in our database and used throughout the
               WorkloadWizard app.
-            </p>
-            <p>
-              It is separate from any profile image managed by WorkOS. You can upload a
-              different image here specifically for use within the app.
             </p>
             <p>
               Supported formats: <strong className="text-foreground">JPG, PNG, GIF, WebP</strong>.

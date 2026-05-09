@@ -2,14 +2,12 @@
 
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
   LogOut,
   Palette,
   Settings,
   Shield,
   Sparkles,
-  User,
   LifeBuoy,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';

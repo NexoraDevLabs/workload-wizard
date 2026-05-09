@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from 'convex/react';
+
 import { api } from '@/convex/_generated/api';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { getUserRoles } from '@/lib/utils';
@@ -17,14 +18,25 @@ import { ProfilePictureTab } from '@/components/account/ProfilePictureTab';
 import { SecurityTab } from '@/components/account/SecurityTab';
 import { PreferencesTab } from '@/components/account/PreferencesTab';
 
-// Force dynamic rendering to prevent WorkOS authentication errors during build
+import {
+  getProfileCompletenessItems,
+  getProfileCompletenessSummary,
+  PROFILE_COMPLETENESS_VERSION,
+} from '@/lib/account/profile-completeness';
+
 export const dynamic = 'force-dynamic';
 
 type TabValue = 'overview' | 'details' | 'picture' | 'security' | 'preferences';
 
 const breadcrumbs = [{ label: 'Home', href: '/' }, { label: 'Account' }];
 
-const VALID_TABS: TabValue[] = ['overview', 'details', 'picture', 'security', 'preferences'];
+const VALID_TABS: TabValue[] = [
+  'overview',
+  'details',
+  'picture',
+  'security',
+  'preferences',
+];
 
 export default function AccountPage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
@@ -33,30 +45,13 @@ export default function AccountPage() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
-  
-  // Get initial tab from URL or default to 'overview'
+
   const tabFromUrl = searchParams.get('tab') as TabValue | null;
-  const initialTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview';
-  
+  const initialTab =
+    tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'overview';
+
   const [activeTab, setActiveTab] = useState<TabValue>(initialTab);
   const [avatarRefreshKey, setAvatarRefreshKey] = useState(0);
-  
-  // Sync tab state with URL
-  useEffect(() => {
-    const tabParam = searchParams.get('tab') as TabValue | null;
-    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
-      setActiveTab(tabParam);
-    }
-  }, [searchParams, activeTab]);
-  
-  // Update URL when tab changes
-  const handleTabChange = useCallback((newTab: string) => {
-    const tab = newTab as TabValue;
-    setActiveTab(tab);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', tab);
-    router.replace(`/account?${params.toString()}`, { scroll: false });
-  }, [searchParams, router]);
 
   const accountDetails = useQuery(
     api.users.getAccountManagementDetails,
@@ -68,19 +63,60 @@ export default function AccountPage() {
     user ? { subject: user.id } : 'skip'
   );
 
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabValue | null;
+
+    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      const tab = newTab as TabValue;
+
+      if (!VALID_TABS.includes(tab)) {
+        return;
+      }
+
+      setActiveTab(tab);
+
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', tab);
+
+      router.replace(`/account?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router]
+  );
+
   const handleRefreshed = useCallback(() => {
     setAvatarRefreshKey((prev) => prev + 1);
   }, []);
 
-  const handleGoToTab = useCallback((tab: string) => {
-    handleTabChange(tab);
-  }, [handleTabChange]);
+  const handleGoToTab = useCallback(
+    (tab: string) => {
+      handleTabChange(tab);
+    },
+    [handleTabChange]
+  );
 
-  // ── Auth guard ──────────────────────────────────────────────────────────────
-  if (!isLoaded) return <LoadingOverlay delayMs={0} />;
-  if (!isSignedIn || !user) return null;
+  if (!isLoaded) {
+    return <LoadingOverlay delayMs={0} />;
+  }
 
-  // ── Derived values ──────────────────────────────────────────────────────────
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  const linkedStaffProfile = accountDetails?.linkedStaffProfile ?? null;
+
+  const hasStaffPreferences = Boolean(
+    linkedStaffProfile?.prefWorkingLocation ||
+      linkedStaffProfile?.prefWorkingTime ||
+      linkedStaffProfile?.prefSpecialism ||
+      linkedStaffProfile?.prefNotes
+  );
+
   const userName =
     accountDetails?.user.fullName ||
     user.fullName ||
@@ -88,19 +124,17 @@ export default function AccountPage() {
     'User';
 
   const userEmail =
-    accountDetails?.user.email ||
-    user.emailAddresses[0]?.emailAddress ||
-    '';
+    accountDetails?.user.email || user.emailAddresses[0]?.emailAddress || '';
 
   const username = accountDetails?.user.username ?? null;
   const organisationName = accountDetails?.organisation?.name ?? null;
   const userRoles = getUserRoles(user);
   const createdAt = user.createdAt ?? null;
 
-  // Prefer Convex-stored picture, fall back to WorkOS imageUrl
   const convexPictureUrl = profilePictureUrl
     ? `${profilePictureUrl}?r=${avatarRefreshKey}`
     : null;
+
   const avatarUrl =
     convexPictureUrl ||
     (user.imageUrl ? `${user.imageUrl}?r=${avatarRefreshKey}` : '');
@@ -116,14 +150,29 @@ export default function AccountPage() {
   const hasFirstName = Boolean(accountDetails?.user.givenName || user.firstName);
   const hasLastName = Boolean(accountDetails?.user.familyName || user.lastName);
 
+  const profileCompletenessItems = getProfileCompletenessItems({
+    userEmail,
+    username,
+    hasProfilePicture,
+    hasFirstName,
+    hasLastName,
+    hasStaffPreferences,
+  });
+
+  const profileCompletenessSummary =
+    getProfileCompletenessSummary(profileCompletenessItems);
+
+  const profileCompletenessDismissed =
+    accountDetails?.user.accountUiState?.profileCompletenessDismissedVersion ===
+    PROFILE_COMPLETENESS_VERSION;
+
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
-      title="Account hub"
+      title="Account Hub"
       subtitle="Manage your profile, security and preferences all in one place."
     >
       <div className="flex flex-col gap-6">
-        {/* ── Hero header ─────────────────────────────────────────────────── */}
         <AccountHeroHeader
           userName={userName}
           userEmail={userEmail}
@@ -132,20 +181,16 @@ export default function AccountPage() {
           username={username}
           organisationName={organisationName}
           createdAt={createdAt}
-          onEditDetails={() => setActiveTab('details')}
-          onChangePhoto={() => setActiveTab('picture')}
-          onSecuritySettings={() => setActiveTab('security')}
+          onEditDetails={() => handleTabChange('details')}
+          onChangePhoto={() => handleTabChange('picture')}
+          onSecuritySettings={() => handleTabChange('security')}
         />
 
-        {/* ── Tabs ────────────────────────────────────────────────────────── */}
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-        >
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="flex h-auto flex-wrap gap-1 p-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="details">Account details</TabsTrigger>
-            <TabsTrigger value="picture">Profile picture</TabsTrigger>
+            <TabsTrigger value="details">Account Details</TabsTrigger>
+            <TabsTrigger value="picture">Profile Picture</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
           </TabsList>
@@ -156,9 +201,14 @@ export default function AccountPage() {
               username={username}
               organisationName={organisationName}
               userRoles={userRoles}
-              hasProfilePicture={hasProfilePicture}
-              hasFirstName={hasFirstName}
-              hasLastName={hasLastName}
+              profileCompletenessItems={profileCompletenessItems}
+              profileCompletenessSummary={profileCompletenessSummary}
+              profileCompletenessDismissed={profileCompletenessDismissed}
+              profileCompletenessVersion={PROFILE_COMPLETENESS_VERSION}
+              subject={user.id}
+              {...(linkedStaffProfile?._id
+                ? { linkedStaffProfileId: String(linkedStaffProfile._id) }
+                : {})}
               onGoToTab={handleGoToTab}
             />
           </TabsContent>
@@ -177,7 +227,7 @@ export default function AccountPage() {
           </TabsContent>
 
           <TabsContent value="security" className="mt-5">
-            <SecurityTab />
+            <SecurityTab userEmail={userEmail} />
           </TabsContent>
 
           <TabsContent value="preferences" className="mt-5">
