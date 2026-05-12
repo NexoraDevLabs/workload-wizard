@@ -21,6 +21,7 @@ import {
   Calendar,
   BookOpen,
   ClipboardList,
+  GitPullRequest,
 } from 'lucide-react';
 import { hasAnyRole } from '@/lib/utils';
 import { useQuery } from 'convex/react';
@@ -182,6 +183,24 @@ export default function OrganisationAdminPage() {
               <Link href="/organisation/settings/admin-allocations">
                 Manage Admin Allocations
               </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GitPullRequest className="h-5 w-5" />
+              Team Management
+            </CardTitle>
+            <CardDescription>Assign managers and review workloads</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-2">
+            <Button asChild variant="outline">
+              <Link href="/organisation/team-management">Manage Teams</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/organisation/team-workloads">Team Workloads</Link>
             </Button>
           </CardContent>
         </Card>

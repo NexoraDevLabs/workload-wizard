@@ -42,7 +42,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from 'lucide-react';
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import type { Id } from '@/convex/_generated/dataModel';
 import { api } from '@/convex/_generated/api';
 import { deleteUser } from '@/lib/actions/userActions';
@@ -93,6 +93,82 @@ interface User {
   };
 }
 
+type OrgRole = {
+  _id: string;
+  name: string;
+};
+
+const ORG_ROLE_ORDER = [
+  'User',
+  'Manager',
+  'Workload Admin',
+  'Organisation Admin',
+] as const;
+
+type CanonicalOrgRoleLabel = (typeof ORG_ROLE_ORDER)[number];
+type CanonicalOrgRoleOption = OrgRole & { label: CanonicalOrgRoleLabel };
+
+const normaliseRoleName = (name: string) =>
+  name.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+
+const getCanonicalOrgRoleName = (name: string) => {
+  const role = normaliseRoleName(name);
+  if (
+    role === 'organisation admin' ||
+    role === 'organization admin' ||
+    role === 'org admin' ||
+    role === 'orgadmin' ||
+    role === 'admin'
+  ) {
+    return 'Organisation Admin';
+  }
+  if (role === 'workload admin' || role === 'workloadadmin') {
+    return 'Workload Admin';
+  }
+  if (role === 'manager' || role === 'team manager') {
+    return 'Manager';
+  }
+  if (role === 'user' || role === 'viewer' || role === 'lecturer') {
+    return 'User';
+  }
+  return name;
+};
+
+const getCanonicalOrgRoleOptions = (
+  roles: OrgRole[] = []
+): CanonicalOrgRoleOption[] => {
+  const preferredNames: Record<CanonicalOrgRoleLabel, string[]> = {
+    User: ['user', 'viewer', 'lecturer'],
+    Manager: ['manager', 'team manager'],
+    'Workload Admin': ['workload admin', 'workloadadmin'],
+    'Organisation Admin': [
+      'organisation admin',
+      'organization admin',
+      'org admin',
+      'orgadmin',
+      'admin',
+    ],
+  };
+
+  return ORG_ROLE_ORDER.reduce<CanonicalOrgRoleOption[]>((options, label) => {
+    const preferences = preferredNames[label];
+    const role = [...roles]
+      .sort((a, b) => {
+        const aIndex = preferences.indexOf(normaliseRoleName(a.name));
+        const bIndex = preferences.indexOf(normaliseRoleName(b.name));
+        return (
+          (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) -
+          (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex)
+        );
+      })
+      .find((candidate) =>
+        preferences.includes(normaliseRoleName(candidate.name))
+      );
+    if (role) options.push({ ...role, label });
+    return options;
+  }, []);
+};
+
 export default function OrganisationUsersPage() {
   const { user, isLoaded, isSignedIn } = useAuthUser({
     redirectOnUnauthenticated: true,
@@ -132,9 +208,9 @@ export default function OrganisationUsersPage() {
     new Set()
   );
   const [assigningUser, setAssigningUser] = useState<User | null>(null);
-  const [selectedSystemRoles, setSelectedSystemRoles] = useState<string[]>([]);
   const [selectedOrgRoleIds, setSelectedOrgRoleIds] = useState<string[]>([]);
   const [isBulkAssign, setIsBulkAssign] = useState(false);
+  const [ensuredRoleOrgId, setEnsuredRoleOrgId] = useState<string | null>(null);
 
   // Get current user's organisation
   const currentUser = useQuery(
@@ -161,27 +237,28 @@ export default function OrganisationUsersPage() {
         }
       : 'skip'
   );
+  const ensureDefaultOrgRoles = useMutation(
+    api.permissions.ensureDefaultRolesForOrganisation
+  );
 
-  // Permission: can this actor assign elevated roles (sysadmin/developer/trial)?
-  const canAssignElevated = (() => {
-    const meta = user?.publicMetadata as Record<string, unknown> | undefined;
-    const roles: string[] = Array.isArray(meta?.roles)
-      ? (meta.roles as unknown[]).filter(
-          (r): r is string => typeof r === 'string'
-        )
-      : [];
-    const role: string | undefined =
-      typeof meta?.role === 'string' ? meta.role : undefined;
-    return (
-      roles.includes('sysadmin') ||
-      roles.includes('developer') ||
-      role === 'sysadmin' ||
-      role === 'developer'
-    );
-  })();
-  const assignableSystemRoles = canAssignElevated
-    ? ['user', 'orgadmin', 'sysadmin', 'developer', 'trial']
-    : ['user', 'orgadmin'];
+  useEffect(() => {
+    const organisationId = currentUser?.organisationId;
+    if (!organisationId || ensuredRoleOrgId === organisationId) return;
+
+    setEnsuredRoleOrgId(organisationId);
+    void ensureDefaultOrgRoles({
+      organisationId: organisationId as unknown as Id<'organisations'>,
+      ...(user?.id ? { performedBy: user.id } : {}),
+      roleNames: [...ORG_ROLE_ORDER],
+    }).catch(() => {
+      setEnsuredRoleOrgId(null);
+    });
+  }, [
+    currentUser?.organisationId,
+    ensureDefaultOrgRoles,
+    ensuredRoleOrgId,
+    user?.id,
+  ]);
 
   // Helpers
   const getUniqueRoles = () => {
@@ -223,6 +300,25 @@ export default function OrganisationUsersPage() {
       default:
         return 'neutral';
     }
+  };
+
+  const canonicalOrgRoleOptions = getCanonicalOrgRoleOptions(
+    (orgRoles || []) as OrgRole[]
+  );
+
+  const getUserOrgRoles = (target: User) =>
+    (
+      target as unknown as {
+        organisationalRoles?: Array<{
+          id: string;
+          name: string;
+        }>;
+      }
+    ).organisationalRoles || [];
+
+  const getOrgRoleFilterLabel = (roleId: string) => {
+    const role = ((orgRoles || []) as OrgRole[]).find((r) => r._id === roleId);
+    return role ? getCanonicalOrgRoleName(role.name) : 'Organisation role';
   };
 
   const sortUsers = useCallback(
@@ -327,9 +423,7 @@ export default function OrganisationUsersPage() {
       list = list.filter((u) => (u.systemRoles || []).includes(roleFilter));
     if (orgRoleFilter !== 'all')
       list = list.filter(
-        (u) =>
-          (u as unknown as { organisationalRole?: { id: string } })
-            .organisationalRole?.id === orgRoleFilter
+        (u) => getUserOrgRoles(u).some((role) => role.id === orgRoleFilter)
       );
     if (statusFilter !== 'all')
       list = list.filter((u) => u.isActive === (statusFilter === 'active'));
@@ -373,17 +467,15 @@ export default function OrganisationUsersPage() {
   // Assign Roles
   const openAssignRoles = (target: User | null, bulk = false) => {
     setAssigningUser(bulk ? ({} as unknown as User) : target);
-    const initialSys = target?.systemRoles || [];
-    const clampedSys = initialSys.filter((r) =>
-      assignableSystemRoles.includes(r)
-    );
-    setSelectedSystemRoles(clampedSys);
     // Preselect org roles from the target user's current assignments
     const preselectedOrgRoleIds = !bulk
-      ? (
-          (target as unknown as { organisationalRoles?: { id: string }[] })
-            ?.organisationalRoles || []
-        ).map((r) => r.id)
+      ? canonicalOrgRoleOptions
+          .filter((option) =>
+            getUserOrgRoles(target as User).some(
+              (role) => getCanonicalOrgRoleName(role.name) === option.label
+            )
+          )
+          .map((role) => role._id)
       : [];
     setSelectedOrgRoleIds(preselectedOrgRoleIds);
     setIsBulkAssign(bulk);
@@ -399,10 +491,7 @@ export default function OrganisationUsersPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: u.subject || u._id,
-              systemRoles: selectedSystemRoles,
-              organisationalRoleIds: selectedOrgRoleIds.length
-                ? selectedOrgRoleIds
-                : undefined,
+              organisationalRoleIds: selectedOrgRoleIds,
               organisationId: currentUser?.organisationId,
             }),
           }).then(async (r) => {
@@ -421,10 +510,7 @@ export default function OrganisationUsersPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: assigningUser.subject || assigningUser._id,
-            systemRoles: selectedSystemRoles,
-            organisationalRoleIds: selectedOrgRoleIds.length
-              ? selectedOrgRoleIds
-              : undefined,
+            organisationalRoleIds: selectedOrgRoleIds,
             organisationId: currentUser?.organisationId,
           }),
         });
@@ -433,9 +519,19 @@ export default function OrganisationUsersPage() {
           throw new Error(errorData.error || 'Failed');
         }
       }
+      toast({
+        title: 'Roles updated',
+        description: 'Organisation roles were saved successfully.',
+        variant: 'success',
+      });
       setAssigningUser(null);
-    } catch {
-      // Error assigning user
+    } catch (error) {
+      toast({
+        title: 'Failed to save roles',
+        description:
+          error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -612,7 +708,7 @@ export default function OrganisationUsersPage() {
                       <div className="space-y-3">
                         <div>
                           <label className="mb-2 block text-sm font-medium">
-                            Role
+                            System Access
                           </label>
                           <Select
                             value={roleFilter}
@@ -644,10 +740,10 @@ export default function OrganisationUsersPage() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All org roles</SelectItem>
-                              {(orgRoles || []).map(
-                                (r: { _id: string; name: string }) => (
+                              {canonicalOrgRoleOptions.map(
+                                (r) => (
                                   <SelectItem key={r._id} value={r._id}>
-                                    {r.name}
+                                    {r.label}
                                   </SelectItem>
                                 )
                               )}
@@ -709,14 +805,16 @@ export default function OrganisationUsersPage() {
               )}
               {roleFilter !== 'all' && (
                 <Badge variant="outline">
-                  Role: {getRoleLabel(roleFilter)}
+                  System Access: {getRoleLabel(roleFilter)}
                 </Badge>
               )}
               {statusFilter !== 'all' && (
                 <Badge variant="outline">Status: {statusFilter}</Badge>
               )}
               {orgRoleFilter !== 'all' && (
-                <Badge variant="outline">Filtered org role</Badge>
+                <Badge variant="outline">
+                  Organisation Role: {getOrgRoleFilterLabel(orgRoleFilter)}
+                </Badge>
               )}
             </div>
           </div>
@@ -764,11 +862,11 @@ export default function OrganisationUsersPage() {
                     onClick={() => handleSort('role')}
                   >
                     <div className="flex items-center justify-center gap-1">
-                      System Roles {getSortIcon('role')}
+                      System Access {getSortIcon('role')}
                     </div>
                   </TableHead>
                   <TableHead className="w-[16%] text-center">
-                    Organisation Role
+                    Organisation Roles
                   </TableHead>
                   <TableHead
                     className="w-[10%] cursor-pointer text-center"
@@ -857,32 +955,17 @@ export default function OrganisationUsersPage() {
                       <div className="flex items-center gap-2 justify-center">
                         <ShieldCheck className="w-4 h-4 text-muted-foreground" />
                         <div className="flex flex-wrap gap-1 justify-center">
-                          {(
-                            user as unknown as {
-                              organisationalRoles?: Array<{
-                                id: string;
-                                name: string;
-                              }>;
-                            }
-                          ).organisationalRoles &&
-                          (
-                            user as unknown as {
-                              organisationalRoles?: Array<{
-                                id: string;
-                                name: string;
-                              }>;
-                            }
-                          ).organisationalRoles!.length > 0 ? (
-                            (
-                              user as unknown as {
-                                organisationalRoles: Array<{
-                                  id: string;
-                                  name: string;
-                                }>;
-                              }
-                            ).organisationalRoles.map((r) => (
+                          {getUserOrgRoles(user).length > 0 ? (
+                            Array.from(
+                              new Map(
+                                getUserOrgRoles(user).map((r) => [
+                                  getCanonicalOrgRoleName(r.name),
+                                  r,
+                                ])
+                              ).entries()
+                            ).map(([label, r]) => (
                               <Badge key={r.id} variant="neutral">
-                                {r.name}
+                                {label}
                               </Badge>
                             ))
                           ) : (
@@ -1002,35 +1085,11 @@ export default function OrganisationUsersPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <div className="text-sm font-medium mb-2">System Roles</div>
-                <div className="flex flex-wrap gap-2">
-                  {assignableSystemRoles.map((role) => {
-                    const checked = selectedSystemRoles.includes(role);
-                    return (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() =>
-                          setSelectedSystemRoles(
-                            checked
-                              ? selectedSystemRoles.filter((r) => r !== role)
-                              : [...selectedSystemRoles, role]
-                          )
-                        }
-                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${checked ? 'border-primary bg-primary text-white' : 'border-border bg-white/85 text-foreground hover:bg-accent'}`}
-                      >
-                        {getRoleLabel(role)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
                 <div className="text-sm font-medium mb-2">
                   Organisation Roles
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {(orgRoles || []).map((r: { _id: string; name: string }) => {
+                  {canonicalOrgRoleOptions.map((r) => {
                     const checked = selectedOrgRoleIds.includes(r._id);
                     return (
                       <button
@@ -1045,11 +1104,14 @@ export default function OrganisationUsersPage() {
                         }
                         className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${checked ? 'border-primary bg-primary text-white' : 'border-border bg-white/85 text-foreground hover:bg-accent'}`}
                       >
-                        {r.name}
+                        {r.label}
                       </button>
                     );
                   })}
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  System Admin is not assigned from organisation settings.
+                </p>
               </div>
               <div className="flex justify-end gap-2">
                 <Button

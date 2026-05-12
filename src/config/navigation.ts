@@ -21,6 +21,8 @@ import {
     | 'developer'
     | 'dev'
     | 'orgadmin'
+    | 'workloadadmin'
+    | 'manager'
     | 'lecturer'
     | 'user';
   
@@ -74,13 +76,22 @@ export type NavigationContext = {
       return true;
     }
   
+    const rolesToCheck =
+      context.userRoles.length > 0
+        ? context.userRoles
+        : context.userRole
+          ? [context.userRole]
+          : [];
+
     const checks = item.requiredPermissions.map((permissionId) =>
+      rolesToCheck.some((role) =>
         hasPermission(
-            context.userRole,
+            role,
             permissionId,
             context.organisationId,
             item.isSystemAction ?? false
-            )
+        )
+      )
     );
   
     return item.requireAllPermissions
@@ -220,6 +231,8 @@ export type NavigationContext = {
       url: '/organisation',
       icon: Building,
       requiredPermissions: [
+        'workload.admin.dashboard.view',
+        'manager.dashboard.view',
         'users.view',
         'permissions.manage',
         'audit.view',
@@ -271,7 +284,40 @@ export type NavigationContext = {
         {
           title: 'Staff',
           url: '/staff',
-          requiredPermissions: ['staff.create', 'staff.edit', 'users.view'],
+          requiredPermissions: [
+            'staff.view.team',
+            'staff.view.org',
+            'manager.team.view',
+            'workload.admin.staff.view',
+            'staff.create',
+            'staff.edit',
+            'users.view',
+          ],
+        },
+        {
+          title: 'Team Management',
+          url: '/organisation/team-management',
+          requiredPermissions: ['permissions.manage'],
+        },
+        {
+          title: 'Team Workloads',
+          url: '/organisation/team-workloads',
+          requiredPermissions: [
+            'manager.dashboard.view',
+            'manager.team.view',
+            'workload.admin.dashboard.view',
+            'workload.admin.staff.view',
+            'permissions.manage',
+          ],
+        },
+        {
+          title: 'Allocation Reviews',
+          url: '/organisation/allocation-reviews',
+          requiredPermissions: [
+            'manager.changes.review',
+            'workload.admin.allocations.view',
+            'permissions.manage',
+          ],
         },
         {
           title: 'Audit Logs',
@@ -281,7 +327,11 @@ export type NavigationContext = {
         {
           title: 'Admin Allocations',
           url: '/organisation/settings/admin-allocations',
-          requiredPermissions: ['allocations.assign', 'allocations.bulk'],
+          requiredPermissions: [
+            'allocations.assign',
+            'allocations.bulk',
+            'workload.admin.allocations.adjust',
+          ],
         },
       ],
     },

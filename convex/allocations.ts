@@ -1,10 +1,20 @@
-import { mutation, query } from './_generated/server';
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from './_generated/server';
 import { v } from 'convex/values';
 import type { Id, Doc } from './_generated/dataModel';
 import { writeAudit } from './audit';
 import { computeHoursFromCredits, computeTotals } from './allocationsMath';
-import { requireOrgPermission } from './permissions';
-import { requirePermission } from './permissions';
+import {
+  assertCanManageOrganisationWorkload,
+  assertCanManageTeamMember,
+  hasOrgPermission,
+  requirePermission,
+  requireOrgPermission,
+} from './permissions/index';
 import { makeLoaders } from '../src/lib/convex/loaders';
 import { getAuthContext } from './lib/auth';
 
@@ -42,12 +52,12 @@ export const assignLecturer = mutation({
 
     // Derive organisationId via module
     const derivedOrgId = moduleDoc?.organisationId as Id<'organisations'>;
-    // Permission: allocations.assign within module's org
-    await requireOrgPermission(
+    // Permission: workload adjustment within module's org
+    await assertCanManageOrganisationWorkload(
       ctx,
       authContext.userId,
-      'allocations.assign',
-      derivedOrgId
+      derivedOrgId,
+      'adjust'
     );
 
     const now = Date.now();
@@ -100,12 +110,12 @@ export const update = mutation({
     const existing = await ctx.db.get(args.allocationId);
     if (!existing) throw new Error('Allocation not found');
 
-    // Authorise within org
-    await requireOrgPermission(
+    // Authorise within org workload scope
+    await assertCanManageOrganisationWorkload(
       ctx,
       authContext.userId,
-      'allocations.assign',
-      existing.organisationId
+      existing.organisationId,
+      'adjust'
     );
 
     const updatePayload: Partial<Doc<'group_allocations'>> = {
@@ -156,6 +166,10 @@ export const listForLecturer = query({
     academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
+    const lecturer = await ctx.db.get(args.lecturerId);
+    if (!lecturer) return [];
+    await assertCanViewLecturerWorkload(ctx, args.userId, lecturer);
+
     const rows = await ctx.db
       .query('group_allocations')
       .withIndex('by_lecturer', (q) => q.eq('lecturerId', args.lecturerId))
@@ -181,16 +195,7 @@ export const computeLecturerTotals = query({
       return computeTotals([]);
     }
 
-    const isOwnProfile = lecturer.userSubject === authContext.userId;
-
-    if (!isOwnProfile) {
-      await requireOrgPermission(
-        ctx,
-        authContext.userId,
-        'allocations.view',
-        lecturer.organisationId
-      );
-    }
+    await assertCanViewLecturerWorkload(ctx, authContext.userId, lecturer);
 
     const allocations = await ctx.db
       .query('group_allocations')
@@ -204,7 +209,7 @@ export const computeLecturerTotals = query({
 
 // List allocations for a group (with lecturer basic info)
 export const listForGroup = query({
-  args: { groupId: v.id('module_groups') },
+  args: { userId: v.optional(v.string()), groupId: v.id('module_groups') },
   handler: async (ctx, args) => {
     const loaders = makeLoaders();
     const rows = await ctx.db
@@ -213,11 +218,27 @@ export const listForGroup = query({
       .collect();
 
     // Use bulk batching instead of N+1 queries
-    const enriched = await Promise.all(
-      rows.map(async (r) => ({
-        allocation: r,
-        lecturer: await loaders.lecturersById.load(ctx, r.lecturerId),
-      }))
+    const enriched = (
+      await Promise.all(
+        rows.map(async (r) => {
+          const lecturer = await loaders.lecturersById.load(ctx, r.lecturerId);
+          if (!lecturer) return null;
+          if (!args.userId) return { allocation: r, lecturer };
+          try {
+            await assertCanViewLecturerWorkload(ctx, args.userId, lecturer);
+            return { allocation: r, lecturer };
+          } catch {
+            return null;
+          }
+        })
+      )
+    ).filter(
+      (
+        row
+      ): row is {
+        allocation: Doc<'group_allocations'>;
+        lecturer: Doc<'lecturer_profiles'>;
+      } => row !== null
     );
     return enriched;
   },
@@ -226,10 +247,17 @@ export const listForGroup = query({
 // List allocations for a lecturer with group and module details
 export const listForLecturerDetailed = query({
   args: {
+    userId: v.optional(v.string()),
     lecturerId: v.id('lecturer_profiles'),
     academicYearId: v.id('academic_years'),
   },
   handler: async (ctx, args) => {
+    const lecturer = await ctx.db.get(args.lecturerId);
+    if (!lecturer) return [];
+    if (args.userId) {
+      await assertCanViewLecturerWorkload(ctx, args.userId, lecturer);
+    }
+
     const loaders = makeLoaders();
     const rows = await ctx.db
       .query('group_allocations')
@@ -283,11 +311,11 @@ export const removeAllocationsForGroups = mutation({
       : all;
     for (const a of filtered) {
       // Authorize per allocation org
-      await requireOrgPermission(
+      await assertCanManageOrganisationWorkload(
         ctx,
         authContext.userId,
-        'allocations.assign',
-        a.organisationId
+        a.organisationId,
+        'adjust'
       );
       await ctx.db.delete(a._id);
       try {
@@ -313,8 +341,25 @@ export const removeAllocationsForGroups = mutation({
 
 // Iteration allocations summary
 export const iterationSummary = query({
-  args: { moduleIterationId: v.id('module_iterations') },
+  args: {
+    userId: v.optional(v.string()),
+    moduleIterationId: v.id('module_iterations'),
+  },
   handler: async (ctx, args) => {
+    const iteration = await ctx.db.get(args.moduleIterationId);
+    if (!iteration) throw new Error('Module iteration not found');
+    const moduleDoc = await ctx.db.get(iteration.moduleId);
+    if (!moduleDoc) throw new Error('Module not found');
+
+    if (args.userId) {
+      await assertCanManageOrganisationWorkload(
+        ctx,
+        args.userId,
+        moduleDoc.organisationId,
+        'view'
+      );
+    }
+
     const groups = await ctx.db
       .query('module_groups')
       .withIndex('by_iteration', (q) =>
@@ -350,12 +395,12 @@ export const remove = mutation({
     const lecturer = await ctx.db.get(existing.lecturerId);
     const group = await ctx.db.get(existing.groupId);
 
-    // Authorise within org
-    await requireOrgPermission(
+    // Authorise within org workload scope
+    await assertCanManageOrganisationWorkload(
       ctx,
       authContext.userId,
-      'allocations.assign',
-      existing.organisationId
+      existing.organisationId,
+      'adjust'
     );
 
     await ctx.db.delete(args.allocationId);
@@ -395,12 +440,7 @@ export const getLecturerTotals = query({
     const lecturer = await ctx.db.get(args.lecturerId);
     if (!lecturer) return null;
 
-    await requireOrgPermission(
-      ctx,
-      authContext.userId,
-      'allocations.view',
-      lecturer.organisationId
-    );
+    await assertCanViewLecturerWorkload(ctx, authContext.userId, lecturer);
 
     const allocations = await ctx.db
       .query('group_allocations')
@@ -450,6 +490,7 @@ export const getModuleTeachingHours = query({
 
 export const listAdminAllocations = query({
   args: {
+    userId: v.optional(v.string()),
     lecturerId: v.id('lecturer_profiles'),
     academicYearId: v.id('academic_years'),
   },
@@ -457,6 +498,9 @@ export const listAdminAllocations = query({
     // derive org via lecturer profile
     const lecturer = await ctx.db.get(args.lecturerId);
     if (!lecturer) return [];
+    if (args.userId) {
+      await assertCanViewLecturerWorkload(ctx, args.userId, lecturer);
+    }
     const rows = await ctx.db
       .query('admin_allocations')
       .withIndex('by_year', (q) => q.eq('academicYearId', args.academicYearId))
@@ -630,11 +674,11 @@ export const upsertAdminAllocation = mutation({
     // Check org scope via lecturer
     const lecturer = await ctx.db.get(args.lecturerId);
     if (!lecturer) throw new Error('Lecturer not found');
-    await requireOrgPermission(
+    await assertCanManageOrganisationWorkload(
       ctx,
       authContext.userId,
-      'allocations.assign',
-      lecturer.organisationId
+      lecturer.organisationId,
+      'adjust'
     );
 
     // Validate against category min/max unless custom
@@ -752,11 +796,11 @@ export const removeAdminAllocation = mutation({
       .withIndex('by_subject', (q) => q.eq('subject', existing.staffId))
       .first();
     if (user) {
-      await requireOrgPermission(
+      await assertCanManageOrganisationWorkload(
         ctx,
         authContext.userId,
-        'allocations.assign',
-        authContext.organisationId
+        authContext.organisationId,
+        'adjust'
       );
     }
     await ctx.db.delete(args.allocationId);
@@ -1089,3 +1133,299 @@ export const pushAdminCategoriesToOrganisations = mutation({
     return { organisationsProcessed: orgs.length, created, updated };
   },
 });
+
+export const createAllocationChangeRequest = mutation({
+  args: {
+    userId: v.string(),
+    type: v.union(v.literal('assign'), v.literal('update'), v.literal('remove')),
+    targetLecturerId: v.id('lecturer_profiles'),
+    academicYearId: v.id('academic_years'),
+    allocationId: v.optional(v.id('group_allocations')),
+    groupId: v.optional(v.id('module_groups')),
+    allocationType: v.optional(v.union(v.literal('teaching'), v.literal('admin'))),
+    hoursOverride: v.optional(v.union(v.float64(), v.null())),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
+    const lecturer = await ctx.db.get(args.targetLecturerId);
+    if (!lecturer) throw new Error('Lecturer not found');
+    await assertCanManageTeamMember(ctx, authContext.userId, lecturer);
+
+    if (args.type === 'assign' && (!args.groupId || !args.allocationType)) {
+      throw new Error('Group and allocation type are required');
+    }
+
+    if ((args.type === 'update' || args.type === 'remove') && !args.allocationId) {
+      throw new Error('Allocation is required');
+    }
+
+    const now = Date.now();
+    const id = await ctx.db.insert('allocation_change_requests', {
+      type: args.type,
+      status: 'pending',
+      organisationId: lecturer.organisationId,
+      targetLecturerId: args.targetLecturerId,
+      academicYearId: args.academicYearId,
+      requestedBy: authContext.userId,
+      requestedAt: now,
+      ...(args.allocationId ? { allocationId: args.allocationId } : {}),
+      ...(args.groupId ? { groupId: args.groupId } : {}),
+      payload: JSON.stringify({
+        allocationType: args.allocationType,
+        hoursOverride: args.hoursOverride,
+      }),
+      ...(args.reason ? { reason: args.reason } : {}),
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await writeAudit(ctx, {
+      action: 'allocation_change.requested',
+      entityType: 'allocation_change_request',
+      entityId: String(id),
+      entityName: `${args.type} allocation change`,
+      performedBy: authContext.userId,
+      organisationId: lecturer.organisationId,
+      details: `Requested ${args.type} allocation change for ${lecturer.fullName}`,
+      severity: 'info',
+      type: 'org',
+    });
+
+    return id;
+  },
+});
+
+export const listAllocationChangeRequests = query({
+  args: {
+    userId: v.string(),
+    status: v.optional(
+      v.union(v.literal('pending'), v.literal('approved'), v.literal('rejected'))
+    ),
+  },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
+    const canViewOrg =
+      (await hasOrgPermission(
+        ctx,
+        authContext.userId,
+        'permissions.manage',
+        authContext.organisationId
+      )) ||
+      (await hasOrgPermission(
+        ctx,
+        authContext.userId,
+        'workload.admin.allocations.view',
+        authContext.organisationId
+      ));
+
+    if (!canViewOrg) {
+      await requireOrgPermission(
+        ctx,
+        authContext.userId,
+        'manager.changes.review',
+        authContext.organisationId
+      );
+    }
+
+    const rows = args.status
+      ? await ctx.db
+          .query('allocation_change_requests')
+          .withIndex('by_org_status', (q) =>
+            q.eq('organisationId', authContext.organisationId).eq('status', args.status!)
+          )
+          .collect()
+      : await ctx.db
+          .query('allocation_change_requests')
+          .filter((q) =>
+            q.eq(q.field('organisationId'), authContext.organisationId)
+          )
+          .collect();
+
+    const visibleRows = [];
+    for (const row of rows) {
+      const lecturer = await ctx.db.get(row.targetLecturerId);
+      if (!lecturer) continue;
+      if (!canViewOrg) {
+        try {
+          await assertCanManageTeamMember(ctx, authContext.userId, lecturer);
+        } catch {
+          continue;
+        }
+      }
+      const requester = await ctx.db
+        .query('users')
+        .withIndex('by_subject', (q) => q.eq('subject', row.requestedBy))
+        .first();
+      const allocation = row.allocationId
+        ? await ctx.db.get(row.allocationId)
+        : null;
+      const group = row.groupId ? await ctx.db.get(row.groupId) : null;
+      visibleRows.push({ request: row, lecturer, requester, allocation, group });
+    }
+
+    return visibleRows.sort(
+      (a, b) => b.request.requestedAt - a.request.requestedAt
+    );
+  },
+});
+
+export const reviewAllocationChangeRequest = mutation({
+  args: {
+    userId: v.string(),
+    requestId: v.id('allocation_change_requests'),
+    decision: v.union(v.literal('approved'), v.literal('rejected')),
+    note: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
+    const request = await ctx.db.get(args.requestId);
+    if (!request) throw new Error('Request not found');
+    if (request.status !== 'pending') throw new Error('Request already reviewed');
+
+    const lecturer = await ctx.db.get(request.targetLecturerId);
+    if (!lecturer) throw new Error('Lecturer not found');
+
+    await requireOrgPermission(
+      ctx,
+      authContext.userId,
+      'manager.changes.approve',
+      request.organisationId
+    );
+    await assertCanManageTeamMember(ctx, authContext.userId, lecturer);
+
+    const now = Date.now();
+    if (args.decision === 'approved') {
+      await applyAllocationChangeRequest(ctx, request);
+    }
+
+    await ctx.db.patch(args.requestId, {
+      status: args.decision,
+      reviewedBy: authContext.userId,
+      reviewedAt: now,
+      ...(args.note ? { decisionNote: args.note } : {}),
+      updatedAt: now,
+    });
+
+    await writeAudit(ctx, {
+      action: `allocation_change.${args.decision}`,
+      entityType: 'allocation_change_request',
+      entityId: String(args.requestId),
+      entityName: `${request.type} allocation change`,
+      performedBy: authContext.userId,
+      organisationId: request.organisationId,
+      details: `${args.decision === 'approved' ? 'Approved' : 'Rejected'} ${request.type} allocation change for ${lecturer.fullName}`,
+      severity: args.decision === 'approved' ? 'info' : 'warning',
+      type: 'org',
+    });
+
+    return { success: true };
+  },
+});
+
+async function assertCanViewLecturerWorkload(
+  ctx: QueryCtx,
+  userId: string,
+  lecturer: Doc<'lecturer_profiles'>
+) {
+  if (lecturer.userSubject === userId) return true;
+
+  const canViewOrg =
+    (await hasOrgPermission(
+      ctx,
+      userId,
+      'workload.admin.allocations.view',
+      lecturer.organisationId
+    )) ||
+    (await hasOrgPermission(
+      ctx,
+      userId,
+      'allocations.view',
+      lecturer.organisationId
+    )) ||
+    (await hasOrgPermission(
+      ctx,
+      userId,
+      'allocations.view.org',
+      lecturer.organisationId
+    ));
+
+  if (canViewOrg) return true;
+
+  const canViewTeam =
+    (await hasOrgPermission(
+      ctx,
+      userId,
+      'manager.team.view',
+      lecturer.organisationId
+    )) ||
+    (await hasOrgPermission(
+      ctx,
+      userId,
+      'allocations.view.team',
+      lecturer.organisationId
+    ));
+
+  if (canViewTeam) {
+    await assertCanManageTeamMember(ctx, userId, lecturer);
+    return true;
+  }
+
+  throw new Error('Permission denied: workload view');
+}
+
+async function applyAllocationChangeRequest(
+  ctx: MutationCtx,
+  request: Doc<'allocation_change_requests'>
+) {
+  const payload = JSON.parse(request.payload) as {
+    allocationType?: 'teaching' | 'admin';
+    hoursOverride?: number | null;
+  };
+  const now = Date.now();
+
+  if (request.type === 'assign') {
+    if (!request.groupId || !payload.allocationType) {
+      throw new Error('Incomplete assignment request');
+    }
+    const group = await ctx.db.get(request.groupId);
+    if (!group) throw new Error('Group not found');
+    const iteration = await ctx.db.get(group.moduleIterationId);
+    if (!iteration) throw new Error('Module iteration not found');
+    const moduleDoc = await ctx.db.get(iteration.moduleId);
+    const baseHours = computeHoursFromCredits(moduleDoc?.credits);
+
+    await ctx.db.insert('group_allocations', {
+      groupId: request.groupId,
+      lecturerId: request.targetLecturerId,
+      academicYearId: request.academicYearId,
+      organisationId: request.organisationId,
+      type: payload.allocationType,
+      hoursComputed: baseHours,
+      ...(typeof payload.hoursOverride === 'number'
+        ? { hoursOverride: payload.hoursOverride }
+        : {}),
+      createdAt: now,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  if (!request.allocationId) {
+    throw new Error('Allocation request is missing allocation');
+  }
+
+  if (request.type === 'remove') {
+    await ctx.db.delete(request.allocationId);
+    return;
+  }
+
+  const updates: Partial<Doc<'group_allocations'>> = { updatedAt: now };
+  if (payload.allocationType) {
+    updates.type = payload.allocationType;
+  }
+  if (payload.hoursOverride !== undefined && payload.hoursOverride !== null) {
+    updates.hoursOverride = payload.hoursOverride;
+  }
+  await ctx.db.patch(request.allocationId, updates);
+}

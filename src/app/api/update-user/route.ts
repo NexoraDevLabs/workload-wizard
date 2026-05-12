@@ -17,6 +17,16 @@ export async function POST(request: NextRequest) {
       ...(body.firstName ? { firstName: String(body.firstName) } : {}),
       ...(body.lastName ? { lastName: String(body.lastName) } : {}),
       ...(Array.isArray(body.roles) ? { roles: body.roles } : {}),
+      ...(Array.isArray(body.organisationalRoleIds)
+        ? {
+            organisationalRoleIds: (body.organisationalRoleIds as unknown[]).map(
+              (roleId) => String(roleId)
+            ),
+          }
+        : {}),
+      ...(body.organisationalRoleId
+        ? { organisationalRoleId: String(body.organisationalRoleId) }
+        : {}),
       ...(body.organisationId
         ? { organisationId: String(body.organisationId) }
         : {}),

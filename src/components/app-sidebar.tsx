@@ -21,15 +21,14 @@ import {
 } from '@/config/navigation';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { usePermissions } from '@/hooks/usePermissions';
-import { getUserRoles } from '@/lib/utils';
 
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthUser();
   const permissions = usePermissions(user?.organisationId ?? undefined);
 
-  const userRoles = getUserRoles(user);
   const userRole = permissions.userRole;
+  const userRoles = permissions.userRoles;
 
   const navigationContext: NavigationContext = {
     userRole,

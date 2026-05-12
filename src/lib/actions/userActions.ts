@@ -145,9 +145,10 @@ export async function createUser(data: CreateUserData) {
   if (roleIds.length > 0) {
     try {
       await getConvexClient().mutation(
-        api.organisationalRoles.assignMultipleToUser,
+        api.organisationalRoles.setUserRolesForOrganisation,
         {
           userId: subject,
+          organisationId: organisationId as Id<'organisations'>,
           roleIds: roleIds.map((roleId) => roleId as Id<'user_roles'>),
           assignedBy: authUser.id,
         }
@@ -212,6 +213,7 @@ export async function updateUser(
     isActive?: boolean;
     password?: string;
     organisationalRoleId?: string;
+    organisationalRoleIds?: string[];
   }
 ) {
   const authUser = await requireUserAdmin();
@@ -244,6 +246,23 @@ export async function updateUser(
     ...(updates.isActive !== undefined ? { isActive: updates.isActive } : {}),
     currentUserId: authUser.id,
   });
+
+  const roleIds =
+    updates.organisationalRoleIds ??
+    (updates.organisationalRoleId ? [updates.organisationalRoleId] : undefined);
+
+  if (roleIds !== undefined) {
+    await getConvexClient().mutation(
+      api.organisationalRoles.setUserRolesForOrganisation,
+      {
+        userId,
+        organisationId: (updates.organisationId ??
+          existing.organisationId) as Id<'organisations'>,
+        roleIds: roleIds.map((roleId) => roleId as Id<'user_roles'>),
+        assignedBy: authUser.id,
+      }
+    );
+  }
 
   await logUserUpdated(
     userId,

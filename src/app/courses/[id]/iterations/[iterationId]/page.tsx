@@ -206,7 +206,9 @@ export default function IterationDetailsPage() {
   // Iteration summary
   const iterationSummary = useQuery(
     api.allocations.iterationSummary,
-    iteration?._id ? { moduleIterationId: iteration._id } : 'skip'
+    iteration?._id
+      ? { moduleIterationId: iteration._id }
+      : 'skip'
   ) as IterationSummary | undefined;
 
   const resetAssignDialogState = () => {
@@ -524,9 +526,9 @@ export default function IterationDetailsPage() {
             ) : (
               <div className="space-y-4">
                 {groups.map((group) => (
-                  <GroupCard
-                    key={String(group._id)}
-                    group={group}
+	                  <GroupCard
+	                    key={String(group._id)}
+	                    group={group}
                     onDelete={async () => {
                       if (
                         confirm(
@@ -1409,9 +1411,10 @@ function GroupCard({
   const { currentYear: _currentYear } = useAcademicYear();
 
   // Fetch allocations for this group
-  const allocations = useQuery(api.allocations.listForGroup, {
-    groupId: group._id,
-  }) as GroupAllocationWithLecturer[] | undefined;
+  const allocations = useQuery(
+    api.allocations.listForGroup,
+    { groupId: group._id }
+  ) as GroupAllocationWithLecturer[] | undefined;
 
   return (
     <div className="border rounded-lg p-4">

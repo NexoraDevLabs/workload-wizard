@@ -50,6 +50,34 @@ function normalizeDbOrgRole(role: string | undefined): DbAuthRole {
   return 'member';
 }
 
+function canonicalOrgRoleName(name: string) {
+  const role = name
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+
+  if (
+    role === 'organisation admin' ||
+    role === 'organization admin' ||
+    role === 'org admin' ||
+    role === 'orgadmin' ||
+    role === 'admin'
+  ) {
+    return 'Organisation Admin';
+  }
+  if (role === 'workload admin' || role === 'workloadadmin') {
+    return 'Workload Admin';
+  }
+  if (role === 'manager' || role === 'team manager') {
+    return 'Manager';
+  }
+  if (role === 'user' || role === 'viewer' || role === 'lecturer') {
+    return 'User';
+  }
+  return name;
+}
+
 function resolveDbAuthRole(
   systemRoles: string[] | undefined,
   organisationRoles: string[]
@@ -710,6 +738,34 @@ export const list = query({
           }
         }
 
+        const profile = organisationId
+          ? await ctx.db
+              .query('user_profiles')
+              .withIndex('by_user_org', (q) =>
+                q.eq('userId', user.subject).eq('organisationId', organisationId)
+              )
+              .first()
+          : null;
+
+        if (profile?.orgRoles && profile.orgRoles.length > 0) {
+          const existingRoleNames = new Set(
+            organisationalRoles
+              .filter((role): role is NonNullable<typeof role> => role !== null)
+              .map((role) => canonicalOrgRoleName(role.name))
+          );
+
+          for (const roleName of profile.orgRoles.map(canonicalOrgRoleName)) {
+            if (!existingRoleNames.has(roleName)) {
+              organisationalRoles.push({
+                id: roleName as unknown as Id<'user_roles'>,
+                name: roleName,
+                description: `${roleName} role`,
+              });
+              existingRoleNames.add(roleName);
+            }
+          }
+        }
+
         // Back-compat: primary role as first, if any
         const organisationalRole = organisationalRoles[0] || null;
 
@@ -742,10 +798,32 @@ export const get = query({
 export const getBySubject = query({
   args: { subject: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const user = await ctx.db
       .query('users')
       .withIndex('by_subject', (q) => q.eq('subject', args.subject))
       .first();
+
+    if (!user) return null;
+
+    const organisationId =
+      user.organisationId ??
+      (await getPrimaryUserOrganisationId(ctx, args.subject));
+
+    const profile = organisationId
+      ? await ctx.db
+          .query('user_profiles')
+          .withIndex('by_user_org', (q) =>
+            q.eq('userId', args.subject).eq('organisationId', organisationId)
+          )
+          .first()
+      : null;
+
+    return {
+      ...user,
+      organisationRoles: profile?.orgRoles
+        ? [...new Set(profile.orgRoles.map(canonicalOrgRoleName))]
+        : [],
+    };
   },
 });
 
@@ -795,6 +873,17 @@ export const getAuthContext = query({
     const organisationId = primaryMembership.membership.organisationId;
 
     async function getOrganisationRoles(orgId: Id<'organisations'>) {
+      const profile = await ctx.db
+        .query('user_profiles')
+        .withIndex('by_user_org', (q) =>
+          q.eq('userId', args.subject).eq('organisationId', orgId)
+        )
+        .first();
+
+      if (profile?.orgRoles && profile.orgRoles.length > 0) {
+        return [...new Set(profile.orgRoles.map(canonicalOrgRoleName))];
+      }
+
       const assignments = await ctx.db
         .query('user_role_assignments')
         .withIndex('by_user_org', (q) =>

@@ -5,6 +5,29 @@ import { writeAudit } from './audit';
 import { makeLoaders } from '../src/lib/convex/loaders';
 import { getAuthContext } from './lib/auth';
 
+function canonicalOrgRoleName(name: string) {
+  const role = name.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  if (
+    role === 'organisation admin' ||
+    role === 'organization admin' ||
+    role === 'org admin' ||
+    role === 'orgadmin' ||
+    role === 'admin'
+  ) {
+    return 'Organisation Admin';
+  }
+  if (role === 'workload admin' || role === 'workloadadmin') {
+    return 'Workload Admin';
+  }
+  if (role === 'manager' || role === 'team manager') {
+    return 'Manager';
+  }
+  if (role === 'user' || role === 'viewer' || role === 'lecturer') {
+    return 'User';
+  }
+  return name;
+}
+
 // Get all roles for an organisation
 export const listByOrganisation = query({
   args: { organisationId: v.id('organisations') },
@@ -356,6 +379,116 @@ export const assignMultipleToUser = mutation({
       performedBy: args.assignedBy,
       organisationId: orgId,
       details: `Assigned ${args.roleIds.length} role(s)`,
+      metadata: JSON.stringify({ roleIds: args.roleIds }),
+      severity: 'info',
+    });
+
+    return { assignedCount: args.roleIds.length };
+  },
+});
+
+// Replace all active organisational roles for a user in an organisation.
+export const setUserRolesForOrganisation = mutation({
+  args: {
+    userId: v.string(),
+    organisationId: v.id('organisations'),
+    roleIds: v.array(v.id('user_roles')),
+    assignedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    const organisation = await ctx.db.get(args.organisationId);
+    if (!organisation || !organisation.isActive) {
+      throw new Error('Organisation not found or inactive');
+    }
+
+    await requireOrgPermission(
+      ctx,
+      args.assignedBy,
+      'permissions.manage',
+      String(args.organisationId)
+    );
+
+    const user = await ctx.db
+      .query('users')
+      .filter((q) => q.eq(q.field('subject'), args.userId))
+      .filter((q) => q.eq(q.field('organisationId'), args.organisationId))
+      .first();
+    if (!user) throw new Error('User not found in the specified organisation');
+
+    const roles = await Promise.all(args.roleIds.map((rid) => ctx.db.get(rid)));
+    if (roles.some((r) => !r || !r.isActive)) {
+      throw new Error('One or more roles invalid or inactive');
+    }
+    if (
+      roles.some(
+        (r) => String(r!.organisationId) !== String(args.organisationId)
+      )
+    ) {
+      throw new Error('Roles must belong to the specified organisation');
+    }
+
+    const existingAssignments = await ctx.db
+      .query('user_role_assignments')
+      .filter((q) => q.eq(q.field('userId'), args.userId))
+      .filter((q) => q.eq(q.field('organisationId'), args.organisationId))
+      .filter((q) => q.eq(q.field('isActive'), true))
+      .collect();
+    for (const assignment of existingAssignments) {
+      await ctx.db.patch(assignment._id, { isActive: false, updatedAt: now });
+    }
+
+    for (const roleId of args.roleIds) {
+      await ctx.db.insert('user_role_assignments', {
+        userId: args.userId,
+        roleId,
+        organisationId: args.organisationId,
+        assignedBy: args.assignedBy,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    const orgRoles = [
+      ...new Set(
+        roles
+          .filter((role): role is NonNullable<typeof role> => Boolean(role))
+          .map((role) => canonicalOrgRoleName(role.name))
+      ),
+    ];
+
+    const profile = await ctx.db
+      .query('user_profiles')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', args.userId).eq('organisationId', args.organisationId)
+      )
+      .first();
+
+    if (profile) {
+      await ctx.db.patch(profile._id, {
+        orgRoles,
+        updatedAt: now,
+      });
+    } else {
+      await ctx.db.insert('user_profiles', {
+        userId: args.userId,
+        organisationId: args.organisationId,
+        orgRoles,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    await writeAudit(ctx, {
+      action: 'user.role_changed',
+      entityType: 'user',
+      entityId: args.userId,
+      entityName: user.fullName ?? user.email ?? args.userId,
+      performedBy: args.assignedBy,
+      organisationId: args.organisationId,
+      details: `Set ${args.roleIds.length} organisation role(s)`,
       metadata: JSON.stringify({ roleIds: args.roleIds }),
       severity: 'info',
     });

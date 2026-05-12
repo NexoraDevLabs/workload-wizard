@@ -61,6 +61,20 @@ export type PermissionId =
   | 'allocations.assign'
   | 'allocations.bulk'
 
+  // Manager workload review
+  | 'manager.dashboard.view'
+  | 'manager.team.view'
+  | 'manager.team.member.view'
+  | 'manager.changes.review'
+  | 'manager.changes.approve'
+
+  // Workload admin
+  | 'workload.admin.dashboard.view'
+  | 'workload.admin.staff.view'
+  | 'workload.admin.staff.adjust'
+  | 'workload.admin.allocations.view'
+  | 'workload.admin.allocations.adjust'
+
   // Permissions / admin
   | 'permissions.manage'
   | 'organisations.manage'
@@ -107,6 +121,8 @@ export const PERMISSION_GROUPS = {
   ITERATIONS: 'iterations',
   GROUPS: 'groups',
   ALLOCATIONS: 'allocations',
+  MANAGER: 'manager',
+  WORKLOAD: 'workload',
 } as const;
 
 export const PERMISSION_SCOPES = {
@@ -316,6 +332,70 @@ export const PERMISSIONS: Record<PermissionId, PermissionMeta> = {
     scope: 'org',
   },
 
+  // Manager workload review
+  'manager.dashboard.view': {
+    label: 'View manager dashboard',
+    group: PERMISSION_GROUPS.MANAGER,
+    description: 'View assigned team workload dashboard',
+    scope: 'team',
+  },
+  'manager.team.view': {
+    label: 'View assigned teams',
+    group: PERMISSION_GROUPS.MANAGER,
+    description: 'View workload for assigned teams',
+    scope: 'team',
+  },
+  'manager.team.member.view': {
+    label: 'Inspect team members',
+    group: PERMISSION_GROUPS.MANAGER,
+    description: 'Inspect staff profiles for assigned team members',
+    scope: 'team',
+  },
+  'manager.changes.review': {
+    label: 'Review workload changes',
+    group: PERMISSION_GROUPS.MANAGER,
+    description: 'View workload change-review process',
+    scope: 'team',
+  },
+  'manager.changes.approve': {
+    label: 'Approve workload changes',
+    group: PERMISSION_GROUPS.MANAGER,
+    description: 'Approve workload changes when explicitly granted',
+    scope: 'team',
+  },
+
+  // Workload admin
+  'workload.admin.dashboard.view': {
+    label: 'View workload dashboard',
+    group: PERMISSION_GROUPS.WORKLOAD,
+    description: 'View workload dashboard across your organisation',
+    scope: 'org',
+  },
+  'workload.admin.staff.view': {
+    label: 'View workload staff',
+    group: PERMISSION_GROUPS.WORKLOAD,
+    description: 'View all workload staff data in your organisation',
+    scope: 'org',
+  },
+  'workload.admin.staff.adjust': {
+    label: 'Adjust workload staff',
+    group: PERMISSION_GROUPS.WORKLOAD,
+    description: 'Adjust workload staff data in your organisation',
+    scope: 'org',
+  },
+  'workload.admin.allocations.view': {
+    label: 'View workload allocations',
+    group: PERMISSION_GROUPS.WORKLOAD,
+    description: 'View workload allocations in your organisation',
+    scope: 'org',
+  },
+  'workload.admin.allocations.adjust': {
+    label: 'Adjust workload allocations',
+    group: PERMISSION_GROUPS.WORKLOAD,
+    description: 'Adjust workload allocations in your organisation',
+    scope: 'org',
+  },
+
   // Admin / audit / organisations
   'permissions.manage': {
     label: 'Manage permissions',
@@ -463,42 +543,49 @@ const LECTURER_PERMISSIONS: PermissionId[] = [
 const MANAGER_PERMISSIONS: PermissionId[] = [
   ...LECTURER_PERMISSIONS,
   'nav.staff',
-  'nav.courses',
-  'nav.modules',
   'staff.view.team',
   'allocations.view.team',
-  'allocations.manage.team',
-  'courses.view',
-  'modules.view',
-  'iterations.view',
-  'groups.view',
+  'manager.dashboard.view',
+  'manager.team.view',
+  'manager.team.member.view',
+  'manager.changes.review',
 ];
 
 const WORKLOAD_ADMIN_PERMISSIONS: PermissionId[] = [
-  ...MANAGER_PERMISSIONS,
+  ...LECTURER_PERMISSIONS,
   'nav.organisation',
   'staff.view.org',
-  'staff.create',
-  'staff.edit',
-  'users.view',
-  'courses.create',
-  'courses.edit',
-  'courses.years.add',
-  'modules.create',
-  'modules.edit',
-  'modules.link',
-  'modules.unlink',
-  'iterations.create',
-  'groups.create',
-  'groups.delete',
   'allocations.view.org',
   'allocations.manage.org',
-  'allocations.assign',
-  'allocations.bulk',
+  'workload.admin.dashboard.view',
+  'workload.admin.staff.view',
+  'workload.admin.staff.adjust',
+  'workload.admin.allocations.view',
+  'workload.admin.allocations.adjust',
 ];
 
 const ORG_ADMIN_PERMISSIONS: PermissionId[] = [
   ...WORKLOAD_ADMIN_PERMISSIONS,
+  'nav.courses',
+  'nav.modules',
+  'staff.create',
+  'staff.edit',
+  'courses.view',
+  'courses.create',
+  'courses.edit',
+  'courses.years.add',
+  'modules.view',
+  'modules.create',
+  'modules.edit',
+  'modules.link',
+  'modules.unlink',
+  'iterations.view',
+  'iterations.create',
+  'groups.view',
+  'groups.create',
+  'groups.delete',
+  'allocations.assign',
+  'allocations.bulk',
   'users.create',
   'users.edit',
   'users.delete',

@@ -162,7 +162,9 @@ export type PermissionGroup =
   | 'users'
   | 'permissions'
   | 'roles'
-  | 'organisations';
+  | 'organisations'
+  | 'manager'
+  | 'workload';
 
 /**
  * Audit action types

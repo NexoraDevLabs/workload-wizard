@@ -21,23 +21,23 @@ export const seedDefaultOrgRolesAndPermissions = mutation({
     // Create default roles
     const defaultRoles = [
       {
-        name: 'Admin',
-        description: 'Full administrative access',
+        name: 'User',
+        description: 'Standard workload user access',
         isDefault: true,
       },
       {
         name: 'Manager',
-        description: 'Management level access',
+        description: 'Team-scoped workload visibility and change review access',
         isDefault: true,
       },
       {
-        name: 'Lecturer',
-        description: 'Standard lecturer access',
+        name: 'Organisation Admin',
+        description: 'Organisation settings and user administration access',
         isDefault: true,
       },
       {
-        name: 'Viewer',
-        description: 'Read-only access',
+        name: 'Workload Admin',
+        description: 'Organisation-scoped workload administration access',
         isDefault: true,
       },
     ];
@@ -1374,7 +1374,7 @@ export async function ensureDefaultsForOrg(
     defaultRoleNames =
       templates.length > 0
         ? templates.map((t) => t.name)
-        : ['Admin', 'Manager', 'Lecturer', 'Viewer'];
+        : ['User', 'Manager', 'Workload Admin', 'Organisation Admin'];
   }
 
   // Load active system permissions once
