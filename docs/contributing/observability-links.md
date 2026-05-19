@@ -32,7 +32,6 @@ When reporting performance issues, include:
 ```markdown
 ## Performance Issue Report
 
-**Dashboard**: [Screenshot of Sentry Performance dashboard]
 **Trace ID**: `abc123def456` (if available)
 **Time Range**: 2024-01-15 14:30 - 15:00 UTC
 **Environment**: Production
@@ -138,7 +137,6 @@ Examples:
 
 When working in forks:
 
-1. **Use Personal Accounts**: Create dashboards in personal Sentry account
 2. **Share with Team**: Add team members as collaborators
 3. **Document Access**: Include access instructions in PR description
 4. **Clean Up**: Remove access after PR is merged
@@ -194,7 +192,6 @@ When working with observability data:
 
 ### External Resources
 
-- **Sentry Documentation**: [docs.sentry.io](https://docs.sentry.io)
 - **Vercel Speed Insights**: [vercel.com/docs/analytics](https://vercel.com/docs/analytics)
 - **OpenTelemetry**: [opentelemetry.io/docs](https://opentelemetry.io/docs)
 

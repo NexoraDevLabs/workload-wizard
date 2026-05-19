@@ -93,7 +93,6 @@ The following must not block MVP delivery:
 ### Analytics and Observability
 
 - PostHog (events, heatmaps, session replay)
-- Advanced Sentry dashboards/alerts
 - OpenTelemetry tracing
 
 ### Feature Management

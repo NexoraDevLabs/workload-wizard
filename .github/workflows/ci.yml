@@ -16,10 +16,6 @@ env:
   NEXT_TELEMETRY_DISABLED: '1'
   NODE_OPTIONS: '--max_old_space_size=4096'
   NEXT_DISABLE_SOURCEMAPS: '1'
-  SENTRY_SKIP_AUTO_RELEASE: '1'
-  SENTRY_SOURCEMAPS: 'false'
-  SENTRY_SILENT: '1'
-  SENTRY_TELEMETRY: 'false'
   # Build optimizations
   SKIP_ENV_VALIDATION: '1'
   CI: 'true'

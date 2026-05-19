@@ -18,7 +18,6 @@ As this is a private organisational tool, only the **latest `main` branch** is a
 WorkloadWizard implements a comprehensive Content Security Policy to protect against XSS attacks:
 
 - **Nonce-based script execution** for inline scripts
-- **Dynamic allowlists** for external services (Convex, WorkOS, Sentry, etc.)
 - **Violation reporting** with admin dashboard at `/admin/csp`
 - **Report-Only mode** by default for safe rollout
 

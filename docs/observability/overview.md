@@ -7,7 +7,6 @@ This document describes the observability infrastructure for WorkloadWizard, inc
 The observability stack consists of:
 
 - **OpenTelemetry**: Distributed tracing and metrics collection
-- **Sentry**: Error tracking, performance monitoring, and alerting
 - **Vercel Speed Insights**: Real User Monitoring (RUM) for P95 Web Vitals
 
 ## Tracing Infrastructure
@@ -60,17 +59,11 @@ const result = await withDbSpan('convex:getUser', () =>
 
 ## Monitoring Dashboards
 
-### Sentry Performance Dashboard
-
-The Sentry dashboard provides comprehensive performance monitoring:
-
 - **API P95 Duration**: 95th percentile response times for API endpoints
 - **API Error Rate**: Error rate percentage by endpoint
 - **DB Operations P95**: Database operation performance
 - **Overall Error Rate**: System-wide error rate
 - **Request Volume**: Request count by endpoint
-
-**Access**: Sentry → Performance → Dashboards → "API & DB Observability - P95 Latency & Error Rate"
 
 ### Vercel Speed Insights
 
@@ -105,36 +98,20 @@ The following alert rules are configured:
 
 ### Alert Configuration
 
-Alerts are configured via the Sentry API using the provided scripts:
-
 ```bash
 # Create dashboards
-npm dashboards:sentry
 
 # Create alerts
-npm alerts:sentry
 ```
 
 **Required Environment Variables:**
-
-- `SENTRY_ORG`: Sentry organization slug
-- `SENTRY_PROJECT`: Sentry project slug
-- `SENTRY_AUTH_TOKEN`: Sentry API token
 
 ## Environment Configuration
 
 ### Required Environment Variables
 
 ```bash
-# Sentry Configuration
-SENTRY_DSN=your_sentry_dsn
-SENTRY_TRACES_SAMPLE_RATE=0.2
-SENTRY_PROFILES_SAMPLE_RATE=0.0
 
-# Sentry API (for scripts)
-SENTRY_ORG=your_org_slug
-SENTRY_PROJECT=your_project_slug
-SENTRY_AUTH_TOKEN=your_api_token
 ```
 
 ### Sampling Rates
@@ -150,10 +127,8 @@ SENTRY_AUTH_TOKEN=your_api_token
 1. **Missing Traces**
    - Verify `instrumentation.ts` is at the root of the project
    - Check that `NEXT_RUNTIME=nodejs` in production
-   - Ensure Sentry DSN is configured
 
 2. **High Sampling Overhead**
-   - Reduce `SENTRY_TRACES_SAMPLE_RATE` for high-traffic applications
    - Consider using dynamic sampling based on error rates
 
 3. **Missing Database Traces**
@@ -165,10 +140,8 @@ SENTRY_AUTH_TOKEN=your_api_token
 Enable debug logging by setting:
 
 ```bash
-SENTRY_DEBUG=true
-```
 
-This will provide detailed logs about trace creation and Sentry integration.
+```
 
 ## Best Practices
 

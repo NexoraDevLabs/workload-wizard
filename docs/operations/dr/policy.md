@@ -41,7 +41,6 @@ This document defines the Disaster Recovery (DR) policy for the Workload Wizard 
 ### Excluded Data
 
 - Static assets (images, documents) - managed by Vercel
-- Third-party service data (PostHog, Sentry) - managed by respective services
 - Development and staging data
 
 ## Storage and Retention

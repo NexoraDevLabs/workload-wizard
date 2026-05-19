@@ -17,7 +17,6 @@
     - [Privacy Settings](#privacy-settings)
   - [Testing the integration](#testing-the-integration)
     - [PostHog Test Dashboard](#posthog-test-dashboard)
-    - [Sentry Test Dashboard](#sentry-test-dashboard)
     - [Testing the proxy](#testing-the-proxy)
     - [Optional developer proxy test steps](#optional-developer-proxy-test-steps)
   - [Security considerations](#security-considerations)
@@ -210,8 +209,6 @@ session_recording: {
 ```
 
 ## Testing the integration
-
-Verify PostHog and Sentry behaviour in a local development environment.
 
 ### Testing the proxy
 

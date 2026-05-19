@@ -5,7 +5,6 @@
 
 - [WorkloadWizard](#workloadwizard)
   - [🚀 **New Advanced Features**](#-new-advanced-features)
-    - [**Sentry Error Monitoring & Performance**](#sentry-error-monitoring--performance)
   - [🛠️ **Tech Stack**](#-tech-stack)
   - [📊 **Key Features**](#-key-features)
   - [🔒 **Access & Security**](#-access--security)
@@ -23,7 +22,6 @@
     - [Code Quality](#code-quality)
     - [Database](#database)
   - [🌟 **Advanced Features**](#-advanced-features)
-    - [**Sentry Monitoring Dashboard**](#sentry-monitoring-dashboard)
   - [📈 **Performance & Monitoring**](#-performance--monitoring)
   - [🤝 **Contributing**](#-contributing)
   - [📄 **License**](#-license)
@@ -43,8 +41,6 @@ A comprehensive workload management application for educational institutions, bu
 
 ## 🚀 **New Advanced Features**
 
-### **Sentry Error Monitoring & Performance**
-
 - **Session Replay** with privacy controls
 - **User Feedback** collection with customizable forms
 - **Performance Monitoring** with custom metrics and traces
@@ -56,7 +52,6 @@ A comprehensive workload management application for educational institutions, bu
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **Backend**: Convex (real-time database)
 - **Authentication**: WorkOS
-- **Monitoring**: Sentry (session replay & user feedback)
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Testing**: Playwright (E2E), Vitest (unit)
 
@@ -109,7 +104,6 @@ A comprehensive workload management application for educational institutions, bu
 - npm
 - Convex account
 - WorkOS account
-- Sentry account (optional)
 
 ### Installation
 
@@ -146,11 +140,7 @@ WORKOS_CLIENT_ID=whsec_your_webhook_secret
 
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Optional: enables Sentry when configured
-NEXT_PUBLIC_SENTRY_DSN=
 ```
-
-Server routes validate `CONVEX_DEPLOYMENT`, `WORKOS_API_KEY`, and `WORKOS_CLIENT_ID` and throw a clear configuration error when required values are missing. Optional tools, including Sentry, stay disabled when their env vars are unset. Never commit real secrets.
 
 ## 🧪 **Testing**
 
@@ -180,7 +170,6 @@ npm run test:watch
 
 ## 📚 **Documentation**
 
-- **Sentry Integration**: `./docs/SENTRY.md` — Error tracking, session replay, user feedback
 - **Permissions**: `./docs/PERMISSIONS.md` — Role-based access control
   _Removed: Feature Flags_
 - **Testing**: `./docs/TESTING_PROCEDURES.md` — Testing guidelines and procedures
@@ -281,7 +270,6 @@ npx convex deploy
 
 ## 📈 **Performance & Monitoring**
 
-- **Error Monitoring** with Sentry
 - **Performance Tracking** with custom metrics
 - **Session Replay** for debugging user issues
 - **User Feedback** collection for continuous improvement

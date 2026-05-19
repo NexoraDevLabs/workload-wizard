@@ -60,30 +60,30 @@ interface StaffMember {
   }>;
 }
 
-interface UserData {
-  systemRoles?: string[];
-}
-
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
   const { user, isLoaded, isSignedIn } = useAuthUser({
     redirectOnUnauthenticated: true,
   });
 
-  const convexUser = useQuery(
-    api.users.getBySubject,
-    user?.id ? { subject: user.id } : 'skip'
-  ) as UserData | undefined;
-
-  const isAdminLike = (convexUser?.systemRoles || []).some(
-    (role) =>
-      role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
-  );
-
   const profiles = useQuery(
     api.staff.list,
-    user?.id && isAdminLike ? { userId: user.id } : 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   ) as StaffMember[] | undefined;
+
+  const canCreateStaff = useQuery(
+    api.permissions.hasPermission,
+    user?.id ? { userId: user.id, permissionId: 'staff.create' } : 'skip'
+  );
+
+  const canAdjustWorkloadStaff = useQuery(
+    api.permissions.hasPermission,
+    user?.id
+      ? { userId: user.id, permissionId: 'workload.admin.staff.adjust' }
+      : 'skip'
+  );
+
+  const canCreate = Boolean(canCreateStaff || canAdjustWorkloadStaff);
 
   const [search, setSearch] = useState('');
   const [contract, setContract] = useState<string>('all');
@@ -126,7 +126,7 @@ export default function StaffCapacityPage() {
       <div className="space-y-4">
         <div data-testid="page-ready" />
 
-        {isAdminLike && (
+        {Array.isArray(profiles) && profiles.length > 0 && (
           <div className="flex flex-col gap-3 rounded-md border p-3 md:flex-row md:items-end">
             <div className="flex-1 space-y-1">
               <Label htmlFor="search">Search</Label>
@@ -196,15 +196,17 @@ export default function StaffCapacityPage() {
               </label>
             </div>
 
-            <div className="md:ml-auto">
-              <Button onClick={() => setOpenCreate(true)}>
-                Create lecturer
-              </Button>
-            </div>
+            {canCreate && (
+              <div className="md:ml-auto">
+                <Button onClick={() => setOpenCreate(true)}>
+                  Create lecturer
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
-        {isAdminLike && (
+        {canCreate && (
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogContent className="max-w-4xl">
               <DialogHeader>
@@ -217,13 +219,7 @@ export default function StaffCapacityPage() {
           </Dialog>
         )}
 
-        {!isAdminLike && (
-          <div className="text-sm text-muted-foreground">
-            View your profile from the sidebar (Staff → My Profile).
-          </div>
-        )}
-
-        {isAdminLike && (!Array.isArray(profiles) || profiles.length === 0) && (
+        {profiles !== undefined && (!Array.isArray(profiles) || profiles.length === 0) && (
           <div
             className="rounded-md border border-dashed bg-muted/30 p-8 text-center text-sm text-muted-foreground"
             data-testid="empty-staff-list"
@@ -232,8 +228,7 @@ export default function StaffCapacityPage() {
           </div>
         )}
 
-        {isAdminLike &&
-          Array.isArray(profiles) &&
+        {Array.isArray(profiles) &&
           profiles.length > 0 &&
           currentYear?._id && (
             <ul className="divide-y rounded-md border" data-testid="staff-list">

@@ -433,7 +433,6 @@ export function AuditLogsViewer({
 
   return (
     <ErrorBoundary
-      contextTag="AuditLogsViewer"
       fallback={({ error, reset }) => (
         <DefaultErrorFallback error={error} reset={reset} />
       )}

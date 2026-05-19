@@ -138,10 +138,11 @@ export default defineSchema({
     userId: v.string(),
     jobTitle: v.optional(v.string()),
     specialism: v.optional(v.string()),
+    orgRoles: v.optional(v.array(v.string())),
     organisationId: v.id('organisations'),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }),
+  }).index('by_user_org', ['userId', 'organisationId']),
 
   // 🔐 Roles
   user_roles: defineTable({
@@ -165,6 +166,18 @@ export default defineSchema({
     createdAt: v.float64(),
     updatedAt: v.float64(),
   }).index('by_user_org', ['userId', 'organisationId']),
+
+  manager_team_assignments: defineTable({
+    managerUserId: v.string(),
+    organisationId: v.id('organisations'),
+    teamName: v.string(),
+    isActive: v.boolean(),
+    assignedBy: v.string(),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index('by_manager_org', ['managerUserId', 'organisationId'])
+    .index('by_org_team', ['organisationId', 'teamName']),
 
   // 📘 Courses
   courses: defineTable({
@@ -302,6 +315,32 @@ export default defineSchema({
     .index('by_lecturer', ['lecturerId']) // list allocations for a lecturer
     .index('by_year', ['academicYearId']) // list allocations for a year
     .index('by_org_year', ['organisationId', 'academicYearId']),
+
+  allocation_change_requests: defineTable({
+    type: v.union(v.literal('assign'), v.literal('update'), v.literal('remove')),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('approved'),
+      v.literal('rejected')
+    ),
+    organisationId: v.id('organisations'),
+    targetLecturerId: v.id('lecturer_profiles'),
+    academicYearId: v.id('academic_years'),
+    requestedBy: v.string(),
+    requestedAt: v.float64(),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.float64()),
+    allocationId: v.optional(v.id('group_allocations')),
+    groupId: v.optional(v.id('module_groups')),
+    payload: v.string(),
+    reason: v.optional(v.string()),
+    decisionNote: v.optional(v.string()),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index('by_org_status', ['organisationId', 'status'])
+    .index('by_target', ['targetLecturerId'])
+    .index('by_requested_by', ['requestedBy']),
 
   // 🧮 Module Allocations
   module_allocations: defineTable({

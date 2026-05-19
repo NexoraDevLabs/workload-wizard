@@ -36,6 +36,59 @@ interface CreateUserFormProps {
   isSysadmin?: boolean; // Flag to indicate if this is for sysadmin use
 }
 
+type OrgRole = {
+  _id: string;
+  name: string;
+};
+
+const ORG_ROLE_ORDER = [
+  'User',
+  'Manager',
+  'Workload Admin',
+  'Organisation Admin',
+] as const;
+
+type CanonicalOrgRoleLabel = (typeof ORG_ROLE_ORDER)[number];
+type CanonicalOrgRoleOption = OrgRole & { label: CanonicalOrgRoleLabel };
+
+const normaliseRoleName = (name: string) =>
+  name.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+
+const getCanonicalOrgRoleOptions = (
+  roles: OrgRole[] = []
+): CanonicalOrgRoleOption[] => {
+  const preferredNames: Record<CanonicalOrgRoleLabel, string[]> = {
+    User: ['user', 'viewer', 'lecturer'],
+    Manager: ['manager', 'team manager'],
+    'Workload Admin': ['workload admin', 'workloadadmin'],
+    'Organisation Admin': [
+      'organisation admin',
+      'organization admin',
+      'org admin',
+      'orgadmin',
+      'admin',
+    ],
+  };
+
+  return ORG_ROLE_ORDER.reduce<CanonicalOrgRoleOption[]>((options, label) => {
+    const preferences = preferredNames[label];
+    const role = [...roles]
+      .sort((a, b) => {
+        const aIndex = preferences.indexOf(normaliseRoleName(a.name));
+        const bIndex = preferences.indexOf(normaliseRoleName(b.name));
+        return (
+          (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) -
+          (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex)
+        );
+      })
+      .find((candidate) =>
+        preferences.includes(normaliseRoleName(candidate.name))
+      );
+    if (role) options.push({ ...role, label });
+    return options;
+  }, []);
+};
+
 export function CreateUserForm({
   organisationId,
   onClose,
@@ -66,6 +119,9 @@ export function CreateUserForm({
             selectedOrganisationId as unknown as Id<'organisations'>,
         }
       : 'skip'
+  );
+  const canonicalOrgRoleOptions = getCanonicalOrgRoleOptions(
+    (organisationalRoles || []) as OrgRole[]
   );
 
   const Schema = z.object({
@@ -102,6 +158,7 @@ export function CreateUserForm({
       password?: string;
       sendEmailInvitation?: boolean;
       organisationalRoleId?: string;
+      organisationalRoleIds?: string[];
     }
 
     let data: FormData;
@@ -127,6 +184,7 @@ export function CreateUserForm({
     data.password = ''; // auto-generated server-side
     data.sendEmailInvitation = true;
     data.organisationalRoleId = undefined as unknown as string;
+    data.organisationalRoleIds = selectedOrgRoleIds;
 
     // Ensure password is always a string for type safety
     const createUserData: CreateUserData = {
@@ -291,27 +349,6 @@ export function CreateUserForm({
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="role-sysadmin"
-                      checked={selectedRoles.includes('sysadmin')}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedRoles([...selectedRoles, 'sysadmin']);
-                        } else {
-                          setSelectedRoles(
-                            selectedRoles.filter((role) => role !== 'sysadmin')
-                          );
-                        }
-                      }}
-                    />
-                    <Label
-                      htmlFor="role-sysadmin"
-                      className="text-sm font-normal"
-                    >
-                      System Admin
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
                       id="role-developer"
                       checked={selectedRoles.includes('developer')}
                       onCheckedChange={(checked) => {
@@ -345,7 +382,7 @@ export function CreateUserForm({
               <div className="space-y-2">
                 <Label>Organisational Roles</Label>
                 <div className="flex flex-wrap gap-2">
-                  {organisationalRoles?.map((role) => {
+                  {canonicalOrgRoleOptions.map((role) => {
                     const checked = selectedOrgRoleIds.includes(role._id);
                     return (
                       <button
@@ -362,7 +399,7 @@ export function CreateUserForm({
                         }
                         className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
                       >
-                        {role.name}
+                        {role.label}
                       </button>
                     );
                   }) || []}

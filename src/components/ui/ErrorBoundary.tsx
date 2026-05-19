@@ -7,8 +7,6 @@ export type ErrorBoundaryProps = {
   fallback?:
     | React.ReactNode
     | ((args: { error: Error; reset: () => void }) => React.ReactNode);
-  /** Optional tag/context string to group Sentry events (e.g., "ChartsPanel"). */
-  contextTag?: string;
   /** Called after error captured (for local logs/metrics). */
   onErrorCaptured?: (error: Error, info: React.ErrorInfo) => void;
 };
@@ -23,18 +21,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
   }
 
   override componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Lazy import to avoid client bundle cost when Sentry disabled
-    void import('../../lib/monitoring')
-      .then(async ({ captureUIException }) => {
-        await captureUIException(error, {
-          componentStack: info.componentStack || undefined,
-          contextTag: this.props.contextTag,
-        });
-      })
-      .catch(() => {
-        /* noop if monitoring not available */
-      });
-
     this.props.onErrorCaptured?.(error, info);
   }
 

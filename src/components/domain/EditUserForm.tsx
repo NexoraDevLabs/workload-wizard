@@ -3,7 +3,7 @@
 import { analytics } from '@/lib/analytics';
 import { useToast } from '@/hooks/use-toast';
 import { toastError } from '@/lib/utils';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -53,6 +53,82 @@ interface EditUserFormProps {
   isSysadmin?: boolean; // Flag to indicate if this is for sysadmin use
 }
 
+type OrgRole = {
+  _id: string;
+  name: string;
+};
+
+const ORG_ROLE_ORDER = [
+  'User',
+  'Manager',
+  'Workload Admin',
+  'Organisation Admin',
+] as const;
+
+type CanonicalOrgRoleLabel = (typeof ORG_ROLE_ORDER)[number];
+type CanonicalOrgRoleOption = OrgRole & { label: CanonicalOrgRoleLabel };
+
+const normaliseRoleName = (name: string) =>
+  name.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+
+const getCanonicalOrgRoleName = (name: string) => {
+  const role = normaliseRoleName(name);
+  if (
+    role === 'organisation admin' ||
+    role === 'organization admin' ||
+    role === 'org admin' ||
+    role === 'orgadmin' ||
+    role === 'admin'
+  ) {
+    return 'Organisation Admin';
+  }
+  if (role === 'workload admin' || role === 'workloadadmin') {
+    return 'Workload Admin';
+  }
+  if (role === 'manager' || role === 'team manager') {
+    return 'Manager';
+  }
+  if (role === 'user' || role === 'viewer' || role === 'lecturer') {
+    return 'User';
+  }
+  return name;
+};
+
+const getCanonicalOrgRoleOptions = (
+  roles: OrgRole[] = []
+): CanonicalOrgRoleOption[] => {
+  const preferredNames: Record<CanonicalOrgRoleLabel, string[]> = {
+    User: ['user', 'viewer', 'lecturer'],
+    Manager: ['manager', 'team manager'],
+    'Workload Admin': ['workload admin', 'workloadadmin'],
+    'Organisation Admin': [
+      'organisation admin',
+      'organization admin',
+      'org admin',
+      'orgadmin',
+      'admin',
+    ],
+  };
+
+  return ORG_ROLE_ORDER.reduce<CanonicalOrgRoleOption[]>((options, label) => {
+    const preferences = preferredNames[label];
+    const role = [...roles]
+      .sort((a, b) => {
+        const aIndex = preferences.indexOf(normaliseRoleName(a.name));
+        const bIndex = preferences.indexOf(normaliseRoleName(b.name));
+        return (
+          (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) -
+          (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex)
+        );
+      })
+      .find((candidate) =>
+        preferences.includes(normaliseRoleName(candidate.name))
+      );
+    if (role) options.push({ ...role, label });
+    return options;
+  }, []);
+};
+
 interface ApiResponse {
   error?: string;
   action?: string;
@@ -96,14 +172,32 @@ export function EditUserForm({
         }
       : 'skip'
   );
+  const canonicalOrgRoleOptions = useMemo(
+    () => getCanonicalOrgRoleOptions((organisationalRoles || []) as OrgRole[]),
+    [organisationalRoles]
+  );
 
   useEffect(() => {
     const incoming = (
-      (user as unknown as { organisationalRoles?: { id: string }[] })
-        .organisationalRoles || []
-    ).map((r) => r.id);
-    setSelectedOrgRoleIds(incoming);
-  }, [user]);
+      (
+        user as unknown as {
+          organisationalRoles?: { id: string; name: string }[];
+        }
+      ).organisationalRoles || []
+    );
+    const canonicalRoleIds = canonicalOrgRoleOptions
+      .filter((option) =>
+        incoming.some(
+          (role) => getCanonicalOrgRoleName(role.name) === option.label
+        )
+      )
+      .map((role) => role._id);
+    if (canonicalRoleIds.length === 0 && incoming.length > 0) {
+      setSelectedOrgRoleIds(incoming.map((r) => r.id));
+      return;
+    }
+    setSelectedOrgRoleIds(canonicalRoleIds);
+  }, [canonicalOrgRoleOptions, user]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -153,7 +247,7 @@ export function EditUserForm({
               firstName: data.firstName,
               lastName: data.lastName,
               username: data.username?.trim() || undefined,
-              systemRoles: data.systemRoles,
+              ...(isSysadmin ? { roles: data.systemRoles } : {}),
               organisationalRoleIds: data.organisationalRoleIds,
               organisationId: data.organisationId,
               // Don't include email - it's handled separately if changed
@@ -355,72 +449,52 @@ export function EditUserForm({
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>System Roles *</Label>
+            {isSysadmin && (
               <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="role-user"
-                    checked={selectedRoles.includes('user')}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedRoles([...selectedRoles, 'user']);
-                      } else {
-                        setSelectedRoles(
-                          selectedRoles.filter((role) => role !== 'user')
-                        );
-                      }
-                    }}
-                  />
-                  <Label htmlFor="role-user" className="text-sm font-normal">
-                    User
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="role-orgadmin"
-                    checked={selectedRoles.includes('orgadmin')}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedRoles([...selectedRoles, 'orgadmin']);
-                      } else {
-                        setSelectedRoles(
-                          selectedRoles.filter((role) => role !== 'orgadmin')
-                        );
-                      }
-                    }}
-                  />
-                  <Label
-                    htmlFor="role-orgadmin"
-                    className="text-sm font-normal"
-                  >
-                    Organisation Admin
-                  </Label>
-                </div>
-                {isSysadmin && (
+                <Label>System Roles *</Label>
+                <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      id="role-sysadmin"
-                      checked={selectedRoles.includes('sysadmin')}
+                      id="role-user"
+                      checked={selectedRoles.includes('user')}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedRoles([...selectedRoles, 'sysadmin']);
+                          setSelectedRoles([...selectedRoles, 'user']);
                         } else {
                           setSelectedRoles(
-                            selectedRoles.filter((role) => role !== 'sysadmin')
+                            selectedRoles.filter((role) => role !== 'user')
                           );
                         }
                       }}
                     />
                     <Label
-                      htmlFor="role-sysadmin"
+                      htmlFor="role-user"
                       className="text-sm font-normal"
                     >
-                      System Admin
+                      User
                     </Label>
                   </div>
-                )}
-                {isSysadmin && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="role-orgadmin"
+                      checked={selectedRoles.includes('orgadmin')}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedRoles([...selectedRoles, 'orgadmin']);
+                        } else {
+                          setSelectedRoles(
+                            selectedRoles.filter((role) => role !== 'orgadmin')
+                          );
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor="role-orgadmin"
+                      className="text-sm font-normal"
+                    >
+                      Organisation Admin
+                    </Label>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="role-developer"
@@ -442,19 +516,19 @@ export function EditUserForm({
                       Developer
                     </Label>
                   </div>
+                </div>
+                {selectedRoles.length === 0 && (
+                  <p className="text-sm text-red-600">
+                    Please select at least one role
+                  </p>
                 )}
               </div>
-              {selectedRoles.length === 0 && (
-                <p className="text-sm text-red-600">
-                  Please select at least one role
-                </p>
-              )}
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label>Organisational Roles</Label>
               <div className="flex flex-wrap gap-2">
-                {organisationalRoles?.map((role) => {
+                {canonicalOrgRoleOptions.map((role) => {
                   const checked = selectedOrgRoleIds.includes(role._id);
                   return (
                     <button
@@ -469,7 +543,7 @@ export function EditUserForm({
                       }
                       className={`px-2 py-1 rounded border text-xs ${checked ? 'bg-slate-900 text-white' : 'bg-white'}`}
                     >
-                      {role.name}
+                      {role.label}
                     </button>
                   );
                 }) || []}

@@ -34,14 +34,6 @@ export async function withDbSpan<T>(
       span.setAttribute('error.type', 'db_error');
       span.setAttribute('db.success', false);
 
-      // Best-effort Sentry capture
-      try {
-        const Sentry = await import('@sentry/nextjs');
-        Sentry.captureException(err);
-      } catch {
-        // Sentry not available or failed
-      }
-
       throw err;
     } finally {
       span.end();

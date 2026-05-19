@@ -2,11 +2,6 @@ import { useAuthUser } from '@/hooks/useAuthUser';
 import { useMemo } from 'react';
 import {
   hasPermission,
-  canViewUsers,
-  canCreateUsers,
-  canEditUsers,
-  canDeleteUsers,
-  canManagePermissions,
   gateUIState,
   gateButtonState,
   gateActionState,
@@ -20,20 +15,47 @@ export function usePermissions(organisationId?: string) {
   const convexUser = useQuery(
     api.users.getBySubject,
     isLoaded && user?.id && user?.organisationId ? { subject: user.id } : 'skip'
-  ) as { systemRoles?: string[] } | undefined;
+  ) as { systemRoles?: string[]; organisationRoles?: string[] } | undefined;
 
   // Derive an effective role from publicMetadata.role or roles[] (prefer strongest)
-  const userRole = useMemo(() => {
+  const userRoles = useMemo(() => {
     const single = user?.publicMetadata?.role as string | undefined;
     const many = (user?.publicMetadata?.roles as string[] | undefined) || [];
     const systemRoles = Array.isArray(convexUser?.systemRoles)
       ? convexUser?.systemRoles
       : [];
+    const organisationRoles = Array.isArray(convexUser?.organisationRoles)
+      ? convexUser.organisationRoles
+      : [];
+    const normalise = (role: string) =>
+      role.trim().toLowerCase().replace(/[_\s-]+/g, '');
+    const orgRoleMap: Record<string, string> = {
+      user: 'user',
+      viewer: 'user',
+      lecturer: 'user',
+      manager: 'manager',
+      teammanager: 'manager',
+      workloadadmin: 'workloadadmin',
+      organisationadmin: 'orgadmin',
+      organizationadmin: 'orgadmin',
+      orgadmin: 'orgadmin',
+      admin: 'orgadmin',
+    };
     const combined = new Set<string>([
       ...many,
       ...systemRoles,
+      ...organisationRoles.map((role) => orgRoleMap[normalise(role)] ?? role),
       ...(single ? [single] : []),
     ]);
+    return [...combined];
+  }, [
+    user?.publicMetadata?.role,
+    user?.publicMetadata?.roles,
+    convexUser?.systemRoles,
+    convexUser?.organisationRoles,
+  ]);
+
+  const userRole = useMemo(() => {
     // Prioritise high-privilege roles if present (include dev/developer aliases)
     const priority = [
       'systemadmin',
@@ -47,35 +69,44 @@ export function usePermissions(organisationId?: string) {
       'lecturer',
       'user',
     ];
-    const found = priority.find((r) => combined.has(r));
+    const found = priority.find((r) => userRoles.includes(r));
     return found || undefined;
-  }, [
-    user?.publicMetadata?.role,
-    user?.publicMetadata?.roles,
-    convexUser?.systemRoles,
-  ]);
+  }, [userRoles]);
+
+  const hasRolePermission = (
+    permissionId: PermissionId,
+    isSystemAction = false
+  ) =>
+    userRoles.some((role) =>
+      hasPermission(role, permissionId, organisationId, isSystemAction)
+    );
+
+  const roleForPermission = (permissionId: PermissionId, isSystemAction = false) =>
+    userRoles.find((role) =>
+      hasPermission(role, permissionId, organisationId, isSystemAction)
+    ) ?? userRole;
 
   const permissions = useMemo(
     () => ({
       // Generic permission checker
       hasPermission: (permissionId: PermissionId, isSystemAction = false) =>
-        hasPermission(userRole, permissionId, organisationId, isSystemAction),
+        hasRolePermission(permissionId, isSystemAction),
 
       // Specific permission checks
-      canViewUsers: () => canViewUsers(userRole, organisationId),
-      canCreateUsers: () => canCreateUsers(userRole, organisationId),
-      canEditUsers: () => canEditUsers(userRole, organisationId),
-      canDeleteUsers: () => canDeleteUsers(userRole, organisationId),
+      canViewUsers: () => hasRolePermission('users.view'),
+      canCreateUsers: () => hasRolePermission('users.create'),
+      canEditUsers: () => hasRolePermission('users.edit'),
+      canDeleteUsers: () => hasRolePermission('users.delete'),
       canManagePermissions: () =>
-        canManagePermissions(userRole, organisationId),
+        hasRolePermission('permissions.manage'),
 
       // Role checks
       isSystemAdmin: () =>
         userRole === 'systemadmin' ||
         userRole === 'sysadmin' ||
         userRole === 'admin',
-      isOrgAdmin: () => userRole === 'orgadmin',
-      isLecturer: () => userRole === 'lecturer',
+      isOrgAdmin: () => userRoles.includes('orgadmin'),
+      isLecturer: () => userRoles.includes('lecturer'),
 
       // Centralized gating utilities
       gateUIState: (
@@ -85,7 +116,11 @@ export function usePermissions(organisationId?: string) {
           fallbackValue?: unknown;
           hideForbidden?: boolean;
         }
-      ) => gateUIState(userRole, permissionId, { organisationId, ...options }),
+      ) =>
+        gateUIState(roleForPermission(permissionId, options?.isSystemAction), permissionId, {
+          organisationId,
+          ...options,
+        }),
 
       gateButtonState: (
         permissionId: PermissionId,
@@ -94,7 +129,11 @@ export function usePermissions(organisationId?: string) {
           disabledText?: string;
         }
       ) =>
-        gateButtonState(userRole, permissionId, { organisationId, ...options }),
+        gateButtonState(
+          roleForPermission(permissionId, options?.isSystemAction),
+          permissionId,
+          { organisationId, ...options }
+        ),
 
       gateActionState: (
         permissionId: PermissionId,
@@ -103,13 +142,18 @@ export function usePermissions(organisationId?: string) {
           actionName?: string;
         }
       ) =>
-        gateActionState(userRole, permissionId, { organisationId, ...options }),
+        gateActionState(
+          roleForPermission(permissionId, options?.isSystemAction),
+          permissionId,
+          { organisationId, ...options }
+        ),
 
       // Current user info
       userRole,
+      userRoles,
       organisationId,
     }),
-    [userRole, organisationId]
+    [userRole, userRoles, organisationId]
   );
 
   return permissions;

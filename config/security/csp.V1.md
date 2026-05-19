@@ -50,12 +50,6 @@ This is the initial Content Security Policy implementation for WorkloadWizard, d
 - `frame-src *.workos.accounts.dev *.workos.com` - Allow WorkOS authentication frames
 - `img-src img.workos.com images.workos.com` - Allow WorkOS user avatars
 
-### Sentry (Error Monitoring)
-
-- `script-src *.sentry-cdn.com *.sentry.io` - Allow Sentry error reporting scripts
-- `connect-src *.sentry.io *.sentry-cdn.com` - Allow Sentry error reporting
-- `img-src *.sentry.io` - Allow Sentry error images
-
 ### Statsig (Feature Flags)
 
 - `script-src *.statsig.com *.statsigapi.net` - Allow Statsig feature flag scripts
