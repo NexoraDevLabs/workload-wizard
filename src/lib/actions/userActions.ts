@@ -1,12 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, no-empty */
 'use server';
 
-import { clerkClient } from '@clerk/nextjs/server';
-import { currentUser } from '@clerk/nextjs/server';
 import { randomBytes } from 'node:crypto';
-// Removed unused imports
 import { revalidatePath } from 'next/cache';
 import { api } from '@/convex/_generated/api';
 import { ConvexHttpClient } from 'convex/browser';
+import type { Id } from '@/convex/_generated/dataModel';
+import { sendUserInvitationEmail } from '@/lib/services/emailService';
+import { can, hasRole } from '@/lib/auth/permissions';
+import { getAuthUser } from '@/lib/authz';
 import {
   logUserCreated,
   logUserDeleted,
@@ -14,18 +16,13 @@ import {
   logUserDeactivated,
   logUserReactivated,
 } from './auditActions';
-import type { Id } from '@/convex/_generated/dataModel';
-import { sendUserInvitationEmail } from '@/lib/services/emailService';
 
-// Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
 
 function getConvexClient(): ConvexHttpClient {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (!url) {
-      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
-    }
+    if (!url) throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     convexClient = new ConvexHttpClient(url);
   }
   return convexClient;
@@ -37,415 +34,172 @@ export interface CreateUserData {
   lastName: string;
   username: string;
   password: string;
-  roles: string[]; // Array of system roles
+  roles: string[];
   organisationId?: string;
   sendEmailInvitation?: boolean;
   organisationalRoleId?: string;
   organisationalRoleIds?: string[];
 }
 
-export async function createUser(data: CreateUserData) {
-  const currentUserData = await currentUser();
+function toUserRow(user: any) {
+  return {
+    id: user.subject,
+    subject: user.subject,
+    email: user.email,
+    username: user.username,
+    firstName: user.givenName,
+    lastName: user.familyName,
+    roles: user.systemRoles,
+    organisationId: user.organisationId,
+    createdAt: user.createdAt,
+    lastSignInAt: user.lastSignInAt || null,
+    isActive: user.isActive,
+    organisation: user.organisation,
+  };
+}
 
-  if (!currentUserData) {
-    throw new Error('Unauthorised: User not authenticated');
-  }
-
-  // Check if user has appropriate permissions
-  const userRole = currentUserData.publicMetadata?.role as string;
-  const userRoles = currentUserData.publicMetadata?.roles as string[];
-  const isAdmin =
-    userRole === 'sysadmin' ||
-    userRole === 'developer' ||
-    (userRoles &&
-      (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-  const isOrgAdmin =
-    userRole === 'orgadmin' || (userRoles && userRoles.includes('orgadmin'));
-
-  if (!isAdmin && !isOrgAdmin) {
+async function requireUserAdmin() {
+  const authUser = await getAuthUser();
+  if (!can(authUser, 'users.admin')) {
     throw new Error('Unauthorised: Admin access required');
   }
+  return authUser;
+}
 
-  // If orgadmin, ensure they can only create users in their own organisation
+export async function createUser(data: CreateUserData) {
+  const authUser = await requireUserAdmin();
+  const isOrgAdmin = hasRole(authUser, 'org_admin');
+
+  let organisationId = data.organisationId as Id<'organisations'> | undefined;
   if (isOrgAdmin) {
-    const actorOrgId = currentUserData.publicMetadata?.organisationId as
-      | string
-      | undefined;
-    if (!actorOrgId) {
+    if (!authUser.orgId) {
       throw new Error('Unauthorised: User must be assigned to an organisation');
     }
-    if (data.organisationId && data.organisationId !== actorOrgId) {
+    if (organisationId && organisationId !== authUser.orgId) {
       throw new Error(
         'Unauthorised: Can only create users in your own organisation'
       );
     }
+    organisationId = authUser.orgId as Id<'organisations'>;
   }
 
-  // Ensure user has an organisationId (for orgadmins)
-  if (isOrgAdmin && !currentUserData.publicMetadata?.organisationId) {
-    throw new Error('Unauthorised: User must be assigned to an organisation');
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.email)) {
-    throw new Error('Invalid email format');
-  }
-
-  try {
-    // Use provided organisationId or get the first organisation as default
-    // Determine organisation: prefer explicit, else actor's org if orgadmin, else first org
-    let organisationId: Id<'organisations'> | undefined =
-      (data.organisationId as unknown as Id<'organisations'>) || undefined;
-    if (!organisationId) {
-      const actorOrgId = currentUserData.publicMetadata?.organisationId as
-        | string
-        | undefined;
-      if (isOrgAdmin && actorOrgId) {
-        organisationId = actorOrgId as unknown as Id<'organisations'>;
-      }
-    }
-    if (!organisationId) {
-      const organisations = await getConvexClient().query(
-        api.organisations.list
+  if (!organisationId) {
+    const organisations = await getConvexClient().query(api.organisations.list);
+    if ((organisations?.length || 0) === 0) {
+      throw new Error(
+        'No organisations found in Convex. Please create an organisation first.'
       );
-      if ((organisations?.length || 0) === 0) {
-        throw new Error(
-          'No organisations found in Convex. Please create an organisation first.'
-        );
-      }
-      organisationId = organisations[0]!._id;
     }
+    organisationId = organisations[0]!._id;
+  }
 
-    // Check if user already exists in Clerk
-
-    try {
-      const clerk = await clerkClient();
-      const existingUsers = await clerk.users.getUserList({
-        emailAddress: [data.email],
-      });
-
-      if ((existingUsers.data?.length || 0) > 0) {
-        const existingUser = existingUsers.data[0]!;
-
-        // Check if user exists in Convex
-        const existingConvexUser = await getConvexClient().query(
-          api.users.getBySubject,
-          {
-            subject: existingUser.id,
-          }
-        );
-
-        if (!existingConvexUser) {
-          // User exists in Clerk but not in Convex - create in Convex
-          const primaryEmail = existingUser.emailAddresses.find(
-            (email) => email.id === existingUser.primaryEmailAddressId
-          );
-
-          if (primaryEmail) {
-            // Update Clerk user with organisationId if not already set
-            if (!existingUser.publicMetadata?.organisationId) {
-              await (
-                await clerkClient()
-              ).users.updateUser(existingUser.id, {
-                publicMetadata: {
-                  ...existingUser.publicMetadata,
-                  organisationId: organisationId,
-                },
-              });
-            }
-
-            await getConvexClient().mutation(api.users.create, {
-              email: primaryEmail.emailAddress,
-              username: existingUser.username || '',
-              givenName: existingUser.firstName || '',
-              familyName: existingUser.lastName || '',
-              fullName:
-                `${existingUser.firstName || ''} ${existingUser.lastName || ''}`.trim(),
-              systemRoles: data.roles,
-              // org derived server-side when userId is provided
-              pictureUrl: existingUser.imageUrl,
-              subject: existingUser.id,
-              tokenIdentifier: primaryEmail.id,
-            });
-          }
-        }
-
-        revalidatePath('/admin/users');
-        return {
-          success: true,
-          userId: existingUser.id,
-          message: 'User already existed in Clerk',
-        };
-      }
-    } catch {
-      // Continue with user creation if search fails
-    }
-
-    // Generate password if not provided
-    const password =
-      data.password || `${randomBytes(12).toString('base64url')}!1aA`;
-
-    // Create new user in Clerk
-    const clerk = await clerkClient();
-    const clerkUser = await clerk.users.createUser({
-      emailAddress: [data.email],
-      username: data.username,
-      password: password,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      publicMetadata: {
-        roles: data.roles,
-        organisationId: organisationId,
-      },
-    });
-
-    // Get the primary email address
-    const primaryEmail = clerkUser.emailAddresses.find(
-      (email) => email.id === clerkUser.primaryEmailAddressId
-    );
-
-    if (!primaryEmail) {
-      throw new Error('Failed to get primary email address');
-    }
-
-    // Create user in Convex
-    await getConvexClient().mutation(api.users.create, {
-      email: primaryEmail.emailAddress,
-      username: data.username || '',
-      givenName: data.firstName,
-      familyName: data.lastName,
-      fullName: `${data.firstName} ${data.lastName}`,
-      systemRoles: data.roles,
-      // org derived server-side when userId is provided
-      pictureUrl: clerkUser.imageUrl,
-      subject: clerkUser.id,
-      tokenIdentifier: primaryEmail.id,
-    });
-
-    // Send email invitation with temporary password if requested
-    let emailSent = false;
-    if (data.sendEmailInvitation !== false) {
-      try {
-        const emailResult = await sendUserInvitationEmail({
-          to: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          username: data.username,
-          temporaryPassword: password,
-          signInUrl:
-            process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL ||
-            'https://workload-wiz.xyz/sign-in',
-          ...(currentUserData.firstName && currentUserData.lastName
-            ? {
-                adminName: `${currentUserData.firstName} ${currentUserData.lastName}`,
-              }
-            : currentUserData.emailAddresses[0]?.emailAddress
-              ? {
-                  adminName: currentUserData.emailAddresses[0]?.emailAddress,
-                }
-              : {}),
-        });
-
-        emailSent = emailResult.success;
-
-        // Email failed but don't fail user creation
-      } catch {
-        // Don't fail the user creation if email fails
-      }
-    }
-
-    // Assign organisational roles if provided (multi or single)
-    if (data.organisationalRoleIds && data.organisationalRoleIds.length > 0) {
-      try {
-        const roleIds = data.organisationalRoleIds.map(
-          (rid) => rid as Id<'user_roles'>
-        );
-        await getConvexClient().mutation(
-          api.organisationalRoles.assignMultipleToUser,
-          {
-            userId: clerkUser.id,
-            roleIds,
-            assignedBy: currentUserData.id,
-          }
-        );
-      } catch {
-        // Role assignment failed but don't fail user creation
-      }
-    } else if (data.organisationalRoleId) {
-      try {
-        await getConvexClient().mutation(api.organisationalRoles.assignToUser, {
-          userId: clerkUser.id,
-          roleId: data.organisationalRoleId as Id<'user_roles'>,
-          assignedBy: currentUserData.id,
-        });
-      } catch {
-        // Don't fail the user creation if role assignment fails
-      }
-    }
-
-    // Log the user creation
-    await logUserCreated(
-      clerkUser.id,
-      primaryEmail.emailAddress,
-      `User created with roles: ${data.roles.join(', ') || 'none'}, organisation: ${organisationId}, organisational role: ${data.organisationalRoleId || 'none'}, email invitation: ${emailSent ? 'sent via Resend' : 'not sent'}`
-    );
-
-    revalidatePath('/admin/users');
+  const existingUsers = await getConvexClient().query(api.users.list, {
+    organisationId,
+  });
+  const existing = existingUsers.find((user: any) => user.email === data.email);
+  if (existing) {
     return {
       success: true,
-      userId: clerkUser.id,
-      message: emailSent
-        ? 'User created and invitation email sent with temporary password'
-        : 'User created with temporary password (email not sent)',
-      emailSent,
-      temporaryPassword:
-        data.sendEmailInvitation === false ? password : undefined,
+      userId: existing.subject,
+      message: 'User already exists',
     };
-  } catch (error) {
-    throw new Error(
-      `Failed to invite user: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
   }
+
+  const password =
+    data.password || `${randomBytes(12).toString('base64url')}!1aA`;
+  const subject = `db_${randomBytes(16).toString('hex')}`;
+
+  await getConvexClient().mutation(api.users.create, {
+    email: data.email,
+    username: data.username || '',
+    givenName: data.firstName,
+    familyName: data.lastName,
+    fullName: `${data.firstName} ${data.lastName}`,
+    systemRoles: data.roles,
+    organisationId,
+    subject,
+    tokenIdentifier: `db:${subject}`,
+    userId: authUser.id,
+  });
+
+  let emailSent = false;
+  if (data.sendEmailInvitation !== false) {
+    try {
+      const emailResult = await sendUserInvitationEmail({
+        to: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username: data.username,
+        temporaryPassword: password,
+        signInUrl:
+          process.env.NEXT_PUBLIC_APP_URL || 'https://workload-wiz.xyz/sign-in',
+        adminName: authUser.email ?? authUser.id,
+      });
+      emailSent = emailResult.success;
+    } catch {}
+  }
+
+  const roleIds =
+    data.organisationalRoleIds ??
+    (data.organisationalRoleId ? [data.organisationalRoleId] : []);
+  if (roleIds.length > 0) {
+    try {
+      await getConvexClient().mutation(
+        api.organisationalRoles.setUserRolesForOrganisation,
+        {
+          userId: subject,
+          organisationId: organisationId as Id<'organisations'>,
+          roleIds: roleIds.map((roleId) => roleId as Id<'user_roles'>),
+          assignedBy: authUser.id,
+        }
+      );
+    } catch {}
+  }
+
+  await logUserCreated(
+    subject,
+    data.email,
+    `User created with roles: ${data.roles.join(', ') || 'none'}, organisation: ${organisationId}, email invitation: ${emailSent ? 'sent via Resend' : 'not sent'}`
+  );
+
+  revalidatePath('/admin/users');
+  return {
+    success: true,
+    userId: subject,
+    message: emailSent
+      ? 'User created and invitation email sent'
+      : 'User created',
+    emailSent,
+    temporaryPassword:
+      data.sendEmailInvitation === false ? password : undefined,
+  };
 }
 
 export async function listUsers() {
-  const currentUserData = await currentUser();
-
-  // Check for multiple roles first (new format)
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData?.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData?.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  // Check if this is a dev login session (server-side check)
-  const isDevLoginSession =
-    currentUserData?.publicMetadata?.devLoginSession === true;
-
-  if (
-    !currentUserData ||
-    (!currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    ) &&
-      !isDevLoginSession)
-  ) {
+  const authUser = await getAuthUser();
+  if (!can(authUser, 'users.list')) {
     throw new Error('Unauthorised: Admin access required');
   }
-
-  try {
-    // Get users from Convex
-    const convexUsers = await getConvexClient().query(api.users.list, {});
-
-    // Transform to match the expected interface
-    return convexUsers.map((user) => ({
-      id: user.subject, // Use Clerk user ID as the ID
-      subject: user.subject, // Include subject for password reset and email updates
-      email: user.email,
-      username: user.username,
-      firstName: user.givenName,
-      lastName: user.familyName,
-      roles: user.systemRoles,
-      organisationId: user.organisationId,
-      createdAt: user.createdAt,
-      lastSignInAt: user.lastSignInAt || null,
-      isActive: user.isActive,
-      organisation: user.organisation,
-    }));
-  } catch {
-    throw new Error('Failed to fetch users');
-  }
+  const convexUsers = await getConvexClient().query(api.users.list, {});
+  return convexUsers.map(toUserRow);
 }
 
 export async function deleteUser(userId: string) {
-  const currentUserData = await currentUser();
-
-  // Check for multiple roles first (new format)
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData?.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData?.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  // Check if this is a dev login session (server-side check)
-  const isDevLoginSession =
-    currentUserData?.publicMetadata?.devLoginSession === true;
-
-  if (
-    !currentUserData ||
-    (!currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    ) &&
-      !isDevLoginSession)
-  ) {
+  const authUser = await getAuthUser();
+  if (!can(authUser, 'users.delete')) {
     throw new Error('Unauthorised: Admin access required');
   }
-
-  try {
-    // Get user details before deletion for audit logging
-    let userEmail = 'unknown';
-    let userExistsInClerk = true;
-
-    try {
-      const user = await (await clerkClient()).users.getUser(userId);
-      const primaryEmail = user.emailAddresses.find(
-        (email) => email.id === user.primaryEmailAddressId
-      );
-      userEmail = primaryEmail?.emailAddress || 'unknown';
-    } catch (userError) {
-      const httpStatus = (userError as { status?: number } | undefined)?.status;
-      if (httpStatus === 404) {
-        userExistsInClerk = false;
-      }
-    }
-
-    // Delete from Convex (always required)
-    // Prefer soft delete to avoid breaking references; fall back to hard delete if not found
-    try {
-      await getConvexClient().mutation(api.users.remove, { userId });
-    } catch {
-      await getConvexClient().mutation(api.users.hardDelete, { userId });
-    }
-
-    // Delete from Clerk only if user exists there
-    if (userExistsInClerk) {
-      await (await clerkClient()).users.deleteUser(userId).catch((error) => {
-        const httpStatus = (error as { status?: number } | undefined)?.status;
-        if (httpStatus === 404) {
-          return; // Don't throw, just skip
-        }
-        throw error; // Re-throw other errors
-      });
-    }
-
-    // Log the user deletion
-    await logUserDeleted(
-      userId,
-      userEmail,
-      `User deleted by admin: ${currentUserData.emailAddresses[0]?.emailAddress}${userExistsInClerk ? '' : ' (Clerk: not found)'}`
-    );
-
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch {
-    throw new Error('Failed to delete user');
-  }
+  const existing = await getConvexClient().query(api.users.getBySubject, {
+    subject: userId,
+  });
+  await getConvexClient().mutation(api.users.remove, { userId });
+  await logUserDeleted(
+    userId,
+    existing?.email ?? 'unknown',
+    `User deleted by admin: ${authUser.email ?? authUser.id}`
+  );
+  revalidatePath('/admin/users');
+  return { success: true };
 }
 
 export async function updateUser(
@@ -459,666 +213,118 @@ export async function updateUser(
     isActive?: boolean;
     password?: string;
     organisationalRoleId?: string;
+    organisationalRoleIds?: string[];
   }
 ) {
-  const currentUserData = await currentUser();
+  const authUser = await requireUserAdmin();
+  const existing = await getConvexClient().query(api.users.getBySubject, {
+    subject: userId,
+  });
+  if (!existing) throw new Error('User not found');
 
-  if (!currentUserData) {
-    throw new Error('Unauthorised: User not authenticated');
+  if (
+    hasRole(authUser, 'org_admin') &&
+    existing.organisationId !== authUser.orgId
+  ) {
+    throw new Error(
+      'Unauthorised: Can only update users in your own organisation'
+    );
   }
 
-  // Check if user has appropriate permissions
-  const userRole = currentUserData.publicMetadata?.role as string;
-  const userRoles = currentUserData.publicMetadata?.roles as string[];
-  const isAdmin =
-    userRole === 'sysadmin' ||
-    userRole === 'developer' ||
-    (userRoles &&
-      (userRoles.includes('sysadmin') || userRoles.includes('developer')));
-  const isOrgAdmin =
-    userRole === 'orgadmin' || (userRoles && userRoles.includes('orgadmin'));
+  await getConvexClient().mutation(api.users.update, {
+    id: existing._id as Id<'users'>,
+    ...(updates.email ? { email: updates.email } : {}),
+    ...(updates.firstName ? { givenName: updates.firstName } : {}),
+    ...(updates.lastName ? { familyName: updates.lastName } : {}),
+    ...(updates.firstName && updates.lastName
+      ? { fullName: `${updates.firstName} ${updates.lastName}` }
+      : {}),
+    ...(updates.roles ? { systemRoles: updates.roles } : {}),
+    ...(updates.organisationId
+      ? { organisationId: updates.organisationId as Id<'organisations'> }
+      : {}),
+    ...(updates.isActive !== undefined ? { isActive: updates.isActive } : {}),
+    currentUserId: authUser.id,
+  });
 
-  if (!isAdmin && !isOrgAdmin) {
-    throw new Error('Unauthorised: Admin access required');
-  }
+  const roleIds =
+    updates.organisationalRoleIds ??
+    (updates.organisationalRoleId ? [updates.organisationalRoleId] : undefined);
 
-  // If orgadmin, ensure they can only update users in their own organisation
-  if (isOrgAdmin) {
-    // Ensure orgadmin has an organisationId
-    if (!currentUserData.publicMetadata?.organisationId) {
-      throw new Error('Unauthorised: User must be assigned to an organisation');
-    }
-
-    // Get the user being updated to check their organisation
-    try {
-      const userToUpdate = await (await clerkClient()).users.getUser(userId);
-      const userOrgId = userToUpdate.publicMetadata?.organisationId as string;
-      const currentUserOrgId = currentUserData.publicMetadata
-        ?.organisationId as string;
-
-      if (userOrgId !== currentUserOrgId) {
-        throw new Error(
-          'Unauthorised: Can only update users in your own organisation'
-        );
+  if (roleIds !== undefined) {
+    await getConvexClient().mutation(
+      api.organisationalRoles.setUserRolesForOrganisation,
+      {
+        userId,
+        organisationId: (updates.organisationId ??
+          existing.organisationId) as Id<'organisations'>,
+        roleIds: roleIds.map((roleId) => roleId as Id<'user_roles'>),
+        assignedBy: authUser.id,
       }
-    } catch {
-      throw new Error('Unauthorised: Cannot access user information');
-    }
+    );
   }
 
-  try {
-    // Get user details before update for audit logging
-    let userEmail = 'unknown';
-    let userToUpdateData: unknown = null;
-
-    try {
-      const user = await (await clerkClient()).users.getUser(userId);
-      const primaryEmail = user.emailAddresses.find(
-        (email) => email.id === user.primaryEmailAddressId
-      );
-      userEmail = primaryEmail?.emailAddress || 'unknown';
-      userToUpdateData = user;
-    } catch {
-      // Could not get user details for audit log
-    }
-
-    // Prepare Clerk update data
-    const clerkUpdateData: {
-      firstName?: string;
-      lastName?: string;
-      publicMetadata?: Record<string, unknown>;
-      password?: string;
-    } = {
-      ...(updates.firstName ? { firstName: updates.firstName } : {}),
-      ...(updates.lastName ? { lastName: updates.lastName } : {}),
-      publicMetadata: {
-        ...(updates.roles ? { roles: updates.roles } : {}),
-        ...(updates.organisationId
-          ? { organisationId: updates.organisationId }
-          : {}),
-      },
-    };
-
-    // Handle password update if provided
-    if (updates.password) {
-      clerkUpdateData.password = updates.password;
-    }
-
-    // Update in Clerk
-    await (await clerkClient()).users.updateUser(userId, clerkUpdateData);
-
-    // Update in Convex
-    await getConvexClient().mutation(api.users.update, {
-      id: (
-        await getConvexClient().query(api.users.getBySubject, {
-          subject: userId,
-        })
-      )?._id as Id<'users'>,
-      ...(updates.email ? { email: updates.email } : {}),
-      ...(updates.firstName ? { givenName: updates.firstName } : {}),
-      ...(updates.lastName ? { familyName: updates.lastName } : {}),
-      ...(updates.firstName && updates.lastName
-        ? { fullName: `${updates.firstName} ${updates.lastName}` }
-        : {}),
-      ...(updates.roles ? { systemRoles: updates.roles } : {}),
-      ...(updates.organisationId
-        ? {
-            organisationId:
-              updates.organisationId as unknown as Id<'organisations'>,
-          }
-        : {}),
-      ...(updates.isActive !== undefined ? { isActive: updates.isActive } : {}),
-      currentUserId: currentUserData.id,
-    });
-
-    // Create detailed audit message
-    const changeDetails = [];
-    if (updates.firstName !== undefined)
-      changeDetails.push(`first name: ${updates.firstName}`);
-    if (updates.lastName !== undefined)
-      changeDetails.push(`last name: ${updates.lastName}`);
-    if (updates.email !== undefined)
-      changeDetails.push(`email: ${updates.email}`);
-    if (updates.roles !== undefined)
-      changeDetails.push(`roles: ${updates.roles.join(', ')}`);
-    if (updates.organisationId !== undefined)
-      changeDetails.push(`organisation: ${updates.organisationId}`);
-    if (updates.isActive !== undefined)
-      changeDetails.push(`status: ${updates.isActive ? 'active' : 'inactive'}`);
-    if (updates.password !== undefined) changeDetails.push('password: changed');
-
-    const auditMessage = `User updated by admin: ${currentUserData?.emailAddresses[0]?.emailAddress || 'unknown'}. Changes: ${changeDetails.join(', ')}`;
-
-    // Update organisational role if provided
-    if (updates.organisationalRoleId && userToUpdateData) {
-      try {
-        const targetOrganisationId =
-          updates.organisationId ||
-          ((
-            userToUpdateData as { publicMetadata?: { organisationId?: string } }
-          ).publicMetadata?.organisationId as string);
-        if (targetOrganisationId) {
-          await getConvexClient().mutation(
-            api.organisationalRoles.assignToUser,
-            {
-              userId: userId,
-              roleId:
-                updates.organisationalRoleId as unknown as Id<'user_roles'>,
-              assignedBy: currentUserData.id,
-            }
-          );
-        }
-      } catch {
-        // Don't fail the user update if role assignment fails
-      }
-    }
-
-    // Log the user update
-    await logUserUpdated(userId, userEmail, updates, auditMessage);
-
-    revalidatePath('/admin/users');
-    return { success: true };
-  } catch {
-    throw new Error('Failed to update user');
-  }
+  await logUserUpdated(
+    userId,
+    updates.email ?? existing.email ?? 'unknown',
+    updates,
+    'User updated'
+  );
+  revalidatePath('/admin/users');
+  return { success: true };
 }
 
 export async function getUsersByOrganisationId(organisationId: string) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorised: User not authenticated');
+  const authUser = await getAuthUser();
+  if (!can(authUser, 'users.list')) {
+    throw new Error('Unauthorised: Admin access required');
   }
-
-  // Check if user has access to this organisation
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    ) &&
-    currentUserData.publicMetadata?.organisationId !== organisationId
-  ) {
-    throw new Error('Unauthorised: Access denied to this organisation');
-  }
-
-  // Ensure user has an organisationId (for orgadmins)
-  if (
-    currentUserData.publicMetadata?.role === 'orgadmin' &&
-    !currentUserData.publicMetadata?.organisationId
-  ) {
-    throw new Error('Unauthorised: User must be assigned to an organisation');
-  }
-
-  try {
-    // Get users from Convex filtered by organisation
-    const convexUsers = await getConvexClient().query(
-      api.users.listByOrganisation,
-      {
-        organisationId: organisationId as unknown as Id<'organisations'>,
-      }
-    );
-
-    // Transform to match the expected interface and get organisational roles
-    const usersWithRoles = await Promise.all(
-      convexUsers.map(async (user) => {
-        // Get user's organisational role
-        let organisationalRole = null;
-        try {
-          const userRoleData = await getConvexClient().query(
-            api.organisationalRoles.getUserRole,
-            {
-              userId: user.subject,
-            }
-          );
-          if (userRoleData?.role) {
-            organisationalRole = {
-              name: userRoleData.role.name,
-              description: userRoleData.role.description,
-            };
-          }
-        } catch {
-          // Failed to get organisational role for user
-        }
-
-        return {
-          id: user.subject, // Use Clerk user ID as the ID
-          email: user.email,
-          firstName: user.givenName,
-          lastName: user.familyName,
-          roles: user.systemRoles,
-          organisationId: user.organisationId,
-          createdAt: user.createdAt,
-          lastSignInAt: user.lastSignInAt || null,
-          isActive: user.isActive,
-          organisationalRole,
-        };
-      })
-    );
-
-    return usersWithRoles;
-  } catch {
-    // Error fetching users by organisation
-    throw new Error('Failed to fetch users');
-  }
+  const users = await getConvexClient().query(api.users.listByOrganisation, {
+    organisationId: organisationId as Id<'organisations'>,
+  });
+  return users.map(toUserRow);
 }
 
 export async function deactivateUser(userId: string) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorised: User not authenticated');
-  }
-
-  // Only orgadmin, sysadmin, and developer can deactivate users
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) =>
-        role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
-    )
-  ) {
-    throw new Error('Unauthorised: Admin access required');
-  }
-
-  // Ensure user has an organisationId (for orgadmins)
-  if (
-    currentUserRoles.includes('orgadmin') &&
-    !currentUserData.publicMetadata?.organisationId
-  ) {
-    throw new Error('Unauthorised: User must be assigned to an organisation');
-  }
-
-  try {
-    // Get user details before deactivation for audit logging
-    let userEmail: string | null = null;
-
-    try {
-      const user = await (await clerkClient()).users.getUser(userId);
-      const primaryEmail = user.emailAddresses.find(
-        (email) => email.id === user.primaryEmailAddressId
-      );
-      userEmail = primaryEmail?.emailAddress || null;
-      const userRole = (user.publicMetadata?.role as string) || 'unknown';
-
-      // Prevent deactivating orgadmin or sysadmin users
-      if (userRole === 'orgadmin' || userRole === 'sysadmin') {
-        throw new Error(
-          'Cannot deactivate organisation admin or system admin users'
-        );
-      }
-    } catch (userError) {
-      // Could not get user details for audit log
-      if (
-        userError instanceof Error &&
-        userError.message.includes('Cannot deactivate')
-      ) {
-        throw userError;
-      }
-    }
-
-    // Deactivate in Convex (soft delete)
-    await getConvexClient().mutation(api.users.remove, { userId });
-
-    // Log the user deactivation
-    await logUserDeactivated(
-      userId,
-      userEmail || 'unknown',
-      `User deactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
-    );
-
-    revalidatePath('/organisation/users');
-    return { success: true };
-  } catch (error) {
-    // Error deactivating user
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to deactivate user'
-    );
-  }
+  await updateUser(userId, { isActive: false });
+  await logUserDeactivated(userId, 'unknown', 'User deactivated');
+  return { success: true };
 }
 
 export async function reactivateUser(userId: string) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorised: User not authenticated');
-  }
-
-  // Only orgadmin, sysadmin, and developer can reactivate users
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) =>
-        role === 'orgadmin' || role === 'sysadmin' || role === 'developer'
-    )
-  ) {
-    throw new Error('Unauthorised: Admin access required');
-  }
-
-  // Ensure user has an organisationId (for orgadmins)
-  if (
-    currentUserRoles.includes('orgadmin') &&
-    !currentUserData.publicMetadata?.organisationId
-  ) {
-    throw new Error('Unauthorized: User must be assigned to an organisation');
-  }
-
-  try {
-    // Get user details before reactivation for audit logging
-    let userEmail = 'unknown';
-
-    try {
-      const user = await (await clerkClient()).users.getUser(userId);
-      const primaryEmail = user.emailAddresses.find(
-        (email) => email.id === user.primaryEmailAddressId
-      );
-      userEmail = primaryEmail?.emailAddress || 'unknown';
-    } catch {
-      // Could not get user details for audit log
-    }
-
-    // Reactivate in Convex (set isActive to true)
-    const target = await getConvexClient().query(api.users.getBySubject, {
-      subject: userId,
-    });
-    if (target?._id) {
-      await getConvexClient().mutation(api.users.update, {
-        id: target._id as Id<'users'>,
-        isActive: true,
-        currentUserId: currentUserData.id,
-      });
-    }
-
-    // Log the user reactivation
-    await logUserReactivated(
-      userId,
-      userEmail,
-      `User reactivated by ${currentUserData.publicMetadata?.role as string}: ${currentUserData.emailAddresses[0]?.emailAddress as string}`
-    );
-
-    revalidatePath('/organisation/users');
-    return { success: true };
-  } catch (error) {
-    // Error reactivating user
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to reactivate user'
-    );
-  }
+  await updateUser(userId, { isActive: true });
+  await logUserReactivated(userId, 'unknown', 'User reactivated');
+  return { success: true };
 }
 
 export async function updateLastSignInForCurrentUser() {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorised: User not authenticated');
-  }
-
-  try {
-    // Update last sign in time in Convex
-    await getConvexClient().mutation(api.users.updateLastSignIn, {
-      userId: currentUserData.id,
-    });
-
-    return { success: true };
-  } catch {
-    // Error updating last sign in time
-    throw new Error('Failed to update last sign in time');
-  }
+  const authUser = await getAuthUser();
+  await getConvexClient().mutation(api.users.updateLastSignIn, {
+    userId: authUser.id,
+  });
+  return { success: true };
 }
 
 export async function getUsersByOrganisationIdWithOverride(
-  organisationId: string,
-  overrideOrganisationId?: string
+  organisationId: string
 ) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorized: User not authenticated');
-  }
-
-  // Check if user has admin privileges
-  const isAdmin =
-    currentUserData.publicMetadata?.role === 'sysadmin' ||
-    currentUserData.publicMetadata?.role === 'developer';
-
-  // If not admin, check if user has access to this organisation
-  if (
-    !isAdmin &&
-    currentUserData.publicMetadata?.organisationId !== organisationId
-  ) {
-    throw new Error('Unauthorized: Access denied to this organisation');
-  }
-
-  // Use override organisation ID if provided and user is admin
-  const targetOrganisationId =
-    isAdmin && overrideOrganisationId ? overrideOrganisationId : organisationId;
-
-  try {
-    // Get users from Convex filtered by organisation
-    const convexUsers = await getConvexClient().query(
-      api.users.listByOrganisation,
-      {
-        organisationId: targetOrganisationId as unknown as Id<'organisations'>,
-      }
-    );
-
-    // Transform to match the expected interface and get organisational roles
-    const usersWithRoles = await Promise.all(
-      convexUsers.map(async (user) => {
-        // Get user's organisational role
-        let organisationalRole = null;
-        try {
-          const userRoleData = await getConvexClient().query(
-            api.organisationalRoles.getUserRole,
-            {
-              userId: user.subject,
-            }
-          );
-          if (userRoleData?.role) {
-            organisationalRole = {
-              name: userRoleData.role.name,
-              description: userRoleData.role.description,
-            };
-          }
-        } catch {
-          // Failed to get organisational role for user
-        }
-
-        return {
-          id: user.subject, // Use Clerk user ID as the ID
-          email: user.email,
-          firstName: user.givenName,
-          lastName: user.familyName,
-          roles: user.systemRoles,
-          organisationId: user.organisationId,
-          createdAt: user.createdAt,
-          lastSignInAt: user.lastSignInAt || null,
-          isActive: user.isActive,
-          organisationalRole,
-        };
-      })
-    );
-
-    return usersWithRoles;
-  } catch {
-    // Error fetching users by organisation
-    throw new Error('Failed to fetch users');
-  }
+  return getUsersByOrganisationId(organisationId);
 }
 
 export async function getAllUsersByOrganisationIdWithOverride(
-  organisationId: string,
-  overrideOrganisationId?: string
+  organisationId: string
 ) {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorized: User not authenticated');
+  const authUser = await getAuthUser();
+  if (!can(authUser, 'users.list')) {
+    throw new Error('Unauthorised: Admin access required');
   }
-
-  // Check if user has admin privileges
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  const isAdmin = currentUserRoles.some(
-    (role) => role === 'sysadmin' || role === 'developer'
-  );
-
-  // If not admin, check if user has access to this organisation
-  if (
-    !isAdmin &&
-    currentUserData.publicMetadata?.organisationId !== organisationId
-  ) {
-    throw new Error('Unauthorized: Access denied to this organisation');
-  }
-
-  // Use override organisation ID if provided and user is admin
-  const targetOrganisationId =
-    isAdmin && overrideOrganisationId ? overrideOrganisationId : organisationId;
-
-  try {
-    // Get all users from Convex filtered by organisation (including inactive)
-    const convexUsers = await getConvexClient().query(
-      api.users.listAllByOrganisation,
-      {
-        organisationId: targetOrganisationId as unknown as Id<'organisations'>,
-      }
-    );
-
-    // Transform to match the expected interface and get organisational roles
-    const usersWithRoles = await Promise.all(
-      convexUsers.map(async (user) => {
-        // Get user's organisational role
-        let organisationalRole = null;
-        try {
-          const userRoleData = await getConvexClient().query(
-            api.organisationalRoles.getUserRole,
-            {
-              userId: user.subject,
-            }
-          );
-          if (userRoleData?.role) {
-            organisationalRole = {
-              name: userRoleData.role.name,
-              description: userRoleData.role.description,
-            };
-          }
-        } catch {
-          // Failed to get organisational role for user
-        }
-
-        return {
-          id: user.subject, // Use Clerk user ID as the ID
-          email: user.email,
-          firstName: user.givenName,
-          lastName: user.familyName,
-          roles: user.systemRoles,
-          organisationId: user.organisationId,
-          createdAt: user.createdAt,
-          lastSignInAt: user.lastSignInAt || null,
-          isActive: user.isActive,
-          organisationalRole,
-        };
-      })
-    );
-
-    return usersWithRoles;
-  } catch {
-    // Error fetching all users by organisation
-    throw new Error('Failed to fetch users');
-  }
+  const users = await getConvexClient().query(api.users.listAllByOrganisation, {
+    organisationId: organisationId as Id<'organisations'>,
+  });
+  return users.map(toUserRow);
 }
 
 export async function getAllOrganisations() {
-  const currentUserData = await currentUser();
-
-  if (!currentUserData) {
-    throw new Error('Unauthorized: User not authenticated');
-  }
-
-  // Only sysadmin and developer can view all organisations
-  const currentUserRoles: string[] = [];
-  if (
-    currentUserData.publicMetadata?.roles &&
-    Array.isArray(currentUserData.publicMetadata.roles)
-  ) {
-    // Type guard to ensure all elements are strings
-    const roles = currentUserData.publicMetadata.roles.filter(
-      (role): role is string => typeof role === 'string'
-    );
-    currentUserRoles.push(...roles);
-  } else if (currentUserData.publicMetadata?.role) {
-    currentUserRoles.push(currentUserData.publicMetadata.role as string);
-  }
-
-  if (
-    !currentUserRoles.some(
-      (role) => role === 'sysadmin' || role === 'developer'
-    )
-  ) {
-    throw new Error('Unauthorized: Admin access required');
-  }
-
-  try {
-    // Get all organisations from Convex
-    const organisations = await getConvexClient().query(api.organisations.list);
-
-    return organisations.map((org) => ({
-      id: org._id,
-      name: org.name,
-      code: org.code,
-    }));
-  } catch {
-    // Error fetching organisations
-    throw new Error('Failed to fetch organisations');
-  }
+  await getAuthUser();
+  return getConvexClient().query(api.organisations.list);
 }

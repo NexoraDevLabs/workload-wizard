@@ -13,6 +13,7 @@ import { apiVersion, dataset, projectId } from './src/sanity/env';
 import { schema } from './src/sanity/schemaTypes';
 import { structure } from './src/sanity/structure';
 
+// TODO post-MVP: Sanity and its styled-components peer still power the blog and Studio routes; revisit CMS scope after MVP.
 export default defineConfig({
   basePath: '/studio',
   projectId,

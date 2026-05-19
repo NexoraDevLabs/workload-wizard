@@ -2,6 +2,7 @@ import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
 import type { QueryCtx, MutationCtx } from './_generated/server';
 import { writeAudit } from './audit';
+import { getAuthContext } from './lib/auth';
 
 function isSystemUser(systemRoles?: string[] | null) {
   const roles = systemRoles || [];
@@ -19,9 +20,14 @@ async function getActorAndOrgFromQuery(ctx: QueryCtx, subject: string) {
     .withIndex('by_subject', (q) => q.eq('subject', subject))
     .first();
   if (!actor) throw new Error('User not found');
+  const membership = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', subject))
+    .first();
+  if (!membership) throw new Error('Organisation context required');
   return {
     actor,
-    orgId: actor.organisationId,
+    orgId: membership.organisationId,
   };
 }
 
@@ -31,9 +37,14 @@ async function getActorAndOrgFromMutation(ctx: MutationCtx, subject: string) {
     .withIndex('by_subject', (q) => q.eq('subject', subject))
     .first();
   if (!actor) throw new Error('User not found');
+  const membership = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', subject))
+    .first();
+  if (!membership) throw new Error('Organisation context required');
   return {
     actor,
-    orgId: actor.organisationId,
+    orgId: membership.organisationId,
   };
 }
 
@@ -78,11 +89,10 @@ export const getOrganisationSettings = query({
 
 // Convenience: get settings for the current actor (no args)
 export const getForActor = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) return null;
-    const { orgId } = await getActorAndOrgFromQuery(ctx, identity.subject);
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
+    const { orgId } = await getActorAndOrgFromQuery(ctx, authContext.userId);
     const row = await ctx.db
       .query('organisation_settings')
       .withIndex('by_organisation', (q) => q.eq('organisationId', orgId))

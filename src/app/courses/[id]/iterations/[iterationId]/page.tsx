@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
@@ -82,7 +82,9 @@ export default function IterationDetailsPage() {
   const iterationId = params?.iterationId;
 
   const { currentYear: _currentYear } = useAcademicYear();
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   // Fetch course and module data
   const course = useQuery(
@@ -93,7 +95,9 @@ export default function IterationDetailsPage() {
   // Fetch iteration details
   const iteration = useQuery(
     api.modules.getIterationById,
-    iterationId ? { id: iterationId as Id<'module_iterations'> } : 'skip'
+    user?.id && iterationId
+      ? { userId: user.id, id: iterationId as Id<'module_iterations'> }
+      : 'skip'
   );
 
   // Fetch module details
@@ -105,8 +109,11 @@ export default function IterationDetailsPage() {
   // Fetch groups for this iteration
   const groups = useQuery(
     api.groups.listByIteration,
-    iterationId
-      ? { moduleIterationId: iterationId as Id<'module_iterations'> }
+    user?.id && iterationId
+      ? {
+          userId: user.id,
+          moduleIterationId: iterationId as Id<'module_iterations'>,
+        }
       : 'skip'
   );
 
@@ -179,8 +186,9 @@ export default function IterationDetailsPage() {
   // Get lecturer totals for instant updates
   const lecturerTotals = useQuery(
     api.allocations.getLecturerTotals,
-    selectedLecturerId && _currentYear?._id
+    user?.id && selectedLecturerId && _currentYear?._id
       ? {
+          userId: user.id,
           lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
           academicYearId: _currentYear._id,
         }
@@ -198,7 +206,9 @@ export default function IterationDetailsPage() {
   // Iteration summary
   const iterationSummary = useQuery(
     api.allocations.iterationSummary,
-    iteration?._id ? { moduleIterationId: iteration._id } : 'skip'
+    iteration?._id
+      ? { moduleIterationId: iteration._id }
+      : 'skip'
   ) as IterationSummary | undefined;
 
   const resetAssignDialogState = () => {
@@ -269,6 +279,22 @@ export default function IterationDetailsPage() {
           Please select an academic year to view iteration details.
         </div>
       </StandardizedSidebarLayout>
+    );
+  }
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
     );
   }
 
@@ -461,6 +487,7 @@ export default function IterationDetailsPage() {
                         await withToast(
                           () =>
                             createGroup({
+                              userId: user!.id,
                               moduleIterationId:
                                 iterationId as Id<'module_iterations'>,
                               name: newGroupName.trim(),
@@ -499,9 +526,9 @@ export default function IterationDetailsPage() {
             ) : (
               <div className="space-y-4">
                 {groups.map((group) => (
-                  <GroupCard
-                    key={String(group._id)}
-                    group={group}
+	                  <GroupCard
+	                    key={String(group._id)}
+	                    group={group}
                     onDelete={async () => {
                       if (
                         confirm(
@@ -509,7 +536,8 @@ export default function IterationDetailsPage() {
                         )
                       ) {
                         await withToast(
-                          () => deleteGroup({ id: group._id }),
+                          () =>
+                            deleteGroup({ userId: user!.id, id: group._id }),
                           {
                             success: {
                               title: 'Group deleted',
@@ -749,6 +777,7 @@ export default function IterationDetailsPage() {
                     await withToast(
                       async () => {
                         const result = await assignLecturer({
+                          userId: user!.id,
                           groupId: selectedGroupId as Id<'module_groups'>,
                           lecturerId:
                             selectedLecturerId as Id<'lecturer_profiles'>,
@@ -857,6 +886,7 @@ export default function IterationDetailsPage() {
                                   }
                                   try {
                                     await updateAllocation({
+                                      userId: user!.id,
                                       allocationId: allocation._id,
                                       type: next,
                                     });
@@ -890,6 +920,7 @@ export default function IterationDetailsPage() {
                                   try {
                                     if (trimmed === '') {
                                       await updateAllocation({
+                                        userId: user!.id,
                                         allocationId: allocation._id,
                                         hoursOverride: null,
                                       });
@@ -915,6 +946,7 @@ export default function IterationDetailsPage() {
                                         );
                                       }
                                       await updateAllocation({
+                                        userId: user!.id,
                                         allocationId: allocation._id,
                                         hoursOverride: value,
                                       });
@@ -945,6 +977,7 @@ export default function IterationDetailsPage() {
                                   ) {
                                     try {
                                       await removeAllocation({
+                                        userId: user!.id,
                                         allocationId: allocation._id,
                                       });
                                       analytics.track('allocation.deleted', {
@@ -1094,6 +1127,7 @@ export default function IterationDetailsPage() {
                   await withToast(
                     () =>
                       updateIteration({
+                        userId: user!.id,
                         id: iterationId as Id<'module_iterations'>,
                         totalHours: num,
                       }),
@@ -1136,6 +1170,7 @@ export default function IterationDetailsPage() {
                   await withToast(
                     () =>
                       createGroup({
+                        userId: user!.id,
                         moduleIterationId:
                           iterationId as Id<'module_iterations'>,
                         name: g.name,
@@ -1171,6 +1206,7 @@ export default function IterationDetailsPage() {
             await withToast(
               () =>
                 removeAllocationsForGroups({
+                  userId: user!.id,
                   groupIds,
                 }),
               {
@@ -1208,9 +1244,13 @@ function BulkGroupsForm({
     }>
   ) => Promise<void> | void;
 }) {
-  const settings = useQuery(api.organisationSettings.getForActor) as
-    | { campusOptions?: string[]; maxClassSizePerGroup?: number }
-    | undefined;
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
+  const settings = useQuery(
+    api.organisationSettings.getForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as { campusOptions?: string[]; maxClassSizePerGroup?: number } | undefined;
   const [entries, setEntries] = useState<
     Array<{ campus: string; students: string }>
   >((campuses || []).map((c) => ({ campus: c, students: '' })));
@@ -1244,6 +1284,22 @@ function BulkGroupsForm({
       })),
     };
   });
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <DialogContent>
@@ -1355,9 +1411,10 @@ function GroupCard({
   const { currentYear: _currentYear } = useAcademicYear();
 
   // Fetch allocations for this group
-  const allocations = useQuery(api.allocations.listForGroup, {
-    groupId: group._id,
-  }) as GroupAllocationWithLecturer[] | undefined;
+  const allocations = useQuery(
+    api.allocations.listForGroup,
+    { groupId: group._id }
+  ) as GroupAllocationWithLecturer[] | undefined;
 
   return (
     <div className="border rounded-lg p-4">

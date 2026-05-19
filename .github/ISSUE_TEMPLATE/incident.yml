@@ -55,7 +55,7 @@ body:
       options:
         - label: Vercel (frontend deployment)
         - label: Convex (database/backend)
-        - label: Clerk (authentication)
+        - label: WorkOS (authentication)
         - label: Upstash/Redis (caching)
         - label: Statsig (feature flags)
         - label: GitHub Actions (CI/CD)

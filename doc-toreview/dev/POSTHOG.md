@@ -17,7 +17,6 @@
     - [Privacy Settings](#privacy-settings)
   - [Testing the integration](#testing-the-integration)
     - [PostHog Test Dashboard](#posthog-test-dashboard)
-    - [Sentry Test Dashboard](#sentry-test-dashboard)
     - [Testing the proxy](#testing-the-proxy)
     - [Optional developer proxy test steps](#optional-developer-proxy-test-steps)
   - [Security considerations](#security-considerations)
@@ -150,9 +149,9 @@ Add to `.env.local` as needed:
 # Required for Convex
 NEXT_PUBLIC_CONVEX_URL=https://your_convex_url.convex.cloud
 
-# Clerk (required for auth)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
-CLERK_SECRET_KEY=sk_test_your_key
+# WorkOS (required for auth)
+WORKOS_CLIENT_ID=pk_test_your_key
+WORKOS_API_KEY=sk_test_your_key
 
 # PostHog (optional; enables flags, analytics, session replays, and heatmaps)
 NEXT_PUBLIC_POSTHOG_KEY=phc_your_api_key_here
@@ -169,7 +168,7 @@ Removed from this project.
 
 ## Early Access Features (EAF)
 
-Create an EAF in PostHog with key `beta_features`. The dev page `/dev/posthog-test` can help verify.
+Create an EAF in PostHog with key `beta_features` and verify it in a local development environment.
 
 Minimal usage:
 
@@ -211,28 +210,6 @@ session_recording: {
 
 ## Testing the integration
 
-### PostHog Test Dashboard
-
-Visit `/dev/posthog-test` for comprehensive testing of:
-
-- Session replays
-- Heatmaps
-- Autocapture
-- Performance tracking
-- User identification
-- Custom events
-
-### Sentry Test Dashboard
-
-Visit `/sentry-example-page` for comprehensive testing of:
-
-- Error reporting
-- Performance monitoring
-- Session replay
-- User feedback
-- Custom metrics
-- Breadcrumbs and context
-
 ### Testing the proxy
 
 - Dev direct connection: default `NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com`
@@ -241,7 +218,7 @@ Visit `/sentry-example-page` for comprehensive testing of:
 
 ### Optional developer proxy test steps
 
-1. Start the dev server (`pnpm dev`).
+1. Start the dev server (`npm run dev`).
 2. Visit any page, then verify:
    - `/e/capture/` responds (proxy endpoint)
    - `/e/static/` serves assets (static proxy)

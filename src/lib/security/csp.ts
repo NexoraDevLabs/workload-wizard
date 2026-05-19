@@ -40,30 +40,10 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
   convex: {
     connectSrc: ['*.convex.cloud', '*.convex.dev'],
   },
-  clerk: {
-    scriptSrc: ['*.clerk.accounts.dev', '*.clerk.com'],
-    connectSrc: ['*.clerk.accounts.dev', '*.clerk.com'],
-    frameSrc: ['*.clerk.accounts.dev', '*.clerk.com'],
-    imgSrc: ['img.clerk.com', 'images.clerk.com'],
-  },
-  sentry: {
-    scriptSrc: ['*.sentry-cdn.com', '*.sentry.io'],
-    connectSrc: ['*.sentry.io', '*.sentry-cdn.com'],
-    imgSrc: ['*.sentry.io'],
-  },
-  statsig: {
-    scriptSrc: ['*.statsig.com', '*.statsigapi.net'],
-    connectSrc: ['*.statsig.com', '*.statsigapi.net'],
-  },
   vercel: {
     scriptSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
     connectSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
     imgSrc: ['va.vercel-scripts.com'],
-  },
-  posthog: {
-    scriptSrc: ['eu-assets.i.posthog.com', 'eu.i.posthog.com'],
-    connectSrc: ['eu.i.posthog.com', 'eu-assets.i.posthog.com'],
-    imgSrc: ['eu-assets.i.posthog.com'],
   },
   sanity: {
     imgSrc: ['cdn.sanity.io'],
@@ -172,26 +152,8 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.convex);
   }
 
-  if (env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || env.CLERK_SECRET_KEY) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.clerk);
-  }
-
-  // Always include Sentry (commonly used for error monitoring)
-  mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
-
-  if (
-    env.NEXT_PUBLIC_STATSIG_CLIENT_KEY ||
-    env.FEATFLAG_STATSIG_SERVER_API_KEY
-  ) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.statsig);
-  }
-
   // Vercel Analytics and Speed Insights are always present in Vercel deployments
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.vercel);
-
-  if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.posthog);
-  }
 
   // Sanity is used for images
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sanity);
@@ -263,8 +225,7 @@ export function generateNonce(): string {
  * Gets the CSP mode from environment variables
  */
 export function getCSPMode(): CSPMode {
-  const env = getEnv();
-  return env.CSP_MODE === 'enforce' ? 'enforce' : 'report-only';
+  return 'report-only';
 }
 
 /**

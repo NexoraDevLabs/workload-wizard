@@ -19,10 +19,6 @@ env:
   NEXT_TELEMETRY_DISABLED: '1'
   NODE_OPTIONS: '--max_old_space_size=4096'
   NEXT_DISABLE_SOURCEMAPS: '1'
-  SENTRY_SKIP_AUTO_RELEASE: '1'
-  SENTRY_SOURCEMAPS: 'false'
-  SENTRY_SILENT: '1'
-  SENTRY_TELEMETRY: 'false'
   # Dummy envs so server code doesn't crash in CI
   NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
   CONVEX_DEPLOYMENT: 'https://example.invalid'
@@ -53,18 +49,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3

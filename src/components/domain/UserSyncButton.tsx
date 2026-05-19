@@ -9,12 +9,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { syncUsersFromClerk, getSyncStatus } from '@/lib/actions/syncUsers';
+import {
+  syncUsersFromAuthProvider,
+  getSyncStatus,
+} from '@/lib/actions/syncUsers';
 import { RefreshCw, CheckCircle, AlertCircle, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SyncStatus {
-  clerkUserCount: number;
+  workosUserCount: number;
   convexUserCount: number;
   missingInConvex: number;
   extraInConvex: number;
@@ -36,7 +39,7 @@ export function UserSyncButton() {
   const handleSync = async () => {
     setIsLoading(true);
     try {
-      const result = await syncUsersFromClerk();
+      const result = await syncUsersFromAuthProvider();
       setLastSyncResult(result);
       await checkSyncStatus();
     } catch (error) {
@@ -74,7 +77,7 @@ export function UserSyncButton() {
           User Synchronization
         </CardTitle>
         <CardDescription>
-          Sync users between Clerk and Convex databases
+          Sync users between WorkOS and Convex databases
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -84,9 +87,9 @@ export function UserSyncButton() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {syncStatus.clerkUserCount}
+                  {syncStatus.workosUserCount}
                 </div>
-                <div className="text-sm text-gray-600">Clerk Users</div>
+                <div className="text-sm text-gray-600">WorkOS Users</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">

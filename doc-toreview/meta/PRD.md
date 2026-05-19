@@ -224,7 +224,7 @@ The MVP is designed to be **flexible** for other organisations while **mirroring
 ## 11. **Tech Notes**
 
 - **Backend:** Convex functions with orgId + academicYearId scoping
-- **Auth:** Clerk metadata → `organisationId`, `systemRole`, `orgRoleId[]`
+- **Auth:** WorkOS metadata → `organisationId`, `systemRole`, `orgRoleId[]`
 - **UI:** Next.js (App Router), React Context/Store for selected AY
 - **Audit Logging:** all create/update/delete actions with userId + timestamp
 - **Indexes:** always on `(orgId, academicYearId)` for AY-scoped tables

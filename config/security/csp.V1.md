@@ -43,18 +43,12 @@ This is the initial Content Security Policy implementation for WorkloadWizard, d
 
 - `connect-src *.convex.cloud *.convex.dev` - Allow connections to Convex deployments
 
-### Clerk (Authentication)
+### WorkOS (Authentication)
 
-- `script-src *.clerk.accounts.dev *.clerk.com` - Allow Clerk authentication scripts
-- `connect-src *.clerk.accounts.dev *.clerk.com` - Allow Clerk API connections
-- `frame-src *.clerk.accounts.dev *.clerk.com` - Allow Clerk authentication frames
-- `img-src img.clerk.com images.clerk.com` - Allow Clerk user avatars
-
-### Sentry (Error Monitoring)
-
-- `script-src *.sentry-cdn.com *.sentry.io` - Allow Sentry error reporting scripts
-- `connect-src *.sentry.io *.sentry-cdn.com` - Allow Sentry error reporting
-- `img-src *.sentry.io` - Allow Sentry error images
+- `script-src *.workos.accounts.dev *.workos.com` - Allow WorkOS authentication scripts
+- `connect-src *.workos.accounts.dev *.workos.com` - Allow WorkOS API connections
+- `frame-src *.workos.accounts.dev *.workos.com` - Allow WorkOS authentication frames
+- `img-src img.workos.com images.workos.com` - Allow WorkOS user avatars
 
 ### Statsig (Feature Flags)
 

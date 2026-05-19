@@ -2,23 +2,23 @@
 
 ## Overview
 
-WorkloadWizard: multi-tenant academic workload web app (Next.js + Convex). Repo uses **pnpm**, Node from **.nvmrc**, TypeScript (strict), Vitest, ESLint + Prettier, Tailwind/shadcn UI. Auth by Clerk. CI is split into Format, Quality (lint/typecheck/test/build), CodeQL, Semgrep. AI PR reviews are label-gated (`ai-review`, `ai-deep`, `ai-ultra`).
+WorkloadWizard: multi-tenant academic workload web app (Next.js + Convex). Repo uses **npm**, Node from **.nvmrc**, TypeScript (strict), Vitest, ESLint + Prettier, Tailwind/shadcn UI. Auth by WorkOS. CI is split into Format, Quality (lint/typecheck/test/build), CodeQL, Semgrep. AI PR reviews are label-gated (`ai-review`, `ai-deep`, `ai-ultra`).
 
 ## Build & Validate (always follow in this order)
 
 1. **Setup**
    - Use Node from `.nvmrc`.
-   - `pnpm install --frozen-lockfile`
+   - `npm install --frozen-lockfile`
 2. **Format**
-   - PRs: `pnpm prettier --check .`
-   - Local: `pnpm prettier --write .` (do not commit style churn beyond touched files)
+   - PRs: `npm prettier --check .`
+   - Local: `npm prettier --write .` (do not commit style churn beyond touched files)
 3. **Lint & Types**
-   - `pnpm lint`
-   - `pnpm typecheck`
+   - `npm run lint`
+   - `npm run typecheck`
 4. **Tests**
-   - `pnpm test` (Vitest, jsdom; only runs tests under `src/**` or `tests/**`; never in `node_modules`)
+   - `npm test` (Vitest, jsdom; only runs tests under `src/**` or `tests/**`; never in `node_modules`)
 5. **Build**
-   - `pnpm build`
+   - `npm run build`
 6. **Env**
    - Local/dev env goes in `.env.local` (never commit). CI uses repo/org secrets.
 

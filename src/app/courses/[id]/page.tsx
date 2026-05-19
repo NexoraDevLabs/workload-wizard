@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -44,7 +44,7 @@ import { withToast } from '@/lib/utils';
 import { GenericDeleteModal } from '@/components/domain/GenericDeleteModal';
 import { useAcademicYear } from '@/components/providers/AcademicYearProvider';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 // Type definitions for course data
@@ -226,6 +226,9 @@ export default function CourseDetailPage() {
   const courseId = params?.id;
   const { toast } = useToast();
   const { currentYear } = useAcademicYear();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   const course = useQuery(
     api.courses.getById,
@@ -233,7 +236,9 @@ export default function CourseDetailPage() {
   );
   const years = useQuery(
     api.courses.listYears,
-    courseId ? { courseId: courseId as Id<'courses'> } : 'skip'
+    user?.id && courseId
+      ? { userId: user.id, courseId: courseId as Id<'courses'> }
+      : 'skip'
   );
   const addYear = useMutation(api.courses.addYear);
 
@@ -244,10 +249,10 @@ export default function CourseDetailPage() {
   const [campusRows, setCampusRows] = useState<
     Array<{ campus: string; count: string }>
   >([]);
-  const settings = useQuery(api.organisationSettings.getForActor, {}) as
-    | OrganisationSettings
-    | null
-    | undefined;
+  const settings = useQuery(
+    api.organisationSettings.getForActor,
+    user?.id ? { userId: user.id } : 'skip'
+  ) as OrganisationSettings | null | undefined;
 
   const updateCourse = useMutation(api.courses.update);
   const initialiseSplit = useMutation(api.courses.initialiseRecommendedGroups);
@@ -316,6 +321,22 @@ export default function CourseDetailPage() {
     }
     setStudentsOpen(true);
   };
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout
@@ -433,6 +454,7 @@ export default function CourseDetailPage() {
                           await withToast(
                             () =>
                               initialiseSplit({
+                                userId: user!.id,
                                 courseId: course._id,
                                 academicYearId: currentYear?._id,
                               }),
@@ -481,6 +503,7 @@ export default function CourseDetailPage() {
                 await withToast(
                   () =>
                     updateCourse({
+                      userId: user!.id,
                       id: course._id,
                       code: course.code,
                       name: course.name,
@@ -544,6 +567,7 @@ export default function CourseDetailPage() {
                     setIsAddingYear(true);
                     try {
                       await addYear({
+                        userId: user!.id,
                         courseId: course._id,
                         yearNumber,
                       });
@@ -622,10 +646,16 @@ function CourseYearModules({
   recommendedList?: Array<{ campus: string; groups: number; count: number }>;
 }) {
   const { toast } = useToast();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const attached = useQuery(api.modules.listForCourseYear, {
     courseYearId: yearId as Id<'course_years'>,
   });
-  const allModules = useQuery(api.modules.listByOrganisation);
+  const allModules = useQuery(
+    api.modules.listByOrganisation,
+    user?.id ? { userId: user.id } : 'skip'
+  );
   const attach = useMutation(api.modules.attachToCourseYear);
   const detach = useMutation(api.modules.detachFromCourseYear);
 
@@ -646,6 +676,22 @@ function CourseYearModules({
     );
     return (allModules || []).filter((m: Module) => !used.has(String(m._id)));
   }, [attached, allModules]);
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4" data-testid="module-attachment-form">
@@ -697,6 +743,7 @@ function CourseYearModules({
               await withToast(
                 () =>
                   attach({
+                    userId: user!.id,
                     courseYearId: yearId as Id<'course_years'>,
                     moduleId: selected as Id<'modules'>,
                     isCore,
@@ -775,6 +822,7 @@ function CourseYearModules({
               await withToast(
                 () =>
                   detach({
+                    userId: user!.id,
                     courseYearId: yearId as Id<'course_years'>,
                     moduleId: _detaching.moduleId as Id<'modules'>,
                   }),
@@ -809,7 +857,9 @@ function ModuleIterationAndGroupsAndAllocations({
 }) {
   const { currentYear } = useAcademicYear();
   const { toast } = useToast();
-  const { user: _user } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const params = useParams();
   const iteration = useQuery(
     api.modules.getIterationForYear,
@@ -824,7 +874,9 @@ function ModuleIterationAndGroupsAndAllocations({
 
   const groups = useQuery(
     api.groups.listByIteration,
-    hasIteration && iteration ? { moduleIterationId: iteration._id } : 'skip'
+    user?.id && hasIteration && iteration
+      ? { userId: user.id, moduleIterationId: iteration._id }
+      : 'skip'
   ) as Array<Group> | undefined;
   const createGroup = useMutation(api.groups.create);
   const autoCreateGroups = useMutation(api.groups.createAutoForIteration);
@@ -832,7 +884,7 @@ function ModuleIterationAndGroupsAndAllocations({
   // Allocations UI bits
   const profiles = useQuery(
     api.staff.listForActor,
-    {} // No parameters needed for listing lecturer profiles
+    user?.id ? { userId: user.id } : 'skip'
   );
   const assign = useMutation(api.allocations.assignLecturer);
   const removeAllocation = useMutation(api.allocations.remove);
@@ -870,6 +922,7 @@ function ModuleIterationAndGroupsAndAllocations({
     api.allocations.getLecturerTotals,
     selectedLecturerId
       ? {
+          userId: user!.id,
           lecturerId: selectedLecturerId as Id<'lecturer_profiles'>,
           academicYearId: currentYear?._id as Id<'academic_years'>,
         }
@@ -892,6 +945,22 @@ function ModuleIterationAndGroupsAndAllocations({
 
   if (!currentYear)
     return <span className="text-muted-foreground">Select AY</span>;
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <div
@@ -920,6 +989,7 @@ function ModuleIterationAndGroupsAndAllocations({
                 await withToast(
                   () =>
                     createGroup({
+                      userId: user!.id,
                       moduleIterationId: iteration._id,
                       name,
                     }),
@@ -1165,6 +1235,7 @@ function ModuleIterationAndGroupsAndAllocations({
                       setIsSubmitting(true);
                       try {
                         await assign({
+                          userId: user!.id,
                           groupId: selectedGroupId as Id<'module_groups'>,
                           lecturerId:
                             selectedLecturerId as Id<'lecturer_profiles'>,
@@ -1278,6 +1349,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                       await withToast(
                                         () =>
                                           updateAllocation({
+                                            userId: user!.id,
                                             allocationId: allocation._id,
                                             type: next,
                                           }),
@@ -1311,6 +1383,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                         await withToast(
                                           () =>
                                             updateAllocation({
+                                              userId: user!.id,
                                               allocationId: allocation._id,
                                               hoursOverride: null,
                                             }),
@@ -1342,6 +1415,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                         await withToast(
                                           () =>
                                             updateAllocation({
+                                              userId: user!.id,
                                               allocationId: allocation._id,
                                               hoursOverride: value,
                                             }),
@@ -1371,6 +1445,7 @@ function ModuleIterationAndGroupsAndAllocations({
                                         await withToast(
                                           () =>
                                             removeAllocation({
+                                              userId: user!.id,
                                               allocationId: allocation._id,
                                             }),
                                           {
@@ -1502,6 +1577,7 @@ function ModuleIterationAndGroupsAndAllocations({
                         await withToast(
                           () =>
                             autoCreateGroups({
+                              userId: user!.id,
                               moduleIterationId: iteration!._id,
                               campusGroups: campusGroups,
                             }),
@@ -1534,6 +1610,7 @@ function ModuleIterationAndGroupsAndAllocations({
               await withToast(
                 () =>
                   createIteration({
+                    userId: user!.id,
                     moduleId: moduleId as Id<'modules'>,
                     academicYearId: currentYear._id,
                   }),

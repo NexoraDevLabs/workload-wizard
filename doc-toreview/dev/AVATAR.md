@@ -17,7 +17,7 @@ Consolidated guide for avatar upload, sync, and troubleshooting.
 
 ## Overview
 
-- Upload to Clerk via `user.setProfileImage()`
+- Upload to WorkOS via `user.setProfileImage()`
 - Sync to Convex `users.pictureUrl`
 - Audit each change in `audit_logs`
 
@@ -32,9 +32,9 @@ Common issues and fixes:
 - Check browser console and Network tab for errors
 - Validate file type (JPG/PNG/GIF/WebP) and size (<5MB)
 - Re-authenticate (sign out/in), try another browser
-- Verify Clerk env keys in `.env.local`
+- Verify WorkOS env keys in `.env.local`
 
-If uploads keep failing, consider backend upload via Clerk server SDK or client-side compression before upload.
+If uploads keep failing, consider backend upload via WorkOS server SDK or client-side compression before upload.
 
 ## Security & Validation
 

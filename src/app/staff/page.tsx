@@ -1,12 +1,11 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
-import { useState } from 'react';
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { useMemo, useState } from 'react';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
-import { useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
@@ -37,7 +36,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-// Define proper types for the data
 interface StaffMember {
   _id: string;
   fullName: string;
@@ -62,37 +60,55 @@ interface StaffMember {
   }>;
 }
 
-interface UserData {
-  systemRoles?: string[];
-}
-
 export default function StaffCapacityPage() {
   const { currentYear } = useAcademicYear();
-  const { user } = useUser();
-
-  const convexUser = useQuery(
-    api.users.getBySubject,
-    user?.id ? { subject: user.id } : 'skip'
-  ) as UserData | undefined;
-
-  const isAdminLike = (convexUser?.systemRoles || []).some(
-    (r) => r === 'orgadmin' || r === 'sysadmin' || r === 'developer'
-  );
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
   const profiles = useQuery(
     api.staff.list,
-    user?.id && isAdminLike ? { userId: user.id } : 'skip'
+    user?.id ? { userId: user.id } : 'skip'
   ) as StaffMember[] | undefined;
 
-  // Filters
+  const canCreateStaff = useQuery(
+    api.permissions.hasPermission,
+    user?.id ? { userId: user.id, permissionId: 'staff.create' } : 'skip'
+  );
+
+  const canAdjustWorkloadStaff = useQuery(
+    api.permissions.hasPermission,
+    user?.id
+      ? { userId: user.id, permissionId: 'workload.admin.staff.adjust' }
+      : 'skip'
+  );
+
+  const canCreate = Boolean(canCreateStaff || canAdjustWorkloadStaff);
+
   const [search, setSearch] = useState('');
-  const [contract, setContract] = useState<string>('all'); // all | FT | PT | Bank
+  const [contract, setContract] = useState<string>('all');
   const [activeOnly, setActiveOnly] = useState<boolean>(false);
   const [overCapacityOnly, setOverCapacityOnly] = useState<boolean>(false);
   const [capacityMode, setCapacityMode] = useState<'teaching' | 'total'>(
     'teaching'
   );
   const [openCreate, setOpenCreate] = useState(false);
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
 
   return (
     <StandardizedSidebarLayout
@@ -109,9 +125,9 @@ export default function StaffCapacityPage() {
     >
       <div className="space-y-4">
         <div data-testid="page-ready" />
-        {/* Filters */}
-        {isAdminLike && (
-          <div className="flex flex-col md:flex-row gap-3 md:items-end border rounded-md p-3">
+
+        {Array.isArray(profiles) && profiles.length > 0 && (
+          <div className="flex flex-col gap-3 rounded-md border p-3 md:flex-row md:items-end">
             <div className="flex-1 space-y-1">
               <Label htmlFor="search">Search</Label>
               <Input
@@ -119,9 +135,10 @@ export default function StaffCapacityPage() {
                 data-testid="staff-search-input"
                 placeholder="Name or email"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => setSearch(event.target.value)}
               />
             </div>
+
             <div className="w-40 space-y-1">
               <Label>Contract</Label>
               <Select value={contract} onValueChange={setContract}>
@@ -136,12 +153,13 @@ export default function StaffCapacityPage() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="w-44 space-y-1">
               <Label>Capacity Mode</Label>
               <Select
                 value={capacityMode}
-                onValueChange={(v) =>
-                  setCapacityMode(v as 'teaching' | 'total')
+                onValueChange={(value) =>
+                  setCapacityMode(value as 'teaching' | 'total')
                 }
               >
                 <SelectTrigger data-testid="capacity-mode-trigger">
@@ -153,34 +171,42 @@ export default function StaffCapacityPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-2 mt-1 md:mt-0">
-              <label className="text-sm inline-flex items-center gap-2">
+
+            <div className="mt-1 flex items-center gap-2 md:mt-0">
+              <label className="inline-flex items-center gap-2 text-sm">
                 <input
                   data-testid="active-only-checkbox"
                   type="checkbox"
                   checked={activeOnly}
-                  onChange={(e) => setActiveOnly(e.target.checked)}
+                  onChange={(event) => setActiveOnly(event.target.checked)}
                 />{' '}
                 Active only
               </label>
-              <label className="text-sm inline-flex items-center gap-2">
+
+              <label className="inline-flex items-center gap-2 text-sm">
                 <input
                   data-testid="over-capacity-checkbox"
                   type="checkbox"
                   checked={overCapacityOnly}
-                  onChange={(e) => setOverCapacityOnly(e.target.checked)}
+                  onChange={(event) =>
+                    setOverCapacityOnly(event.target.checked)
+                  }
                 />{' '}
                 Over capacity
               </label>
             </div>
-            <div className="md:ml-auto">
-              <Button onClick={() => setOpenCreate(true)}>
-                Create lecturer
-              </Button>
-            </div>
+
+            {canCreate && (
+              <div className="md:ml-auto">
+                <Button onClick={() => setOpenCreate(true)}>
+                  Create lecturer
+                </Button>
+              </div>
+            )}
           </div>
         )}
-        {isAdminLike && (
+
+        {canCreate && (
           <Dialog open={openCreate} onOpenChange={setOpenCreate}>
             <DialogContent className="max-w-4xl">
               <DialogHeader>
@@ -192,12 +218,8 @@ export default function StaffCapacityPage() {
             </DialogContent>
           </Dialog>
         )}
-        {!isAdminLike && (
-          <div className="text-sm text-muted-foreground">
-            View your profile from the sidebar (Staff → My Profile).
-          </div>
-        )}
-        {isAdminLike && (!Array.isArray(profiles) || profiles.length === 0) && (
+
+        {profiles !== undefined && (!Array.isArray(profiles) || profiles.length === 0) && (
           <div
             className="rounded-md border border-dashed bg-muted/30 p-8 text-center text-sm text-muted-foreground"
             data-testid="empty-staff-list"
@@ -205,15 +227,16 @@ export default function StaffCapacityPage() {
             No staff in list
           </div>
         )}
-        {isAdminLike &&
-          Array.isArray(profiles) &&
+
+        {Array.isArray(profiles) &&
           profiles.length > 0 &&
           currentYear?._id && (
-            <ul className="divide-y border rounded-md" data-testid="staff-list">
-              {profiles.map((p) => (
+            <ul className="divide-y rounded-md border" data-testid="staff-list">
+              {profiles.map((profile) => (
                 <StaffRow
-                  key={String(p._id)}
-                  profile={p}
+                  key={String(profile._id)}
+                  userId={user.id}
+                  profile={profile}
                   yearId={String(currentYear._id)}
                   filters={{
                     search,
@@ -232,10 +255,12 @@ export default function StaffCapacityPage() {
 }
 
 function StaffRow({
+  userId,
   profile,
   yearId,
   filters,
 }: {
+  userId: string;
   profile: StaffMember;
   yearId?: string;
   filters: {
@@ -248,8 +273,9 @@ function StaffRow({
 }) {
   const totals = useQuery(
     api.allocations.computeLecturerTotals,
-    profile && yearId
+    userId && profile._id && yearId
       ? {
+          userId,
           lecturerId: profile._id as Id<'lecturer_profiles'>,
           academicYearId: yearId as Id<'academic_years'>,
         }
@@ -262,10 +288,9 @@ function StaffRow({
       }
     | undefined;
 
-  // Also include standalone admin allocations (not tied to modules/groups)
   const adminAllocations = useQuery(
     api.allocations.listAdminAllocations,
-    profile && yearId
+    profile._id && yearId
       ? {
           lecturerId: profile._id as Id<'lecturer_profiles'>,
           academicYearId: yearId as Id<'academic_years'>,
@@ -273,28 +298,32 @@ function StaffRow({
       : 'skip'
   ) as Array<{ allocation?: { hours?: number } }> | undefined;
 
-  // Apply filters when data available
   const matchesFilters = useMemo(() => {
-    // Search by name/email
-    const q = filters.search.trim().toLowerCase();
+    const query = filters.search.trim().toLowerCase();
+
     const searchOk =
-      !q ||
-      (profile.fullName || '').toLowerCase().includes(q) ||
-      (profile.email || '').toLowerCase().includes(q);
-    // Contract
+      !query ||
+      (profile.fullName || '').toLowerCase().includes(query) ||
+      (profile.email || '').toLowerCase().includes(query);
+
     const contractOk =
       filters.contract === 'all' || profile.contract === filters.contract;
-    // Active
+
     const activeOk = !filters.activeOnly || Boolean(profile.isActive);
-    // Over capacity (requires totals and max values)
+
     if (!filters.overCapacityOnly) {
       return searchOk && contractOk && activeOk;
     }
-    if (!totals) return false;
+
+    if (!totals) {
+      return false;
+    }
+
     const adminExtra = (adminAllocations || []).reduce(
-      (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
+      (acc, row) => acc + (Number(row?.allocation?.hours) || 0),
       0
     );
+
     const teaching = totals.allocatedTeaching || 0;
     const totalWithAdmin = teaching + (totals.allocatedAdmin || 0) + adminExtra;
     const teachingMax = Number(profile.maxTeachingHours) || 0;
@@ -302,44 +331,52 @@ function StaffRow({
     const teachingPct =
       teachingMax > 0 ? (totals.allocatedTeaching / teachingMax) * 100 : 0;
     const totalPct = totalMax > 0 ? (totalWithAdmin / totalMax) * 100 : 0;
+
     const over =
       filters.capacityMode === 'teaching' ? teachingPct > 100 : totalPct > 100;
+
     return searchOk && contractOk && activeOk && over;
   }, [filters, profile, totals, adminAllocations]);
 
-  if (!matchesFilters) return null;
+  if (!matchesFilters) {
+    return null;
+  }
 
   const teachingMax = Number(profile.maxTeachingHours) || 0;
   const totalMax = Number(profile.totalContract) || 0;
   const teaching = totals?.allocatedTeaching ?? 0;
+
   const adminStandalone = (adminAllocations || []).reduce(
-    (acc, r) => acc + (Number(r?.allocation?.hours) || 0),
+    (acc, row) => acc + (Number(row?.allocation?.hours) || 0),
     0
   );
+
   const admin = (totals?.allocatedAdmin ?? 0) + adminStandalone;
   const total = teaching + admin;
-  const teachingRemaining = Math.max(0, (teachingMax || 0) - teaching);
+  const teachingRemaining = Math.max(0, teachingMax - teaching);
+
   const teachingPct =
     teachingMax > 0
       ? Math.min(100, Math.round((teaching / teachingMax) * 100))
       : 0;
+
   const totalPct =
     totalMax > 0 ? Math.min(100, Math.round((total / totalMax) * 100)) : 0;
 
-  // For stacked total bar (contract baseline with teaching + admin overlays)
   let teachingPctOfTotal =
     totalMax > 0 ? Math.round((teaching / totalMax) * 100) : 0;
+
   let adminPctOfTotal = totalMax > 0 ? Math.round((admin / totalMax) * 100) : 0;
+
   teachingPctOfTotal = Math.max(0, Math.min(100, teachingPctOfTotal));
   adminPctOfTotal = Math.max(0, Math.min(100, adminPctOfTotal));
+
   if (teachingPctOfTotal + adminPctOfTotal > 100) {
     const excess = teachingPctOfTotal + adminPctOfTotal - 100;
-    // Prefer to keep teaching visible; trim admin to fit
     adminPctOfTotal = Math.max(0, adminPctOfTotal - excess);
   }
 
   const teachingColor = 'bg-blue-600';
-  // Note: totalColor no longer used; stacked bar below shows teaching/admin split
 
   return (
     <li className="p-3 text-sm hover:bg-accent/50" data-testid="staff-row">
@@ -348,24 +385,27 @@ function StaffRow({
         className="flex items-start justify-between"
       >
         <div>
-          <div className="font-medium flex items-center gap-2">
+          <div className="flex items-center gap-2 font-medium">
             {profile.fullName}
             {!profile.isActive && <Badge variant="secondary">Inactive</Badge>}
           </div>
+
           <div className="text-muted-foreground">
             Team: {profile.teamName || '—'}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
+
+          <div className="mt-1 text-xs text-muted-foreground">
             Contract: {profile.contract} • FTE {profile.fte}
           </div>
+
           <div className="text-xs text-muted-foreground">
             Limits: Max teaching {teachingMax || '–'}h • Contract{' '}
             {totalMax || '–'}h
           </div>
         </div>
+
         <div className="flex-1 px-4">
           <div className="space-y-2">
-            {/* Teaching capacity */}
             <div>
               <div className="flex justify-between text-[11px] text-muted-foreground">
                 <span>Teaching</span>
@@ -374,16 +414,18 @@ function StaffRow({
                   {teachingMax ? teachingPct : 0}%)
                 </span>
               </div>
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="w-full h-3 bg-blue-100 rounded-md overflow-hidden ring-1 ring-blue-300/50 cursor-help">
+                    <div className="h-3 w-full cursor-help overflow-hidden rounded-md bg-blue-100 ring-1 ring-blue-300/50">
                       <div
                         className={`h-full ${teachingColor} transition-[width] duration-500 ease-out`}
                         style={{ width: `${teachingPct}%` }}
                       />
                     </div>
                   </TooltipTrigger>
+
                   <TooltipContent
                     side="top"
                     align="center"
@@ -399,6 +441,7 @@ function StaffRow({
                           {teachingMax || '–'}h
                         </span>
                       </div>
+
                       <div className="flex items-center gap-2">
                         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-600" />
                         <span className="text-muted-foreground">
@@ -406,6 +449,7 @@ function StaffRow({
                         </span>
                         <span className="ml-auto font-medium">{teaching}h</span>
                       </div>
+
                       <div className="flex items-center gap-2">
                         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-300" />
                         <span className="text-muted-foreground">Remaining</span>
@@ -413,6 +457,7 @@ function StaffRow({
                           {teachingRemaining}h
                         </span>
                       </div>
+
                       <div className="pt-1 text-[11px] text-muted-foreground">
                         Used:{' '}
                         <span className="font-medium text-foreground">
@@ -424,7 +469,7 @@ function StaffRow({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            {/* Total capacity (stacked: teaching + admin over contract baseline) */}
+
             <div>
               <div className="flex justify-between text-[11px] text-muted-foreground">
                 <span>Total</span>
@@ -432,20 +477,22 @@ function StaffRow({
                   {total}/{totalMax || '–'}h ({totalMax ? totalPct : 0}%)
                 </span>
               </div>
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="w-full h-3 bg-emerald-100 rounded-md overflow-hidden flex cursor-help ring-1 ring-emerald-300/60">
+                    <div className="flex h-3 w-full cursor-help overflow-hidden rounded-md bg-emerald-100 ring-1 ring-emerald-300/60">
                       <div
-                        className={`h-full bg-blue-600 transition-[width] duration-500 ease-out`}
+                        className="h-full bg-blue-600 transition-[width] duration-500 ease-out"
                         style={{ width: `${teachingPctOfTotal}%` }}
                       />
                       <div
-                        className={`h-full bg-amber-400 transition-[width] duration-500 ease-out`}
+                        className="h-full bg-amber-400 transition-[width] duration-500 ease-out"
                         style={{ width: `${adminPctOfTotal}%` }}
                       />
                     </div>
                   </TooltipTrigger>
+
                   <TooltipContent
                     side="top"
                     align="center"
@@ -461,16 +508,19 @@ function StaffRow({
                           {totalMax || '–'}h
                         </span>
                       </div>
+
                       <div className="flex items-center gap-2">
                         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-blue-600" />
                         <span className="text-muted-foreground">Teaching</span>
                         <span className="ml-auto font-medium">{teaching}h</span>
                       </div>
+
                       <div className="flex items-center gap-2">
                         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-amber-400" />
                         <span className="text-muted-foreground">Admin</span>
                         <span className="ml-auto font-medium">{admin}h</span>
                       </div>
+
                       <div className="pt-1 text-[11px] text-muted-foreground">
                         Used:{' '}
                         <span className="font-medium text-foreground">
@@ -485,7 +535,8 @@ function StaffRow({
             </div>
           </div>
         </div>
-        <div className="text-right min-w-40">
+
+        <div className="min-w-40 text-right">
           <div data-testid="staff-teaching">Teaching: {teaching}h</div>
           <div data-testid="staff-admin">Admin: {admin}h</div>
           <div data-testid="staff-total" className="font-medium">

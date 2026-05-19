@@ -12,11 +12,11 @@
       - [Specific Test Types](#specific-test-types)
       - [Test Runner Options](#test-runner-options)
   - [🧪 **Test Types**](#-test-types)
-    - [1. Unit Tests (`pnpm test`)](#1-unit-tests-pnpm-test)
-    - [2. E2E Tests (`pnpm e2e`)](#2-e2e-tests-pnpm-e2e)
-    - [3. Performance Tests (`pnpm test:performance`)](#3-performance-tests-pnpm-testperformance)
-    - [4. Visual Regression Tests (`pnpm test:visual`)](#4-visual-regression-tests-pnpm-testvisual)
-    - [5. Group Creation Tests (`pnpm test:e2e --grep group-creation`)](#5-group-creation-tests-pnpm-teste2e---grep-group-creation)
+    - [1. Unit Tests (`npm test`)](#1-unit-tests-npm-test)
+    - [2. E2E Tests (`npm e2e`)](#2-e2e-tests-npm-e2e)
+    - [3. Performance Tests (`npm test:performance`)](#3-performance-tests-npm-testperformance)
+    - [4. Visual Regression Tests (`npm test:visual`)](#4-visual-regression-tests-npm-testvisual)
+    - [5. Group Creation Tests (`npm test:e2e --grep group-creation`)](#5-group-creation-tests-npm-teste2e---grep-group-creation)
   - [🔧 **Test Configuration**](#-test-configuration)
     - [Playwright Configuration (`playwright.config.ts`)](#playwright-configuration-playwrightconfigts)
     - [Test Fixtures (`tests/e2e/fixtures.ts`)](#test-fixtures-testse2efixturests)
@@ -67,14 +67,14 @@ The testing suite covers:
 1. **Environment Variables** (required for E2E tests):
 
    ```bash
-   export CLERK_TEST_USER_EMAIL="your-test-email@example.com"
-   export CLERK_TEST_USER_PASSWORD="your-test-password"
+   export WORKOS_TEST_USER_EMAIL="your-test-email@example.com"
+   export WORKOS_TEST_USER_PASSWORD="your-test-password"
    export E2E_ASSUME_ADMIN="true"
    ```
 
 2. **Install Dependencies**:
    ```bash
-   pnpm install
+   npm install
    ```
 
 ### Running Tests
@@ -86,26 +86,26 @@ The testing suite covers:
 ./scripts/test-runner.sh
 
 # Or using npm
-pnpm test:all
+npm test:all
 ```
 
 #### Specific Test Types
 
 ```bash
 # Unit tests only
-pnpm test
+npm test
 
 # E2E tests only
-pnpm e2e
+npm e2e
 
 # Performance tests only
-pnpm test:performance
+npm test:performance
 
 # Visual regression tests only
-pnpm test:visual
+npm test:visual
 
 # Smoke tests only
-pnpm test:smoke
+npm test:smoke
 ```
 
 #### Test Runner Options
@@ -129,7 +129,7 @@ pnpm test:smoke
 
 ## 🧪 **Test Types**
 
-### 1. Unit Tests (`pnpm test`)
+### 1. Unit Tests (`npm test`)
 
 **Location**: `tests/` directory
 **Framework**: Vitest
@@ -141,7 +141,7 @@ pnpm test:smoke
 - `permissions-helpers.spec.ts` - Permission system
 - `authz.spec.ts` - Authorization logic
 
-### 2. E2E Tests (`pnpm e2e`)
+### 2. E2E Tests (`npm e2e`)
 
 **Location**: `tests/e2e/` directory
 **Framework**: Playwright
@@ -156,7 +156,7 @@ pnpm test:smoke
 - `modules.spec.ts` - Module management
 - `staff-capacity.spec.ts` - Staff capacity
 
-### 3. Performance Tests (`pnpm test:performance`)
+### 3. Performance Tests (`npm test:performance`)
 
 **Location**: `tests/e2e/performance.spec.ts`
 **Framework**: Playwright with performance metrics
@@ -180,7 +180,7 @@ const loadTime = Date.now() - startTime;
 expect(loadTime).toBeLessThan(3000); // 3 seconds
 ```
 
-### 4. Visual Regression Tests (`pnpm test:visual`)
+### 4. Visual Regression Tests (`npm test:visual`)
 
 **Location**: `tests/e2e/visual-regression.spec.ts`
 **Framework**: Playwright with screenshot comparison
@@ -215,7 +215,7 @@ await expect(page).toHaveScreenshot('dashboard-layout.png', {
 - Max diff pixels: 100
 - Output directory: `test-results/`
 
-### 5. Group Creation Tests (`pnpm test:e2e --grep group-creation`)
+### 5. Group Creation Tests (`npm test:e2e --grep group-creation`)
 
 **Location**: `tests/e2e/group-creation.spec.ts`
 **Framework**: Playwright
@@ -268,9 +268,7 @@ export const test = base.extend<{ seedDemoData: void }>({
       // Auto-seed demo data before tests
       const assumeAdmin = process.env.E2E_ASSUME_ADMIN === 'true';
       if (assumeAdmin) {
-        // Reset and seed demo data
-        await ctx.post('/api/admin/dev-tools/reset');
-        await ctx.post('/api/admin/dev-tools/seed');
+        // Seed demo data using local-only test helpers.
       }
       await use();
     },
@@ -307,15 +305,7 @@ ls -la test-results/
 
 **Problem**: Module attachment dropdown shows no options
 **Cause**: Permission issue - user lacks `modules.view` permission
-**Solution**: Ensure test user has Admin role via dev tools
-
-```typescript
-// In test setup
-await page.goto('/admin/dev-tools');
-const adminBtn = page.getByRole('button', { name: /^Admin$/ });
-if (await adminBtn.isVisible()) await adminBtn.click();
-await page.waitForTimeout(1000); // Wait for role switch
-```
+**Solution**: Ensure the test user has the required role before running the test.
 
 #### 2. Group Creation Failing
 
@@ -333,17 +323,17 @@ await page.waitForTimeout(1000); // Wait for role switch
 ./scripts/test-runner.sh -u
 
 # Update specific test snapshots
-pnpm test:visual --update-snapshots
+npm test:visual --update-snapshots
 ```
 
 ### Debug Mode
 
 ```bash
 # Run tests with UI for debugging
-pnpm e2e:ui
+npm e2e:ui
 
 # Run specific test with debug output
-pnpm e2e --grep "test-name" --debug
+npm e2e --grep "test-name" --debug
 ```
 
 ## 📈 **Performance Benchmarks**
@@ -361,10 +351,10 @@ pnpm e2e --grep "test-name" --debug
 
 ```bash
 # Run performance tests only
-pnpm test:performance
+npm test:performance
 
 # Run with performance profiling
-pnpm test:performance --project=performance
+npm test:performance --project=performance
 
 # View performance metrics
 cat test-results/results.json | jq '.results[].metrics'
@@ -379,7 +369,7 @@ cat test-results/results.json | jq '.results[].metrics'
 - name: Run Tests
   run: |
     export E2E_ASSUME_ADMIN=true
-    pnpm test:all
+    npm test:all
 
 - name: Upload Test Results
   uses: actions/upload-artifact@v3
@@ -392,10 +382,10 @@ cat test-results/results.json | jq '.results[].metrics'
 
 ```bash
 # Run tests before commit
-pnpm test:smoke
+npm test:smoke
 
 # Run full test suite
-pnpm test:all
+npm test:all
 ```
 
 ## 📝 **Adding New Tests**

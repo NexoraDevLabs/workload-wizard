@@ -1,8 +1,9 @@
 'use client';
 
-import { useUser } from '@clerk/nextjs';
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuthUser } from '@/hooks/useAuthUser';
 import { LoadingOverlay } from '@/components/loading-overlay';
-import { OnboardingCheck } from '@/components/common/OnboardingCheck';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 
@@ -11,22 +12,40 @@ export function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoaded, isSignedIn } = useUser();
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
 
-  if (!isLoaded) {
-    return <LoadingOverlay delayMs={300} />;
-  }
+  const pathname = usePathname();
+  const router = useRouter();
 
-  if (!isSignedIn) {
-    return <>{children}</>;
-  }
+  const isOnboardingRoute =
+    pathname === '/onboarding' || pathname === '/onboarding-success';
+
+  const needsOnboarding = Boolean(
+    user && (user.needsOrganisation || !user.onboardingCompleted)
+  );
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn || !user) return;
+
+    if (needsOnboarding && !isOnboardingRoute) {
+      router.replace('/onboarding');
+    }
+  }, [isLoaded, isSignedIn, user, needsOnboarding, isOnboardingRoute, router]);
+
+  if (!isLoaded) return <LoadingOverlay delayMs={300} />;
+  if (!isSignedIn || !user) return <LoadingOverlay delayMs={300} />;
+  if (needsOnboarding && !isOnboardingRoute) return <LoadingOverlay delayMs={300} />;
+  if (isOnboardingRoute) return <>{children}</>;
 
   return (
-    <OnboardingCheck>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset data-testid="page-ready">{children}</SidebarInset>
-      </SidebarProvider>
-    </OnboardingCheck>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset data-testid="page-ready">
+        {children}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

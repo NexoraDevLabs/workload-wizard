@@ -4,111 +4,164 @@ import { z } from 'zod';
 import { Resend } from 'resend';
 
 const BodySchema = z.object({
-  email: z.string().email(),
-  firstName: z.string().min(1),
-  lastName: z.string().optional(),
-  organisation: z.string().optional(),
-  source: z.string().optional(),
+  email: z.string().trim().toLowerCase().email(),
+  firstName: z.string().trim().min(1),
+  lastName: z.string().trim().optional(),
+  source: z.string().trim().optional(),
+  organisation: z.string().trim().optional(),
 });
 
-interface ResendContact {
-  email?: string;
+type ResendContactPayload = {
+  email: string;
+  firstName: string;
+  lastName?: string;
+  unsubscribed?: boolean;
+  properties?: Record<string, string>;
+};
+
+type ResendContactUpdatePayload = {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  unsubscribed?: boolean;
+  properties?: Record<string, string>;
+};
+
+function isDuplicateContactError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : '';
+
+  return (
+    message.includes('already exists') ||
+    message.includes('duplicate') ||
+    message.includes('already exist')
+  );
 }
 
-interface ResendContactList {
-  data?: ResendContact[];
+async function optInContactToTopic(params: {
+  resend: Resend;
+  email: string;
+  topicId: string;
+}) {
+  await params.resend.contacts.topics.update({
+    email: params.email,
+    topics: [
+      {
+        id: params.topicId,
+        subscription: 'opt_in',
+      },
+    ],
+  });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, firstName, lastName, organisation, source } =
+    const { email, firstName, lastName, source, organisation } =
       BodySchema.parse(await req.json());
 
-    // Do not actually send in E2E runs
     if (process.env.NEXT_PUBLIC_E2E === 'true') {
       return NextResponse.json({ ok: true, e2e: true });
     }
 
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const blogTopicId = process.env.RESEND_NEWSLETTER_TOPIC_ID;
 
-    if (!RESEND_API_KEY) {
-      // RESEND_API_KEY not configured
+    if (!resendApiKey) {
       return NextResponse.json(
         { error: 'Email service not configured' },
         { status: 500 }
       );
     }
 
-    if (!RESEND_AUDIENCE_ID) {
-      // RESEND_NEWSLETTER_AUDIENCE_ID not configured
+    if (!blogTopicId) {
       return NextResponse.json(
-        { error: 'Newsletter audience not configured' },
+        { error: 'Blog topic is not configured' },
         { status: 500 }
       );
     }
 
-    const resend = new Resend(RESEND_API_KEY);
+    const resend = new Resend(resendApiKey);
+    const companyName = organisation?.trim();
 
-    // Check for existing contact to avoid duplicates
-    try {
-      const list = await resend.contacts.list({
-        audienceId: RESEND_AUDIENCE_ID,
-      });
-      // Type assertion with proper error handling
-      const contactList = list as unknown as ResendContactList;
-      const alreadyExists = Array.isArray(contactList?.data)
-        ? (contactList.data?.some(
-            (c: ResendContact) =>
-              String(c?.email || '').toLowerCase() === email.toLowerCase()
-          ) ?? false)
-        : false;
-      if (alreadyExists) {
-        return NextResponse.json({ ok: true, already: true });
-      }
-    } catch {
-      // Resend contacts.list failed
+    const properties: Record<string, string> = {
+      blog_updates: 'true',
+    };
+
+    if (companyName) {
+      properties.company_name = companyName;
     }
 
-    // Add to Resend Audience contacts
-    const basePayload: {
-      audienceId: string;
-      email: string;
-      firstName: string;
-      unsubscribed: boolean;
-      lastName?: string;
-    } = {
-      audienceId: RESEND_AUDIENCE_ID,
+    if (source) {
+      properties.blog_signup_source = source;
+    }
+
+    const contactPayload: ResendContactPayload = {
       email,
       firstName,
       unsubscribed: false,
+      properties,
     };
 
-    if (lastName && lastName.trim()) {
-      basePayload.lastName = lastName.trim();
+    if (lastName) {
+      contactPayload.lastName = lastName;
     }
 
-    // Add tags for segmentation
-    const withTags = {
-      ...basePayload,
-      tags: ['newsletter'],
-    } as typeof basePayload & { tags: string[] };
-    if (source && source.trim()) withTags.tags.push(`source:${source}`);
-    if (organisation && organisation.trim())
-      withTags.tags.push(`org:${organisation.trim()}`);
+    let alreadySubscribed = false;
 
     try {
-      await resend.contacts.create(withTags);
+      await resend.contacts.create(contactPayload);
+    } catch (error) {
+      if (!isDuplicateContactError(error)) {
+        return NextResponse.json(
+          { error: 'Failed to create blog subscription contact' },
+          { status: 500 }
+        );
+      }
+
+      alreadySubscribed = true;
+
+      const updatePayload: ResendContactUpdatePayload = {
+        email,
+        firstName,
+        unsubscribed: false,
+        properties,
+      };
+
+      if (lastName) {
+        updatePayload.lastName = lastName;
+      }
+
+      try {
+        await resend.contacts.update(updatePayload);
+      } catch {
+        return NextResponse.json(
+          { error: 'Failed to update blog subscription contact' },
+          { status: 502 }
+        );
+      }
+    }
+
+    try {
+      await optInContactToTopic({
+        resend,
+        email,
+        topicId: blogTopicId,
+      });
     } catch {
       return NextResponse.json(
-        { error: 'Failed to subscribe to newsletter' },
-        { status: 500 }
+        { error: 'Failed to subscribe contact to Blog topic' },
+        { status: 502 }
       );
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      already: alreadySubscribed,
+      topicSubscribed: true,
+    });
   } catch {
-    // Newsletter subscription error
-    return NextResponse.json({ error: 'Bad request' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Failed to subscribe to blog updates' },
+      { status: 500 }
+    );
   }
 }

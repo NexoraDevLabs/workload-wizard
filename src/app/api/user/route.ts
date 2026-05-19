@@ -1,22 +1,57 @@
 import { NextResponse } from 'next/server';
-import { currentUser, auth } from '@clerk/nextjs/server';
+import { getAuthUserFromWorkOS } from '@/lib/auth/workos';
 import { withApiTracing } from '@/lib/otel/withApiTracing';
+import { ConvexHttpClient } from 'convex/browser';
+import { api } from '@/convex/_generated/api';
+
+let convexClient: ConvexHttpClient | null = null;
+
+function getConvexClient(): ConvexHttpClient {
+  if (!convexClient) {
+    const url = process.env.NEXT_PUBLIC_CONVEX_URL;
+    if (!url) throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
+    convexClient = new ConvexHttpClient(url);
+  }
+  return convexClient;
+}
 
 async function handleGet() {
-  // Use `auth()` to get the user's ID
-  const { userId } = await auth();
+  try {
+    const authUser = await getAuthUserFromWorkOS();
 
-  // Protect the route by checking if the user is signed in
-  if (!userId) {
-    return new NextResponse('Unauthorised', { status: 401 });
+    if (!authUser) {
+      return new NextResponse('Unauthorised', { status: 401 });
+    }
+
+    const givenName = authUser.firstName ?? '';
+    const familyName = authUser.lastName ?? '';
+
+    const sync = await getConvexClient().mutation(api.users.syncUser, {
+      userId: authUser.id,
+      email: authUser.email,
+      givenName,
+      familyName,
+    });
+
+    return NextResponse.json(
+      {
+        userId: authUser.id,
+        email: authUser.email,
+        fullName:
+          sync.user?.fullName ??
+          [givenName, familyName].filter(Boolean).join(' ') ??
+          authUser.email,
+        givenName: sync.user?.givenName ?? givenName,
+        familyName: sync.user?.familyName ?? familyName,
+        organisationId: sync.user?.organisationId ?? null,
+        needsOrganisation: sync.needsOrganisation,
+        onboardingCompleted: sync.onboardingCompleted,
+      },
+      { status: 200 }
+    );
+  } catch {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
-
-  // Use `currentUser()` to get the Backend API User object
-  const user = await currentUser();
-
-  // Add your Route Handler's logic with the returned `user` object
-
-  return NextResponse.json({ user: user }, { status: 200 });
 }
 
 export const GET = withApiTracing('api:/api/user', handleGet);

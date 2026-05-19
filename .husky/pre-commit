@@ -1,10 +1,7 @@
-#!/usr/bin/env bash
-. "$(dirname "$0")/_/husky.sh"
-
 # ensure correct node version
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 nvm use 20 > /dev/null
 
-pnpm exec lint-staged
+npx lint-staged

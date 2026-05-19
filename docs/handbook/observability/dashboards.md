@@ -41,15 +41,13 @@ Dashboards provide a shared view of system health for developers and stakeholder
 - **Request Volume**: Requests per minute by endpoint
 - **Database Operations**: Convex query/mutation performance
 
-**Access**: [TODO: Add Sentry Performance dashboard link]
-
 **Alert Thresholds**:
 
 - API P95 > 500ms (P1), > 350ms (P2)
 - Error Rate > 2% (P1), > 1% (P2)
 - Convex P95 > 200ms (P1), > 100ms (P2)
 
-### Auth (Clerk) Dashboard
+### Auth (WorkOS) Dashboard
 
 **Purpose**: Monitor authentication service health
 
@@ -60,7 +58,7 @@ Dashboards provide a shared view of system health for developers and stakeholder
 - **Session Duration**: Average user session length
 - **Geographic Distribution**: Auth performance by region
 
-**Access**: [TODO: Add Clerk dashboard link]
+**Access**: [TODO: Add WorkOS dashboard link]
 
 **Alert Thresholds**:
 

@@ -10,8 +10,12 @@ import {
 } from '@/components/ui/card';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 export default function PermissionTestsPage() {
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
   const debugData = useQuery(api.permissions.debugOrganisationsAndRoles);
 
   const breadcrumbs = [
@@ -28,7 +32,21 @@ export default function PermissionTestsPage() {
       </div>
     </div>
   );
+  if (!isLoaded) {
+    return null;
+  }
 
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}

@@ -1,43 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TestTube, Flag, Shield, Settings, Database } from 'lucide-react';
+import { CheckCircle2, Shield, Settings, Database } from 'lucide-react';
 import Link from 'next/link';
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 const devTools = [
-  {
-    title: 'PostHog Test Dashboard',
-    description:
-      'Comprehensive testing for PostHog events, feature flags, user identification, and proxy configuration',
-    href: '/dev/posthog-test',
-    icon: TestTube,
-    status: 'active',
-    category: 'Analytics',
-  },
   {
     title: 'Permission Tests',
     description:
       'Test permissions and their default roles across all organisations',
     href: '/dev/permission-test',
     icon: Shield,
-    status: 'active',
-    category: 'Features',
-  },
-  {
-    title: 'Feature Flag Management',
-    description:
-      'Manage and preview all feature flags (PostHog and local) with comprehensive controls',
-    href: '/dev/features',
-    icon: Flag,
-    status: 'active',
-    category: 'Features',
-  },
-  {
-    title: 'Statsig Test',
-    description: 'Test Statsig feature flags and user targeting',
-    href: '/dev/statsig-test',
-    icon: Flag,
     status: 'active',
     category: 'Features',
   },
@@ -48,16 +23,27 @@ const breadcrumbs = [
   { label: 'Dev', href: '/dev' },
 ];
 
-const categories = [
-  'All',
-  'Analytics',
-  'Features',
-  'UI',
-  'Database',
-  'Security',
-];
+const categories = ['All', 'Features', 'UI', 'Database', 'Security'];
 
 export default function DevPage() {
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
+
+  if (!user.organisationId) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Your account has not been assigned to an organisation yet.
+      </div>
+    );
+  }
   return (
     <StandardizedSidebarLayout
       breadcrumbs={breadcrumbs}
@@ -69,7 +55,7 @@ export default function DevPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <TestTube className="h-4 w-4 text-blue-500" />
+              <Settings className="h-4 w-4 text-blue-500" />
               <span className="text-sm font-medium">Total Tools</span>
             </div>
             <p className="text-2xl font-bold">{devTools.length}</p>
@@ -78,7 +64,7 @@ export default function DevPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Flag className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
               <span className="text-sm font-medium">Active</span>
             </div>
             <p className="text-2xl font-bold">
@@ -157,7 +143,7 @@ export default function DevPage() {
                 Security & Auth
               </h3>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Clerk Dashboard</li>
+                <li>• WorkOS Dashboard</li>
                 <li>• Permission System</li>
                 <li>• Audit Logs</li>
               </ul>

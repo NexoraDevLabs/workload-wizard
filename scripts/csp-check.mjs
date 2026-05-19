@@ -38,14 +38,6 @@ const mockEnv = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   NEXT_PUBLIC_CONVEX_URL:
     process.env.NEXT_PUBLIC_CONVEX_URL || 'https://mock.convex.cloud',
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_mock',
-  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY || 'sk_test_mock',
-  NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY || 'ph_mock',
-  NEXT_PUBLIC_STATSIG_CLIENT_KEY:
-    process.env.NEXT_PUBLIC_STATSIG_CLIENT_KEY || 'client_mock',
-  FEATFLAG_STATSIG_SERVER_API_KEY:
-    process.env.FEATFLAG_STATSIG_SERVER_API_KEY || 'server_mock',
   CSP_MODE: process.env.CSP_MODE || 'report-only',
   ...loadEnv(),
 };

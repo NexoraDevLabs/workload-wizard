@@ -125,7 +125,7 @@ Use area labels for feature-specific alerts:
 
 **Responsibilities**:
 
-- Clerk integration issues
+- WorkOS integration issues
 - Authentication flows
 - User session management
 - Permission system bugs
@@ -290,9 +290,6 @@ Alert → Team Lead (Next day) → Product Manager (Weekly review)
 **Test Commands**:
 
 ```bash
-# Test Sentry alert
-curl -X POST https://sentry.io/api/0/projects/org/project/events/ \
-  -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
   -d '{"message": "Test P1 alert", "level": "error"}'
 
 # Test Slack notification

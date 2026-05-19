@@ -35,7 +35,7 @@ docs: update simulation booking workflow
 3. Run linting and tests before opening a PR:
 
    ```bash
-   pnpm lint && pnpm test
+   npm lint && npm test
    ```
 
 4. Open a **draft PR** early for visibility.

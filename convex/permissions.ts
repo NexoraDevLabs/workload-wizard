@@ -7,6 +7,46 @@ import {
 import { v } from 'convex/values';
 import type { Id, Doc } from './_generated/dataModel';
 import { writeAudit } from './audit';
+import { getAuthContext } from './lib/auth';
+import { DEFAULT_ROLE_PERMISSIONS } from './permissions/constants';
+
+function canonicalOrgRoleName(name: string) {
+  const role = name.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  if (
+    role === 'organisation admin' ||
+    role === 'organization admin' ||
+    role === 'org admin' ||
+    role === 'orgadmin' ||
+    role === 'admin'
+  ) {
+    return 'Organisation Admin';
+  }
+  if (role === 'workload admin' || role === 'workloadadmin') {
+    return 'Workload Admin';
+  }
+  if (role === 'manager' || role === 'team manager') {
+    return 'Manager';
+  }
+  if (role === 'user' || role === 'viewer' || role === 'lecturer') {
+    return 'User';
+  }
+  return name;
+}
+
+async function getPrimaryOrganisationId(
+  ctx: QueryCtx | MutationCtx,
+  userId: string
+): Promise<Id<'organisations'> | null> {
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+  return (
+    memberships.find((membership) => membership.isPrimary)?.organisationId ??
+    memberships[0]?.organisationId ??
+    null
+  );
+}
 
 /**
  * Check if a user has a specific permission
@@ -35,11 +75,32 @@ export const hasPermission = query({
       }
     }
 
+    const organisationId = await getPrimaryOrganisationId(ctx, userId);
+    if (!organisationId) return false;
+
+    const profile = await ctx.db
+      .query('user_profiles')
+      .withIndex('by_user_org', (q) =>
+        q.eq('userId', userId).eq('organisationId', organisationId)
+      )
+      .first();
+    const profileOrgRoles = [
+      ...new Set((profile?.orgRoles || []).map(canonicalOrgRoleName)),
+    ];
+
+    if (
+      profileOrgRoles.some((roleName) =>
+        (DEFAULT_ROLE_PERMISSIONS[roleName] || []).includes(permissionId)
+      )
+    ) {
+      return true;
+    }
+
     // Get user's active role assignments (support multiple)
     const roleAssignments = await ctx.db
       .query('user_role_assignments')
       .withIndex('by_user_org', (q) =>
-        q.eq('userId', userId).eq('organisationId', user.organisationId)
+        q.eq('userId', userId).eq('organisationId', organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
@@ -73,7 +134,11 @@ export const hasPermission = query({
     }
 
     // Check defaults across any role
-    return roles.some((r) => systemPermission.defaultRoles.includes(r.name));
+    return (
+      profileOrgRoles.some((roleName) =>
+        systemPermission.defaultRoles.includes(roleName)
+      ) || roles.some((r) => systemPermission.defaultRoles.includes(r.name))
+    );
   },
 });
 
@@ -94,10 +159,13 @@ export const getCurrentUserOrgRole = query({
       return null;
     }
 
+    const organisationId = await getPrimaryOrganisationId(ctx, userId);
+    if (!organisationId) return null;
+
     const roleAssignment = await ctx.db
       .query('user_role_assignments')
       .withIndex('by_user_org', (q) =>
-        q.eq('userId', userId).eq('organisationId', user.organisationId)
+        q.eq('userId', userId).eq('organisationId', organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .first();
@@ -252,23 +320,23 @@ export const seedDefaultOrgRolesAndPermissions = mutation({
     // Create default roles
     const defaultRoles = [
       {
-        name: 'Admin',
-        description: 'Full administrative access',
+        name: 'User',
+        description: 'Standard workload user access',
         isDefault: true,
       },
       {
         name: 'Manager',
-        description: 'Management level access',
+        description: 'Team-scoped workload visibility and change review access',
         isDefault: true,
       },
       {
-        name: 'Lecturer',
-        description: 'Standard lecturer access',
+        name: 'Organisation Admin',
+        description: 'Organisation settings and user administration access',
         isDefault: true,
       },
       {
-        name: 'Viewer',
-        description: 'Read-only access',
+        name: 'Workload Admin',
+        description: 'Organisation-scoped workload administration access',
         isDefault: true,
       },
     ];
@@ -319,14 +387,13 @@ export const seedDefaultOrgRolesAndPermissions = mutation({
  * Get all roles for an organisation
  */
 export const getOrganisationRoles = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
 
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
 
@@ -334,7 +401,7 @@ export const getOrganisationRoles = query({
       .query('user_roles')
       .filter((q) =>
         q.and(
-          q.eq(q.field('organisationId'), actor.organisationId),
+          q.eq(q.field('organisationId'), authContext.organisationId),
           q.eq(q.field('isActive'), true)
         )
       )
@@ -346,6 +413,7 @@ export const getOrganisationRoles = query({
  * Get all system permissions (for admin UI)
  */
 export const getSystemPermissions = query({
+  args: {},
   handler: async (ctx) => {
     return await ctx.db
       .query('system_permissions')
@@ -358,6 +426,7 @@ export const getSystemPermissions = query({
  * Get all system permissions grouped by group
  */
 export const getSystemPermissionsGrouped = query({
+  args: {},
   handler: async (ctx) => {
     const permissions = await ctx.db
       .query('system_permissions')
@@ -641,19 +710,25 @@ export const seedPlanningMvpPermissions = mutation({
         id: 'courses.view',
         group: 'courses',
         description: 'View courses',
-        defaultRoles: ['Admin', 'Manager', 'Lecturer', 'Viewer'],
+        defaultRoles: [
+          'Admin',
+          'Organisation Admin',
+          'User',
+          'Lecturer',
+          'Viewer',
+        ],
       },
       {
         id: 'courses.create',
         group: 'courses',
         description: 'Create courses',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'courses.edit',
         group: 'courses',
         description: 'Edit courses',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'courses.delete',
@@ -665,25 +740,31 @@ export const seedPlanningMvpPermissions = mutation({
         id: 'courses.years.add',
         group: 'courses',
         description: 'Add course years',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'modules.view',
         group: 'modules',
         description: 'View modules',
-        defaultRoles: ['Admin', 'Manager', 'Lecturer', 'Viewer'],
+        defaultRoles: [
+          'Admin',
+          'Organisation Admin',
+          'User',
+          'Lecturer',
+          'Viewer',
+        ],
       },
       {
         id: 'modules.create',
         group: 'modules',
         description: 'Create modules',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'modules.edit',
         group: 'modules',
         description: 'Edit modules',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'modules.delete',
@@ -695,49 +776,115 @@ export const seedPlanningMvpPermissions = mutation({
         id: 'modules.link',
         group: 'modules',
         description: 'Attach module to course year',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'modules.unlink',
         group: 'modules',
         description: 'Detach module from course year',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'iterations.create',
         group: 'iterations',
         description: 'Create module iterations for an academic year',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'groups.view',
         group: 'groups',
         description: 'View groups',
-        defaultRoles: ['Admin', 'Manager', 'Lecturer', 'Viewer'],
+        defaultRoles: [
+          'Admin',
+          'Organisation Admin',
+          'User',
+          'Lecturer',
+          'Viewer',
+        ],
       },
       {
         id: 'groups.create',
         group: 'groups',
         description: 'Create groups',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'groups.delete',
         group: 'groups',
         description: 'Delete groups',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'allocations.view',
         group: 'allocations',
         description: 'View allocations totals',
-        defaultRoles: ['Admin', 'Manager', 'Lecturer'],
+        defaultRoles: ['Admin', 'Organisation Admin', 'User', 'Lecturer'],
       },
       {
         id: 'allocations.assign',
         group: 'allocations',
         description: 'Assign lecturer to group',
-        defaultRoles: ['Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
+      },
+      {
+        id: 'manager.dashboard.view',
+        group: 'manager',
+        description: 'View manager workload dashboard',
+        defaultRoles: ['Manager', 'Team Manager'],
+      },
+      {
+        id: 'manager.team.view',
+        group: 'manager',
+        description: 'View assigned team workload',
+        defaultRoles: ['Manager', 'Team Manager'],
+      },
+      {
+        id: 'manager.team.member.view',
+        group: 'manager',
+        description: 'Inspect members of assigned teams',
+        defaultRoles: ['Manager', 'Team Manager'],
+      },
+      {
+        id: 'manager.changes.review',
+        group: 'manager',
+        description: 'View workload change-review process',
+        defaultRoles: ['Manager', 'Team Manager'],
+      },
+      {
+        id: 'manager.changes.approve',
+        group: 'manager',
+        description: 'Approve workload changes for assigned teams',
+        defaultRoles: [],
+      },
+      {
+        id: 'workload.admin.dashboard.view',
+        group: 'workload',
+        description: 'View organisation workload dashboard',
+        defaultRoles: ['Workload Admin'],
+      },
+      {
+        id: 'workload.admin.staff.view',
+        group: 'workload',
+        description: 'View all workload staff data within own organisation',
+        defaultRoles: ['Workload Admin'],
+      },
+      {
+        id: 'workload.admin.staff.adjust',
+        group: 'workload',
+        description: 'Adjust workload staff data within own organisation',
+        defaultRoles: ['Workload Admin'],
+      },
+      {
+        id: 'workload.admin.allocations.view',
+        group: 'workload',
+        description: 'View all workload allocations within own organisation',
+        defaultRoles: ['Workload Admin'],
+      },
+      {
+        id: 'workload.admin.allocations.adjust',
+        group: 'workload',
+        description: 'Adjust workload allocations within own organisation',
+        defaultRoles: ['Workload Admin'],
       },
     ];
 
@@ -1142,7 +1289,7 @@ export const seedAcademicYearPermissions = mutation({
         defaultRoles: [
           'Admin',
           'Organisation Admin',
-          'Manager',
+          'User',
           'Lecturer',
           'Viewer',
         ],
@@ -1151,7 +1298,7 @@ export const seedAcademicYearPermissions = mutation({
         id: 'year.view.staging',
         group: 'academic_years',
         description: 'View staged/draft academic years',
-        defaultRoles: ['Admin', 'Organisation Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'year.view.archived',
@@ -1171,7 +1318,7 @@ export const seedAcademicYearPermissions = mutation({
         group: 'academic_years',
         description:
           'Edit staged/draft academic years (create, modify before publish)',
-        defaultRoles: ['Admin', 'Organisation Admin', 'Manager'],
+        defaultRoles: ['Admin', 'Organisation Admin'],
       },
       {
         id: 'year.edit.archived',
@@ -1260,6 +1407,7 @@ export const seedAcademicYearPermissions = mutation({
  * Debug function to check what organizations and roles exist
  */
 export const debugOrganisationsAndRoles = query({
+  args: {},
   handler: async (ctx) => {
     const organisations = await ctx.db
       .query('organisations')
@@ -1491,6 +1639,7 @@ export const pushPermissionsToOrganisations = mutation({
  */
 export const createOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     permissions: v.array(v.string()),
@@ -1501,8 +1650,8 @@ export const createOrganisationRole = mutation({
     const now = Date.now();
 
     // Determine organisation from actor (performedBy or authenticated identity)
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1516,7 +1665,7 @@ export const createOrganisationRole = mutation({
       isDefault: false,
       isSystem: false,
       permissions: args.permissions,
-      organisationId: actor.organisationId,
+      organisationId: authContext.organisationId,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -1533,12 +1682,12 @@ export const createOrganisationRole = mutation({
         ...(args.performedByName
           ? { performedByName: args.performedByName }
           : {}),
-        organisationId: actor.organisationId,
+        organisationId: authContext.organisationId,
         details: `Role "${args.name}" created with ${args.permissions.length} permission(s)`,
         metadata: JSON.stringify({
           description: args.description,
           permissions: args.permissions,
-          organisationId: actor.organisationId,
+          organisationId: authContext.organisationId,
         }),
         severity: 'info',
       });
@@ -1553,6 +1702,7 @@ export const createOrganisationRole = mutation({
  */
 export const updateOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     name: v.string(),
     description: v.optional(v.string()),
@@ -1567,8 +1717,8 @@ export const updateOrganisationRole = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation can modify
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1582,7 +1732,7 @@ export const updateOrganisationRole = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot modify roles outside your organisation'
@@ -1637,6 +1787,7 @@ export const updateOrganisationRole = mutation({
  */
 export const deleteOrganisationRole = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     performedBy: v.optional(v.string()),
     performedByName: v.optional(v.string()),
@@ -1667,8 +1818,8 @@ export const deleteOrganisationRole = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation can delete
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1682,7 +1833,7 @@ export const deleteOrganisationRole = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot delete roles outside your organisation'
@@ -1728,6 +1879,7 @@ export const deleteOrganisationRole = mutation({
  */
 export const updateRolePermissions = mutation({
   args: {
+    userId: v.string(),
     roleId: v.id('user_roles'),
     permissionId: v.string(),
     isGranted: v.boolean(),
@@ -1742,8 +1894,8 @@ export const updateRolePermissions = mutation({
     }
 
     // Authorisation: only system admins or members of the same organisation
-    const identity = await ctx.auth.getUserIdentity();
-    const subject = args.performedBy ?? identity?.subject;
+    const authContext = await getAuthContext(ctx, args);
+    const subject = args.performedBy ?? authContext.userId;
     if (!subject) throw new Error('Unauthenticated');
     const actor = await ctx.db
       .query('users')
@@ -1757,7 +1909,7 @@ export const updateRolePermissions = mutation({
         );
       if (
         !isSystem &&
-        String(actor.organisationId) !== String(role.organisationId)
+        String(authContext.organisationId) !== String(role.organisationId)
       ) {
         throw new Error(
           'Unauthorised: Cannot modify roles outside your organisation'
@@ -1865,27 +2017,43 @@ export const requirePermission = async (
         }
       }
 
-      // Get user's role assignment
-      const roleAssignment = await ctx.db
+      const organisationId = await getPrimaryOrganisationId(ctx, userId);
+      if (!organisationId) return false;
+
+      const profile = await ctx.db
+        .query('user_profiles')
+        .withIndex('by_user_org', (q) =>
+          q.eq('userId', userId).eq('organisationId', organisationId)
+        )
+        .first();
+      const profileOrgRoles = [
+        ...new Set((profile?.orgRoles || []).map(canonicalOrgRoleName)),
+      ];
+
+      if (
+        profileOrgRoles.some((roleName) =>
+          (DEFAULT_ROLE_PERMISSIONS[roleName] || []).includes(permissionId)
+        )
+      ) {
+        return true;
+      }
+
+      // Get user's role assignments
+      const roleAssignments = await ctx.db
         .query('user_role_assignments')
         .withIndex('by_user_org', (q) =>
-          q.eq('userId', userId).eq('organisationId', user.organisationId)
+          q.eq('userId', userId).eq('organisationId', organisationId)
         )
         .filter((q) => q.eq(q.field('isActive'), true))
-        .first();
+        .collect();
 
-      if (!roleAssignment) {
-        return false;
-      }
+      const roles = (
+        await Promise.all(
+          roleAssignments.map((assignment) => ctx.db.get(assignment.roleId))
+        )
+      ).filter((role): role is Doc<'user_roles'> => Boolean(role?.isActive));
 
-      // Get the role
-      const role = await ctx.db.get(roleAssignment.roleId);
-      if (!role || !role.isActive) {
-        return false;
-      }
-
-      // Check if permission is in the role's permissions array
-      if (role.permissions.includes(permissionId)) {
+      if (roles.some((role) => role.permissions.includes(permissionId))) {
         return true;
       }
 
@@ -1899,8 +2067,12 @@ export const requirePermission = async (
         return false;
       }
 
-      // Check if role name is in default roles for this permission
-      return systemPermission.defaultRoles.includes(role.name);
+      return (
+        profileOrgRoles.some((roleName) =>
+          systemPermission.defaultRoles.includes(roleName)
+        ) ||
+        roles.some((role) => systemPermission.defaultRoles.includes(role.name))
+      );
     });
 
   if (!hasPermission) {
@@ -1939,7 +2111,8 @@ export const requireOrgPermission = async (
   }
 
   // Must be operating within their own organisation
-  if (String(user.organisationId) !== String(organisationId)) {
+  const actorOrganisationId = await getPrimaryOrganisationId(ctx, userId);
+  if (String(actorOrganisationId) !== String(organisationId)) {
     throw new Error('Permission denied: cross-organisation access not allowed');
   }
 
@@ -1985,7 +2158,7 @@ export async function ensureDefaultsForOrg(
     defaultRoleNames =
       templates.length > 0
         ? templates.map((t) => t.name)
-        : ['Admin', 'Manager', 'Lecturer', 'Viewer'];
+        : ['User', 'Manager', 'Workload Admin', 'Organisation Admin'];
   }
 
   // Load active system permissions once

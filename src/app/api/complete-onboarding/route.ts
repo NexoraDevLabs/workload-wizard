@@ -1,101 +1,93 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
-import { clerkClient } from '@clerk/nextjs/server';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
+import { getAuthUserFromWorkOS } from '@/lib/auth/workos';
 import { withApiTracing } from '@/lib/otel/withApiTracing';
 import { withDbSpan } from '@/lib/otel/withDbSpan';
 
-// Lazy client creation to avoid build-time issues
 let convexClient: ConvexHttpClient | null = null;
 
-function getConvexClient(): ConvexHttpClient {
+function getConvexClient() {
   if (!convexClient) {
     const url = process.env.NEXT_PUBLIC_CONVEX_URL;
-    if (!url) {
-      throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
-    }
+    if (!url) throw new Error('NEXT_PUBLIC_CONVEX_URL not configured');
     convexClient = new ConvexHttpClient(url);
   }
+
   return convexClient;
 }
 
-interface OnboardingData {
-  firstName?: string;
-  lastName?: string;
+type CompleteOnboardingBody = {
+  organisationId?: string;
+  givenName?: string;
+  familyName?: string;
+  firstName?: string; // Back-compat with old form
+  lastName?: string; // Back-compat with old form
   jobRole?: string;
   department?: string;
   phone?: string;
+};
+
+function normaliseString(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 async function handlePost(request: NextRequest) {
   try {
-    const user = await currentUser();
+    const authUser = await getAuthUserFromWorkOS();
 
-    if (!user) {
-      // No current user found in onboarding completion
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
     }
 
-    const body = (await request.json()) as { onboardingData: OnboardingData };
-    const { onboardingData } = body;
+    const body = (await request.json()) as CompleteOnboardingBody;
 
-    // Only call Convex if the user exists there; avoid 500s if webhook hasn't created it yet
-    try {
-      const existing = await withDbSpan('convex:getBySubject', () =>
-        getConvexClient().query(api.users.getBySubject, {
-          subject: user.id,
-        })
+    const organisationId = normaliseString(body.organisationId);
+    if (!organisationId) {
+      return NextResponse.json(
+        { error: 'organisationId is required' },
+        { status: 400 }
       );
-
-      if (existing) {
-        await withDbSpan('convex:completeOnboarding', () =>
-          getConvexClient().mutation(api.users.completeOnboarding, {
-            subject: user.id,
-            onboardingData: onboardingData,
-          })
-        );
-      } else {
-        // complete-onboarding: Convex user not found; skipping Convex update
-      }
-    } catch {
-      // complete-onboarding: Convex call failed
-      // Continue; Clerk will still be updated below
     }
 
-    // Also update Clerk user record for name changes to keep in sync
-    const clerk = await clerkClient();
-    const clerkUpdates: Record<string, unknown> = {};
+    const givenName =
+      normaliseString(body.givenName) ||
+      normaliseString(body.firstName) ||
+      authUser.firstName ||
+      '';
 
-    if (
-      onboardingData.firstName &&
-      onboardingData.firstName !== user.firstName
-    ) {
-      clerkUpdates.firstName = onboardingData.firstName;
-    }
+    const familyName =
+      normaliseString(body.familyName) ||
+      normaliseString(body.lastName) ||
+      authUser.lastName ||
+      '';
 
-    if (onboardingData.lastName && onboardingData.lastName !== user.lastName) {
-      clerkUpdates.lastName = onboardingData.lastName;
-    }
+    const result = await withDbSpan('convex:completeOnboardingAndCreateProfile', () =>
+      getConvexClient().mutation(api.users.completeOnboardingAndCreateProfile, {
+        subject: authUser.id,
+        organisationId: organisationId as Id<'organisations'>,
+        givenName,
+        familyName,
+        email: authUser.email,
+        ...(normaliseString(body.jobRole)
+          ? { jobRole: normaliseString(body.jobRole) }
+          : {}),
+        ...(normaliseString(body.department)
+          ? { department: normaliseString(body.department) }
+          : {}),
+        ...(normaliseString(body.phone)
+          ? { phone: normaliseString(body.phone) }
+          : {}),
+      })
+    );
 
-    // Only update Clerk if there are name changes to sync
-    if (Object.keys(clerkUpdates).length > 0) {
-      await clerk.users.updateUser(user.id, clerkUpdates);
-    }
-
-    // Update Clerk metadata with just completion status
-    await clerk.users.updateUserMetadata(user.id, {
-      publicMetadata: {
-        ...user.publicMetadata,
-        onboardingCompleted: true,
-        onboardingCompletedAt: new Date().toISOString(),
-      },
+    return NextResponse.json({
+      success: true,
+      ...result,
     });
-
-    return NextResponse.json({ success: true });
   } catch {
-    // Error completing onboarding
     return NextResponse.json(
       { error: 'Failed to complete onboarding' },
       { status: 500 }

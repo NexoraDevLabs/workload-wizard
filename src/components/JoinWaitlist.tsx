@@ -10,10 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Building2, User } from 'lucide-react';
+import { Mail, Building2, User, X } from 'lucide-react';
 
 type JoinWaitlistProps = {
   /** Where this signup came from (stored server-side) */
@@ -33,7 +34,7 @@ type JoinWaitlistProps = {
 export default function JoinWaitlist({
   source = 'landing',
   trigger,
-  buttonText = 'Join waitlist',
+  buttonText = 'Join Waitlist',
   buttonProps,
   onSuccess,
   initialOpen = false,
@@ -63,10 +64,12 @@ export default function JoinWaitlist({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim() || undefined,
           name: `${firstName} ${lastName}`.trim(),
           source,
-          organisation: organisation?.trim() || undefined,
+          organisation: organisation.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error('Request failed');
@@ -104,8 +107,8 @@ export default function JoinWaitlist({
           {trigger ?? (
             <Button
               size="lg"
-              className="rounded-2xl px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
-              aria-label="Join the WorkloadWizard waitlist"
+              className="btn-waitlist rounded-2xl px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+              aria-label="Join the WorkloadWizard Waitlist"
               {...buttonProps}
             >
               {buttonText}
@@ -115,15 +118,35 @@ export default function JoinWaitlist({
 
         <DialogContent
           className="
-            sm:max-w-md rounded-2xl p-6
-            border border-white/10
-            bg-gradient-to-br from-neutral-900/75 via-neutral-900/70 to-neutral-900/70
-            backdrop-blur-xl shadow-2xl
+              waitlist-dialog
+              sm:max-w-md rounded-2xl p-6
+              border border-white/10
+              bg-gradient-to-br from-[#0f172a]/95 via-[#111827]/92 to-[#172033]/95
+              backdrop-blur-xl shadow-2xl
+              [&>button]:hidden
           "
         >
           <DialogHeader className="space-y-1.5">
+          <DialogClose asChild>
+            <button
+              className={`
+                absolute right-4 top-4
+                flex h-8 w-8 items-center justify-center
+                rounded-full
+                border border-white/10
+                bg-white/10
+                text-white/70
+                backdrop-blur-md
+                transition-all
+                hover:bg-white/20
+                hover:text-white
+              `}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </DialogClose>
             <DialogTitle className="text-2xl font-semibold text-white">
-              Join the waitlist
+              Join the Waitlist
             </DialogTitle>
             <p className="text-sm text-white/60">
               Be the first to try{' '}

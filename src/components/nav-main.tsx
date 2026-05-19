@@ -1,15 +1,22 @@
 'use client';
 
 import { ChevronRight, type LucideIcon } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
-import posthog from 'posthog-js';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -22,167 +29,150 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-export function NavMain({
-  items,
-}: {
-  items: {
+export type NavItem = {
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  items?: {
     title: string;
     url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
   }[];
-}) {
-  const { state } = useSidebar();
-  const router = useRouter();
+};
+
+export function NavMain({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-  // Synchronously initialize from localStorage to avoid flicker
-  const initialisedFromStorageRef = useRef(false);
-  const [openItems, setOpenItems] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const saved = localStorage.getItem('sidebar-nav-state');
-      if (saved) {
-        const parsed = JSON.parse(saved) as string[];
-        initialisedFromStorageRef.current = true;
-        return new Set(parsed);
-      }
-    } catch {
-      // Failed to read sidebar state
-    }
-    return new Set();
-  });
+  const { state, isMobile } = useSidebar();
 
-  // When items load and there was no saved state, open any default active groups
-  useEffect(() => {
-    if (initialisedFromStorageRef.current) return;
-    const defaults = items.filter((i) => i.isActive).map((i) => i.title);
-    if (defaults.length > 0) setOpenItems(new Set(defaults));
-  }, [items]);
-
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    if (openItems.size > 0 || localStorage.getItem('sidebar-nav-state')) {
-      localStorage.setItem(
-        'sidebar-nav-state',
-        JSON.stringify(Array.from(openItems))
-      );
-    }
-  }, [openItems]);
-
-  const handleMainItemClick = (item: (typeof items)[0]) => {
-    posthog.capture('main-nav-item-clicked', {
-      item_title: item.title,
-      item_url: item.url,
-      has_sub_items: !!item.items && item.items.length > 0,
-      sidebar_state: state,
-    });
-    // If sidebar is collapsed, navigate directly to the URL
-    if (state === 'collapsed') {
-      router.push(item.url);
-      return;
-    }
-
-    // If sidebar is expanded and item has children, toggle the collapsible
-    if (item.items && item.items.length > 0) {
-      setOpenItems((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(item.title)) {
-          newSet.delete(item.title);
-        } else {
-          newSet.add(item.title);
-        }
-        return newSet;
-      });
-    } else {
-      // If no children, navigate to the URL
-      router.push(item.url);
-    }
-  };
+  const isCollapsed = state === 'collapsed' && !isMobile;
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Navigation</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.title}>
-            {item.items && item.items.length > 0 ? (
+        {items.map((item) => {
+          const hasSubItems = item.items && item.items.length > 0;
+          const isParentActive =
+            pathname === item.url ||
+            item.items?.some((sub) => pathname === sub.url) ||
+            false;
+
+          if (hasSubItems && isCollapsed) {
+            return (
+              <SidebarMenuItem key={item.title}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={isParentActive}
+                      aria-label={item.title}
+                    >
+                      {item.icon && <item.icon className="shrink-0" />}
+                      <span className="sr-only">{item.title}</span>
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent
+                    side="right"
+                    align="start"
+                    sideOffset={10}
+                    className="w-56 rounded-xl"
+                  >
+                    <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+
+                    {item.items?.map((subItem) => (
+                      <DropdownMenuItem
+                        key={subItem.title}
+                        asChild
+                        className={
+                          pathname === subItem.url
+                            ? 'bg-accent text-accent-foreground font-medium'
+                            : undefined
+                        }
+                      >
+                        <Link href={subItem.url}>{subItem.title}</Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            );
+          }
+
+          if (hasSubItems) {
+            return (
               <Collapsible
-                open={openItems.has(item.title)}
-                onOpenChange={(open) => {
-                  setOpenItems((prev) => {
-                    const newSet = new Set(prev);
-                    if (open) {
-                      newSet.add(item.title);
-                    } else {
-                      newSet.delete(item.title);
-                    }
-                    return newSet;
-                  });
-                }}
+                key={item.title}
+                asChild
+                defaultOpen={Boolean(
+                  item.isActive ||
+                    pathname === item.url ||
+                    item.items?.some((sub) => pathname.startsWith(sub.url))
+                )}
                 className="group/collapsible"
               >
-                <CollapsibleTrigger asChild>
-                  <SidebarMenuButton
-                    tooltip={item.title}
-                    isActive={
-                      pathname === item.url ||
-                      !!item.items?.some((subItem) => pathname === subItem.url)
-                    }
-                    onClick={(e) => {
-                      // Prevent default collapsible behavior when collapsed
-                      if (state === 'collapsed') {
-                        e.preventDefault();
-                        handleMainItemClick(item);
-                      }
-                    }}
-                  >
-                    {item.icon && <item.icon />}
-                    <span>{item.title}</span>
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarMenuButton>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarMenuSub>
-                    {item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === subItem.url}
-                        >
-                          <a
-                            href={subItem.url}
-                            onClick={() => {
-                              posthog.capture('sub-nav-item-clicked', {
-                                sub_item_title: subItem.title,
-                                sub_item_url: subItem.url,
-                                parent_item_title: item.title,
-                              });
-                            }}
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      isActive={isParentActive}
+                    >
+                      {item.icon && <item.icon className="shrink-0" />}
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        {item.title}
+                      </span>
+
+                      <ChevronRight
+                        className="
+                          ml-auto
+                          transition-transform
+                          duration-200
+                          group-data-[state=open]/collapsible:rotate-90
+                          group-data-[collapsible=icon]:hidden
+                        "
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items?.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === subItem.url}
                           >
-                            <span>{subItem.title}</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </CollapsibleContent>
+                            <Link href={subItem.url}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
               </Collapsible>
-            ) : (
+            );
+          }
+
+          return (
+            <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 tooltip={item.title}
                 isActive={pathname === item.url}
-                onClick={() => handleMainItemClick(item)}
+                asChild
               >
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
+                <Link href={item.url}>
+                  {item.icon && <item.icon className="shrink-0" />}
+                  <span className="group-data-[collapsible=icon]:hidden">
+                    {item.title}
+                  </span>
+                </Link>
               </SidebarMenuButton>
-            )}
-          </SidebarMenuItem>
-        ))}
+            </SidebarMenuItem>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

@@ -43,7 +43,7 @@ Success criteria:
 
 ### Authentication and Access
 
-- Clerk sign-in and sign-out
+- WorkOS sign-in and sign-out
 - Organisation-aware access (users scoped to organisation)
 - Basic onboarding flow
 
@@ -93,7 +93,6 @@ The following must not block MVP delivery:
 ### Analytics and Observability
 
 - PostHog (events, heatmaps, session replay)
-- Advanced Sentry dashboards/alerts
 - OpenTelemetry tracing
 
 ### Feature Management

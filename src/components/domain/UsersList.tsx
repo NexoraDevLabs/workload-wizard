@@ -229,7 +229,7 @@ const applyFilters = (
 
 interface User {
   id: string;
-  subject?: string; // Clerk user ID
+  subject?: string; // WorkOS user ID
   email: string;
   username?: string;
   firstName: string;
@@ -853,7 +853,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
                             User Synchronization
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            Keep user data in sync with Clerk
+                            Keep user data in sync with WorkOS
                           </p>
                         </div>
                       </div>
@@ -872,7 +872,7 @@ export const UsersList = forwardRef<UsersListRef>((props, ref) => {
 
                         <div className="text-xs text-muted-foreground">
                           <p>
-                            This will sync all users from Clerk to your local
+                            This will sync all users from WorkOS to your local
                             database, ensuring user data is up to date.
                           </p>
                         </div>

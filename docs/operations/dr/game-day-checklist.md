@@ -18,7 +18,7 @@ This checklist is used during disaster recovery drills and actual incidents to e
   - [ ] Convex production deploy key available
   - [ ] R2 backup/restore credentials verified
   - [ ] Vercel API access confirmed
-  - [ ] Clerk API access confirmed
+  - [ ] WorkOS API access confirmed
   - [ ] GitHub Actions access verified
 
 - [ ] **Communication Channels Ready**
@@ -96,7 +96,7 @@ This checklist is used during disaster recovery drills and actual incidents to e
   - [ ] Archive extracted and verified
   - [ ] Convex data imported
   - [ ] Vercel environment variables updated
-  - [ ] Clerk user data reviewed
+  - [ ] WorkOS user data reviewed
 
 - [ ] **System Validation**
   - [ ] Health endpoint tested
@@ -244,7 +244,7 @@ This checklist is used during disaster recovery drills and actual incidents to e
   - [ ] Escalation: [Process]
   - [ ] SLA: [Details]
 
-- [ ] **Clerk Support**
+- [ ] **WorkOS Support**
   - [ ] Contact: [Information]
   - [ ] Escalation: [Process]
   - [ ] SLA: [Details]

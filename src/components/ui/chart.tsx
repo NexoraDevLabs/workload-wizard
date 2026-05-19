@@ -53,7 +53,6 @@ function ChartContainer({
 
   return (
     <ErrorBoundary
-      contextTag="ChartContainer"
       fallback={({ error, reset }) => (
         <DefaultErrorFallback error={error} reset={reset} />
       )}

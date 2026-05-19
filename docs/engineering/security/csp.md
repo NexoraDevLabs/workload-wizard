@@ -47,13 +47,13 @@ Browser → CSP Policy → Violation → Report Handler → Convex DB → Admin 
 
 ```bash
 # Switch to report-only mode
-pnpm run csp:mode:report
+npm run csp:mode:report
 
 # Switch to enforce mode
-pnpm run csp:mode:enforce
+npm run csp:mode:enforce
 
 # Check current CSP configuration
-pnpm run csp:check
+npm run csp:check
 ```
 
 #### Production (Vercel)
@@ -122,8 +122,7 @@ export const CSP_ALLOWLIST_OVERRIDES: Record<string, CSPAllowlistOverride> = {
 The CSP policy automatically includes allowlists for:
 
 - **Convex**: Database and real-time subscriptions
-- **Clerk**: Authentication and user management
-- **Sentry**: Error monitoring and performance tracking
+- **WorkOS**: Authentication and user management
 - **Statsig**: Feature flags and experimentation
 - **Vercel**: Analytics and speed insights
 - **PostHog**: Product analytics
@@ -195,15 +194,15 @@ If issues arise after switching to enforce mode:
 
 ```bash
 # Check CSP configuration
-pnpm run csp:check
+npm run csp:check
 
 # Test in report-only mode
-pnpm run csp:mode:report
-pnpm run dev
+npm run csp:mode:report
+npm run dev
 
 # Test in enforce mode
-pnpm run csp:mode:enforce
-pnpm run dev
+npm run csp:mode:enforce
+npm run dev
 ```
 
 ### CI Testing

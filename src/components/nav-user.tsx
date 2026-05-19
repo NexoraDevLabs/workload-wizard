@@ -4,16 +4,16 @@ import {
   BadgeCheck,
   ChevronsUpDown,
   LogOut,
-  Settings,
-  User,
   Palette,
+  Settings,
   Shield,
+  Sparkles,
   LifeBuoy,
 } from 'lucide-react';
-import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-
+import { useAuthUser } from '@/hooks/useAuthUser';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -31,22 +31,45 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function NavUser() {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { user, isLoaded } = useAuthUser();
   const { isMobile } = useSidebar();
   const router = useRouter();
+
+  const profilePictureUrl = useQuery(
+    api.users.getOwnProfilePictureUrl,
+    user ? { subject: user.id } : 'skip'
+  );
+
+  const handleLogout = () => {
+    window.location.assign('/api/auth/logout');
+  };
+
+  const navigateTo = (path: string) => {
+    router.push(path);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   if (!isLoaded) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg">
-            <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
-            <div className="grid flex-1 gap-1">
-              <div className="h-4 bg-muted rounded animate-pulse" />
-              <div className="h-3 bg-muted rounded animate-pulse" />
+            <Skeleton className="size-8 shrink-0 rounded-lg" />
+            <div className="grid flex-1 gap-1 group-data-[collapsible=icon]:hidden">
+              <Skeleton className="h-4 rounded" />
+              <Skeleton className="h-3 rounded" />
             </div>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -54,28 +77,18 @@ export function NavUser() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const userName = user.fullName || user.firstName || 'User';
   const userEmail = user.emailAddresses[0]?.emailAddress || '';
-  const userRole = user.publicMetadata?.role as string;
-  const avatarUrl = user.imageUrl;
-
-  // Generate initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const handleLogout = async () => {
-    await signOut(() => router.push('/sign-in'));
-  };
+  const userRole =
+    typeof user.publicMetadata?.role === 'string'
+      ? user.publicMetadata.role
+      : '';
+  const avatarUrl = profilePictureUrl || user.imageUrl || '';
+  const formattedRole = userRole
+    ? userRole.charAt(0).toUpperCase() + userRole.slice(1)
+    : '';
 
   return (
     <SidebarMenu>
@@ -84,34 +97,35 @@ export function NavUser() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="rounded-2xl data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              tooltip={userName}
             >
-              <Avatar className="h-8 w-8 rounded-lg">
+              <Avatar className="size-8 shrink-0 rounded-lg">
                 <AvatarImage src={avatarUrl} alt={userName} />
                 <AvatarFallback className="rounded-lg">
                   {getInitials(userName)}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium">{userName}</span>
                 <span className="truncate text-xs text-sidebar-foreground/65">
-                  {userRole
-                    ? userRole.charAt(0).toUpperCase() + userRole.slice(1)
-                    : userEmail}
+                  {formattedRole || userEmail}
                 </span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
+            {/* User identity header */}
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
+                <Avatar className="size-8 rounded-lg">
                   <AvatarImage src={avatarUrl} alt={userName} />
                   <AvatarFallback className="rounded-lg">
                     {getInitials(userName)}
@@ -125,54 +139,91 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
+            {/* Quick upgrade / pro prompt */}
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <Link href="/account">
-                  <User className="mr-2 h-4 w-4" />
-                  Account
-                </Link>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=overview')}
+                className="gap-2"
+              >
+                <Sparkles />
+                Account Hub
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/support">
-                  <LifeBuoy className="mr-2 h-4 w-4" />
-                  Support
-                </Link>
+            </DropdownMenuGroup>
+
+            {/* Account navigation — each maps to a specific tab */}
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=security')}
+                className="gap-2"
+              >
+                <Shield />
+                Security &amp; Privacy
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/account/profile">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Profile Settings
-                </Link>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/account?tab=preferences')}
+                className="gap-2"
+              >
+                <Settings />
+                Preferences
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/account/security">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Security & Privacy
-                </Link>
+              <DropdownMenuItem
+                onClick={() => navigateTo('/support')}
+                className="gap-2"
+              >
+                <LifeBuoy />
+                Support
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <div className="flex items-center justify-between w-full cursor-pointer">
-                  <div className="flex items-center">
-                    <Palette className="mr-2 h-4 w-4" />
-                    Theme
-                  </div>
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+
+            {/* Theme toggle */}
+            <DropdownMenuGroup>
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              className="
+                flex items-center justify-between gap-2
+                cursor-default
+                focus:bg-transparent
+                data-[highlighted]:bg-transparent
+              "
+            >
+                <div className="flex items-center gap-2">
+                  <Palette />
+                  <span>Theme</span>
+                </div>
+                <div
+                  className="
+                    flex h-9 w-9 items-center justify-center
+                    rounded-full
+                    border border-border/70
+                    bg-background/80
+                    shadow-sm
+                    backdrop-blur-md
+                  "
+                >
                   <ThemeToggle />
                 </div>
               </DropdownMenuItem>
-              {userRole && (
-                <DropdownMenuItem disabled>
-                  <BadgeCheck className="mr-2 h-4 w-4" />
-                  Role: {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+
+              {formattedRole && (
+                <DropdownMenuItem disabled className="gap-2">
+                  <BadgeCheck />
+                  Role: {formattedRole}
                 </DropdownMenuItem>
               )}
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem
               onClick={handleLogout}
-              className="text-red-600 focus:text-red-600"
+              className="gap-2 text-destructive focus:text-destructive"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

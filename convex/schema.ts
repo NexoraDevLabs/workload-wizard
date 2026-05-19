@@ -48,9 +48,9 @@ export default defineSchema({
     jobRole: v.optional(v.string()), // User's job role from onboarding
     department: v.optional(v.string()),
     phone: v.optional(v.string()),
-    organisationId: v.id('organisations'),
-    pictureUrl: v.optional(v.string()),
-    subject: v.string(), // Clerk ID
+    organisationId: v.optional(v.id('organisations')),
+    pictureUrl: v.optional(v.id('_storage')),
+    subject: v.string(), // WorkOS ID
     tokenIdentifier: v.optional(v.string()),
     isActive: v.boolean(),
     lastSignInAt: v.optional(v.float64()),
@@ -78,15 +78,22 @@ export default defineSchema({
       })
     ),
     onboardingCompletedAt: v.optional(v.float64()),
+    accountUiState: v.optional(
+      v.object({
+        profileCompletenessDismissedAt: v.optional(v.float64()),
+        profileCompletenessDismissedVersion: v.optional(v.string()),
+      })
+    ),
     createdAt: v.float64(),
     updatedAt: v.float64(),
   })
     .index('by_subject', ['subject'])
-    .index('by_email', ['email']),
+    .index('by_email', ['email'])
+    .index('by_username', ['username']),
 
   // 👤 User Preferences (per user per organisation)
   user_preferences: defineTable({
-    userId: v.string(), // Clerk subject ID
+    userId: v.string(), // WorkOS subject ID
     organisationId: v.id('organisations'),
     selectedAcademicYearId: v.optional(v.id('academic_years')),
     includeDrafts: v.optional(v.boolean()),
@@ -131,10 +138,11 @@ export default defineSchema({
     userId: v.string(),
     jobTitle: v.optional(v.string()),
     specialism: v.optional(v.string()),
+    orgRoles: v.optional(v.array(v.string())),
     organisationId: v.id('organisations'),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }),
+  }).index('by_user_org', ['userId', 'organisationId']),
 
   // 🔐 Roles
   user_roles: defineTable({
@@ -158,6 +166,18 @@ export default defineSchema({
     createdAt: v.float64(),
     updatedAt: v.float64(),
   }).index('by_user_org', ['userId', 'organisationId']),
+
+  manager_team_assignments: defineTable({
+    managerUserId: v.string(),
+    organisationId: v.id('organisations'),
+    teamName: v.string(),
+    isActive: v.boolean(),
+    assignedBy: v.string(),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index('by_manager_org', ['managerUserId', 'organisationId'])
+    .index('by_org_team', ['organisationId', 'teamName']),
 
   // 📘 Courses
   courses: defineTable({
@@ -248,7 +268,7 @@ export default defineSchema({
     fte: v.float64(),
     maxTeachingHours: v.float64(),
     totalContract: v.float64(),
-    userSubject: v.optional(v.string()), // Optional link to Clerk subject / users.subject
+    userSubject: v.optional(v.string()), // Optional link to WorkOS subject / users.subject
     role: v.optional(v.string()),
     teamName: v.optional(v.string()),
     contractFamily: v.optional(v.string()),
@@ -262,7 +282,9 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }).index('by_organisation', ['organisationId']),
+  })
+  .index('by_organisation', ['organisationId'])
+  .index('by_user_subject', ['userSubject']),
 
   // 🧑‍🏫 Lecturer Instances
   lecturers: defineTable({
@@ -272,7 +294,10 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
-  }),
+  })
+  .index('by_profile', ['profileId'])
+  .index('by_year', ['academicYearId'])
+  .index('by_profile_year', ['profileId', 'academicYearId']),
 
   // 👥 Group Allocations (lecturer ↔ group for AY)
   group_allocations: defineTable({
@@ -290,6 +315,32 @@ export default defineSchema({
     .index('by_lecturer', ['lecturerId']) // list allocations for a lecturer
     .index('by_year', ['academicYearId']) // list allocations for a year
     .index('by_org_year', ['organisationId', 'academicYearId']),
+
+  allocation_change_requests: defineTable({
+    type: v.union(v.literal('assign'), v.literal('update'), v.literal('remove')),
+    status: v.union(
+      v.literal('pending'),
+      v.literal('approved'),
+      v.literal('rejected')
+    ),
+    organisationId: v.id('organisations'),
+    targetLecturerId: v.id('lecturer_profiles'),
+    academicYearId: v.id('academic_years'),
+    requestedBy: v.string(),
+    requestedAt: v.float64(),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.float64()),
+    allocationId: v.optional(v.id('group_allocations')),
+    groupId: v.optional(v.id('module_groups')),
+    payload: v.string(),
+    reason: v.optional(v.string()),
+    decisionNote: v.optional(v.string()),
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index('by_org_status', ['organisationId', 'status'])
+    .index('by_target', ['targetLecturerId'])
+    .index('by_requested_by', ['requestedBy']),
 
   // 🧮 Module Allocations
   module_allocations: defineTable({
@@ -425,9 +476,9 @@ export default defineSchema({
     .index('by_role_permission', ['roleId', 'permissionId'])
     .index('by_organisation', ['organisationId']),
 
-  // 🧪 Early Access Features (Admin-managed metadata)
+  // Legacy early access metadata retained for data compatibility.
   feature_flags: defineTable({
-    key: v.string(), // Statsig gate key
+    key: v.string(),
     name: v.string(),
     description: v.optional(v.string()),
     stage: v.union(
@@ -441,10 +492,10 @@ export default defineSchema({
     updatedAt: v.float64(),
   }).index('by_key', ['key']),
 
-  // 🧪 Per-user feature enrollments (drives Statsig user custom props)
+  // Legacy per-user feature enrollments retained for data compatibility.
   feature_enrollments: defineTable({
-    userId: v.string(), // Clerk subject
-    featureKey: v.string(), // matches feature_flags.key / Statsig gate key
+    userId: v.string(), // WorkOS subject
+    featureKey: v.string(),
     enabled: v.boolean(),
     createdAt: v.float64(),
     updatedAt: v.float64(),
@@ -454,7 +505,7 @@ export default defineSchema({
 
   // ⭐ Per-user Quick Access preferences
   quick_access_prefs: defineTable({
-    userId: v.string(), // Clerk subject
+    userId: v.string(), // WorkOS subject
     links: v.array(v.object({ name: v.string(), url: v.string() })),
     showNames: v.boolean(),
     createdAt: v.float64(),

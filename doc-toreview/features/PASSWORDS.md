@@ -21,7 +21,7 @@ Admin-created users can be onboarded via email invitation (recommended) or tempo
 ## Best Practices
 
 - Prefer invitations to avoid sharing passwords
-- Ensure Clerk email templates are configured
-- Enforce complexity and length via Clerk
+- Ensure WorkOS email templates are configured
+- Enforce complexity and length via WorkOS
 
 _See UI examples in `PASSWORD_MANAGEMENT_GUIDE.md` (now consolidated into this document)._

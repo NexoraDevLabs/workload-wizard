@@ -24,7 +24,6 @@ This document describes the alerting configuration for WorkloadWizard and provid
 **Runbook**:
 
 1. **Immediate Actions**:
-   - Check Sentry Performance dashboard for affected endpoints
    - Review recent deployments for potential causes
    - Check system resources (CPU, memory, database connections)
 
@@ -59,7 +58,6 @@ This document describes the alerting configuration for WorkloadWizard and provid
 **Runbook**:
 
 1. **Immediate Actions**:
-   - Check Sentry Issues dashboard for new error spikes
    - Review system health dashboard
    - Check if issue is affecting all users or specific segments
 
@@ -70,7 +68,7 @@ This document describes the alerting configuration for WorkloadWizard and provid
    - Check external API dependencies
 
 3. **Resolution**:
-   - If authentication issue: Check Clerk service status
+   - If authentication issue: Check WorkOS service status
    - If database issue: Check Convex service status
    - If external API issue: Check service health, implement fallbacks
    - If code issue: Review recent deployments, consider rollback
@@ -118,17 +116,12 @@ This document describes the alerting configuration for WorkloadWizard and provid
 
 ```bash
 # Set required environment variables
-export SENTRY_ORG=your_org_slug
-export SENTRY_PROJECT=your_project_slug
-export SENTRY_AUTH_TOKEN=your_api_token
 
 # Create alerts
-pnpm alerts:sentry
 ```
 
 #### Manual Setup
 
-1. Navigate to Sentry → Settings → Alerts → Rules
 2. Create new rule for each alert type
 3. Configure conditions and actions
 4. Test alert rules
@@ -137,21 +130,18 @@ pnpm alerts:sentry
 
 #### Slack Integration
 
-1. Install Sentry Slack app
 2. Configure webhook URL
 3. Set up channel notifications
 4. Configure user mentions for different severity levels
 
 #### Email Notifications
 
-1. Configure SMTP settings in Sentry
 2. Set up email templates
 3. Configure recipient lists
 4. Set up escalation policies
 
 #### PagerDuty Integration (Optional)
 
-1. Install Sentry PagerDuty integration
 2. Configure service mapping
 3. Set up escalation policies
 4. Configure on-call schedules
@@ -239,9 +229,6 @@ Actions: [Steps being taken]
 ### Test Commands
 
 ```bash
-# Test Sentry integration
-curl -X POST https://sentry.io/api/0/projects/org/project/events/ \
-  -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
   -d '{"message": "Test alert", "level": "error"}'
 
 # Test Slack integration
@@ -292,8 +279,7 @@ curl -X POST $SLACK_WEBHOOK_URL \
 
 1. **Check Rule Configuration**: Verify conditions and actions
 2. **Check Integration Status**: Ensure Slack/email integrations are working
-3. **Check Alert History**: Review Sentry alert history
-4. **Test Manually**: Send test alerts
+3. **Test Manually**: Send test alerts
 
 #### Too Many Alerts
 

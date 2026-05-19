@@ -30,7 +30,6 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 - `children`: React.ReactNode - The component tree to wrap
 - `fallback?`: React.ReactNode | ((args: { error: Error; reset: () => void }) => React.ReactNode) - Custom fallback UI
-- `contextTag?`: string - Tag for Sentry grouping (e.g., "ChartsPanel")
 - `onErrorCaptured?`: (error: Error, info: React.ErrorInfo) => void - Callback for local error handling
 
 ### DefaultErrorFallback
@@ -93,10 +92,6 @@ Error boundaries should be placed around components that are most likely to thro
 
 ## Monitoring Integration
 
-### Sentry Integration
-
-The error boundary system integrates with Sentry through the `src/lib/monitoring.ts` facade:
-
 ```typescript
 // Automatically captures errors with context
 captureUIException(error, {
@@ -113,8 +108,6 @@ captureUIException(error, {
 - **Custom extras**: Additional context data
 
 ### No-Op Mode
-
-When Sentry is not configured or available, the monitoring facade gracefully no-ops without throwing errors.
 
 ## Implementation Examples
 
@@ -177,7 +170,6 @@ Comprehensive tests are located at `src/components/ui/__tests__/ErrorBoundary.te
 - Renders fallback when error thrown
 - Handles both node and render-prop fallbacks
 - Tests reset functionality
-- Verifies Sentry integration
 - Handles monitoring failures gracefully
 
 ### Test Components
@@ -214,13 +206,11 @@ const ThrowingInEffect = ({ shouldThrow }) => {
 
 ### Error Context
 
-1. **Meaningful tags** - Use descriptive context tags for Sentry grouping
 2. **Rich metadata** - Include relevant context data
 3. **Component stack** - Always include React component stack
 
 ### Performance
 
-1. **Lazy monitoring** - Import Sentry only when needed
 2. **No-op fallbacks** - Handle missing dependencies gracefully
 3. **Minimal bundle impact** - Keep error boundary code lightweight
 
@@ -234,7 +224,6 @@ const ThrowingInEffect = ({ shouldThrow }) => {
 
 ### Debugging
 
-1. **Check Sentry dashboard** - Verify error capture and context
 2. **Console logs** - Use onErrorCaptured for local debugging
 3. **Component stack** - Review React DevTools for component hierarchy
 
@@ -244,9 +233,7 @@ const ThrowingInEffect = ({ shouldThrow }) => {
 
 1. **Identify risky components** - Charts, forms, third-party widgets
 2. **Add ErrorBoundary wrapper** - Import and wrap component
-3. **Add context tag** - Use descriptive tag for Sentry grouping
-4. **Test error scenarios** - Verify fallback UI and reset functionality
-5. **Monitor in production** - Check Sentry for error patterns
+3. **Test error scenarios** - Verify fallback UI and reset functionality
 
 ### Gradual Rollout
 

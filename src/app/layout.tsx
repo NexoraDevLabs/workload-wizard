@@ -9,15 +9,13 @@ import { BreadcrumbProvider } from '@/hooks/useBreadcrumbs';
 import FeaturebaseMessenger from '@/components/domain/FeatureBaseWidget';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { DynamicStatsigProvider } from './dynamic-statsig-provider';
-import { ClerkWrapper } from '@/components/providers/ClerkWrapper';
+import { WorkOSWrapper } from '@/components/providers/WorkOSWrapper';
 import { headers } from 'next/headers';
-// Import flags dynamically only when needed to avoid initialising on special routes
-import { ClerkStatsigSync } from '@/lib/statsig/ClerkStatsigSync';
 // import { LoadingOverlay } from "@/components/loading-overlay";
 import { LoadingOverlayServer } from '@/components/loading-overlay-server';
 import { Suspense } from 'react';
 import { RouteLoadingOverlay } from '@/components/RouteLoadingOverlay';
+import { AuthUserProvider } from '@/components/providers/AuthUserProvider';
 
 const dmSans = DM_Sans({
   variable: '--font-sans',
@@ -40,14 +38,11 @@ export const metadata: Metadata = {
   icons: { icon: '/favicon.ico' },
 };
 
-// Statsig bootstrap is done client-side via DynamicStatsigProvider
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Bootstrap client with the same user/config used on the server for flag evals
   const headersStore = await headers();
   const pathname =
     headersStore.get('next-url') ||
@@ -55,7 +50,7 @@ export default async function RootLayout({
     headersStore.get('x-matched-path') ||
     '';
 
-  // Sanity Studio should render without our app providers/auth/flags
+  // Sanity Studio should render without our app providers/auth.
   if (pathname.startsWith('/studio')) {
     return (
       <html lang="en" suppressHydrationWarning>
@@ -68,22 +63,14 @@ export default async function RootLayout({
     );
   }
 
-  const { statsigAdapter, identify } = await import('@/flags');
-  const user = await identify({ headers: headersStore });
-  const Statsig = await statsigAdapter.initialize();
-  const datafile = Statsig.getClientInitializeResponse(user, {
-    hash: 'djb2',
-  });
-
   return (
-    <ClerkWrapper>
+    <html lang="en" suppressHydrationWarning>
+    <body
+      className={`${dmSans.variable} ${jetBrainsMono.variable} app-shell antialiased`}
+    >
+    <WorkOSWrapper>
       <ConvexClientProvider>
-        <html lang="en" suppressHydrationWarning>
-          <body
-            className={`${dmSans.variable} ${jetBrainsMono.variable} app-shell antialiased`}
-          >
-            <DynamicStatsigProvider datafile={datafile}>
-              <ClerkStatsigSync />
+        <AuthUserProvider>
               <ThemeProvider
                 attribute="class"
                 defaultTheme="system"
@@ -103,10 +90,10 @@ export default async function RootLayout({
                   </BreadcrumbProvider>
                 </AcademicYearProvider>
               </ThemeProvider>
-            </DynamicStatsigProvider>
-          </body>
-        </html>
+        </AuthUserProvider>
       </ConvexClientProvider>
-    </ClerkWrapper>
+    </WorkOSWrapper>
+    </body>
+    </html>
   );
 }

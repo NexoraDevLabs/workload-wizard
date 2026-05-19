@@ -3,8 +3,9 @@
 import { StandardizedSidebarLayout } from '@/components/layout/StandardizedSidebarLayout';
 import { AuditLogsViewer } from '@/components/domain/AuditLogsViewer';
 import { AuditViewGate } from '@/components/common/PermissionGate';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
-// Force dynamic rendering to prevent Clerk authentication errors during build
+// Force dynamic rendering to prevent WorkOS authentication errors during build
 export const dynamic = 'force-dynamic';
 
 export default function AdminAuditLogsPage() {
@@ -14,7 +15,19 @@ export default function AdminAuditLogsPage() {
     { label: 'Audit Logs' },
   ];
 
+  const { user, isLoaded, isSignedIn } = useAuthUser({
+    redirectOnUnauthenticated: true,
+  });
+
   const headerActions = <div className="flex items-center gap-2"></div>;
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn || !user) {
+    return null;
+  }
 
   return (
     <AuditViewGate

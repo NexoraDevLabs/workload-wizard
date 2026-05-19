@@ -49,5 +49,5 @@ security/**                                @NexoraDevLabs/infrastructure-ops
 
 # ---- Config & package management
 package.json                               @NexoraDevLabs/infrastructure-ops
-pnpm-lock.yaml                             @NexoraDevLabs/infrastructure-ops
+package-lock.json                          @NexoraDevLabs/infrastructure-ops
 tsconfig*.json                             @NexoraDevLabs/engineering

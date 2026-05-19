@@ -46,7 +46,7 @@ if (flag.enabled) {
 ## Debug
 
 - Dev-only panel: `FeatureFlagDebug`
-- Test pages: `/dev/feature-flags-test`, `/dev/posthog-test`
+- Test pages are local-development only.
 
 ## Adding a flag
 

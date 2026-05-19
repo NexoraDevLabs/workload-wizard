@@ -1,6 +1,22 @@
-import { query } from '../_generated/server';
+import { query, type QueryCtx } from '../_generated/server';
 import { v } from 'convex/values';
-import type { Doc } from '../_generated/dataModel';
+import type { Doc, Id } from '../_generated/dataModel';
+import { getAuthContext } from '../lib/auth';
+
+async function getPrimaryOrganisationId(
+  ctx: QueryCtx,
+  userId: string
+): Promise<Id<'organisations'> | null> {
+  const memberships = await ctx.db
+    .query('user_organisations')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect();
+  return (
+    memberships.find((membership) => membership.isPrimary)?.organisationId ??
+    memberships[0]?.organisationId ??
+    null
+  );
+}
 
 /**
  * Check if a user has a specific permission
@@ -29,11 +45,14 @@ export const hasPermissionQuery = query({
       }
     }
 
+    const organisationId = await getPrimaryOrganisationId(ctx, userId);
+    if (!organisationId) return false;
+
     // Get user's active role assignments (support multiple)
     const roleAssignments = await ctx.db
       .query('user_role_assignments')
       .withIndex('by_user_org', (q) =>
-        q.eq('userId', userId).eq('organisationId', user.organisationId)
+        q.eq('userId', userId).eq('organisationId', organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .collect();
@@ -88,10 +107,13 @@ export const getCurrentUserOrgRole = query({
       return null;
     }
 
+    const organisationId = await getPrimaryOrganisationId(ctx, userId);
+    if (!organisationId) return null;
+
     const roleAssignment = await ctx.db
       .query('user_role_assignments')
       .withIndex('by_user_org', (q) =>
-        q.eq('userId', userId).eq('organisationId', user.organisationId)
+        q.eq('userId', userId).eq('organisationId', organisationId)
       )
       .filter((q) => q.eq(q.field('isActive'), true))
       .first();
@@ -237,14 +259,13 @@ export const getUserEffectivePermissions = query({
  * Get all roles for an organisation
  */
 export const getOrganisationRoles = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.subject) throw new Error('Unauthenticated');
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const authContext = await getAuthContext(ctx, args);
 
     const actor = await ctx.db
       .query('users')
-      .withIndex('by_subject', (q) => q.eq('subject', identity.subject))
+      .withIndex('by_subject', (q) => q.eq('subject', authContext.userId))
       .first();
     if (!actor) throw new Error('User not found');
 
@@ -252,7 +273,7 @@ export const getOrganisationRoles = query({
       .query('user_roles')
       .filter((q) =>
         q.and(
-          q.eq(q.field('organisationId'), actor.organisationId),
+          q.eq(q.field('organisationId'), authContext.organisationId),
           q.eq(q.field('isActive'), true)
         )
       )
@@ -264,6 +285,7 @@ export const getOrganisationRoles = query({
  * Get all system permissions (for admin UI)
  */
 export const getSystemPermissions = query({
+  args: {},
   handler: async (ctx) => {
     return await ctx.db
       .query('system_permissions')
@@ -276,6 +298,7 @@ export const getSystemPermissions = query({
  * Get all system permissions grouped by group
  */
 export const getSystemPermissionsGrouped = query({
+  args: {},
   handler: async (ctx) => {
     const permissions = await ctx.db
       .query('system_permissions')
@@ -373,6 +396,7 @@ export const checkPermissionUsage = query({
  * Debug function to check what organizations and roles exist
  */
 export const debugOrganisationsAndRoles = query({
+  args: {},
   handler: async (ctx) => {
     const organisations = await ctx.db
       .query('organisations')

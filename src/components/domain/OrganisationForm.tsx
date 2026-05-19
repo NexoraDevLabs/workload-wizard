@@ -17,6 +17,7 @@ import { api } from '@/convex/_generated/api';
 import { useToast } from '@/hooks/use-toast';
 import { withToast, isZodError, formatZodError } from '@/lib/utils';
 import { analytics } from '@/lib/analytics';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface OrganisationFormData {
   name: string;
@@ -30,6 +31,7 @@ interface OrganisationFormData {
 export function OrganisationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuthUser();
 
   const createOrganisation = useMutation(api.organisations.create);
 
@@ -99,7 +101,10 @@ export function OrganisationForm() {
     try {
       await withToast(
         async () => {
-          const result = await createOrganisation(data);
+          const result = await createOrganisation({
+            userId: user!.id,
+            ...data,
+          });
           return result;
         },
         {
