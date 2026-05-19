@@ -41,8 +41,6 @@ Dashboards provide a shared view of system health for developers and stakeholder
 - **Request Volume**: Requests per minute by endpoint
 - **Database Operations**: Convex query/mutation performance
 
-**Access**: [TODO: Add Sentry Performance dashboard link]
-
 **Alert Thresholds**:
 
 - API P95 > 500ms (P1), > 350ms (P2)

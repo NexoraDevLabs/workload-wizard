@@ -115,10 +115,6 @@ describe('CSP Builder', () => {
       expect(policy).toContain('*.workos.accounts.dev');
       expect(policy).toContain('*.workos.com');
 
-      // Sentry
-      expect(policy).toContain('*.sentry.io');
-      expect(policy).toContain('*.sentry-cdn.com');
-
       // Vercel
       expect(policy).toContain('vitals.vercel-insights.com');
       expect(policy).toContain('va.vercel-scripts.com');

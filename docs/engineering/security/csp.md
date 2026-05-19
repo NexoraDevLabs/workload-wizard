@@ -123,7 +123,6 @@ The CSP policy automatically includes allowlists for:
 
 - **Convex**: Database and real-time subscriptions
 - **WorkOS**: Authentication and user management
-- **Sentry**: Error monitoring and performance tracking
 - **Statsig**: Feature flags and experimentation
 - **Vercel**: Analytics and speed insights
 - **PostHog**: Product analytics

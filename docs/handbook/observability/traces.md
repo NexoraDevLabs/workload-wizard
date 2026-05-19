@@ -29,9 +29,7 @@ Traces will appear in your browser's developer tools and be sent to your configu
 
 Traces are automatically collected and sent to:
 
-- **Sentry Performance**: [TODO: Add Sentry Performance dashboard link]
 - **Vercel Speed Insights**: Available in Vercel Dashboard → Speed Insights
-- **Observability Provider**: [TODO: Replace with actual provider - Datadog/New Relic/Sentry/Vercel]
 
 ## What to Instrument
 
@@ -118,9 +116,6 @@ Use consistent naming patterns for spans and attributes:
 
 ## Finding P95/P99 Latencies
 
-### Using Sentry Performance
-
-1. Navigate to Sentry → Performance → Transactions
 2. Filter by service: `service:web-app` or `service:convex`
 3. Sort by P95 or P99 duration
 4. Click on specific transactions to see detailed traces
@@ -249,7 +244,6 @@ Before considering tracing complete, verify you can see spans for:
 
 ### High Sampling Overhead
 
-1. **Reduce sample rate**: Lower `SENTRY_TRACES_SAMPLE_RATE` for high-traffic apps
 2. **Use dynamic sampling**: Implement error-based sampling
 3. **Filter noise**: Exclude health checks and static assets
 

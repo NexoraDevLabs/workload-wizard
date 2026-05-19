@@ -40,11 +40,6 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
   convex: {
     connectSrc: ['*.convex.cloud', '*.convex.dev'],
   },
-  sentry: {
-    scriptSrc: ['*.sentry-cdn.com', '*.sentry.io'],
-    connectSrc: ['*.sentry.io', '*.sentry-cdn.com'],
-    imgSrc: ['*.sentry.io'],
-  },
   vercel: {
     scriptSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
     connectSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
@@ -155,10 +150,6 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
   // Detect and add service-specific allowlists
   if (env.NEXT_PUBLIC_CONVEX_URL) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.convex);
-  }
-
-  if (env.NEXT_PUBLIC_SENTRY_DSN) {
-    mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sentry);
   }
 
   // Vercel Analytics and Speed Insights are always present in Vercel deployments

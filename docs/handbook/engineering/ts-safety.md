@@ -32,12 +32,9 @@ For complex Convex queries/mutations where type inference becomes excessively de
 const data = useQuery(api.complex.getData, { params });
 ```
 
-### 3. Sentry/OpenTelemetry Integration
-
 For monitoring libraries where callback types are complex.
 
 ```typescript
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return -- justified: Sentry callback return type
 return event;
 ```
 

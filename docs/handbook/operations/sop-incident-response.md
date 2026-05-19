@@ -59,7 +59,6 @@ This Standard Operating Procedure (SOP) defines the process for detecting, respo
 
 ## Required Tools
 
-- **Monitoring**: Sentry, PostHog, Vercel Analytics
 - **Communication**: Slack/Teams, GitHub Issues, Status page
 - **Infrastructure**: Vercel, Convex, WorkOS, Upstash, Statsig
 - **Development**: GitHub, Git, local development environment

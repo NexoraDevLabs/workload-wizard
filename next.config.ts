@@ -1,7 +1,5 @@
 // next.config.ts
 
-// TODO post-MVP: @opentelemetry/instrumentation is kept because @sentry/nextjs requires it while loading config.
-import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 // Security headers applied to all routes
@@ -49,12 +47,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-const sentryOptions = {
-  org: 'smcnab-tech',
-  project: 'workload-wizard',
-  silent: true,
-};
-
-export default process.env.NEXT_PUBLIC_SENTRY_DSN
-  ? withSentryConfig(nextConfig, sentryOptions)
-  : nextConfig;
+export default nextConfig;

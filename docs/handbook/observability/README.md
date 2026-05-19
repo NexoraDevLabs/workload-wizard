@@ -13,8 +13,6 @@ Our observability stack enables you to trace requests from API routes through Co
 
 ## Overview
 
-WorkloadWizard uses a comprehensive observability stack built on OpenTelemetry, Sentry, and Vercel Speed Insights. This enables:
-
 - **Distributed Tracing**: Track requests across API routes, Convex functions, and client-side operations
 - **Performance Monitoring**: Real-time dashboards showing P95/P99 latencies, error rates, and Core Web Vitals
 - **Proactive Alerting**: Automated alerts with clear ownership and escalation procedures

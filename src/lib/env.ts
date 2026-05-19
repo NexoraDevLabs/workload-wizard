@@ -1,11 +1,5 @@
 import { z } from 'zod';
 
-const OptionalUrlSchema = z
-  .string()
-  .url()
-  .optional()
-  .or(z.literal('').transform(() => undefined));
-
 const PublicEnvSchema = z.object({
   NEXT_PUBLIC_CONVEX_URL: z
     .string()
@@ -15,7 +9,6 @@ const PublicEnvSchema = z.object({
     .url('NEXT_PUBLIC_APP_URL must be a URL')
     .optional()
     .default('http://localhost:3000'),
-  NEXT_PUBLIC_SENTRY_DSN: OptionalUrlSchema,
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -41,7 +34,6 @@ function readPublicEnv() {
   return {
     NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NODE_ENV: process.env.NODE_ENV,
   };
 }

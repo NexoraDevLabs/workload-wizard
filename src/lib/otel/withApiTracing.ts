@@ -53,14 +53,6 @@ export function withApiTracing(name: string, handler: Handler): Handler {
         span.setAttribute('error', true);
         span.setAttribute('error.type', 'exception');
 
-        // Best-effort Sentry capture (optional at runtime)
-        try {
-          const Sentry = await import('@sentry/nextjs');
-          Sentry.captureException(err);
-        } catch {
-          // Sentry not available or failed
-        }
-
         throw err;
       } finally {
         span.end();

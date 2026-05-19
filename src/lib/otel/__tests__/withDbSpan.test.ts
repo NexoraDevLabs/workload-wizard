@@ -18,11 +18,6 @@ vi.mock('@opentelemetry/api', () => ({
   },
 }));
 
-// Mock Sentry
-vi.mock('@sentry/nextjs', () => ({
-  captureException: vi.fn(),
-}));
-
 describe('withDbSpan', () => {
   beforeEach(() => {
     vi.clearAllMocks();

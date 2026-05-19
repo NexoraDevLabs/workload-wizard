@@ -2,11 +2,7 @@
 
 This document describes the monitoring dashboards available for WorkloadWizard and how to interpret the metrics.
 
-## Sentry Performance Dashboard
-
 ### Dashboard: "API & DB Observability - P95 Latency & Error Rate"
-
-**Location**: Sentry → Performance → Dashboards
 
 **Widgets:**
 
@@ -94,9 +90,6 @@ This document describes the monitoring dashboards available for WorkloadWizard a
 
 ## Dashboard Access
 
-### Sentry Dashboard
-
-1. Navigate to [Sentry](https://sentry.io)
 2. Select your organization
 3. Go to Performance → Dashboards
 4. Find "API & DB Observability - P95 Latency & Error Rate"
@@ -108,8 +101,6 @@ This document describes the monitoring dashboards available for WorkloadWizard a
 3. Go to Speed Insights tab
 
 ## Custom Queries
-
-### Common Sentry Queries
 
 #### Find slowest API endpoints
 

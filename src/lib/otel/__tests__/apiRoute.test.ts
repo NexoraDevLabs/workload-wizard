@@ -19,11 +19,6 @@ vi.mock('@opentelemetry/api', () => ({
   },
 }));
 
-// Mock Sentry
-vi.mock('@sentry/nextjs', () => ({
-  captureException: vi.fn(),
-}));
-
 describe('API Route Tracing Integration', () => {
   let mockRequest: NextRequest;
 

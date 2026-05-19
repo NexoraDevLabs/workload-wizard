@@ -48,14 +48,12 @@ node scripts/csp-check.mjs
 node scripts/verify-no-console.mjs
 ```
 
-## Sentry
-
 ```sh
-npx tsx scripts/sentry/createDashboards.ts
+
 ```
 
 ```sh
-npx tsx scripts/sentry/createAlerts.ts
+
 ```
 
 ## Commit and Hook Helpers

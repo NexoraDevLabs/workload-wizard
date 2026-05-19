@@ -3,17 +3,6 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import ErrorBoundary from '../ErrorBoundary';
 import { DefaultErrorFallback } from '../ErrorFallback';
 
-// Mock the monitoring module
-vi.mock('../../../lib/monitoring', () => ({
-  captureUIException: vi.fn(),
-}));
-
-// Mock Sentry
-const mockCaptureException = vi.fn();
-vi.mock('@sentry/nextjs', () => ({
-  captureException: mockCaptureException,
-}));
-
 // Test components that throw errors
 const ThrowingComponent = ({ shouldThrow }: { shouldThrow: boolean }) => {
   if (shouldThrow) {
@@ -101,20 +90,6 @@ describe('ErrorBoundary', () => {
     }).not.toThrow();
   });
 
-  it('provides context tag to monitoring', async () => {
-    // const { captureUIException } = await import('../../../lib/monitoring');
-
-    const TestComponent = () => (
-      <ErrorBoundary contextTag="TestComponent">
-        <ThrowingComponent shouldThrow={true} />
-      </ErrorBoundary>
-    );
-
-    expect(() => {
-      const element = React.createElement(TestComponent);
-      expect(element).toBeDefined();
-    }).not.toThrow();
-  });
 });
 
 describe('DefaultErrorFallback', () => {
@@ -137,23 +112,5 @@ describe('DefaultErrorFallback', () => {
       reset,
     });
     expect(element).toBeDefined();
-  });
-});
-
-describe('ErrorBoundary Integration', () => {
-  it('monitoring integration works', async () => {
-    const { captureUIException } = await import('../../../lib/monitoring');
-
-    // Test that the monitoring function is callable
-    expect(async () => {
-      await captureUIException(new Error('Test'), { contextTag: 'Test' });
-    }).not.toThrow();
-  });
-
-  it('handles monitoring import failure gracefully', () => {
-    // Test that the monitoring module can be imported
-    expect(async () => {
-      await import('../../../lib/monitoring');
-    }).not.toThrow();
   });
 });

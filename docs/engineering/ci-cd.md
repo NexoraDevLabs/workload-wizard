@@ -123,8 +123,6 @@ All workflows include these environment variables to prevent issues during build
 NEXT_TELEMETRY_DISABLED: '1'
 NODE_OPTIONS: '--max_old_space_size=4096'
 NEXT_DISABLE_SOURCEMAPS: '1'
-SENTRY_SKIP_AUTO_RELEASE: '1'
-SENTRY_SOURCEMAPS: 'false'
 
 # Dummy values for server code
 NEXT_PUBLIC_CONVEX_URL: 'https://example.invalid'
