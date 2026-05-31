@@ -3,13 +3,11 @@
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { WandSparkles } from 'lucide-react';
-import { useAuthUser } from '@/hooks/useAuthUser';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 const Header = () => {
-  const { isSignedIn, isLoaded } = useAuthUser();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const _isBlogPage = pathname === '/blog';
@@ -85,25 +83,13 @@ const Header = () => {
           {/* Actions */}
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            {/* Conditional User Button */}
-            {isLoaded &&
-              (isSignedIn ? (
-                <Button
-                  variant="outline"
-                  className="text-white border-white hover:text-white hover:bg-white/20 rounded-full px-4 py-2 h-8 bg-transparent"
-                  asChild
-                >
-                  <Link href="/dashboard">Dashboard</Link>
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="text-white hover:text-white hover:bg-white/10 rounded-full px-4 py-2 h-8"
-                  asChild
-                >
-                  <Link href="/sign-in">Sign In</Link>
-                </Button>
-              ))}
+            <Button
+              variant="ghost"
+              className="text-white hover:text-white hover:bg-white/10 rounded-full px-4 py-2 h-8"
+              asChild
+            >
+              <Link href="/api/auth/login?returnTo=/dashboard">Sign In</Link>
+            </Button>
           </div>
         </div>
       </div>
