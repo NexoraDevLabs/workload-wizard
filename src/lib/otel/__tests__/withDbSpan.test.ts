@@ -1,29 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { withDbSpan } from '../withDbSpan';
 
-// Mock OpenTelemetry
-vi.mock('@opentelemetry/api', () => ({
-  trace: {
-    getTracer: vi.fn(() => ({
-      startActiveSpan: vi.fn((_name, callback) => {
-        const span = {
-          setAttribute: vi.fn(),
-          recordException: vi.fn(),
-          end: vi.fn(),
-        };
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return -- Mock span for testing
-        return callback(span);
-      }),
-    })),
-  },
-}));
-
 describe('withDbSpan', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should wrap function and set span attributes on success', async () => {
+  it('should call the wrapped function on success', async () => {
     const mockResult = { id: '123', name: 'test' };
     const mockFn = vi.fn().mockResolvedValue(mockResult);
 
@@ -33,7 +16,7 @@ describe('withDbSpan', () => {
     expect(mockFn).toHaveBeenCalledOnce();
   });
 
-  it('should set error attributes when function throws', async () => {
+  it('should preserve thrown function errors', async () => {
     const error = new Error('Database error');
     const mockFn = vi.fn().mockRejectedValue(error);
 
@@ -43,7 +26,7 @@ describe('withDbSpan', () => {
     expect(mockFn).toHaveBeenCalledOnce();
   });
 
-  it('should pass custom attributes to span', async () => {
+  it('should ignore custom attributes without changing the result', async () => {
     const mockResult = { id: '123' };
     const mockFn = vi.fn().mockResolvedValue(mockResult);
     const customAttributes = {

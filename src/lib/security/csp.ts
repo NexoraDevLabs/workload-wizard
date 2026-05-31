@@ -40,11 +40,6 @@ const SERVICE_ALLOWLISTS: Record<string, Partial<CSPAllowlist>> = {
   convex: {
     connectSrc: ['*.convex.cloud', '*.convex.dev'],
   },
-  vercel: {
-    scriptSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
-    connectSrc: ['vitals.vercel-insights.com', 'va.vercel-scripts.com'],
-    imgSrc: ['va.vercel-scripts.com'],
-  },
   sanity: {
     imgSrc: ['cdn.sanity.io'],
     connectSrc: ['*.sanity.io'],
@@ -151,9 +146,6 @@ function buildAllowlist(env: ReturnType<typeof getEnv>): CSPAllowlist {
   if (env.NEXT_PUBLIC_CONVEX_URL) {
     mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.convex);
   }
-
-  // Vercel Analytics and Speed Insights are always present in Vercel deployments
-  mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.vercel);
 
   // Sanity is used for images
   mergeAllowlist(allowlist, SERVICE_ALLOWLISTS.sanity);
