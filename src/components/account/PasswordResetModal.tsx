@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { KeyRound, Loader2 } from 'lucide-react';
 
-import { sendPasswordResetEmail } from '@/app/account/actions';
+import { sendPasswordResetEmail } from '@/app/(app)/account/actions';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

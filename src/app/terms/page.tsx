@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import Footer from '@/components/Footer';
 import DynamicHeaderIsland from '@/components/dynamic-header-island';
 
+export const dynamic = 'force-static';
+
 export default function TermsOfServicePage() {
   return (
     <div className="relative min-h-screen">

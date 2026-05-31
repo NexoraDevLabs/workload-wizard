@@ -1,26 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const publicRoutePatterns = [
-  /^\/$/,
-  /^\/sign-in(?:\/.*)?$/,
-  /^\/terms$/,
-  /^\/privacy$/,
-  /^\/blog(?:\/.*)?$/,
-  /^\/api\/auth(?:\/.*)?$/,
-  /^\/api\/user$/,
-];
-
-function matches(pathname: string, patterns: RegExp[]) {
-  return patterns.some((pattern) => pattern.test(pathname));
-}
-
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  if (matches(pathname, publicRoutePatterns)) {
-    return NextResponse.next();
-  }
 
   const hasWorkOSSession = Boolean(
     req.cookies.get('wos-session')?.value ??
@@ -29,7 +11,10 @@ export default function middleware(req: NextRequest) {
 
   if (!hasWorkOSSession) {
     const loginUrl = new URL('/api/auth/login', req.url);
-    loginUrl.searchParams.set('returnTo', pathname);
+    loginUrl.searchParams.set(
+      'returnTo',
+      `${pathname}${req.nextUrl.search}`
+    );
     return NextResponse.redirect(loginUrl);
   }
 
@@ -38,7 +23,28 @@ export default function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    '/(api|trpc)(.*)',
+    '/dashboard/:path*',
+    '/account/:path*',
+    '/admin/:path*',
+    '/organisation/:path*',
+    '/settings/:path*',
+    '/courses/:path*',
+    '/modules/:path*',
+    '/staff/:path*',
+    '/notifications/:path*',
+    '/onboarding/:path*',
+    '/onboarding-success/:path*',
+    '/dev/:path*',
+    '/api/account/:path*',
+    '/api/admin/:path*',
+    '/api/complete-onboarding',
+    '/api/env-check',
+    '/api/featurebase/:path*',
+    '/api/sync-usernames',
+    '/api/update-last-signin',
+    '/api/update-user',
+    '/api/update-user-email',
+    '/api/update-user-username',
+    '/api/user/:path*',
   ],
 };

@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { WandSparkles } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { useAuthUser } from '@/hooks/useAuthUser';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -18,7 +17,6 @@ import {
 import { Label } from '@/components/ui/label';
 
 export default function LandingPage() {
-  const { isSignedIn } = useAuthUser();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -90,19 +88,11 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            {isSignedIn ? (
-              <Link href="/dashboard">
-                <Button variant="default" size="sm">
-                  Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/sign-in">
-                <Button variant="default" size="sm">
-                  Sign in
-                </Button>
-              </Link>
-            )}
+            <Link href="/api/auth/login?returnTo=/dashboard">
+              <Button variant="default" size="sm">
+                Sign in
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
