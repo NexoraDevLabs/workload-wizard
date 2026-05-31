@@ -2,24 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { withApiTracing } from '../withApiTracing';
 import type { NextRequest } from 'next/server';
 
-// Mock OpenTelemetry
-vi.mock('@opentelemetry/api', () => ({
-  trace: {
-    getTracer: vi.fn(() => ({
-      startActiveSpan: vi.fn((_name, callback) => {
-        const span = {
-          setAttribute: vi.fn(),
-          recordException: vi.fn(),
-          end: vi.fn(),
-        };
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return -- Mock span for testing
-        return callback(span);
-      }),
-    })),
-  },
-}));
-
-describe('API Route Tracing Integration', () => {
+describe('API route tracing shim', () => {
   let mockRequest: NextRequest;
 
   beforeEach(() => {
@@ -37,7 +20,7 @@ describe('API Route Tracing Integration', () => {
     } as unknown as NextRequest;
   });
 
-  it('should trace a health check endpoint', async () => {
+  it('should pass through a health check endpoint', async () => {
     const healthHandler = async (_req: NextRequest) => {
       return new Response(
         JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }),
@@ -56,7 +39,7 @@ describe('API Route Tracing Integration', () => {
     expect(body.status).toBe('ok');
   });
 
-  it('should trace an error endpoint', async () => {
+  it('should pass through an error endpoint', async () => {
     const errorHandler = async (_req: NextRequest) => {
       return new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
@@ -72,7 +55,7 @@ describe('API Route Tracing Integration', () => {
     expect(body.error).toBe('Not found');
   });
 
-  it('should trace an endpoint that throws', async () => {
+  it('should preserve endpoint errors', async () => {
     const throwingHandler = async (_req: NextRequest) => {
       throw new Error('Internal server error');
     };
